@@ -1,7 +1,9 @@
 ''gui for fbdebuuger_new
 ''dbg_gui.bas
 
+'=====================
 ''Loading of buttons
+'=====================
 sub load_button(id as integer,button_name as zstring ptr,xcoord as integer,tooltiptext as zstring ptr=0,idtooltip as integer=-1,disab as long=1)
 	Var HIMAGE=Load_image(*button_name)
 	ButtonImageGadget(id,xcoord,0,30,26,HIMAGE,  BS_BITMAP)
@@ -14,7 +16,9 @@ sub load_button(id as integer,button_name as zstring ptr,xcoord as integer,toolt
 	end if
 	disablegadget(id,disab)
 end sub
-
+'===================================================
+'' changes the color/style of line in displayed src
+'===================================================
 sub line_color(byval pline as integer,byval style as ulong)
 	var begpos=Send_sci(SCI_POSITIONFROMLINE,pline-1,0)
 	var endpos=Send_sci(SCI_GETLINEENDPOSITION,pline-1,0)
@@ -23,106 +27,47 @@ sub line_color(byval pline as integer,byval style as ulong)
 	 'style next chars with style #x
 	Send_sci(SCI_SetStyling, endpos-begpos,style)
 end sub
-''''''======================================
-function create_sci2(byval wind as hwnd,byval gadget as long) as hwnd
-	
-var result = DyLibLoad ( "D:\laurent_divers\fb dev\En-cours\FBDEBUG NEW\asm64_via_llvm\test_a_garder/Scintilla" )
-print "dll=";result
-dim as hwnd editor_win 
-	
-	
-dim as RECT rc
-dim as wstring *50 wstrg =wstr("TEST SCINTILLA")
-'dim as byte ptr bptr=strptr(wstrg)
-'print bptr
-'for i as integer =0 to 15:print bptr[i]:next
-print "create",len(wstrg)
-       GetClientRect(wind, @rc)
-		'WS_SIZEBOX      Or _
-		' WS_CAPTION or WS_SYSMENU or WS_MAXIMIZEBOX or WS_MINIMIZEBOX or  WS_POPUP, _
-		editor_win = createwindowex(0,"Scintilla", wstrg, _
-		WS_CHILD or WS_VSCROLL or WS_HSCROLL or WS_CLIPCHILDREN , _
-		0,65,400,rc.bottom-90,_
-		wind,Cast(HMENU,CInt(gadget)),GetModuleHandle(0), 0)
-		
-		'print rc.left, rc.top,rc.right,rc.bottom
-		'print "editor=";editor_win,getlasterror
-       	
-       
-		SendMessage(editor_win,SCI_SETMARGINTYPEN,0,SC_MARGIN_NUMBER )
-		sendmessage(editor_win,SCI_SETMARGINWIDTHN,0,40)
-		SendMessage(editor_win,SCI_SETMARGINTYPEN,1,SC_MARGIN_SYMBOL )
-		SendMessage(editor_win,SCI_SETMARGINWIDTHN,1,12)
-		SendMessage(editor_win,SCI_SETFOLDMARGINCOLOUR,0,BLACK_BRUSH )
-		showwindow(editor_win , SW_SHOW)
-		win9AddNewGadget(gadget,editor_win)
-		
-		
-		
-		'Set default FG/BG
-		SendMessage editor_win, SCI_SetLexer, SCLEX_Null, 0
-		SendMessage editor_win, SCI_StyleSetFore, Style_Default, &h404040'&h0 ''writes in black KBLUE
-		SendMessage editor_win, SCI_StyleSetBack, Style_Default, &hFFFFFF 'white background
-		SendMessage editor_win, SCI_StyleClearAll, 0, 0     'set all styles to style_default
-		
+'==========================================================
+'' displays current line after restoring previous one
+'==========================================================
+sub curline_display(linenew as integer)
+	if srcurc<>srcdisplayed then
+		Send_sci(SCI_ADDREFDOCUMENT,0,sourceptr(srcdisplayed))
+		Send_sci(SCI_SETDOCPOINTER,0,sourceptr(srccur))
+		srcdisplayed=srccur
+	end if
+	line_color(linecur,KSTYLENONE)
+	if rline(linenew).sx<>srcdisplayed then
+		srccur=rline(linenew).sx
+		Send_sci(SCI_ADDREFDOCUMENT,0,sourceptr(srcdisplayed))
+		Send_sci(SCI_SETDOCPOINTER,0,sourceptr(srccur))
+		srcdisplayed=srccur
+	end if
+	linecur=rline(linenew).nu
+	line_color(linecur,KSTYLCUR)
 
-		SendMessage editor_win, SCI_MarkerDefine, 0,SC_MARK_CIRCLE
-		SendMessage editor_win, SCI_MarkerDefine, 1,SC_MARK_FULLRECT
-		SendMessage editor_win, SCI_MarkerDefine, 2,SC_MARK_ARROW
-		SendMessage editor_win, SCI_MarkerDefine, 3,SC_MARK_SMALLRECT
-		SendMessage editor_win, SCI_MarkerDefine, 4,SC_MARK_SHORTARROW
-		sendmessage editor_win, SCI_MarkerDefine, 5,SC_MARK_CHARACTER+65
-
-		SendMessage editor_win,SCI_MARKERSETFORE,0,KBLUE
-		SendMessage editor_win,SCI_MARKERSETBACK,0,KBLUE
-		sendmessage editor_win,SCI_MARKERSETFORE,1,KRED
-		SendMessage editor_win,SCI_MARKERSETBACK,1,KRED
-		sendmessage editor_win,SCI_MARKERSETFORE,2,KRED
-		SendMessage editor_win,SCI_MARKERSETBACK,2,KRED
-		sendmessage editor_win,SCI_MARKERSETFORE,3,KORANGE
-		SendMessage editor_win,SCI_MARKERSETBACK,3,KORANGE
-		
-		dim txt As String
-		txt = "Dim as integer test_var ''dummy code" + chr(13) + "If x = 2 Then" + chr(13) + "   'do nothing" + chr(13)
-		txt = txt + "Else" + chr(13) + "   x = 0" + chr(13) + "End If" + Chr$(0)
-		SendMessage editor_win, SCI_SetText, 0, cast(lparam,strptr(txt))
-		
-		SendMessage editor_win, SCI_StyleSetFore, 2, KRED   'style #2 FG set to red
-		SendMessage editor_win, SCI_StyleSetBack, 2, KYELLOW 'style #2 BB set to green
-
-		'line_color(editor_win,5,2)
-	   For imark as Integer = 0 To 5
-	      SendMessage editor_win, SCI_SetMarginMaskN, 1,-1  'all symbols allowed
-	      SendMessage editor_win, SCI_MarkerAdd, imark, imark       'line, marker#
-	   Next
-		
-	return editor_win
-end function
-''======================================
+	'' display in current line gadget
+	lgt=send_sci(SCI_LINELENGHT,linecur-1,0)
+	txt=space(lgt) + Chr(0)
+	send_sci(SCI_GETLINE,linecur-1,strptr(txt))
+	setgadgettext(GCURRENTLINE,txt)
+end sub
+'============================
 ''create scintilla windows
+'============================
 function create_sci(byval wind as hwnd,byval gadget as long) as hwnd
 	
 	var result = DyLibLoad ( "D:\laurent_divers\fb dev\En-cours\FBDEBUG NEW\asm64_via_llvm\test_a_garder/Scintilla" )
 
 	dim as hwnd editor_win 
 	
-	dim as RECT rc
-	GetClientRect(wind, @rc)
-	'WS_SIZEBOX      Or _
-	' WS_CAPTION or WS_SYSMENU or WS_MAXIMIZEBOX or WS_MINIMIZEBOX or  WS_POPUP, _
 	editor_win = createwindowex(0,"Scintilla","", _
 	WS_CHILD or WS_VSCROLL or WS_HSCROLL or WS_CLIPCHILDREN , _
-	0,65,400,rc.bottom-90,_
+	0,65,400,WindowClientHeight(wind)-90,_
 	wind,Cast(HMENU,CInt(gadget)),GetModuleHandle(0), 0)
+
 	scint=editor_win
-	'print rc.left, rc.top,rc.right,rc.bottom
-	'print "editor=";editor_win,getlasterror
-		
-		'sendmessage(editor_win,SCI_SETMARGINTYPEN,0,SC_MARGIN_NUMBER )
-		'sendmessage(editor_win,SCI_SETMARGINWIDTHN,0,40)
-		'SendMessage(editor_win,SCI_SETMARGINTYPEN,1,SC_MARGIN_SYMBOL )
-		'SendMessage(editor_win,SCI_SETMARGINWIDTHN,1,12)
-		'SendMessage(editor_win,SCI_SETFOLDMARGINCOLOUR,0,BLACK_BRUSH )
+
 	send_sci(SCI_SETMARGINTYPEN,0,SC_MARGIN_NUMBER )
 	send_sci(SCI_SETMARGINWIDTHN,0,40)
 	send_sci(SCI_SETMARGINTYPEN,1,SC_MARGIN_SYMBOL )
@@ -244,18 +189,18 @@ private sub gui_init
 	'var hbmp1 = load_Icon("2.ico")	
 	treeviewgadget(GTVIEWVAR,0,0,499,299,KTRRESTYLE)
 	''filling treeview for example
-	var Pos_=AddTreeViewItem(GTVIEWVAR,"Myvar udt ",0,0,0)
-	AddTreeViewItem(GTVIEWVAR,"first field",0,0,1,Pos_)
-	Pos_=AddTreeViewItem(GTVIEWVAR,"my second var",0,0,0)
-	AddTreeViewItem(GTVIEWVAR,"first field",0,0,0,Pos_)
+	var Pos_=AddTreeViewItem(GTVIEWVAR,"Myvar udt ",cast (hicon, 0),cast (hicon, 0),0,0)
+	AddTreeViewItem(GTVIEWVAR,"first field",cast (hicon, 0),0,1,Pos_)
+	Pos_=AddTreeViewItem(GTVIEWVAR,"my second var",cast (hicon, 0),0,0)
+	AddTreeViewItem(GTVIEWVAR,"first field",cast (hicon, 0),0,0,Pos_)
 	
 	HideWindow(htabvar,0)
 	''treeview procs
 	var htabprc=AddPanelGadgetItem(GRIGHTTABS,1,"Procs",,1)
 	treeviewgadget(GTVIEWPRC,0,0,499,299,KTRRESTYLE)
-	AddTreeViewItem(GTVIEWPRC,"first proc",0,0,0)
-	AddTreeViewItem(GTVIEWPRC,"second proc",0,0,0)
-	AddTreeViewItem(GTVIEWPRC,"third proc",0,0,0)
+	AddTreeViewItem(GTVIEWPRC,"first proc",cast (hicon, 0),0,0)
+	AddTreeViewItem(GTVIEWPRC,"second proc",cast (hicon, 0),0,0)
+	AddTreeViewItem(GTVIEWPRC,"third proc",cast (hicon, 0),0,0)
 	''treeview threads
 	var htabthrd=AddPanelGadgetItem(GRIGHTTABS,2,"Threads")
 	''treeview watched

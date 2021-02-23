@@ -44,10 +44,6 @@ dim shared as boolean flagrestart = true
 #include "dbg_tools.bas"
 
 
-'if prbm
-'Declare Function AddTreeViewItem OverLoad(ByVal gadget As long, ByRef string_ As String, ByVal Idimage_0 As HBITMAP, ByVal Idimage_Selected As HBITMAP, ByVal pos_ As integer, ByVal parent As Integer=0) As Integer
-'Declare Function AddTreeViewItem(ByVal gadget As Long, ByRef string_ As String,ByVal Idimage_0 As HICON,ByVal Idimage_Selected As HICON,ByVal pos_ As integer,ByVal parent As Integer=0) As integer
-
 
 
 gui_init
@@ -127,7 +123,7 @@ MenuItem(1102,HMenuprc,"Disable proc")
 do
 	Var event=WaitEvent()
 	If Event=EventClose then
-		if messbox("Quitting Fbdebugger","Are you sure ? (pgm still running)",MB_YESNO)=6 then
+		if messbox("Quit Fbdebugger","Are you sure ? (pgm still running)",MB_YESNO)=6 then
 			''todo need to release doc SCI_RELEASEDOCUMENT(<unused>, pointer doc)
 			release_doc
 			end

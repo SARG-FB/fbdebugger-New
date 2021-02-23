@@ -163,7 +163,8 @@ Const   SRCMAX=1000		   ''max source file
 #define KSTYLBREAKCOUNT
 #define KSTYLBREAKDISABLED
 
-
+#define KSTYLNONE 0
+#define KSTYLCUR  2
 '================ Lines ==============================================
 Const LINEMAX=100000
 Type tline
