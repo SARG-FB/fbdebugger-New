@@ -11,7 +11,7 @@
 #include once "Scintilla.bi"
 #include once "SciLexer.bi"
 #Include Once "file.bi"
-	
+
 'define data 64bit/32bit
 #Ifdef __FB_64BIT__ 
    #Define regip rip
@@ -43,7 +43,7 @@
 	#Include Once "win\shellapi.bi"
 	#Include Once "win\psapi.bi" 
 
-	
+
 	'' if they are not already defined
 	#Ifndef EXCEPTION_DEBUG_EVENT
 		#Define EXCEPTION_DEBUG_EVENT  1
@@ -78,7 +78,7 @@
 
 ''end of define for windows	
 #endif
-	
+
 #Define TYPESTD 17 ''upper limit for standard type, now 17 for va_list 2020/02/05
 
 ''source code files
@@ -156,15 +156,59 @@ Const   SRCMAX=1000		   ''max source file
 #define KGREEN &hB700
 #define KYELLOW &hFFFF
 #define KORANGE &h04A0FB
-#define send_sci(b,c,d) sendmessage(scint,b,c,cast(lparam,d))
+#Ifdef __fb_win32__
+	#define send_sci(b,c,d) sendmessage(scint,b,c,cast(integer,d))
+#else
+	#define send_sci scintilla_send_message(scint,b,c,cast(integer,d))
+	extern "C"
 
+	type ScintillaObject as _ScintillaObject
+	type ScintillaObjectClass as _ScintillaClass
+
+	type _ScintillaObject
+		cont as GtkContainer
+		pscin as any ptr
+	end type
+
+	type _ScintillaClass
+		parent_class as GtkContainerClass
+		command as sub(byval sci as ScintillaObject ptr, byval cmd as long, byval window as GtkWidget ptr)
+		notify as sub(byval sci as ScintillaObject ptr, byval id as long, byval scn as SCNotification ptr)
+	end type
+
+	declare function scintilla_object_get_type() as GType
+	declare function scintilla_object_new() as GtkWidget ptr
+	declare function scintilla_object_send_message(byval sci as ScintillaObject ptr, byval iMessage as ulong, byval wParam as guintptr, byval lParam as gintptr) as gintptr
+	declare function scnotification_get_type() as GType
+	type ScintillaClass as _ScintillaClass
+	declare function scintilla_get_type() as GType
+	declare function scintilla_new() as GtkWidget ptr
+	declare sub scintilla_set_id(byval sci as ScintillaObject ptr, byval id as uptr_t)
+	declare function scintilla_send_message(byval sci as ScintillaObject ptr, byval iMessage as ulong, byval wParam as uptr_t, byval lParam as sptr_t) as sptr_t
+	declare sub scintilla_release_resources()
+
+	#define SCINTILLA(obj) G_TYPE_CHECK_INSTANCE_CAST(obj, scintilla_get_type(), ScintillaObject)
+	#define SCINTILLA_CLASS(klass) G_TYPE_CHECK_CLASS_CAST(klass, scintilla_get_type(), ScintillaClass)
+	#define IS_SCINTILLA(obj) G_TYPE_CHECK_INSTANCE_TYPE(obj, scintilla_get_type())
+	#define SCINTILLA_TYPE_OBJECT scintilla_object_get_type()
+	#define SCINTILLA_OBJECT(obj) G_TYPE_CHECK_INSTANCE_CAST((obj), SCINTILLA_TYPE_OBJECT, ScintillaObject)
+	#define SCINTILLA_IS_OBJECT(obj) G_TYPE_CHECK_INSTANCE_TYPE((obj), SCINTILLA_TYPE_OBJECT)
+	#define SCINTILLA_OBJECT_CLASS(klass) G_TYPE_CHECK_CLASS_CAST((klass), SCINTILLA_TYPE_OBJECT, ScintillaObjectClass)
+	#define SCINTILLA_IS_OBJECT_CLASS(klass) G_TYPE_CHECK_CLASS_TYPE((klass), SCINTILLA_TYPE_OBJECT)
+	#define SCINTILLA_OBJECT_GET_CLASS(obj) G_TYPE_INSTANCE_GET_CLASS((obj), SCINTILLA_TYPE_OBJECT, ScintillaObjectClass)
+	#define SCINTILLA_TYPE_NOTIFICATION scnotification_get_type()
+	#define SCINTILLA_NOTIFY "sci-notify"
+
+end extern
+
+#endif
 #define KSTYLBREAK
 #define KSTYLBREAKTEMPO
 #define KSTYLBREAKCOUNT
 #define KSTYLBREAKDISABLED
 
-#define KSTYLNONE 0
-#define KSTYLCUR  2
+#define KSTYLENONE 0
+#define KSTYLECUR  2
 '================ Lines ==============================================
 Const LINEMAX=100000
 Type tline
@@ -212,3 +256,4 @@ End type
 
 ''Declares
 Declare Function win9AddNewGadget(ByVal gadget As Integer, ByVal hWin As HWND) As integer
+Declare Function win9GetCurrent() As HWND

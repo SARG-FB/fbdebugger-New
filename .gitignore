@@ -23,3 +23,5 @@ Window9.bi
 window9.chm
 window9.chw
 Window9_2.bi
+*.dll
+*.so

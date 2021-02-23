@@ -31,7 +31,7 @@ end sub
 '' displays current line after restoring previous one
 '==========================================================
 sub curline_display(linenew as integer)
-	if srcurc<>srcdisplayed then
+	if srccur<>srcdisplayed then
 		Send_sci(SCI_ADDREFDOCUMENT,0,sourceptr(srcdisplayed))
 		Send_sci(SCI_SETDOCPOINTER,0,sourceptr(srccur))
 		srcdisplayed=srccur
@@ -44,42 +44,87 @@ sub curline_display(linenew as integer)
 		srcdisplayed=srccur
 	end if
 	linecur=rline(linenew).nu
-	line_color(linecur,KSTYLCUR)
+	line_color(linecur,KSTYLECUR)
 
 	'' display in current line gadget
-	lgt=send_sci(SCI_LINELENGHT,linecur-1,0)
-	txt=space(lgt) + Chr(0)
+	var lgt=send_sci(SCI_LINELENGTH,linecur-1,0)
+	var txt=space(lgt) + Chr(0)
 	send_sci(SCI_GETLINE,linecur-1,strptr(txt))
 	setgadgettext(GCURRENTLINE,txt)
 end sub
+'======================================
+'' notification from scintilla gadget
+'======================================
+#ifdef __FB_WIN32__
+	function getMessages(hwnd as hwnd , msg as UINteger , wparam as wparam , lparam as lparam) as Integer
+		select case msg
+			Case WM_NOTIFY
+				dim as SCNotification ptr pSn = cast(SCNotification ptr , lparam) 'SCNotification ->https://www.scintilla.org/ScintillaDoc.html#Notifications
+				if pSn->nmhdr.code = SCN_CHARADDED then
+					? pSn->ch ' press keys and look in the console/terminal
+				EndIf
+				'? pSn->nmhdr.idFrom ' number gadget
+				'? pSn->nmhdr.hwndFrom ' hwnd sciHWND
+		end select
+		return 0
+	End Function
+#else
+	Sub getMessages cdecl(w as hwnd, p as gint, notification as SCNotification ptr, userData as gpointer )	
+		dim as SCNotification ptr pSn = cast(SCNotification ptr , notification)
+		if pSn->nmhdr.code = SCN_CHARADDED then
+			? pSn->ch ' press keys and look in the console/terminal
+		EndIf
+		'? pSn->nmhdr.idFrom ' number gadget
+		'? pSn->nmhdr.hwndFrom ' hwnd sciHWND
+	End Sub
+#endif
 '============================
 ''create scintilla windows
 '============================
-function create_sci(byval wind as hwnd,byval gadget as long) as hwnd
+sub create_sci(gadget as long, x as Long, y as Long , w as Long , h as Long  , Exstyle as integer = 0)
+	dim as HWND hsci
+	#ifdef __fb_win32__
+		if dylibload("SciLexer.dll")=0 then ''todo if not loaded -->error and exit
+		'if dylibload ( "D:\laurent_divers\fb dev\En-cours\FBDEBUG NEW\asm64_via_llvm\test_a_garder/Scintilla" )=0 then
+
+			messbox("SciLexer.dll problem","dll not found"+chr(13)+"Quitting fbdebugger")
+			end
+		end if
+		hsci = CreateWindowEx(Exstyle,"Scintilla","", WS_CHILD Or WS_VISIBLE Or WS_CLIPCHILDREN,x,y,w,h,Cast(HWND,win9GetCurrent()), Cast(HMENU,CInt(gadget)), 0, 0)
+		win9AddNewGadget(gadget,hsci)
+		setwindowcallback(cint(@getMessages) , 0) ' set callback for main window (mainHWND)	
+	#else
+		#inclib "scintilla"
+		dim as GtkWidget ptr editor
+		dim as ScintillaObject ptr sci
+		Dim As HWND  vBox , mainBox
+		dim as ListT ptr pListTemp
+		editor = scintilla_new()
+		sci = SCINTILLA(editor)
+		pListTemp = cast(ListT ptr,pGlobalTypeWindow9->ListWinAndContainers->findNodeFunc(cint(pGlobalTypeWindow9->CurentHwnd)))		
+		mainBox = cast(hwnd , pListTemp->anyTwoData)
+		vbox = gtk_fixed_new()
+		gtk_container_add (GTK_CONTAINER(mainBox), vbox)
+		gtk_fixed_put(GTK_FIXED(vbox), editor , x , y)
+		scintilla_set_id(sci, gadget)
+		gtk_widget_set_size_request(editor, w, h)
+		g_signal_connect(G_OBJECT(sci), "sci-notify", G_CALLBACK (@getMessages), 0)
+		gtk_widget_show_all(pGlobalTypeWindow9->CurentHwnd)
+		gtk_widget_grab_focus(GTK_WIDGET(editor))
+		hsci=cast(hwnd, sci)
+	#endif
+	scint=hsci ''need to be done as used in send_sci
 	
-	var result = DyLibLoad ( "D:\laurent_divers\fb dev\En-cours\FBDEBUG NEW\asm64_via_llvm\test_a_garder/Scintilla" )
-
-	dim as hwnd editor_win 
-	
-	editor_win = createwindowex(0,"Scintilla","", _
-	WS_CHILD or WS_VSCROLL or WS_HSCROLL or WS_CLIPCHILDREN , _
-	0,65,400,WindowClientHeight(wind)-90,_
-	wind,Cast(HMENU,CInt(gadget)),GetModuleHandle(0), 0)
-
-	scint=editor_win
-
 	send_sci(SCI_SETMARGINTYPEN,0,SC_MARGIN_NUMBER )
 	send_sci(SCI_SETMARGINWIDTHN,0,40)
 	send_sci(SCI_SETMARGINTYPEN,1,SC_MARGIN_SYMBOL )
 	send_sci(SCI_SETMARGINWIDTHN,1,12)
 	send_sci(SCI_SETFOLDMARGINCOLOUR,0,BLACK_BRUSH )
 	
-	win9AddNewGadget(gadget,editor_win)
-
 	'Set default FG/BG
 	send_sci(SCI_SetLexer, SCLEX_Null, 0)
-	send_sci(SCI_StyleSetFore, Style_Default, &h404040)''grey
-	send_sci(SCI_StyleSetBack, Style_Default, &hFFFFFF) ''white background
+	send_sci(SCI_StyleSetFore, STYLE_DEFAULT, &h404040)''grey
+	send_sci(SCI_StyleSetBack, STYLE_DEFAULT, &hFFFFFF) ''white background
 	send_sci(SCI_StyleClearAll, 0, 0)     ''set all styles to style_default
 	
 	''markers
@@ -105,16 +150,20 @@ function create_sci(byval wind as hwnd,byval gadget as long) as hwnd
 	for imark as Integer = 0 To 5
 	    send_sci(SCI_SetMarginMaskN, 1,-1)  ''all symbols allowed
 	next
+	'SendMessage(sciHWND, SCI_SETCODEPAGE, SC_CP_UTF8 ,0)
+	send_sci(SCI_SETLEXER, SCLEX_FREEBASIC, 0 )
+	send_sci(SCI_SETKEYWORDS,0, @"sub function operator constructor destructor")
+	send_sci(SCI_STYLESETFORE, SCE_B_CONSTANT, 0)
+	send_sci(SCI_STYLESETFORE, SCE_B_KEYWORD, &hff00ff)
 	
-	return editor_win
-end function
+End sub
 private sub gui_init
 
 	''main windows
 	mainwindow=OpenWindow("New FBDEBUGGER with window9 :-)",10,10,1100,500)
 	
 	''scintilla gadget
-	scint=create_sci(mainwindow,GSCINTILLA)
+	create_sci(GSCINTILLA,0,65,400,WindowClientHeight(mainwindow)-90,)
 
 	''source panel
 	'Var font=LoadFont("Arial",40)

@@ -9,14 +9,16 @@ dim shared as any ptr sourceptr(SRCMAX)     ''pointer doc scintilla
 dim Shared As UByte   sourcebuf(SRCSIZEMAX) ''buffer for loading source file
 dim Shared as Integer sourcenb =-1          ''number of src, 0 based
 dim Shared As integer sourceix              ''source index when loading data
-dim shared as any ptr currentdoc            ''current doc pointer
-
+dim shared as any ptr currentdoc            ''current doc pointer  todo set local in source_load ?
+dim Shared As integer srccur				''index source line to be executed
+dim Shared As integer srcdisplayed			''index displayed source
 
 ''lines
 dim Shared As Integer linenb,rlineprev ''numbers of lines, index of previous executed line (rline)
 dim Shared As Integer linenbprev ''used for dll
 dim Shared As Integer lastline
 dim Shared as tline rline(LINEMAX)
+dim Shared As Integer linecur          ''line to be executed (inside source)
 
 ''procedures
 dim Shared as tproc proc(PROCMAX) ''list of procs in code
@@ -177,7 +179,3 @@ do
 		endif
 	endif
 loop
-'Infos à garder
-'win9GetCurrent - renvoie la fenêtre actuelle de la liste liée, pour y placer des gadgets. Identique à UseGadgetList, mais vice versa.
-'win9AddNewGadget - Ajoute un gadget et sa fenêtre associée à la liste liée
-
