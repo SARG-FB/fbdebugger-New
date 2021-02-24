@@ -7,7 +7,7 @@
 '#define fulldbg_prt 'uncomment to get more information
 #Define dbg_prt2 Rem 'used temporary for debugging fbdebugger, change rem by dbg_prt 
 
-#include once "window9.bi"
+#include once "Window9.bi"
 #include once "Scintilla.bi"
 #include once "SciLexer.bi"
 #Include Once "file.bi"
@@ -100,6 +100,7 @@ Const   SRCMAX=1000		   ''max source file
 	#define KTRRESTYLE TVS_HASLINES or TVS_HASBUTTONS or TVS_LINESATROOT
 #Else
 	#define KTRRESTYLE 0
+	#define hicon HBITMAP
 #endif
 
 ''right panels
@@ -159,7 +160,7 @@ Const   SRCMAX=1000		   ''max source file
 #Ifdef __fb_win32__
 	#define send_sci(b,c,d) sendmessage(scint,b,c,cast(integer,d))
 #else
-	#define send_sci scintilla_send_message(scint,b,c,cast(integer,d))
+	#define send_sci(b,c,d) scintilla_send_message(cast(scintillaobject ptr,scint),b,c,cast(integer,d))
 	extern "C"
 
 	type ScintillaObject as _ScintillaObject
@@ -237,7 +238,7 @@ Type tproc
 	rv As Integer  'return value type
 	pt As Long     'counter pointer for return value (** -> 2)
 	rvadr As Integer 'offset for return value adr (for now only dwarf) 19/08/2015
-    tv As HTREEITEM 'in tview2
+    'tv As HTREEITEM 'in tview2 todo changed for linux
     st As Byte     'state followed = not checked
 End Type
 
@@ -245,7 +246,7 @@ Const PROCRMAX=50000 'Running proc
 Type tprocr
 	sk   As UInteger  'stack
 	idx  As UInteger  'index for proc
-	tv   As HTREEITEM 'index for treeview
+	'tv   As HTREEITEM 'index for treeview todo changed for linux
 	'lst as uinteger 'future array in LIST
 	cl   As Integer   'calling line
 	thid As Integer   'idx thread

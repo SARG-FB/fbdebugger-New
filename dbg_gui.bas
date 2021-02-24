@@ -119,7 +119,7 @@ sub create_sci(gadget as long, x as Long, y as Long , w as Long , h as Long  , E
 	send_sci(SCI_SETMARGINWIDTHN,0,40)
 	send_sci(SCI_SETMARGINTYPEN,1,SC_MARGIN_SYMBOL )
 	send_sci(SCI_SETMARGINWIDTHN,1,12)
-	send_sci(SCI_SETFOLDMARGINCOLOUR,0,BLACK_BRUSH )
+	send_sci(SCI_SETFOLDMARGINCOLOUR,0,&h202020 )
 	
 	'Set default FG/BG
 	send_sci(SCI_SetLexer, SCLEX_Null, 0)
@@ -226,9 +226,11 @@ private sub gui_init
 	'  SendMessage(hwnd,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
 	'  SendMessage(hwnd,WM_SETICON,ICON_SMALL,Cast(Lparam,icon))
 	'D:\telechargements\win9\tmp\
-	var icon=loadimage(0,@"fbdebugger.ico",IMAGE_ICON,0,0,LR_LOADFROMFILE or LR_DEFAULTSIZE)
-	sendmessage(mainwindow,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
 	
+	#ifdef __fb_win32__
+		var icon=loadimage(0,@"fbdebugger.ico",IMAGE_ICON,0,0,LR_LOADFROMFILE or LR_DEFAULTSIZE)
+		sendmessage(mainwindow,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
+	#endif
 	''right panels
 	PanelGadget(GRIGHTTABS,500,30,499,300)
 	SetGadgetFont(GRIGHTTABS,CINT(LoadFont("Courier New",11)))
