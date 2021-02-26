@@ -210,6 +210,14 @@ end extern
 
 #define KSTYLENONE 0
 #define KSTYLECUR  2
+
+
+Enum 'type udt/redim/dim
+	TYUDT
+	TYRDM
+	TYDIM
+End enum
+
 '================ Lines ==============================================
 Const LINEMAX=100000
 Type tline
@@ -217,7 +225,7 @@ Type tline
 	nu As integer  ''number in file
 	sv As byte     ''saved value replaced by &hCC
 	px As UShort   ''proc index
-	sx As UShort   ''source index 2018/08/02 need it now for lines from include and not inside proc
+	sx As UShort   ''source index need it now for lines from include and not inside proc
 end Type
 '===================== Procedures (sub, function, operator) ============================
 Const PROCMAX=20000 'in sources
@@ -230,14 +238,14 @@ Type tproc
 	nm As String   'name
 	db As UInteger 'lower address
 	fn As UInteger 'upper line address
-	ed As UInteger 'upper proc end 18/08/2015
+	ed As UInteger 'upper proc end
 	sr As UShort   'source index
 	nu As Long     'line number to quick access
-	lastline As Long 'last line of proc (use when dwarf data) ''2016/03/24
+	'todo remove lastline As Long 'last line of proc (use when dwarf data)
 	vr As UInteger 'lower index variable upper (next proc) -1
 	rv As Integer  'return value type
 	pt As Long     'counter pointer for return value (** -> 2)
-	rvadr As Integer 'offset for return value adr (for now only dwarf) 19/08/2015
+	rvadr As Integer 'offset for return value adr (for now only dwarf)
     'tv As HTREEITEM 'in tview2 todo changed for linux
     st As Byte     'state followed = not checked
 End Type

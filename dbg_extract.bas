@@ -30,10 +30,841 @@ union ustab
 		desc as short
 	end type
 end union
+'--------------------------------------
+'' check if local var already stored
+'--------------------------------------
+private function local_exist() As long''2016/08/12
+	Dim ad As UInteger=vrb(vrbloc).adr
+	For i As Integer = proc(procnb).vr To proc(procnb+1).vr-2
+		If vrb(i).adr=ad AndAlso vrb(i).nm=vrb(vrbloc).nm Then
+			vrbloc-=1
+			proc(procnb+1).vr-=1
+			Return TRUE 'return true if variable local already stored
+		EndIf
+	Next
+	Return FALSE
+End function
+'------------------------------------
+'' check if common already stored
+'------------------------------------
+private function Common_exist(ad As UInteger) As Integer
+	For i As Integer = 1 To vrbgbl
+		If vrb(i).adr=ad Then Return TRUE 'return true if common already stored
+	Next
+	Return FALSE
+End function
+'---------------------------------
+'' check if enum already stored
+'---------------------------------
+private sub enum_check(idx As Integer)
+	For i As Integer =1 To udtmax-1
+		If udt(i).en Then 'enum
+			If udt(idx).nm=udt(i).nm Then 'same name
+				If udt(idx).ub-udt(idx).lb=udt(i).ub-udt(i).lb Then 'same number of elements
+					If cudt(udt(idx).ub).nm=cudt(udt(i).ub).nm Then 'same name for last element
+						If cudt(udt(idx).lb).nm=cudt(udt(i).lb).nm Then 'same name for first element
+							'enum are considered same
+							udt(idx).lb=udt(i).lb:udt(idx).ub=udt(i).ub
+							udt(idx).en=i
+							cudtnb=cudtnbsav
+							Exit Sub
+						EndIf
+					EndIf
+				EndIf
+			EndIf
+		EndIf
+	Next
+End sub
+'------------------------
+'' parse variable names
+'------------------------
+private function parse_name(strg As String) As String
+	 '"__ZN9TESTNAMES2XXE:S1
+	Dim As Integer p,d
+	Dim As String nm,strg2,nm2
+	p=InStr(strg,"_ZN")
+	strg2=Mid(strg,p+3,999)
+	p=Val(strg2)
+	If p>9 Then d=3 Else d=2
+	nm=Mid(strg2,d,p)
+	strg2=Mid(strg2,d+p)
+	p=Val(strg2)
+	If p>9 Then d=3 Else d=2
+	nm2=Mid(strg2,d,p)
+	Return nm+"."+nm2
+End function
+'----------------
+'' parse arrays
+'----------------
+private function parse_array(gv As String,d As Integer,f As Byte) As Integer
+	Dim As Integer p=d,q,c
 
-'' ----------------------------
-'' check if source yet stored
-'' ----------------------------
+	If arrnb>ARRMAX Then hard_closing("Max array reached limit="+str(ARRMAX))
+	arrnb+=1
+
+	'While gv[p-1]=Asc("a")
+	While InStr(p,gv,"ar")
+		''GCC todo remove
+		''p+=4
+		'
+		'If InStr(gv,"=r(")Then
+		'	p=InStr(p,gv,";;")+2 'skip range =r(n,n);n;n;;
+		'Else
+		'	p=InStr(p,gv,";")+1 'skip ar1;
+		'End If
+		'
+		'
+		'q=InStr(p,gv,";")
+		''END GCC
+		arr(arrnb).nlu(c).lb=Val(Mid(gv,p,q-p)) 'lbound
+
+		p=q+1
+		q=InStr(p,gv,";")
+		arr(arrnb).nlu(c).ub=Val(Mid(gv,p,q-p))'ubound
+		'''arr(arrnb).nlu(c).nb=arr(arrnb).nlu(c).ub-arr(arrnb).nlu(c).lb+1 'dim
+		p=q+1
+		c+=1
+	Wend
+		arr(arrnb).dm=c 'nb dim
+	If f=TYDIM Then
+		vrb(*vrbptr).arr=@arr(arrnb)
+	Else
+		cudt(cudtnb).arr=@arr(arrnb)
+	End If
+	Return p
+End function
+'--------------------------
+'' parse returned value
+'--------------------------
+private sub parse_retval(prcnb As Integer,gv2 As String)
+	'example :f7 --> private sub /  :F18=*19=f7" --> public sub ptr / :f18=*19=*1 --> private integer ptr ptr
+	Dim p As Integer,c As Integer,e As Integer
+	For p=0 To Len(gv2)-1
+		If gv2[p]=Asc("*") Then c+=1
+		If gv2[p]=Asc("=") Then e=p+1
+	next
+	If c Then 'pointer
+		If InStr(gv2,"=f") OrElse InStr(gv2,"=F") Then
+			If InStr(gv2,"=f7") OrElse InStr(gv2,"=F7") Then
+				p=200+c 'sub
+			Else
+				p=220+c 'function
+			EndIf
+		Else
+			If gv2[e]=Asc("*")Then e+=1
+         p=c
+		End If
+	Else
+		p=0
+	End If
+	c=Val(Mid(gv2,e+1))
+	'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used 
+	'done also with simple and array var
+	'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
+	If c=15 Then c=16
+	'========================================================
+
+	''todo remove
+	''If c=udt(15).index Then c=15
+
+	If c>TYPESTD Then c+=udtcpt '20/08/2015
+	proc(prcnb).pt=p
+	proc(prcnb).rv=c
+End sub
+'------------------
+'' parse scopes
+'------------------
+private function parse_scope(gv As Byte, ad As UInteger,dlldelta As Integer=0) As Integer 
+	Select Case gv
+		Case Asc("S"),Asc("G")     'shared/common
+			If gv=Asc("G") Then If Common_exist(ad) Then Return 0 'to indicate that no needed to continue
+			If vrbgbl=VGBLMAX then hard_closing("Init Globals reached limit "+Str(VGBLMAX))
+			vrbgbl+=1
+			vrb(vrbgbl).adr=ad
+			vrbptr=@vrbgbl
+			Select Case gv
+				Case Asc("S")		'shared
+					vrb(vrbgbl).mem=2
+					vrb(vrbgbl).adr+=dlldelta 'in case of relocation dll, all shared addresses are relocated
+				Case Asc("G")     'common
+					vrb(vrbgbl).mem=6
+			End Select
+			Return 2
+		Case Else
+			If vrbloc=VARMAX Then hard_closing("Init locals reached limit="+Str(VARMAX-3000))
+			vrbloc+=1
+			vrb(vrbloc).adr=ad
+			vrbptr=@vrbloc
+			proc(procnb+1).vr=vrbloc+1 'just to have the next beginning
+			Select Case gv
+				Case Asc("V")     'static
+					vrb(vrbloc).mem=3
+					Return 2
+				Case Asc("v")     'byref parameter
+					vrb(vrbloc).mem=4
+					Return 2
+				Case Asc("p")     'byval parameter
+					vrb(vrbloc).mem=5
+					Return 2
+				Case Else         'local
+					vrb(vrbloc).mem=1
+					Return 1
+			End Select
+	End select
+End function
+'--------------------------------------------
+'' parse ???? cutup_2
+'--------------------------------------------
+private sub parse_var2(gv As String,f As Byte)
+Dim p As Integer=1,c As Integer,e As Integer,gv2 As String,pp As Integer
+If InStr(gv,"=")=0 Then
+	c=Val(Mid(gv,p,9))
+	'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used 
+	'done also with array just below and param
+	'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
+	If c=15 Then c=16
+	'==================================
+
+	''todo remove
+	''If c=udt(15).index Then c=15
+
+	If c>TYPESTD Then c+=udtcpt 'udt type so adding the decal
+	pp=0
+	If f=TYUDT then
+		cudt(cudtnb).typ=c
+		cudt(cudtnb).pt=pp
+		cudt(cudtnb).arr=0 'by default not an array
+	Else
+		vrb(*vrbptr).typ=c
+		vrb(*vrbptr).pt=pp
+		vrb(*vrbptr).arr=0 'by default not an array
+	End if
+Else
+	If InStr(gv,"=ar1") Then p=parse_array(gv,InStr(gv,"=ar1")+1,f)
+	gv2=Mid(gv,p)
+	For p=0 To Len(gv2)-1
+		If gv2[p]=Asc("*") Then c+=1
+		If gv2[p]=Asc("=") Then e=p+1
+	next
+	If c Then 'pointer
+		If InStr(gv2,"=f") Then 'proc
+			If InStr(gv2,"=f7") Then
+				pp=200+c 'sub
+			Else
+				pp=220+c 'function
+			EndIf
+		Else
+			pp=c
+			If gv2[e]=Asc("*")Then e+=1
+		End If
+	Else
+		pp=0
+	End If
+	c=Val(Mid(gv2,e+1))
+
+	'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used 
+	'done also with simple var and param
+	'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
+	If c=15 Then c=16
+	'========================================================
+
+	''todo remove
+	''If c=udt(15).index Then c=15
+
+	If c>TYPESTD Then c+=udtcpt 'udt type so adding the decal 20/08/2015
+	If f=TYUDT Then
+		cudt(cudtnb).pt=pp
+		cudt(cudtnb).typ=c
+	Else
+		vrb(*vrbptr).pt=pp
+		vrb(*vrbptr).typ=c
+	End If
+EndIf
+End Sub
+
+'------------
+'' parse udt
+'------------
+private sub parse_udt(readl As String)
+	Dim As Integer p,q,lgbits
+	Dim As String tnm
+	p=InStr(readl,":")
+
+	tnm=Left(readl,p-1)
+	If InStr(readl,":Tt") Then
+	   p+=3 'skip :Tt
+	else
+	   p+=2 'skip :T  GCC
+	endif
+
+	q=InStr(readl,"=")
+
+	udtidx=Val(Mid(readl,p,q-p))
+
+	''todo remove
+	'If tnm="OBJECT" OrElse tnm="$fb_Object" Then udt(15).index=udtidx:Exit sub
+
+	udtidx+=udtcpt:If udtidx>udtmax Then udtmax=udtidx
+	If udtmax > TYPEMAX-1 Then hard_closing("Storing UDT limit reached "+Str(TYPEMAX))
+	udt(udtidx).nm=tnm
+	If left(tnm,4)="TMP$" Then Exit Sub 'gcc redim
+	p=q+2
+	q=p-1
+	While readl[q]<64
+		q+=1
+	Wend
+	q+=1
+	udt(udtidx).lg=Val(Mid(readl,p,q-p))
+	p=q
+	udt(udtidx).lb=cudtnb+1
+	while readl[p-1]<>Asc(";")
+		'dbg_prt("STORING CUDT "+readl)
+		If cudtnb = CTYPEMAX Then hard_closing("Storing CUDT limit reached "+Str(CTYPEMAX))
+		cudtnb+=1
+
+		q=InStr(p,readl,":")
+		cudt(cudtnb).nm=Mid(readl,p,q-p) 'variable name
+		p=q+1
+		q=InStr(p,readl,",")
+
+		parse_var2(Mid(readl,p,q-p),TYUDT) 'variable type
+
+		'11/05/2014 'new way for redim
+		If Left(udt(cudt(cudtnb).typ).nm,7)="FBARRAY" Then 'new way for redim array
+
+		'.stabs "__FBARRAY1:Tt25=s32DATA:26=*1,0,32;PTR:27=*7,32,32;SIZE:1,64,32;ELEMENT_LEN:1,96,32;DIMENSIONS:1,128,32;DIMTB:28=ar1;0;0;29,160,96;;",128,0,0,0
+		'.stabs "TTEST2:Tt23=s40VVV:24=ar1;0;1;2,0,16;XXX:1,32,32;ZZZ:25,64,256;;",128,0,0,0
+		'.stabs "__FBARRAY1:Tt21=s32DATA:22=*23,0,32;PTR:30=*7,32,32;SIZE:1,64,32;ELEMENT_LEN:1,96,32;DIMENSIONS:1,128,32;DIMTB:31=ar1;0;0;29,160,96;;",128,0,0,0
+		'.stabs "TTEST:Tt20=s56AAA:3,0,8;BBB:21,32,256;CCC:32=ar1;1;2;10,320,128;;",128,0,0,0
+		'.stabs "__FBARRAY8:Tt18=s116DATA:19=*20,0,32;PTR:33=*7,32,32;SIZE:1,64,32;ELEMENT_LEN:1,96,32;DIMENSIONS:1,128,32;DIMTB:34=ar1;0;0;29,160,768;;",128,0,0,0
+		'.stabs "VTEST:18",128,0,0,-176
+				cudt(cudtnb).pt=cudt(udt(cudt(cudtnb).typ).lb).pt-1 'pointer always al least 1 so reduce by one
+				cudt(cudtnb).typ=cudt(udt(cudt(cudtnb).typ).lb).typ 'real type
+				cudt(cudtnb).arr=Cast(tarr Ptr,-1) 'defined as dyn arr
+
+				'dbg_prt2("dyn array="+cudt(cudtnb).nm+" "+Str(cudt(cudtnb).typ)+" "+Str(cudt(cudtnb).pt)+" "+cudt(udt(cudt(cudtnb).typ).lb).nm)
+			EndIf
+			'end new redim
+
+			p=q+1
+			q=InStr(p,readl,",")
+			cudt(cudtnb).ofs=Val(Mid(readl,p,q-p))  'bits offset / beginning
+			p=q+1
+			q=InStr(p,readl,";")
+			lgbits=Val(Mid(readl,p,q-p))	'length in bits
+
+			if cudt(cudtnb).typ<>4 And cudt(cudtnb).pt=0 And cudt(cudtnb).arr=0 Then 'not zstring, pointer,array !!!
+				If lgbits<>udt(cudt(cudtnb).typ).lg*8 Then 'bitfield
+				  cudt(cudtnb).typ=TYPEMAX 'special type for bitfield
+				  cudt(cudtnb).ofb=cudt(cudtnb).ofs-(cudt(cudtnb).ofs\8) * 8 ' bits mod byte
+				  cudt(cudtnb).lg=lgbits  'length in bits
+				end If
+			end If
+		''''''''''''''''''EndIf 'end change 17/04/2014
+		p=q+1
+		cudt(cudtnb).ofs=cudt(cudtnb).ofs\8 'offset bytes
+	Wend
+	udt(udtidx).ub=cudtnb
+End sub
+
+'----------------
+'' parse enum
+'----------------
+private sub parse_enum(readl As String)
+'.stabs "TENUM:T26=eESSAI:5,TEST08:8,TEST09:9,TEST10:10,FIN:99,;",128,0,0,0
+	Dim As Integer p,q
+	Dim As String tnm
+	p=InStr(readl,":")
+	tnm=Left(readl,p-1)
+	p+=2 'skip :T
+	q=InStr(readl,"=")
+	udtidx=Val(Mid(readl,p,q-p))
+	udtidx+=udtcpt:If udtidx>udtmax Then udtmax=udtidx
+	If udtmax > TYPEMAX Then hard_closing("Storing ENUM="+tnm+" limit reached "+Str(TYPEMAX))
+	udt(udtidx).nm=tnm 'enum name
+
+	udt(udtidx).en=udtidx 'flag enum, in case of already treated use same previous cudt
+	udt(udtidx).lg=Len(Integer) 'same size as integer
+	'each cudt contains the value (typ) and the associated text (nm)
+	udt(udtidx).lb=cudtnb+1
+	p=q+2
+	cudtnbsav=cudtnb 'save value for restoring see enum_check
+	If InStr(readl,";")=0 Then
+		cudtnb+=1
+		cudt(cudtnb).nm="DUMMY"
+		cudt(cudtnb).val=0
+		messbox("Storing ENUM="+tnm,"Data not correctly formated "):Exit sub
+	Else
+		While readl[p-1]<>Asc(";")
+		q=InStr(p,readl,":") 'text
+		If cudtnb>=CTYPEMAX Then hard_closing("Storing ENUM="+tnm+" limit reached "+Str(CTYPEMAX))
+		cudtnb+=1
+		cudt(cudtnb).nm=Mid(readl,p,q-p)
+
+		p=q+1
+		q=InStr(p,readl,",") 'value
+		cudt(cudtnb).val=Val(Mid(readl,p,q-p))
+		p=q+1
+
+		Wend
+	EndIf
+	udt(udtidx).ub=cudtnb
+	enum_check(udtidx) 'eliminate duplicates
+End sub
+'-------------------
+'' parse variables
+'-------------------
+private sub parse_var(gv As String,ad As UInteger, dlldelta As Integer=0)
+	Dim p As Integer
+	Static defaulttype As Integer
+	Dim As String vname
+	'If gengcc Then todo remove
+	'	If InStr(gv,"long double:t")<>0 OrElse InStr(gv,"FBSTRING:t")<>0 Then
+	'	      defaulttype=0
+	'	ElseIf Left(gv,5)="int:t" OrElse InStr(gv,"_Decimal32:t")<>0 Then
+	'	      defaulttype=1
+	'	EndIf
+	'Else
+		If instr(gv,"va_list:t") orelse instr(gv,"boolean:t") Orelse InStr(gv,"pchar:t") Then 'last default type
+		      defaulttype=0
+		ElseIf InStr(gv,"integer:t") Then
+		      defaulttype=1
+		EndIf
+	'EndIf todo remove
+	If defaulttype Then Exit sub
+
+	'=====================================================
+	vname=Left(gv,InStr(gv,":")+1)
+
+	p=InStr(vname,"$")
+	If p=0 Then 'no $ in the string
+		If InStr(vname,":t")<>0 Then
+			If UCase(Left(vname,InStr(vname,":")))<>Left(vname,InStr(vname,":")) Then
+				Exit Sub 'don't keep  <lower case name>:t, keep <upper case name>:t  => enum
+			EndIf
+		ElseIf InStr(vname,"_ZTSN")<>0  orelse InStr(vname,"_ZTVN")<>0 then
+			Exit Sub 'don't keep _ZTSN or _ZTVN (extra data for class) or with double underscore  __Z
+		EndIf
+		If Left(vname,2)="_{" Then Exit Sub '_{fbdata}_<label name>  07/04/2014
+		If Left(vname,3)=".Lt" Then Exit Sub '.Ltxxxx used with data 07/04/2014
+		If Left(vname,3)="Lt_" Then Exit Sub 'Lt_xxxx used with extern and array 2018/07/27
+	Else '$ in the string
+		If InStr(p+1,vname,"$") <>0 AndAlso InStr(vname,"$fb_Object")=0 then
+			Exit Sub 'don't keep TMP$xx$xx:
+		EndIf
+		'''''''''''''If InStr(vname,":T")<>0 OrElse InStr(vname,":t")<>0 Then
+		'$9CABRIOLET:T(0,51)=s16$BASE:(0,48),0,128;;
+		If InStr(vname,":t")<>0 Then 'InStr(vname,":T")<>0 OrElse InStr(vname,":t")<>0 Then
+			If Left(vname,5)<>"$fb_O" andalso Left(vname,4)<>"TMP$" Then  'redim
+				Exit Sub 'don't keep
+			End if
+		EndIf
+		If InStr(vname,"$fb_RTTI") OrElse InStr(vname,"fb$result$") Then
+			Exit Sub 'don't keep
+		EndIf
+		If Left(vname,3)="vr$" OrElse Left(vname,4)="tmp$" then
+			Exit Sub 'don't keep  vr$xx: or tmp$xx$xx:
+		EndIf
+		'eliminate $ and eventually the number at the end of name ex udt$1 --> udt
+		If Left(vname,4)<>"TMP$" Then ' use with redim
+			If p<>1 Then gv=Left(gv,p-1)+Mid(gv,InStr(gv,":"))
+		EndIf
+	EndIf
+	'======================================================
+	If InStr(gv,";;") Then 'defined type or redim var
+		If InStr(gv,":T") Then 'GCC change ":Tt" in just ":T"
+					'UDT
+			parse_udt(gv)
+		Else
+      'REDIM
+			If parse_scope(gv[InStr(gv,":")],ad,dlldelta)=0 Then Exit Sub 'Scope / increase number and put adr
+			'if common exists return 0 so exit sub
+			vrb(*vrbptr).nm=Left(gv,InStr(gv,":")-1) 'var or parameter
+
+		'.stabs "VTEST:22=s32DATA:25=*23=24=*1,0,32;PTR:26=*23=24=*1,32,32;SIZE:1,64,32;ELEMENT_LEN:1,96,32;DIMENSIONS:1,128,32;dim1_ELEMENTS:1,160,32;dim1_LBOUND:1,192,32;
+	   'dim1_UBOUND:1,224,32;;
+	   'DATA:27=*dim1_20=*21,0,32;PTR:28=*dim1_20=*21,32,32;SIZE:1,64,32;ELEMENT_LEN:1,96,32;DIMENSIONS:1,128,32;dim1_ELEMENTS:1,160,32;
+	   'dim1_LBOUND:1,192,32;dim1_UBOUND:1,224,32;;21",128,0,0,-168
+
+			p=InStr(gv,";;")+2 ' case dyn var including dyn array field...... 21/04/2014 to be removed when 0.91 is released
+			While InStr(p,gv,";;")<>0 '29/04/2014
+				p=InStr(p,gv,";;")+2
+			Wend
+
+			parse_var2(Mid(gv,p),TYRDM) 'datatype
+			vrb(*vrbptr).arr=Cast(tarr Ptr,-1) 'redim array
+		EndIf
+	ElseIf InStr(gv,"=e") Then
+		'ENUM
+		parse_enum(gv)
+	Else
+		'DIM
+		If InStr(gv,"FDBG_COMPIL_INFO") Then Exit Sub
+		If gv[0]=Asc(":") Then Exit Sub 'no name, added by compiler don't take it
+		p=parse_scope(gv[InStr(gv,":")],ad,dlldelta)'Scope / increase number and put adr
+		If p=0 Then Exit Sub 'see redim
+		If InStr(gv,"_ZN") AndAlso InStr(gv,":") Then
+			vrb(*vrbptr).nm=parse_name(gv) 'namespace
+		Else
+			vrb(*vrbptr).nm=Left(gv,InStr(gv,":")-1) 'var or parameter
+	      'to avoid two lines in proc/var tree, case dim shared array and use of erase or u/lbound
+			If vrb(*vrbptr).mem=2 AndAlso vrb(*vrbptr).nm=vrb(*vrbptr-1).nm Then 'check also if shared
+            *vrbptr-=1 'decrement pointed value, vrbgbl in this case
+            Exit sub
+			EndIf
+			If vrb(*vrbptr).mem=1 Then ''local var ''2016/08/12
+				If local_exist Then Exit sub'' check if same adr and name exist (case several for loops repeated with the same iterator)
+			EndIf
+		End If
+		parse_var2(Mid(gv,InStr(gv,":")+p),TYDIM)
+		'11/05/2014 'new way for redim
+		If Left(udt(vrb(*vrbptr).typ).nm,7)="FBARRAY" Then 'new way for redim array
+
+			'.stabs "__FBARRAY2:Tt23=s44DATA:24=*10,0,32;PTR:25=*7,32,32;SIZE:1,64,32;ELEMENT_LEN:1,96,32;DIMENSIONS:1,128,32;DIMTB:26=ar1;0;1;22,160,192;;",128,0,0,0
+			'.stabs "MYARRAY2:S23",38,0,0,_MYARRAY2
+			vrb(*vrbptr).pt=cudt(udt(vrb(*vrbptr).typ).lb).pt-1 'pointer always al least 1 so reduce by one
+			vrb(*vrbptr).typ=cudt(udt(vrb(*vrbptr).typ).lb).typ 'real type
+			vrb(*vrbptr).arr=Cast(tarr Ptr,-1) 'defined as dyn arr
+
+			'dbg_prt2("dyn array="+vrb(*vrbptr).nm+" "+Str(vrb(*vrbptr).typ)+" "+Str(vrb(*vrbptr).pt)+" "+cudt(udt(vrb(*vrbptr).typ).lb).nm)
+		EndIf
+		'end new redim
+	EndIf
+End sub
+'-----------------------
+'' parse type operator
+'-----------------------
+private function parse_typeope(vchar As long) As String
+	'RPiR8vector2D or R8vector2DS0_ or R8FBSTRINGR8VECTOR2D
+	Dim As Long typ
+
+	If vchar=Asc("P") Then
+		Return "*" 'pointer
+	Else
+		'l=long/m=unsigned long/n=__int128/o=unsigned __int128/e=long double, __float80
+		Select Case As Const vchar
+			Case Asc("i"),Asc("l")
+				typ=1
+			Case Asc("a")
+				typ=2
+			Case Asc("h")
+				typ=3
+			'Case Asc("") 'Zstring
+			'	typ=4
+			Case Asc("s")
+				typ=5
+			Case Asc("t")
+				typ=6
+			Case Asc("v")
+				typ=7
+		    Case Asc("j")',Asc("m")
+				typ=8
+			Case Asc("x")
+				typ=9
+			Case Asc("y")
+				typ=10
+			Case Asc("f")
+				typ=11
+			Case Asc("d")
+				typ=12
+		    case Asc("b")
+				typ=16
+			'Case Asc("")'String
+			'	typ=13
+			'Case Asc("")'Fstring
+			'	typ=14
+			Case Else
+				typ=0
+		End Select
+		Return udt(typ).nm
+	EndIf
+End function
+
+'-----------------
+'' parse operator
+'-----------------
+private function parse_op (op As String) As string
+Select Case  op
+	case "aS"
+    Function = "Let"
+	Case "pl"
+    Function = "+" 
+	Case "pL"
+    Function = "+="
+Case "mi"        
+    Function = "-"                
+Case "mI"                
+    Function = "-="                
+Case "ml"                
+    Function = "*"                
+Case "mL"                
+    Function = "*="                
+Case "dv"
+    Function = "/"                
+Case "dV"
+    Function = "/="                
+Case "Dv"        
+    Function = "\"                
+Case "DV"        
+    Function = "\="                
+Case "rm"                
+    Function = "mod"                
+Case "rM"        
+    Function = "mod="                
+Case "an"                
+    Function = "and"                
+Case "aN"                
+    Function = "and="                
+Case "or"                
+    Function = "or"                
+Case "oR"        
+    Function = "or="                
+Case "aa"                 
+    Function = "andalso"             
+Case "aA"        
+    Function = "andalso="                
+Case "oe"               
+    Function = "orelse"               
+Case "oE"       
+    Function = "orelse="              
+Case "eo"                
+    Function = "xor"                
+Case "eO"                 
+    Function = "xor="              
+Case "ev"                 
+    Function = "eqv"                
+Case "eV"                 
+    Function = "eqv="                
+Case "im"                 
+    Function = "imp"               
+Case "iM"               
+    Function = "imp="               
+Case "ls"                
+    Function = "shl"               
+Case "lS"                
+    Function = "shl="                
+Case "rs"                 
+    Function = "shr"               
+	Case "rS"                 
+    Function = "shr="             
+Case "po"                 
+    Function = "^"               
+Case "pO"        
+    Function = "^="                
+Case "ct"               
+    Function = "&"                
+Case "cT"         
+    Function = "&="                
+	Case "eq" 
+    Function = "eq"                
+Case "gt"                
+    Function = "gt"                
+Case "lt"                
+    Function = "lt"                
+Case "ne"                
+    Function = "ne"                
+Case "ge"                
+    Function = "ge"                
+Case "le"                
+    Function = "le"                
+Case "nt"                
+    Function = "not"                
+	Case "ng"                
+    Function = "neg"                
+	Case"ps"                
+    Function = "ps"                
+	Case "ab"                
+    Function = "ab"                
+	Case "fx"                
+    Function = "fix"                
+Case "fc"                 
+    Function = "frac"                
+Case "sg"                
+    Function = "sgn"                
+Case "fl"                
+    Function = "floor"                
+Case "nw"
+    Function = "new"                
+Case "na"
+    Function = "new []?"                
+Case "dl"        
+    Function = "del"
+Case "da"
+    Function = "del[]?"                
+Case "de"                
+    Function = "."                
+Case "pt"                
+    Function = "->"                
+Case "ad"                
+    Function = "@"                
+Case "fR"                
+    Function = "for"                
+Case "sT"                
+    Function = "step"                
+Case "nX"                
+    Function = "next"                
+	case "cv"
+   	Function = "Cast"
+	Case "C1"                        
+		Function = "(Constructor)"
+	Case "D1"                        
+		Function = "(Destructor)"          
+Case Else                        
+    Function = "Unknow"                
+End Select   
+End function
+'--------------------
+'' parse procedure
+'--------------------
+private function parse_proc(fullname As String) As String
+	Dim As Long p=3,lg,namecpt,ps
+	Dim As String strg,strg2,names(20),mainname,strg3
+	lg=InStr(fullname,"@")
+   If lg=0 Then lg=InStr(fullname,":")
+   strg=Left(fullname,lg-1)
+
+	If InStr(strg,"_Z")=0 Then Return strg
+
+	If strg[2]=Asc("Z") Then p+=1 'add 1 case _ _ Z
+	If strg[p-1]=Asc("N") Then 'nested waiting "E"
+		mainname=""
+		p+=1
+		While Strg[p-1]<>Asc("E")
+			lg=ValInt(Mid(strg,p,2)) 'evaluate possible lenght of name eg 7NAMESPC
+			If lg Then 'name of namespace or udt
+				If lg>9 Then p+=1 '>9 --> 2 characters
+				strg3=Mid(strg,p+1,lg) 'extract name and keep it for later
+				ps=InStr(strg3,"__get__")
+            If ps Then
+               strg3=Left(strg3,ps-1)+" (Get property)"
+            Else
+               ps=InStr(strg3,"__set__")
+               If ps then
+					strg3=Left(strg3,ps-1)+" (Set property)"
+               EndIf
+            EndIf
+			if mainname="" Then
+					mainname=strg3
+					strg2+=strg3
+			else
+					mainname+="."+strg3
+					strg2+="."+strg3
+         	EndIf
+      		namecpt+=1
+      		names(namecpt)=mainname           	
+				p+=1+lg'next name
+			Else 'operator
+				strg2+=" "+parse_op(Mid(strg,p,2))+" " 'extract name of operator
+				p+=2
+				mainname=""
+				While Strg[p-1]<>Asc("E") 'more data eg FBSTRING, 
+					lg=ValInt(Mid(strg,p,2))
+					If lg Then
+						If lg>9 Then p+=1 
+						strg3=Mid(strg,p+1,lg) 'extract name and keep it for later
+						If strg3="FBSTRING" Then strg3="string"
+            		If mainname="" Then 
+            			mainname=strg3
+            			strg2+=strg3
+            		Else
+            			mainname+="."+strg3
+            			strg2+="."+strg3
+            		endif
+            		namecpt+=1
+            		names(namecpt)=mainname
+						p+=1+lg
+					Else
+						strg2+=parse_typeope(Asc(Mid(strg,p,1)))
+						p+=1
+					EndIf
+				Wend
+				
+			EndIf
+		Wend
+	Else
+	   lg=ValInt(Mid(strg,p,2)) 'overloaded proc eg. for sub testme overload (as string) --> __ZN6TESTMER8FBSTRING@4 07/11/2015
+	   If lg Then
+			If lg>9 Then p+=1
+			strg2=Mid(strg,p+1,lg) 'extract name
+			p+=1+lg'next
+	   Else
+		   strg2=parse_op(Mid(strg,p,2))+" "
+		   p+=2
+	   End If
+	EndIf
+	
+	If strg[p-1]=Asc("E") Then p+=1 'skip "E"
+	
+	'parameters
+	mainname=""
+	strg2+="("
+	While p<=Len(strg)
+		lg=ValInt(Mid(strg,p,2))
+		If lg Then
+			If lg>9 Then p+=1 
+			strg3=Mid(strg,p+1,lg) 'extract name and keep it for later
+			If strg3="FBSTRING" Then strg3="String"
+            if mainname="" Then 
+       			mainname=strg3
+       			strg2+=strg3
+       		Else
+       			mainname+="."+strg3
+       			strg2+="."+strg3
+       		EndIf
+       		namecpt+=1
+            names(namecpt)=strg3'mainname
+			p+=1+lg
+		elseIf strg[p-1]=Asc("R") Then
+			If Right(strg2,1)<>"(" AndAlso Right(strg2,1)<>"," Then strg2+=","
+			p+=1
+		elseIf strg[p-1]=Asc("N") Then
+			If Right(strg2,1)<>"(" AndAlso Right(strg2,1)<>"," Then strg2+=","
+			mainname=""
+			p+=1
+		elseIf strg[p-1]=Asc("K") Then
+			If Right(strg2,1)<>"(" AndAlso Right(strg2,1)<>"," Then
+				strg2+=",const."
+			Else
+				strg2+="const."
+			EndIf
+			p+=1
+		elseIf strg[p-1]=Asc("E") then
+			p+=1
+		ElseIf strg[p-1]=Asc("S") Then 'S0_ -->	'repeating the previous type
+    		If Right(strg2,1)<>"(" AndAlso Right(strg2,1)<>"," Then strg2+=",":mainname=""
+			p+=1
+			If strg[p-1]=asc("_") Then
+				strg3=names(1)
+				p+=1
+			Else
+				strg3=names(strg[p-1]-48)
+				p+=2
+			endif
+	        if mainname="" Then 
+       			strg2+=strg3
+	        else
+       			strg2+="."+strg3
+	        endif
+		else
+			If Right(strg2,1)="(" Then
+				strg2+=parse_typeope(Asc(Mid(strg,p,1)))
+			Else
+				strg2+=","+parse_typeope(Asc(Mid(strg,p,1)))
+			EndIf
+			p+=1
+		EndIf
+	Wend
+
+	strg2+=")"
+	If Right(strg2,6)="(Void)" Then
+		strg2=Left(strg2,Len(strg2)-6)
+	endif
+	Return strg2
+End Function
+
+'' --------------------------------
+'' check if source already stored
+'' --------------------------------
 private function check_source(sourcenm As String) As integer
    For i As Integer=0 To sourcenb
       If source(i)=sourcenm Then Return i 'found
@@ -47,6 +878,7 @@ private sub dbg_file(strg as string,value as integer)
 	static as string path
 	dim as string fullname
 	if strg="" then ''end of main ?
+		udtcpt=udtmax-TYPESTD
 		print "---------------- end of current debug data -------------------"
 	else
 		if right(strg,4)<>".bas" and right(strg,3)<>".bi" then
@@ -120,7 +952,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 	dim as string procname
 	if linenum then
 		procnodll=false
-		'procname=parsing_proc(strg) ''to be added
+		procname=parse_proc(strg)
 		procname=left(strg,instr(strg,":")-1)
 		if procname<>"" and (flagmain=true or procname<>"main") then
 			'If InStr(procname,".LT")=0 then  ''to be checked if useful
@@ -136,7 +968,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 			proc(procnb).nm=procname
 			proc(procnb).db=adr'+exebase-baseimg 'only when <> exebase and baseimg (DLL)
 			''to be added
-			'cutup_retval(procnb,Mid(strg,InStr(strg,":")+2,99))'return value .rv + pointer .pt 
+			parse_retval(procnb,Mid(strg,InStr(strg,":")+2,99))'return value .rv + pointer .pt 
 			proc(procnb).st=1 'state no checked
 			proc(procnb).nu=linenum
 			lastline=0
@@ -151,7 +983,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 		
 		if proc(procnb).fn>procfn Then procfn=proc(procnb).fn+1 ' just to be sure to be above see gest_brk
 		
-		''to be checked ??????
+		''todo be checked ??????
 		'for proc added by fbc (constructor, operator, ...) '11/05/2014 adding >2 to avoid case only one line ...
 		If proc(procnb).nu=rline(linenb).nu AndAlso linenb>2 then
 			proc(procnb).nu=-1	               	
@@ -220,9 +1052,8 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 				dbg_file(strg,value)
 			case 255 ''not as standard stab freebasic version and maybe other information
 				print "compiled with=";strg
-			case 128 ''type
-				'dbg_type(strg)
-				print "missing procedure stab cod=128"
+			Case 32,38,40,128,160 'init common/ var / uninit var / local / parameter
+               	parse_var(strg,value)',exebase-baseimg) ''todo
 			case 132 '' file name
 				dbg_include(strg)
 			case 36 ''procedure
@@ -231,13 +1062,8 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 				dbg_line(stab.desc,value)
 			case 224 ''address epilog
 				dbg_epilog(value)
-			case 160 ''
-				'dbg_param(strg,value)
-				print "missing procedure stab cod=160"
 			case 42 ''main entry point
 				'not used
-			case 40 '' variable
-				print "missing procedure stab cod=40"
 			case else
 				print "Unknow stab cod=";stab.cod
 		end select
@@ -245,6 +1071,43 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 	next
 	print
 end sub
+'-------------------------------------------------
+'' list all extracted data
+'-------------------------------------------------
+private sub list_all
+	dim scopelabel(1 to ...) as const zstring ptr={@"local",@"global",@"static",@"byref param",@"byval param",@"common"}
+	print "sources ------------------------------------------------------- ";"total=";sourcenb+1
+	for isrc as integer =0 to sourcenb
+		print "isrc=";isrc;" ";source(isrc)
+	next
+	print "procedures ------------------------------------------------------- ";procnb
+	for iprc as integer =1 to procnb
+		print "iprc=";iprc;" ";source(proc(iprc).sr);" ";proc(iprc).nm;" ";proc(iprc).nu;" ";udt(proc(iprc).rv).nm
+		print "lower/upper/end ad=";proc(iprc).db;" ";proc(iprc).fn;" ";proc(iprc).ed
+	next
+	print "Lines ---------------------------------------------------------- ";linenb
+	for iline as integer = 1 to linenb
+		print "iline=";iline;" proc=";proc(rline(iline).px).nm;" ";rline(iline).nu
+	next
+	print 
+	print "types ----------------------------------------------------------- ";udtcpt
+	for iudt as integer=1 to udtcpt
+		print "iudt=";iudt;" ";udt(iudt).nm;" ";udt(iudt).lg
+		for icudt as integer =udt(iudt).lb to udt(iudt).ub
+			print "icudt=";cudt(icudt).nm
+		next
+	next
+	print "global variables ---------------------------------------------------------- ";vrbgbl
+	for ivrb as integer=1 to vrbgbl
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+	next
+	print "local variables ----------------------------------------------------------- ";vrbloc-(VGBLMAX+1)
+	for ivrb as integer=VGBLMAX+1 to vrbloc
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+	next
+
+end sub
+
 '' ------------------------------------------------------------------------------------
 '' Retrieving sections .dbgdat (offset and size) and .dbgdat (offset) in the elf file
 '' ------------------------------------------------------------------------------------

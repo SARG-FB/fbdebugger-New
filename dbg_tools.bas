@@ -1,6 +1,24 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
+'-----------------------------------------------
+'' Reinitialisation
+'-----------------------------------------------
+sub reinit
+	vrbgbl=0:vrbloc=VGBLMAX:vrbgblprev=0
+end sub
+
+'--------------------------------------------------------------------------
+'' something wrong happens so close fbdebugger after displaying a message
+'--------------------------------------------------------------------------
+sub hard_closing(errormsg as string)
+	messbox("Need to close fbdebugger",_
+			  "Sorry an unrecoverable problem occurs :"+chr(13)+errormsg+chr(13)+chr(13)+"Report to dev please")
+	''freegadgets()  todo free all gadget
+	close_window(mainwindow)
+	end
+end sub
+
 '======================================================================
 ''extracts the file name from full name
 '======================================================================

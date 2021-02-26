@@ -5,7 +5,7 @@
 ''Loading of buttons
 '=====================
 sub load_button(id as integer,button_name as zstring ptr,xcoord as integer,tooltiptext as zstring ptr=0,idtooltip as integer=-1,disab as long=1)
-	Var HIMAGE=Load_image(*button_name)
+	Var HIMAGE=Load_image("."+slash+"buttons"+slash+*button_name)
 	ButtonImageGadget(id,xcoord,0,30,26,HIMAGE,  BS_BITMAP)
 	if tooltiptext then
 		if idtooltip<>-1 then
@@ -187,45 +187,45 @@ private sub gui_init
 
 
 	''buttons
-	load_button(IDBUTSTEP,@".\buttons\step.bmp",8,@"[S]tep/line by line",)
-	load_button(IDCONTHR,@".\buttons\runto.bmp",40,@"Run to [C]ursor",)
-	load_button(IDBUTSTEPP,@".\buttons\step_over.bmp",72,@"Step [O]ver sub/func",)
-	load_button(IDBUTSTEPT,@".\buttons\step_start.bmp",104,@"[T]op next called sub/func",)
-	load_button(IDBUTSTEPB,@".\buttons\step_end.bmp",136,@"[B}ottom current sub/func",)
-	load_button(IDBUTSTEPM,@".\buttons\step_out.bmp",168,@"[E]xit current sub/func",)
-	load_button(IDBUTAUTO,@".\buttons\auto.bmp",200,@"Step [A]utomatically, stopped by [H]alt",)
-	load_button(IDBUTRUN,@".\buttons\run.bmp",232,@"[R]un, stopped by [H]alt",)
-	load_button(IDBUTSTOP,@".\buttons\stop.bmp",264,@"[H]alt running pgm",)
-	load_button(IDFASTRUN,@".\buttons\fastrun.bmp",328,@"[F]AST Run to cursor",)
-	load_button(IDEXEMOD,@".\buttons\exemod.bmp",360,@"[M]odify execution, continue with line under cursor",)
-	load_button(IDBUTFREE,@".\buttons\free.bmp",392,@"Release debuged prgm",)
-	load_button(IDBUTKILL,@".\buttons\kill.bmp",424,@"CAUTION [K]ill process",)
-	load_button(IDBUTRRUNE,@".\buttons\restart.bmp",466,@"Restart debugging (exe)",,0)
-	load_button(IDLSTEXE,@".\buttons\multiexe.bmp",498,@"Last 10 exe(s)",,0)
-	load_button(IDBUTATTCH,@".\buttons\attachexe.bmp",530,@"Attach running program",,0)
-	load_button(IDBUTFILE,@".\buttons\files.bmp",562,@"Select EXE/BAS",,0)
-	load_button(IDNOTES,@".\buttons\notes.bmp",600,@"Open or close notes",,0)
+	load_button(IDBUTSTEP,@"step.bmp",8,@"[S]tep/line by line",)
+	load_button(IDCONTHR,@"runto.bmp",40,@"Run to [C]ursor",)
+	load_button(IDBUTSTEPP,@"step_over.bmp",72,@"Step [O]ver sub/func",)
+	load_button(IDBUTSTEPT,@"step_start.bmp",104,@"[T]op next called sub/func",)
+	load_button(IDBUTSTEPB,@"step_end.bmp",136,@"[B}ottom current sub/func",)
+	load_button(IDBUTSTEPM,@"step_out.bmp",168,@"[E]xit current sub/func",)
+	load_button(IDBUTAUTO,@"auto.bmp",200,@"Step [A]utomatically, stopped by [H]alt",)
+	load_button(IDBUTRUN,@"run.bmp",232,@"[R]un, stopped by [H]alt",)
+	load_button(IDBUTSTOP,@"stop.bmp",264,@"[H]alt running pgm",)
+	load_button(IDFASTRUN,@"fastrun.bmp",328,@"[F]AST Run to cursor",)
+	load_button(IDEXEMOD,@"exemod.bmp",360,@"[M]odify execution, continue with line under cursor",)
+	load_button(IDBUTFREE,@"free.bmp",392,@"Release debuged prgm",)
+	load_button(IDBUTKILL,@"kill.bmp",424,@"CAUTION [K]ill process",)
+	load_button(IDBUTRRUNE,@"restart.bmp",466,@"Restart debugging (exe)",,0)
+	load_button(IDLSTEXE,@"multiexe.bmp",498,@"Last 10 exe(s)",,0)
+	load_button(IDBUTATTCH,@"attachexe.bmp",530,@"Attach running program",,0)
+	load_button(IDBUTFILE,@"files.bmp",562,@"Select EXE/BAS",,0)
+	load_button(IDNOTES,@"notes.bmp",596,@"Open or close notes",,0)
 	''missing line for the icon of the second notes
-	load_button(IDBUTTOOL,@".\buttons\tools.bmp",632,"Some usefull....Tools",,0)
-	load_button(IDUPDATE,@".\buttons\update.bmp",663,@"Update On /Update off : variables, dump",,0)
-	load_button(ENLRSRC,@".\buttons\source.bmp",690,@"Enlarge/reduce source",)
-	load_button(ENLRVAR,@".\buttons\varproc.bmp",720,@"Enlarge/reduce proc/var",)
-	load_button(ENLRMEM,@".\buttons\memory.bmp",750,@ "Enlarge/reduce dump memory",)
+	load_button(IDBUTTOOL,@"tools.bmp",628,"Some usefull....Tools",,0)
+	load_button(IDUPDATE,@"update.bmp",660,@"Update On /Update off : variables, dump",,0)
+	load_button(ENLRSRC,@"source.bmp",692,@"Enlarge/reduce source",)
+	load_button(ENLRVAR,@"varproc.bmp",724,@"Enlarge/reduce proc/var",)
+	load_button(ENLRMEM,@"memory.bmp",756,@ "Enlarge/reduce dump memory",)
 	
 	''bmb(25)=Loadbitmap(fb_hinstance,Cast(LPSTR,MAKEINTRESOURCE(1025))) 'if toogle noupdate
 	''no sure to implement this one	 
-	''load_button(IDBUTMINI,@".\buttons\minicmd.bmp",296,@ "Mini window",)
+	''load_button(IDBUTMINI,@"minicmd.bmp",296,@ "Mini window",)
 	
 	''icon on title bar
 	''-----> ONLY WINDOWS
-	'Var icon=LoadIcon(null,@"D:\telechargements\win9\tmp\fbdebugger.ico")
+	'Var icon=LoadIcon(null,@"D:"+slash+"telechargements"+slash+"win9"+slash+"tmp"+slash+"fbdebugger.ico")
 	'print icon,getlasterror()
 	'    'SendMessage(hwnd,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
-	'    sendmessage(hwnd,WM_SETICON,ICON_SMALL,Cast(Lparam,LoadIcon(GetModuleHandle(0),@".\fbdebugger.ico")))
+	'    sendmessage(hwnd,WM_SETICON,ICON_SMALL,Cast(Lparam,LoadIcon(GetModuleHandle(0),@"."+slash+"fbdebugger.ico")))
 	'Var icon=LoadIcon(GetModuleHandle(0),MAKEINTRESOURCE(100))
 	'  SendMessage(hwnd,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
 	'  SendMessage(hwnd,WM_SETICON,ICON_SMALL,Cast(Lparam,icon))
-	'D:\telechargements\win9\tmp\
+	'D:"+slash+"telechargements"+slash+"win9"+slash+"tmp"+slash+"
 	
 	#ifdef __fb_win32__
 		var icon=loadimage(0,@"fbdebugger.ico",IMAGE_ICON,0,0,LR_LOADFROMFILE or LR_DEFAULTSIZE)
