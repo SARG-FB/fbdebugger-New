@@ -260,8 +260,89 @@ Type tprocr
 	thid As Integer   'idx thread
 	vr   As Integer   'lower index running variable upper (next proc) -1
 End type
+''======================== Arrays =========================================
+Const ARRMAX=1500
+Type tnlu
+	lb As UInteger
+	ub As UInteger
+End Type
+Type tarr 'five dimensions max
+	dm As UInteger
+	nlu(5) As tnlu
+End type
 
+''====================== Variables gloables/common/locales/parameters ============================
+const VARMAX=20000 'CAUTION 3000 elements taken for globals
+Const VGBLMAX=3000 'max globals
+Const KBLOCKIDX=100 'max displayed lines inside index selection
+Type tvrb
+	nm As String    'name
+	typ As Integer  'type
+	adr As Integer  'address or offset
+	mem As UByte    'scope
+	arr As tarr Ptr 'pointer to array def
+	pt As long      'pointer
+End type
 
+''========================== Running variables ============================
+Const VRRMAX=200000
+Type tvrr
+	ad    As UInteger 'address
+	'tv    As HTREEITEM 'tview handle  todo changed for linux
+	vr    As Integer  'variable if >0 or component if <0
+	ini   As UInteger 'dyn array address (structure) or initial address in array
+	gofs  As UInteger 'global offset to optimise access
+	ix(4) As Integer  '5 index max in case of array
+	arrid As integer  'index in array tracking for automatic tracking ''2016/06/02
+End type
+
+''========================= Tracking an array, displaying value using variables as indexes ================
+'' ex array1(i,j) when i or j change the corresponding value of array1 is displayed
+Const TRCKARRMAX=4
+Type ttrckarr
+	typ    As UByte     ''type or lenght ???
+	memadr As UInteger  ''adress in memory
+	iv     As UInteger  ''vrr index used when deleting proc
+	idx    As Integer   ''array variable index in vrr
+	''bname as string
+End Type
+
+''====================== UDT structures and fields ==============================
+Const TYPEMAX=80000,CTYPEMAX=100000
+'CAUTION : TYPEMAX is the type for bitfield so the real limit is typemax-1
+Type tudt
+	nm As String  'name of udt
+	lb As Integer 'lower limit for components
+	ub As Integer 'upper
+	lg As Integer 'lenght
+	en As Integer 'flag if enum 1 or 0
+
+	''todo remove
+	'index As Integer 'dwarf
+	'what As Integer 'dwarf udt/pointer/array
+	'typ As Integer 'dwarf
+	'dimnb As Long 'dwarf
+	'bounds(5) As UInteger 'dwarf
+End Type
+Type tcudt
+	nm As String    'name of components or text for enum
+	Union
+	typ As Integer  'type
+	Val As Integer  'value for enum
+	End Union
+	ofs As UInteger 'offset
+	ofb As UInteger 'rest offset bits
+    lg As UInteger  'lenght
+	arr As tarr Ptr 'arr ptr
+	pt As long
+End Type
+
+''========================= Excluded lines for procs added in dll (DllMain and tmp$x) ================
+Const EXCLDMAX=10
+Type texcld
+	db As UInteger
+	fn As UInteger
+End type
 
 ''Declares
 Declare Function win9AddNewGadget(ByVal gadget As Integer, ByVal hWin As HWND) As integer

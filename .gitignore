@@ -26,3 +26,5 @@ Window9_2.bi
 *.dll
 *.so
 *.txt
+*.exe
+*.asm

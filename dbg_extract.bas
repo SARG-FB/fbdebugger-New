@@ -104,18 +104,17 @@ private function parse_array(gv As String,d As Integer,f As Byte) As Integer
 
 	'While gv[p-1]=Asc("a")
 	While InStr(p,gv,"ar")
-		''GCC todo remove
-		''p+=4
-		'
-		'If InStr(gv,"=r(")Then
-		'	p=InStr(p,gv,";;")+2 'skip range =r(n,n);n;n;;
-		'Else
-		'	p=InStr(p,gv,";")+1 'skip ar1;
-		'End If
-		'
-		'
-		'q=InStr(p,gv,";")
-		''END GCC
+		'GCC todo remove
+		'p+=4
+
+		If InStr(gv,"=r(")Then
+			p=InStr(p,gv,";;")+2 'skip range =r(n,n);n;n;;
+		Else
+			p=InStr(p,gv,";")+1 'skip ar1;
+		End If
+
+		q=InStr(p,gv,";")
+		'END GCC
 		arr(arrnb).nlu(c).lb=Val(Mid(gv,p,q-p)) 'lbound
 
 		p=q+1
@@ -270,7 +269,7 @@ Else
 
 	''todo remove
 	''If c=udt(15).index Then c=15
-
+print "in var2=>";gv;" ";gv2;" ";c
 	If c>TYPESTD Then c+=udtcpt 'udt type so adding the decal 20/08/2015
 	If f=TYUDT Then
 		cudt(cudtnb).pt=pp
@@ -1087,15 +1086,19 @@ private sub list_all
 	next
 	print "Lines ---------------------------------------------------------- ";linenb
 	for iline as integer = 1 to linenb
-		print "iline=";iline;" proc=";proc(rline(iline).px).nm;" ";rline(iline).nu
+		print "iline=";iline;" proc=";proc(rline(iline).px).nm;" ";rline(iline).nu;" ";hex(rline(iline).ad)
 	next
 	print 
-	print "types ----------------------------------------------------------- ";udtcpt
-	for iudt as integer=1 to udtcpt
-		print "iudt=";iudt;" ";udt(iudt).nm;" ";udt(iudt).lg
-		for icudt as integer =udt(iudt).lb to udt(iudt).ub
-			print "icudt=";cudt(icudt).nm
-		next
+	print "types ----------------------------------------------------------- ";udtmax
+	for iudt as integer=1 to udtmax
+		if udt(iudt).nm<>"" then
+			print "iudt=";iudt;" ";udt(iudt).nm;" ";udt(iudt).lg
+			if udt(iudt).ub<>0 then
+				for icudt as integer =udt(iudt).lb to udt(iudt).ub
+					print "icudt=";cudt(icudt).nm
+				next
+			end if
+		end if
 	next
 	print "global variables ---------------------------------------------------------- ";vrbgbl
 	for ivrb as integer=1 to vrbgbl
