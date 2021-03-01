@@ -86,8 +86,8 @@
 #Define STAB_SZ_MAX 60000  ''max stabs string
 Const   SRCMAX=1000		   ''max source file
 #define GSRCTAB 650        ''panel
-#define GFILELIST 3000     ''file combo file
-#define GFILESEL 3001	   ''button for selcting a file
+#define GFILELIST 3000     ''file combo
+#define GFILESEL 3001	   ''button for selecting a file
 
 #define GSCINTILLA 5000
 
@@ -152,11 +152,14 @@ Const   SRCMAX=1000		   ''max source file
 
 
 ''for scintilla
-#define KRED &hFF
-#define KBLUE &hFF0000
-#define KGREEN &hB700
+#define KRED    &hFF
+#define KBLUE   &hFF0000
+#define KGREEN  &hB700
 #define KYELLOW &hFFFF
 #define KORANGE &h04A0FB
+#define KPURPLE &hEB80EB
+#define KGREY   &h808080
+
 #Ifdef __fb_win32__
 	#define send_sci(b,c,d) sendmessage(scint,b,c,cast(integer,d))
 #else
@@ -203,21 +206,30 @@ Const   SRCMAX=1000		   ''max source file
 end extern
 
 #endif
-#define KSTYLBREAK
-#define KSTYLBREAKTEMPO
-#define KSTYLBREAKCOUNT
-#define KSTYLBREAKDISABLED
+#define KSTYLBREAK      1
+#define KSTYLBREAKTEMPO 2
+#define KSTYLBREAKCOUNT 3
+#define KSTYLBREAKDISAB 4
 
 #define KSTYLENONE 0
 #define KSTYLECUR  2
 
 
-Enum 'type udt/redim/dim
+Enum ''type udt/redim/dim
 	TYUDT
 	TYRDM
 	TYDIM
 End enum
 
+Enum ''type of running
+	RTRUN
+	RTSTEP
+	RTAUTO
+	RTOFF
+	RTFRUN
+	RTFREE
+	RTEND
+End enum
 '================ Lines ==============================================
 Const LINEMAX=100000
 Type tline

@@ -10,7 +10,7 @@ dim Shared As UByte   sourcebuf(SRCSIZEMAX) ''buffer for loading source file
 dim Shared as Integer sourcenb =-1          ''number of src, 0 based
 dim Shared As integer sourceix              ''source index when loading data
 dim shared as any ptr currentdoc            ''current doc pointer  todo set local in source_load ?
-dim Shared As integer srccur				''index source line to be executed
+
 dim Shared As integer srcdisplayed			''index displayed source
 
 ''lines
@@ -18,7 +18,11 @@ dim Shared As Integer linenb,rlineprev ''numbers of lines, index of previous exe
 dim Shared As Integer linenbprev ''used for dll
 dim Shared As Integer lastline
 dim Shared as tline rline(LINEMAX) ''1 based
-dim Shared As Integer linecur      ''line to be executed (inside source)
+
+''current tab:line
+dim Shared As integer srccur   ''index source line to be executed
+dim Shared As Integer linecur  ''line to be executed (inside source)
+dim Shared As Integer rlinecur ''line to be executed
 
 ''procedures
 dim Shared as tproc proc(PROCMAX) ''list of procs in code
@@ -58,6 +62,11 @@ Dim Shared As Integer udtcpt,udtmax 'current, max cpt
 ''excluded lines
 Dim Shared As integer excldnb
 Dim Shared As texcld excldlines(EXCLDMAX)
+
+''miscellanous data
+dim shared as boolean prun=false    ''debuggee running
+dim shared as integer runtype=RTOFF ''running type
+Dim Shared As integer breakcpu=&hCC ''asm code for breakpoint
 
 
 ''put in a ctx with type ??
@@ -134,48 +143,47 @@ dim shared as string exename
 gui_init
 reinit
 
-SetStatusBarField(1,0,100,"Loading data")
+SetStatusBarField(1,0,100,"No debuggee")
+''for testing todo remove
 exename="D:\telechargements\win9\tmp\test_include_main"
+srccur=0
+linecur=10
+rlinecur=14
+''
 dim as string title="Fbdebugger "+exename
 setwindowtext(mainwindow,strptr(title))
-elf_extract(exename)
-list_all
-print "------------------ after extraction -----------------------"
-print "Number of files=";sourcenb
-
-'hidewindow(scint ,1)
-for isrc as integer =0 to sourcenb
-	source(isrc)="D:\telechargements\win9\tmp\"+source_name(source(isrc))
-	print "index=";isrc;" file=";source(isrc)
-
-	AddPanelGadgetItem(GSRCTAB,isrc,source_name(source(isrc)))
-	''later sort the files to get them in alphabetic order
-	AddComboBoxItem(GFILELIST,source_name(source(isrc)),-1)
-next
-'SetGadgetFont(GSRCTAB,CINT(LoadFont("Courier New",10)))
-source_load(0,filedatetime(exename))
-
-''for testing to be removed
+SetStatusBarField(1,0,100,"Loading data")
+if elf_extract(exename) then
+	list_all
+	SetStatusBarField(1,0,100,"Waiting")
+	print "------------------ after extraction -----------------------"
+	print "Number of files=";sourcenb
 	
-	line_color(5,2)
-	line_color(10,2)
-	for imark as Integer = 0 To 5
-		send_sci(SCI_MarkerAdd, imark, imark)       'line, marker#
+	'hidewindow(scint ,1)
+	for isrc as integer =0 to sourcenb
+		source(isrc)="D:\telechargements\win9\tmp\"+source_name(source(isrc))
+		print "index=";isrc;" file=";source(isrc)
+	
+		AddPanelGadgetItem(GSRCTAB,isrc,source_name(source(isrc)))
+		''later sort the files to get them in alphabetic order
+		AddComboBoxItem(GFILELIST,source_name(source(isrc)),-1)
 	next
-hidewindow(scint ,0)
-SetStatusBarField(1,0,100,"Waiting")
-'============================================
-''changes the displayed source
-'============================================
-private sub source_change(numb as integer)
-	static as integer numbold=-1
-	dim as any ptr ptrdoc
-	if numb=numbold then exit sub
-	numbold=numb
-	ptrdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
-	Send_sci(SCI_ADDREFDOCUMENT,0,ptrdoc)
-	Send_sci(SCI_SETDOCPOINTER,0,sourceptr(numb))
-end sub
+	'SetGadgetFont(GSRCTAB,CINT(LoadFont("Courier New",10)))
+	source_load(0,filedatetime(exename))
+	
+	''for testing to be removed
+		
+		'line_color(5,2)
+		'line_color(10,2)
+		'line_color(4,2)
+		for imark as Integer = 0 To 5
+			send_sci(SCI_MarkerAdd, imark, imark)       'line, marker#
+		next
+		linecur_change(rlinecur)
+	hidewindow(scint ,0)
+	SetStatusBarField(1,0,100,"Waiting")
+end if
+
 
 ''========================================
 ''========================================
@@ -220,6 +228,16 @@ do
 		Select case EventNumber
 			case MNSETBRK
 				MessBox("","Set breakpoint")
+				static as integer brk
+				brk+=1
+				if brk=5 then brk=0
+				print srccur,line_cursor,brk,srcdisplayed
+				
+				if line_check(line_cursor) then
+					breakpoint_marker(srccur,line_cursor,brk)
+				else
+					messbox("Error setting breakpoint","Not an executable line")
+				end if
 			case MNDISAS
 				MessBox("","Disass line")
 			case MNLOCSRC
@@ -238,7 +256,7 @@ do
 			endif
 		endif
 	elseif event=eventgadget then
-		if eventnumber()=GFILESEL Then
+		if eventnumber()=GFILESEL then
         	if GetItemComboBox(GFILELIST)<>-1 then
         		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
 	        		MessBox("Jumping to file ="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
@@ -251,16 +269,13 @@ do
         		messbox("Select a file", "before clicking on the button")
         	endif
 		elseif eventnumber()=GCURRENTLINE then
-			if PanelGadgetGetCursel(GSRCTAB)<>0 then
 				messbox("Click on Current line","Jumping to the file/line")
-				source_change(0)''todo doc where is the next executed line
-				send_sci(SCI_SETFIRSTVISIBLELINE, 2,0)
-				send_sci(SCI_LINESCROLL,0,-5)
-				line_color(5,0)
-			end if
+				linecur_display()
 		elseif eventnumber()=GSRCTAB then
 			Messbox("The selected panel for file:",source(PanelGadgetGetCursel(GSRCTAB)))
 			source_change(PanelGadgetGetCursel(GSRCTAB))
+		elseif eventnumber()=GFILELIST then
+			''nothing to execute with file combo
 		else
 			button_action(eventnumber())
 		endif

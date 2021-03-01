@@ -721,7 +721,7 @@ private function parse_proc(fullname As String) As String
 	lg=InStr(fullname,"@")
    If lg=0 Then lg=InStr(fullname,":")
    strg=Left(fullname,lg-1)
-
+print "fullname=";fullname
 	If InStr(strg,"_Z")=0 Then Return strg
 
 	If strg[2]=Asc("Z") Then p+=1 'add 1 case _ _ Z
@@ -1113,79 +1113,98 @@ end sub
 
 '' ------------------------------------------------------------------------------------
 '' Retrieving sections .dbgdat (offset and size) and .dbgdat (offset) in the elf file
+'' return 0 if an error (wrong bitness) otherwise -1
 '' ------------------------------------------------------------------------------------
-private sub elf_extract(filename as string)
-dim lgf As Integer,ulgt as integer,ulg as ulong,usht as ushort,ofset as ulongint
-dim as integer start_section,str_section,sect_num,walk_section,dbg_dat_of,dbg_dat_size,dbg_str_of
-dim as string sect_name=space(40)
-
-open filename for binary as #1
-lgf=lof(1)
-'print "lenght=";lgf
-
-ofset=of_entry
-get #1,ofset+1,ulgt
-'print "entry=";hex(ulgt)
-
-ofset=of_section
-get #1,ofset+1,ulgt
-'print "start section header=";hex(ulgt)
-start_section=ulgt
-
-ofset=of_section_size
-get #1,ofset+1,usht
-'print "section size=";usht
-
-
-ofset=of_section_num
-get #1,ofset+1,usht
-'print "section number=";usht
-sect_num=usht
-
-ofset=of_section_str
-get #1,ofset+1,usht
-'print "section string=";usht
-
-ofset=start_section+(usht)*&h40+&h18 '(&h28 si 32bit)
-get #1,ofset+1,ulgt
-'print "start offset string=";hex(ulgt)
-str_section=ulgt
-
-''sections
-
-walk_section=start_section
-for isec as integer = 1 to sect_num
-	'print "section=";isec;" ";
+private function elf_extract(filename as string) as integer
+	dim lgf As Integer,ulgt as integer,ulg as ulong,usht as ushort,ofset as ulongint,ubyt as ubyte
+	dim as integer start_section,str_section,sect_num,walk_section,dbg_dat_of,dbg_dat_size,dbg_str_of
+	dim as string sect_name=space(40)
 	
-	ofset=walk_section
-	get #1,ofset+1,ulg ''offset in str table
-	'print "offset string=";ulg;" ";
-	ofset=str_section+ulg
-	sect_name=space(40)
-	get #1,ofset+1,sect_name
-	sect_name=""+*strptr(sect_name)
-	'print "name=";sect_name
-
-	ofset=walk_section+of_offset_infile
-	get #1,ofset+1,ulgt
-	'print "offset in file= ";hex(ulgt);" ";
-	if sect_name=".dbgdat" then
-		dbg_dat_of=ulgt
-	elseif sect_name=".dbgstr" then
-		dbg_str_of=ulgt
-		exit for ''not anymore section to retrieve
-	end if
+	open filename for binary as #1
+	lgf=lof(1)
+	'print "lenght=";lgf
 	
-	ofset=walk_section+of_size_infile
+	ofset=4 ''32bit or 64bit
+	get #1,ofset+1,ubyt
+	
+	#Ifdef __FB_64BIT__
+		if ubyt<>2 then
+			messbox("FBdebugger 64bit","can not be used for debugging 32bit exe...")
+			close #1
+			return 0
+		end if
+	#else
+		if ubyt<>1 then
+			messbox("FBdebugger 32bit","can not be used for debugging 64bit exe...")
+			close #1
+			return
+		end if
+	#endif
+	
+	ofset=of_entry
 	get #1,ofset+1,ulgt
-	'print "size= ";hex(ulgt);" ";ulgt
-	if sect_name=".dbgdat" then
-		dbg_dat_size=ulgt
-	endif
-
-	walk_section+=sect_size
-next
-load_dat(dbg_dat_of,dbg_dat_size,dbg_str_of)
-
-close #1
-end sub
+	'print "entry=";hex(ulgt)
+	
+	ofset=of_section
+	get #1,ofset+1,ulgt
+	'print "start section header=";hex(ulgt)
+	start_section=ulgt
+	
+	ofset=of_section_size
+	get #1,ofset+1,usht
+	'print "section size=";usht
+	
+	
+	ofset=of_section_num
+	get #1,ofset+1,usht
+	'print "section number=";usht
+	sect_num=usht
+	
+	ofset=of_section_str
+	get #1,ofset+1,usht
+	'print "section string=";usht
+	
+	ofset=start_section+(usht)*&h40+&h18 '(&h28 si 32bit)
+	get #1,ofset+1,ulgt
+	'print "start offset string=";hex(ulgt)
+	str_section=ulgt
+	
+	''sections
+	
+	walk_section=start_section
+	for isec as integer = 1 to sect_num
+		'print "section=";isec;" ";
+		
+		ofset=walk_section
+		get #1,ofset+1,ulg ''offset in str table
+		'print "offset string=";ulg;" ";
+		ofset=str_section+ulg
+		sect_name=space(40)
+		get #1,ofset+1,sect_name
+		sect_name=""+*strptr(sect_name)
+		'print "name=";sect_name
+	
+		ofset=walk_section+of_offset_infile
+		get #1,ofset+1,ulgt
+		'print "offset in file= ";hex(ulgt);" ";
+		if sect_name=".dbgdat" then
+			dbg_dat_of=ulgt
+		elseif sect_name=".dbgstr" then
+			dbg_str_of=ulgt
+			exit for ''not anymore section to retrieve
+		end if
+		
+		ofset=walk_section+of_size_infile
+		get #1,ofset+1,ulgt
+		'print "size= ";hex(ulgt);" ";ulgt
+		if sect_name=".dbgdat" then
+			dbg_dat_size=ulgt
+		endif
+	
+		walk_section+=sect_size
+	next
+	load_dat(dbg_dat_of,dbg_dat_size,dbg_str_of)
+	
+	close #1
+	return -1
+end function

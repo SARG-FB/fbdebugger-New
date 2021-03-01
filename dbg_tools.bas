@@ -1,16 +1,101 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
+'===============================================
+'' check if the line is executable return true
+'===============================================
+function line_check(pline as integer)as boolean
+	For iline as integer =1 To linenb
+		If rline(iline).nu=pline AndAlso rline(iline).sx=srcdisplayed Then 
+			return true
+		end if
+	next
+	return false
+end function
+'-----------------------------------------------
+'' Reinitialisation GUI todo move in dbg_gui
+'-----------------------------------------------
+sub reinit_gui
+	
+end sub
 '-----------------------------------------------
 '' Reinitialisation
 '-----------------------------------------------
 sub reinit
 	vrbgbl=0:vrbloc=VGBLMAX:vrbgblprev=0
-end sub
+	prun=FALSE
+	runtype=RTOFF
+	flagmain=true
+	sourcenb=-1
+	vrrnb=0:procnb=0:procrnb=0:linenb=0:cudtnb=0:arrnb=0:procr(1).vr=1
+	'procin=0:procfn=0:procbot=0:proctop=FALSE
+	proc(1).vr=VGBLMAX+1 'for the first stored proc
+	udtcpt=0:udtmax=0
+	'================================================================
+				'	'======== init =========================================
+				'private sub re_ini()
+				'   
+				'If TimerID1<>0 Then KillTimer(windmain,TimerID1) ''27/12/26
 
-'--------------------------------------------------------------------------
+				'brkv.adr=0 'no break on var
+				'brknb=0 'no break on line
+				'brkol(0).ad=0   'no break on cursor
+				'
+				'setwindowtext(hcurline,"")
+				'setwindowtext(brkvhnd,"Break on var")
+				'menu_chg(menuvar,idvarbrk,"Break on var value")
+				'setwindowtext(windmain,"DEBUG "+ver3264)
+				'
+				'SendMessage(listview1,LVM_DELETEALLITEMS,0,0) 'dump
+				'SendMessage(tviewvar,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'procs/vars
+				'SendMessage(tviewprc,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'procs
+				'SendMessage(tviewthd,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'threads
+				'
+				'ShowWindow(tviewcur,SW_HIDE):tviewcur=tviewvar:ShowWindow(tviewcur,SW_SHOW)
+				'SendMessage(htab2,TCM_SETCURSEL,0,0)
+				'If dsptyp Then dsp_hide(dsptyp)
+				'dsp_sizecalc
+				'threadnb=-1
+				'If flagrestart=-1 Then 'add test for restart without loading again all the files
+				'	setwindowtext(richeditcur,"Your source")
+				'	sendmessage(htab1,TCM_DELETEALLITEMS ,0,0) 'zone tab
+				'	For i As Integer=0 To MAXSRC:setWindowText(richedit(i),""):ShowWindow(richedit(i),SW_HIDE):Next
+				'Else
+				'	sel_line(curlig-1,0,1,richedit(curtab),FALSE) 'default color
+				'EndIf
+				'curlig=0
+				':dllnb=0
+				'excldnb=0
+				'dumpadr=0:copybeg=-99:copyend=-99:copycol=-99 '23/11/2014
+				''flaglog=0:dbg_prt(" $$$$___CLOSE ALL___$$$$ "):flagtrace=0
+				':flagattach=FALSE:flagkill=FALSE
+				'
+				'For i As Integer = 0 To 4 :SendMessage(dbgstatus,SB_SETTEXT,i,Cast(LPARAM,@"")) : Next '08/04/2014 3-->4
+				'
+				'
+				'bx_closing
+				'array_tracking_remove
+				'
+				''reset bookmarks
+				'sendmessage(bmkh,CB_RESETCONTENT,0,0)
+				'bmkcpt=0:For i As Integer =1 To BMKMAX:bmk(i).ntab=-1:Next
+				'EnableMenuItem(menuedit,IDNXTBMK,MF_GRAYED)
+				'EnableMenuItem(menuedit,IDPRVBMK,MF_GRAYED)
+				'EnableMenuItem(menutools,IDHIDLOG,MF_GRAYED)
+				'compinfo="" 'information about compilation
+				'threadprv=0
+				'threadsel=0
+				'
+				'For i As Long =TYPESTD+1 To TYPEMAX 'reinit index to avoid message udt nok when executing an other debuggee, only gcc 16/08/2015 20/08/2015 boolean
+				'   udt(i).typ=0
+				'Next
+				'End sub
+	'================================================================
+	
+end sub
+'=========================================================================
 '' something wrong happens so close fbdebugger after displaying a message
-'--------------------------------------------------------------------------
+'==========================================================================
 sub hard_closing(errormsg as string)
 	messbox("Need to close fbdebugger",_
 			  "Sorry an unrecoverable problem occurs :"+chr(13)+errormsg+chr(13)+chr(13)+"Report to dev please")
@@ -18,7 +103,6 @@ sub hard_closing(errormsg as string)
 	close_window(mainwindow)
 	end
 end sub
-
 '======================================================================
 ''extracts the file name from full name
 '======================================================================

@@ -4,7 +4,7 @@
 '=====================
 ''Loading of buttons
 '=====================
-sub load_button(id as integer,button_name as zstring ptr,xcoord as integer,tooltiptext as zstring ptr=0,idtooltip as integer=-1,disab as long=1)
+private sub load_button(id as integer,button_name as zstring ptr,xcoord as integer,tooltiptext as zstring ptr=0,idtooltip as integer=-1,disab as long=1)
 	Var HIMAGE=Load_image("."+slash+"buttons"+slash+*button_name)
 	ButtonImageGadget(id,xcoord,0,30,26,HIMAGE,  BS_BITMAP)
 	if tooltiptext then
@@ -16,21 +16,58 @@ sub load_button(id as integer,button_name as zstring ptr,xcoord as integer,toolt
 	end if
 	disablegadget(id,disab)
 end sub
+'============================================
+''changes the displayed source
+'============================================
+private sub source_change(numb as integer)
+	static as integer numbold=-1
+	dim as any ptr ptrdoc
+	if numb=numbold then exit sub
+	numbold=numb
+	ptrdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
+	Send_sci(SCI_ADDREFDOCUMENT,0,ptrdoc)
+	Send_sci(SCI_SETDOCPOINTER,0,sourceptr(numb))
+end sub
+'===================================================
+'' return line where is the cursor
+'===================================================
+private function line_cursor()as integer
+	return Send_sci(SCI_LINEFROMPOSITION,Send_sci(SCI_GETCURRENTPOS,0,0),0)+1
+end function
 '===================================================
 '' changes the color/style of line in displayed src
 '===================================================
-sub line_color(byval pline as integer,byval style as ulong)
+private sub line_color(byval pline as integer,byval style as ulong)
 	var begpos=Send_sci(SCI_POSITIONFROMLINE,pline-1,0)
 	var endpos=Send_sci(SCI_GETLINEENDPOSITION,pline-1,0)
-	'begin styling at pos=c
+	'begin styling at pos
 	Send_sci(SCI_StartStyling, begpos, 0)
-	 'style next chars with style #x
+	'style next chars with style #x
 	Send_sci(SCI_SetStyling, endpos-begpos,style)
 end sub
 '==========================================================
-'' displays current line after restoring previous one
+'' displays line current
 '==========================================================
-sub curline_display(linenew as integer)
+private sub line_display(pline as integer)
+	send_sci(SCI_SETFIRSTVISIBLELINE, pline,0)
+	if linecur-send_sci(SCI_GETFIRSTVISIBLELINE,0,0)+5>send_sci(SCI_LINESONSCREEN,0,0) then
+		send_sci(SCI_LINESCROLL,0,+5)
+	else
+		send_sci(SCI_LINESCROLL,0,-5)
+	end if
+	'print send_sci(SCI_GETFIRSTVISIBLELINE,0,0)
+end sub
+'==========================================================
+'' displays line current
+'==========================================================
+private sub linecur_display()
+	source_change(srccur)
+	line_display(linecur)
+end sub
+'==========================================================
+'' changes current line after restoring previous one
+'==========================================================
+private sub linecur_change(linenew as integer)
 	if srccur<>srcdisplayed then
 		Send_sci(SCI_ADDREFDOCUMENT,0,sourceptr(srcdisplayed))
 		Send_sci(SCI_SETDOCPOINTER,0,sourceptr(srccur))
@@ -45,18 +82,29 @@ sub curline_display(linenew as integer)
 	end if
 	linecur=rline(linenew).nu
 	line_color(linecur,KSTYLECUR)
-
+	linecur_display()
 	'' display in current line gadget
 	var lgt=send_sci(SCI_LINELENGTH,linecur-1,0)
 	var txt=space(lgt) + Chr(0)
 	send_sci(SCI_GETLINE,linecur-1,strptr(txt))
-	setgadgettext(GCURRENTLINE,txt)
+	setgadgettext(GCURRENTLINE,"Current line : "+txt)
+end sub
+'===================================================
+'' set/unset breakpoint markers
+'===================================================
+sub breakpoint_marker(src as integer,pline as integer,brk as integer)
+	source_change(src)
+	if brk then
+		send_sci(SCI_MARKERADD, pline-1, brk)
+	else
+		send_sci(SCI_MARKERDELETE, pline-11, -1)
+	end if
 end sub
 '======================================
 '' notification from scintilla gadget
 '======================================
 #ifdef __FB_WIN32__
-	function getMessages(hwnd as hwnd , msg as UINteger , wparam as wparam , lparam as lparam) as Integer
+	private function getMessages(hwnd as hwnd , msg as UINteger , wparam as wparam , lparam as lparam) as Integer
 		select case msg
 			Case WM_NOTIFY
 				dim as SCNotification ptr pSn = cast(SCNotification ptr , lparam) 'SCNotification ->https://www.scintilla.org/ScintillaDoc.html#Notifications
@@ -69,7 +117,7 @@ end sub
 		return 0
 	End Function
 #else
-	Sub getMessages cdecl(w as hwnd, p as gint, notification as SCNotification ptr, userData as gpointer )	
+	private sub getMessages cdecl(w as hwnd, p as gint, notification as SCNotification ptr, userData as gpointer )	
 		dim as SCNotification ptr pSn = cast(SCNotification ptr , notification)
 		if pSn->nmhdr.code = SCN_CHARADDED then
 			? pSn->ch ' press keys and look in the console/terminal
@@ -81,7 +129,7 @@ end sub
 '============================
 ''create scintilla windows
 '============================
-sub create_sci(gadget as long, x as Long, y as Long , w as Long , h as Long  , Exstyle as integer = 0)
+private sub create_sci(gadget as long, x as Long, y as Long , w as Long , h as Long  , Exstyle as integer = 0)
 	dim as HWND hsci
 	#ifdef __fb_win32__
 		if dylibload("SciLexer.dll")=0 then ''todo if not loaded -->error and exit
@@ -128,21 +176,27 @@ sub create_sci(gadget as long, x as Long, y as Long , w as Long , h as Long  , E
 	send_sci(SCI_StyleClearAll, 0, 0)     ''set all styles to style_default
 	
 	''markers
+	''SC_MARK_CIRCLE SC_MARK_FULLRECT SC_MARK_ARROW SC_MARK_SMALLRECT SC_MARK_SHORTARROW
 	send_sci(SCI_MarkerDefine, 0,SC_MARK_CIRCLE)
 	send_sci(SCI_MarkerDefine, 1,SC_MARK_FULLRECT)
-	send_sci(SCI_MarkerDefine, 2,SC_MARK_ARROW)
-	send_sci(SCI_MarkerDefine, 3,SC_MARK_SMALLRECT)
-	send_sci(SCI_MarkerDefine, 4,SC_MARK_SHORTARROW)
-	send_sci(SCI_MarkerDefine, 5,SC_MARK_CHARACTER+65)
+	send_sci(SCI_MarkerDefine, 2,SC_MARK_FULLRECT)
+	send_sci(SCI_MarkerDefine, 3,SC_MARK_FULLRECT)
+	send_sci(SCI_MarkerDefine, 4,SC_MARK_FULLRECT)
+	send_sci(SCI_MarkerDefine, 5,SC_MARK_SHORTARROW)
 	''color markers
 	send_sci(SCI_MARKERSETFORE,0,KBLUE)
 	send_sci(SCI_MARKERSETBACK,0,KBLUE)
 	send_sci(SCI_MARKERSETFORE,1,KRED)
 	send_sci(SCI_MARKERSETBACK,1,KRED)
-	send_sci(SCI_MARKERSETFORE,2,KRED)
-	send_sci(SCI_MARKERSETBACK,2,KRED)
-	send_sci(SCI_MARKERSETFORE,3,KORANGE)
-	send_sci(SCI_MARKERSETBACK,3,KORANGE)
+
+	send_sci(SCI_MARKERSETFORE,2,KORANGE)
+	send_sci(SCI_MARKERSETBACK,2,KORANGE)
+	send_sci(SCI_MARKERSETFORE,3,KPURPLE)
+	send_sci(SCI_MARKERSETBACK,3,KPURPLE)
+	send_sci(SCI_MARKERSETFORE,4,KGREY)
+	send_sci(SCI_MARKERSETBACK,4,KGREY)
+	send_sci(SCI_MARKERSETFORE,5,KGREEN)
+	send_sci(SCI_MARKERSETBACK,5,KGREEN)
 	
 	send_sci(SCI_StyleSetFore, 2, KRED)    ''style #2 FG set to red
 	send_sci(SCI_StyleSetBack, 2, KYELLOW) ''style #2 BB set to green
@@ -151,10 +205,10 @@ sub create_sci(gadget as long, x as Long, y as Long , w as Long , h as Long  , E
 	    send_sci(SCI_SetMarginMaskN, 1,-1)  ''all symbols allowed
 	next
 	'SendMessage(sciHWND, SCI_SETCODEPAGE, SC_CP_UTF8 ,0)
-	send_sci(SCI_SETLEXER, SCLEX_FREEBASIC, 0 )
-	send_sci(SCI_SETKEYWORDS,0, @"sub function operator constructor destructor")
-	send_sci(SCI_STYLESETFORE, SCE_B_CONSTANT, 0)
-	send_sci(SCI_STYLESETFORE, SCE_B_KEYWORD, &hff00ff)
+	'send_sci(SCI_SETLEXER, SCLEX_FREEBASIC, 0 )
+	'send_sci(SCI_SETKEYWORDS,0, @"sub function operator constructor destructor")
+	'send_sci(SCI_STYLESETFORE, SCE_B_CONSTANT, 0)
+	'send_sci(SCI_STYLESETFORE, SCE_B_KEYWORD, &hff00ff)
 	
 End sub
 private sub gui_init
@@ -187,8 +241,8 @@ private sub gui_init
 
 
 	''buttons
-	load_button(IDBUTSTEP,@"step.bmp",8,@"[S]tep/line by line",)
-	load_button(IDCONTHR,@"runto.bmp",40,@"Run to [C]ursor",)
+	load_button(IDBUTSTEP,@"step.bmp",8,@"[S]tep/line by line",,0)
+	load_button(IDCONTHR,@"runto.bmp",40,@"Run to [C]ursor",,0)
 	load_button(IDBUTSTEPP,@"step_over.bmp",72,@"Step [O]ver sub/func",)
 	load_button(IDBUTSTEPT,@"step_start.bmp",104,@"[T]op next called sub/func",)
 	load_button(IDBUTSTEPB,@"step_end.bmp",136,@"[B}ottom current sub/func",)

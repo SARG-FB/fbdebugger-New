@@ -21,12 +21,11 @@ end sub
 
 
 
-
-
-
 sub button_action(button as integer)
 	select case button
-		'case IDBUTSTEP
+		case IDBUTSTEP
+			rlinecur+=1
+			linecur_change(rlinecur)
 		'case IDBUTSTEPP
 		'case IDBUTSTEPM
 		'case IDBUTAUTO
@@ -42,13 +41,17 @@ sub button_action(button as integer)
 		'case IDBUTKILL
 		'case IDNOTES
 		'case IDLSTEXE
-		'case IDFASTRUN
+		case IDFASTRUN
+			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
 		'case IDEXEMOD
 		'case IDBUTSTEPB
 		'case IDBUTSTEPT
-		'case IDCONTHR ''503 'used also with button
+		case IDCONTHR ''503 'used also with button
+			messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
+			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
 		'case IDUPDATE
+		case GSCINTILLA
 		case else
-			messbox("feature not implemented","sorry")
+			messbox("feature not implemented","sorry gadget="+str(button))
 	end select
 end sub
