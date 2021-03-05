@@ -2,13 +2,13 @@
 ''dbg_define.bi
 ''
 
-#Define fbdebuggerversion "V 2.98.2 32-64bit"
+#Define fbdebuggerversion "V 3.00 BETA 32-64bit"
 
 '#define fulldbg_prt 'uncomment to get more information
 #Define dbg_prt2 Rem 'used temporary for debugging fbdebugger, change rem by dbg_prt 
 
 #include once "Window9.bi"
-#include once "Scintilla.bi"
+#include once "scintilla.bi"
 #include once "SciLexer.bi"
 #Include Once "file.bi"
 
@@ -31,6 +31,11 @@
    #else
    		#define ver3264 "(1.07-32bit) "
    #endif
+#endif
+
+''to handle new added field in array descriptor structure
+#if __FB_VERSION__ >= "1.08"
+	#define KNEWARRAYFIELD ''to skip flag field
 #endif
 
 #ifdef __fb_win32__
@@ -149,7 +154,9 @@ Const   SRCMAX=1000		   ''max source file
 #define ENLRVAR   131
 #define ENLRMEM   132
 
-
+''for menu option
+''tools
+#define MNABOUT 500
 
 ''for scintilla
 #define KRED    &hFF
@@ -160,48 +167,51 @@ Const   SRCMAX=1000		   ''max source file
 #define KPURPLE &hEB80EB
 #define KGREY   &h808080
 
+#define RETYES 6
+#define RETNO  7
+
 #Ifdef __fb_win32__
-	#define send_sci(b,c,d) sendmessage(scint,b,c,cast(integer,d))
+	#define send_sci(b,c,d) sendmessage(hscint,b,c,cast(integer,d))
 #else
 	#define send_sci(b,c,d) scintilla_send_message(cast(scintillaobject ptr,scint),b,c,cast(integer,d))
 	extern "C"
 
-	type ScintillaObject as _ScintillaObject
-	type ScintillaObjectClass as _ScintillaClass
+	type scintillaObject as _scintillaObject
+	type scintillaObjectClass as _scintillaClass
 
-	type _ScintillaObject
+	type _scintillaObject
 		cont as GtkContainer
 		pscin as any ptr
 	end type
 
-	type _ScintillaClass
+	type _scintillaClass
 		parent_class as GtkContainerClass
-		command as sub(byval sci as ScintillaObject ptr, byval cmd as long, byval window as GtkWidget ptr)
-		notify as sub(byval sci as ScintillaObject ptr, byval id as long, byval scn as SCNotification ptr)
+		command as sub(byval sci as scintillaObject ptr, byval cmd as long, byval window as GtkWidget ptr)
+		notify as sub(byval sci as scintillaObject ptr, byval id as long, byval scn as SCNotification ptr)
 	end type
 
 	declare function scintilla_object_get_type() as GType
 	declare function scintilla_object_new() as GtkWidget ptr
-	declare function scintilla_object_send_message(byval sci as ScintillaObject ptr, byval iMessage as ulong, byval wParam as guintptr, byval lParam as gintptr) as gintptr
+	declare function scintilla_object_send_message(byval sci as scintillaObject ptr, byval iMessage as ulong, byval wParam as guintptr, byval lParam as gintptr) as gintptr
 	declare function scnotification_get_type() as GType
-	type ScintillaClass as _ScintillaClass
+	type scintillaClass as _scintillaClass
 	declare function scintilla_get_type() as GType
 	declare function scintilla_new() as GtkWidget ptr
-	declare sub scintilla_set_id(byval sci as ScintillaObject ptr, byval id as uptr_t)
-	declare function scintilla_send_message(byval sci as ScintillaObject ptr, byval iMessage as ulong, byval wParam as uptr_t, byval lParam as sptr_t) as sptr_t
+	declare sub scintilla_set_id(byval sci as scintillaObject ptr, byval id as uptr_t)
+	declare function scintilla_send_message(byval sci as scintillaObject ptr, byval iMessage as ulong, byval wParam as uptr_t, byval lParam as sptr_t) as sptr_t
 	declare sub scintilla_release_resources()
 
-	#define SCINTILLA(obj) G_TYPE_CHECK_INSTANCE_CAST(obj, scintilla_get_type(), ScintillaObject)
-	#define SCINTILLA_CLASS(klass) G_TYPE_CHECK_CLASS_CAST(klass, scintilla_get_type(), ScintillaClass)
-	#define IS_SCINTILLA(obj) G_TYPE_CHECK_INSTANCE_TYPE(obj, scintilla_get_type())
-	#define SCINTILLA_TYPE_OBJECT scintilla_object_get_type()
-	#define SCINTILLA_OBJECT(obj) G_TYPE_CHECK_INSTANCE_CAST((obj), SCINTILLA_TYPE_OBJECT, ScintillaObject)
-	#define SCINTILLA_IS_OBJECT(obj) G_TYPE_CHECK_INSTANCE_TYPE((obj), SCINTILLA_TYPE_OBJECT)
-	#define SCINTILLA_OBJECT_CLASS(klass) G_TYPE_CHECK_CLASS_CAST((klass), SCINTILLA_TYPE_OBJECT, ScintillaObjectClass)
-	#define SCINTILLA_IS_OBJECT_CLASS(klass) G_TYPE_CHECK_CLASS_TYPE((klass), SCINTILLA_TYPE_OBJECT)
-	#define SCINTILLA_OBJECT_GET_CLASS(obj) G_TYPE_INSTANCE_GET_CLASS((obj), SCINTILLA_TYPE_OBJECT, ScintillaObjectClass)
-	#define SCINTILLA_TYPE_NOTIFICATION scnotification_get_type()
-	#define SCINTILLA_NOTIFY "sci-notify"
+	#define scintILLA(obj) G_TYPE_CHECK_INSTANCE_CAST(obj, scintilla_get_type(), scintillaObject)
+	#define scintILLA_CLASS(klass) G_TYPE_CHECK_CLASS_CAST(klass, scintilla_get_type(), scintillaClass)
+	#define IS_scintILLA(obj) G_TYPE_CHECK_INSTANCE_TYPE(obj, scintilla_get_type())
+	#define scintILLA_TYPE_OBJECT scintilla_object_get_type()
+	#define scintILLA_OBJECT(obj) G_TYPE_CHECK_INSTANCE_CAST((obj), scintILLA_TYPE_OBJECT, scintillaObject)
+	#define scintILLA_IS_OBJECT(obj) G_TYPE_CHECK_INSTANCE_TYPE((obj), scintILLA_TYPE_OBJECT)
+	#define scintILLA_OBJECT_CLASS(klass) G_TYPE_CHECK_CLASS_CAST((klass), scintILLA_TYPE_OBJECT, scintillaObjectClass)
+	#define scintILLA_IS_OBJECT_CLASS(klass) G_TYPE_CHECK_CLASS_TYPE((klass), scintILLA_TYPE_OBJECT)
+	#define scintILLA_OBJECT_GET_CLASS(obj) G_TYPE_INSTANCE_GET_CLASS((obj), scintILLA_TYPE_OBJECT, scintillaObjectClass)
+	#define scintILLA_TYPE_NOTIFICATION scnotification_get_type()
+	#define scintILLA_NOTIFY "sci-notify"
 
 end extern
 
@@ -214,6 +224,46 @@ end extern
 #define KSTYLENONE 0
 #define KSTYLECUR  2
 
+
+''for settings
+#define LOGGROUP 700
+#define GNOLOG   701
+#define GSCREENLOG 702
+#define GFILELOG 703
+#define GBOTHLOG 704
+#define GTRACEPROC 706
+#define GTRACELINE 707
+#define GVERBOSE 710
+#define GTEXTDELAY 711
+#define GAUTODELAY 712
+#define GTEXTCMDLP 713
+#define GCMDLPARAM 714
+
+#define FONTGROUP 715
+#define GTEXTFTYPE 716
+#define GTEXTFSIZE 717
+#define GTEXTFCOLOR 718
+
+Union valeurs
+vinteger As Integer
+vuinteger As UInteger
+vsingle As Single
+vdouble As Double
+vlongint As LongInt
+vulongint As ULongInt
+vbyte As Byte
+vubyte As UByte
+vshort As Short
+vushort As UShort
+'vstring as string
+'vzstring as zstring
+'vwstring as wstring
+End union
+
+''font size
+Const KSIZE8=8
+Const KSIZE10=10
+Const KSIZE12=12
 
 Enum ''type udt/redim/dim
 	TYUDT
@@ -354,6 +404,55 @@ Const EXCLDMAX=10
 Type texcld
 	db As UInteger
 	fn As UInteger
+End type
+
+''========================= Watched variables or memory ==================================
+Const WTCHMAX=19 ''zero based
+Const WTCHALL=9999999
+Type twtch
+    hnd As HWND     'handle
+    tvl  As HTREEITEM 'tview handle
+    adr As UInteger 'memory address
+    typ As Integer  'type for var_sh2
+    pnt As Integer  'nb pointer
+    ivr As Integer  'index vrr
+    psk As Integer  'stk procr or -1 (empty)/-2 (memory)/-3 (non-existent local var)/-4 (session)
+    lbl As String   'name & type,etc
+    arr As UInteger 'ini for dyn arr
+    tad As Integer  'additionnal type
+    old As String   'keep previous value for tracing
+    idx As Integer  'index proc only for local var
+    dlt As Integer  'delta on stack only for local var
+    vnb As Integer  'number of level
+    vnm(10) As String   'name of var or component
+    vty(10) As String   'type
+    Var     As Integer  'array=1 / no array=0
+End type
+
+''========================= Breakpoint on line ===================================
+Const BRKMAX=10 'breakpoint index zero for "run to cursor"
+Type breakol
+	isrc    As UShort   'source index 
+	nline   As UInteger 'num line for display
+	index   As Integer  'index for rline
+	ad      As UInteger 'address
+	typ     As Byte	  'type normal=1 /temporary=0, 3 or 4 =disabled
+	counter As UInteger 'counter to control the number of times the line should be executed before stopping 02/09/2015
+	cntrsav As UInteger 'to reset if needed the initial value of the counter '03/09/2015
+End type
+
+''========================= Breakpoint on variable ===================================
+Type tbrkv
+	typ As Integer   'type of variable
+	adr As UInteger  'address
+	arr As UInteger  'adr if dyn array
+	ivr As Integer   'variable index
+	psk As Integer   'stack proc
+	Val As valeurs   'value
+	vst As String    'value as string
+	tst As Byte=1    'type of comparison (1 to 6)
+	ttb As Byte      'type of comparison (16 to 0)
+	txt As String	  'name and value just for brkv_box
 End type
 
 ''Declares

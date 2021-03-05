@@ -68,18 +68,63 @@ dim shared as boolean prun=false    ''debuggee running
 dim shared as integer runtype=RTOFF ''running type
 Dim Shared As integer breakcpu=&hCC ''asm code for breakpoint
 
+''last debugged exes / command line parameters
+Dim Shared savexe(9) As String 'last 10 exe, 0=more recent
+Dim Shared cmdexe(9) As String 'last 10 exe
 
 ''put in a ctx with type ??
 dim shared As boolean procnodll
 dim shared As boolean flagmain
 
 ''handle
-dim shared as HWND mainwindow,scint
+dim shared as HWND hmain,hscint,hsettings
+
+''for autostepping
+dim shared as integer delayautostep=50
 
 ''flags
 ''todo type and tflag and flag.restart, etc
 dim shared as boolean flagrestart = true
+Dim Shared flaglog As Byte=0    ' flag for dbg_prt 0 --> no output / 1--> only screen / 2-->only file / 3 --> both
+Dim Shared flagtrace As Byte    ' flag for trace mode : 1 proc / +2 line
+Dim Shared flagverbose As Byte  ' flag for verbose mode
 
+''watched
+dim Shared wtch(WTCHMAX) As twtch  ''zero based
+Dim Shared wtchcpt As Integer 'counter of watched value, used for the menu 
+Dim Shared hwtchbx As HWND    'handle
+Dim Shared wtchidx As Integer 'index for delete 
+Dim Shared wtchexe(9,WTCHMAX) As String 'watched var (no memory for next execution)
+Dim Shared wtchnew As Integer 'to keep index after creating new watched
+
+''breakpoint on line
+dim Shared as breakol brkol(BRKMAX)
+dim shared as integer brknb
+Dim Shared as String brkexe(9,BRKMAX) 'to save breakpoints by session
+
+''breakpoint on variable/memory (when there is a change)
+Dim Shared brkv As tbrkv 
+Dim Shared brkv2 As tbrkv 'copie for use inside brkv_box
+Dim Shared brkvhnd As HWND   'handle
+
+''font
+Dim Shared As Integer fontsize=KSIZE8
+Dim Shared As Integer fontcolor
+Dim Shared As String  fontname
+fontname="Courier new"
+
+''for retrieving data from in file
+Dim Shared As Integer restorefontsize
+Dim Shared As Integer restorefontcolor
+Dim Shared As String  restorefontname
+Dim Shared As Integer restorex
+Dim Shared As Integer restorey
+Dim Shared As Integer restorew
+Dim Shared As Integer restoreh
+
+
+
+''slash for file WDS<>LNX
 dim shared as zstring *2 slash
 #Ifdef __fb_win32__
 	slash="\"
@@ -136,8 +181,7 @@ dim shared as string exename
 #include "dbg_extract.bas"
 #include "dbg_gui.bas"
 #include "dbg_buttons.bas"
-
-
+#include "dbg_menu.bas"
 
 
 gui_init
@@ -150,8 +194,7 @@ srccur=0
 linecur=10
 rlinecur=14
 ''
-dim as string title="Fbdebugger "+exename
-setwindowtext(mainwindow,strptr(title))
+settitle()
 SetStatusBarField(1,0,100,"Loading data")
 if elf_extract(exename) then
 	list_all
@@ -180,7 +223,7 @@ if elf_extract(exename) then
 			send_sci(SCI_MarkerAdd, imark, imark)       'line, marker#
 		next
 		linecur_change(rlinecur)
-	hidewindow(scint ,0)
+	hidewindow(hscint ,0)
 	SetStatusBarField(1,0,100,"Waiting")
 end if
 
@@ -218,11 +261,29 @@ MenuItem(1102,HMenuprc,"Disable proc")
 do
 	Var event=WaitEvent()
 	If Event=EventClose then
-		if messbox("Quit Fbdebugger","Are you sure ? (pgm still running)",MB_YESNO)=6 then
-			''todo need to release doc SCI_RELEASEDOCUMENT(<unused>, pointer doc)
-			release_doc
-			end
-		endif
+		if EventHwnd=hmain then
+			if messbox("Quit Fbdebugger","Are you sure ? (pgm still running)",MB_YESNO)=6 then
+				''todo need to release doc SCI_RELEASEDOCUMENT(<unused>, pointer doc)
+				release_doc
+				end
+			endif
+		else
+			HideWindow(EventHwnd,1)
+			if EventHwnd=hsettings then
+				''todo put in a dedicated proc
+				cmdexe(0)=GetGadgetText(GCMDLPARAM)
+				delayautostep=valint(GetGadgetText(GAUTODELAY))
+				if delayautostep<50 then
+					delayautostep=50
+					SetGadgetText(GAUTODELAY,str(delayautostep))
+					messbox("Delay for autostepping","Too small, reset to "+str(delayautostep))
+				elseIf delayautostep>10000 then
+					delayautostep=10000
+					SetGadgetText(GAUTODELAY,str(delayautostep))
+					messbox("Delay for autostepping","Too big, reset to "+str(delayautostep))
+				end if
+			end if
+		end if
 	end if
 	If event=EventMenu then
 		Select case EventNumber

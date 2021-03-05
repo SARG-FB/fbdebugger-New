@@ -97,7 +97,7 @@ sub breakpoint_marker(src as integer,pline as integer,brk as integer)
 	if brk then
 		send_sci(SCI_MARKERADD, pline-1, brk)
 	else
-		send_sci(SCI_MARKERDELETE, pline-11, -1)
+		send_sci(SCI_MARKERDELETE, pline-1, -1)
 	end if
 end sub
 '======================================
@@ -107,7 +107,7 @@ end sub
 	private function getMessages(hwnd as hwnd , msg as UINteger , wparam as wparam , lparam as lparam) as Integer
 		select case msg
 			Case WM_NOTIFY
-				dim as SCNotification ptr pSn = cast(SCNotification ptr , lparam) 'SCNotification ->https://www.scintilla.org/ScintillaDoc.html#Notifications
+				dim as SCNotification ptr pSn = cast(SCNotification ptr , lparam) 'SCNotification ->https://www.scintilla.org/scintillaDoc.html#Notifications
 				if pSn->nmhdr.code = SCN_CHARADDED then
 					? pSn->ch ' press keys and look in the console/terminal
 				EndIf
@@ -133,22 +133,22 @@ private sub create_sci(gadget as long, x as Long, y as Long , w as Long , h as L
 	dim as HWND hsci
 	#ifdef __fb_win32__
 		if dylibload("SciLexer.dll")=0 then ''todo if not loaded -->error and exit
-		'if dylibload ( "D:\laurent_divers\fb dev\En-cours\FBDEBUG NEW\asm64_via_llvm\test_a_garder/Scintilla" )=0 then
+		'if dylibload ( "D:\laurent_divers\fb dev\En-cours\FBDEBUG NEW\asm64_via_llvm\test_a_garder/scintilla" )=0 then
 
 			messbox("SciLexer.dll problem","dll not found"+chr(13)+"Quitting fbdebugger")
 			end
 		end if
-		hsci = CreateWindowEx(Exstyle,"Scintilla","", WS_CHILD Or WS_VISIBLE Or WS_CLIPCHILDREN,x,y,w,h,Cast(HWND,win9GetCurrent()), Cast(HMENU,CInt(gadget)), 0, 0)
+		hsci = CreateWindowEx(Exstyle,"scintilla","", WS_CHILD Or WS_VISIBLE Or WS_CLIPCHILDREN,x,y,w,h,Cast(HWND,win9GetCurrent()), Cast(HMENU,CInt(gadget)), 0, 0)
 		win9AddNewGadget(gadget,hsci)
 		setwindowcallback(cint(@getMessages) , 0) ' set callback for main window (mainHWND)	
 	#else
 		#inclib "scintilla"
 		dim as GtkWidget ptr editor
-		dim as ScintillaObject ptr sci
+		dim as scintillaObject ptr sci
 		Dim As HWND  vBox , mainBox
 		dim as ListT ptr pListTemp
 		editor = scintilla_new()
-		sci = SCINTILLA(editor)
+		sci = scintILLA(editor)
 		pListTemp = cast(ListT ptr,pGlobalTypeWindow9->ListWinAndContainers->findNodeFunc(cint(pGlobalTypeWindow9->CurentHwnd)))		
 		mainBox = cast(hwnd , pListTemp->anyTwoData)
 		vbox = gtk_fixed_new()
@@ -161,7 +161,7 @@ private sub create_sci(gadget as long, x as Long, y as Long , w as Long , h as L
 		gtk_widget_grab_focus(GTK_WIDGET(editor))
 		hsci=cast(hwnd, sci)
 	#endif
-	scint=hsci ''need to be done as used in send_sci
+	hscint=hsci ''need to be done as used in send_sci
 	
 	send_sci(SCI_SETMARGINTYPEN,0,SC_MARGIN_NUMBER )
 	send_sci(SCI_SETMARGINWIDTHN,0,40)
@@ -211,13 +211,49 @@ private sub create_sci(gadget as long, x as Long, y as Long , w as Long , h as L
 	'send_sci(SCI_STYLESETFORE, SCE_B_KEYWORD, &hff00ff)
 	
 End sub
+'===========================================================
+''set the title of main window
+'===========================================================
+private sub settitle()
+	dim as string title="Fbdebugger "+ver3264+exename
+	setwindowtext(hmain,strptr(title))
+end sub
+'=============================================
+'' settings
+'=============================================
+private sub create_settings()
+	hsettings=OpenWindow("Settings",10,10,500,500)
+	centerWindow(hsettings)
+	groupgadget(LOGGROUP,10,10,450,85,"Log  fbdebugger path"+slash+"dbg_log.txt")
+	optiongadget(GNOLOG,12,32,80,18,"No log")
+	SetGadgetState(GNOLOG,1)''set on overriden by read_ini
+	optiongadget(GSCREENLOG,102,32,80,18,"Screen")
+	optiongadget(GFILELOG,192,32,80,18,"File")
+	optiongadget(GBOTHLOG,282,32,80,18,"Both")
+	CheckBoxGadget(GTRACEPROC,12,70,220,15,"Trace on for proc")
+	CheckBoxGadget(GTRACELINE,232,70,220,15,"Trace on for line")
+	CheckBoxGadget(GVERBOSE,12,100,220,15,"Verbose Mode On for proc/var")
+	textgadget(GTEXTDELAY,12,125,200,15,"50< delay auto (ms) <10000",0)
+	stringgadget(GAUTODELAY,210,125,50,15,str(delayautostep))
+	textgadget(GTEXTCMDLP,12,155,200,15,"Command line parameters",0)
+	stringgadget(GCMDLPARAM,210,155,200,15,cmdexe(0))
+	
+	groupgadget(FONTGROUP,10,240,450,80,"Font for source code")
+	textgadget(GTEXTFTYPE,12,260,200,15,"type",0)
+	textgadget(GTEXTFSIZE,12,280,200,15,"size",0)
+	textgadget(GTEXTFCOLOR,12,300,200,15,"color",0)
+	
+end sub
+'===========================================
+'' Initialise all the GUI windows/gadgets
+'===========================================
 private sub gui_init
 
 	''main windows
-	mainwindow=OpenWindow("New FBDEBUGGER with window9 :-)",10,10,1100,500)
+	hmain=OpenWindow("New FBDEBUGGER with window9 :-)",10,10,1100,500)
 	
 	''scintilla gadget
-	create_sci(GSCINTILLA,0,65,400,WindowClientHeight(mainwindow)-90,)
+	create_sci(GSCINTILLA,0,65,400,WindowClientHeight(hmain)-90,)
 
 	''source panel
 	'Var font=LoadFont("Arial",40)
@@ -283,7 +319,7 @@ private sub gui_init
 	
 	#ifdef __fb_win32__
 		var icon=loadimage(0,@"fbdebugger.ico",IMAGE_ICON,0,0,LR_LOADFROMFILE or LR_DEFAULTSIZE)
-		sendmessage(mainwindow,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
+		sendmessage(hmain,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
 	#endif
 	''right panels
 	PanelGadget(GRIGHTTABS,500,30,499,300)
@@ -320,5 +356,6 @@ private sub gui_init
 	next
 	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
 	
+	create_settings()
 end sub
 

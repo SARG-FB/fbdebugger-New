@@ -100,7 +100,7 @@ sub hard_closing(errormsg as string)
 	messbox("Need to close fbdebugger",_
 			  "Sorry an unrecoverable problem occurs :"+chr(13)+errormsg+chr(13)+chr(13)+"Report to dev please")
 	''freegadgets()  todo free all gadget
-	close_window(mainwindow)
+	close_window(hmain)
 	end
 end sub
 '======================================================================
@@ -223,3 +223,283 @@ private sub release_doc
 		end if
 	next
 end sub
+'=======================================================================
+'' write some options on file for next launch of fbdebugger
+'=======================================================================
+private sub ini_write()
+	Dim As Integer fileout
+	If Dir(ExePath+slash+"fbdebugger.ini")<>"" Then
+		If Dir(ExePath+slash+"fbdebuggersav.ini")<>"" Then Kill ExePath+slash+"fbdebuggersav.ini"
+		Name (ExePath+slash+"fbdebugger.ini",ExePath+slash+"fbdebuggersav.ini")
+    EndIf
+    fileout=FreeFile
+    Open ExePath+slash+"fbdebugger.ini" For Output As fileout
+  
+	For i As Integer = 0 To 9
+		If savexe(i)<>"" Then
+			Print #fileout,"[EXE]="+savexe(i)
+			If cmdexe(i)<>"" Then Print #fileout,"[CMD]="+cmdexe(i)
+			For j As Integer =0 To WTCHMAX
+				If wtchexe(i,j)<>"" Then
+					Print #fileout,"[WTC]="+wtchexe(i,j)
+				Else
+					Exit For
+				EndIf
+			Next
+			
+			For j As Integer =1 To BRKMAX
+				If brkexe(i,j)<>"" Then
+					Print #fileout,"[BRK]="+brkexe(i,j)
+				EndIf
+			Next
+		End If
+	Next
+	Print #fileout,"[FTN]="+fontname
+	Print #fileout,"[FTS]="+Str(fontsize)
+	Print #fileout,"[FTC]="+Str(fontcolor)
+	Print #fileout,"[LOG]="+Str(flaglog) 'type of log
+	Print #fileout,"[TRC]="+Str(flagtrace) 'type of trace
+	
+	Print #fileout,"[WDX]="+Str(WindowX(hmain)) 
+	Print #fileout,"[WDY]="+Str(WindowY(hmain))
+	Print #fileout,"[WDW]="+str(WindowWidth(hmain))
+	Print #fileout,"[WDH]="+str(WindowHeight(hmain))
+	
+	'Print #fileout,"[CHK]="+Str(clrkeyword) 'color highlighted keywords
+	'Print #fileout,"[CCL]="+Str(clrcurline) 'color current line
+	'Print #fileout,"[CTB]="+Str(clrtmpbrk) 'color tempo breakpoint
+	'Print #fileout,"[CPB]="+Str(clrperbrk) 'color perm breakpoint
+	'print #fileout,"[DPO]="+Str(dspofs)
+	'If jitprev<>"" Then Print #fileout,"[JIT]="+jitprev
+	'Print #fileout,"[PST]="+Str(procsort) 'type of procs sort
+	
+	close fileout
+End sub
+'======================================================================
+'' read some options from previous launch of fbdebugger saved on file
+'=======================================================================
+private sub ini_read()
+
+    Dim filein As Integer,lineread As String, c As Integer=-1,w As Integer,b As Integer
+   Dim As Long lft,top,rgt,bot,p,q
+    If Dir(ExePath+slash+"fbdebugger.ini")="" Then
+       'fb_message("Init Error","fbdebugger.ini doesn't exist"+chr(10)+"compilation impossible")
+       Exit Sub
+    End If
+    Filein = FreeFile
+    Open ExePath+slash+"fbdebugger.ini" For Input As #Filein
+    Do While Not Eof(Filein)
+        Line Input #filein,lineread
+		if Left(lineread,6)="[EXE]=" Then
+        		lineread=RTrim(Mid(lineread,7))
+        		If Dir(lineread)<>"" And InStr(LCase(lineread),".exe") Then
+        			c+=1
+        			savexe(c)=lineread:cmdexe(c)=""
+        			w=-1:b=0
+        		EndIf
+        ElseIf Left(lineread,6)="[CMD]=" Then
+        		cmdexe(c)=RTrim(Mid(lineread,7))
+        ElseIf Left(lineread,6)="[WTC]=" Then
+        		w+=1
+        		wtchexe(c,w)=RTrim(Mid(lineread,7))
+        ElseIf Left(lineread,6)="[BRK]=" Then 
+        		b+=1
+        		brkexe(c,b)=RTrim(Mid(lineread,7))
+		ElseIf Left(lineread,6)="[FTN]=" Then	
+    			restorefontname=RTrim(Mid(lineread,7))
+        ElseIf Left(lineread,6)="[FTS]=" Then
+        		restorefontsize=ValInt(RTrim(Mid(lineread,7)))
+		ElseIf Left(lineread,6)="[FTC]=" Then 'color
+            	restorefontcolor=ValInt(RTrim(Mid(lineread,7)))
+			''todo set color for source font
+		ElseIf Left(lineread,6)="[LOG]=" Then	'type of log
+        		flaglog=ValInt(RTrim(Mid(lineread,7)))
+        ElseIf Left(lineread,6)="[TRC]=" Then	'flagtrace
+        		flagtrace=ValInt(RTrim(Mid(lineread,7)))	
+        'ElseIf Left(lineread,6)="[PST]=" Then	'type of proc sort
+        '		procsort=ValInt(RTrim(Mid(lineread,7)))
+		ElseIf Left(lineread,6)="[WDX]=" Then ''for restoring position/size of main window
+				restorex=valint(RTrim(Mid(lineread,7)))
+				if restorex<0 or restorex>1080 then ''security to not get a window out of visibility
+					restorex=0
+				end if
+		ElseIf Left(lineread,6)="[WDY]=" Then ''for restoring position/size of main window
+				restorey=valint(RTrim(Mid(lineread,7)))
+				if restorey<0 or restorey>800 then ''security
+					restorey=0
+				end if
+		ElseIf Left(lineread,6)="[WDW]=" Then ''for restoring position/size of main window
+				restorew=valint(RTrim(Mid(lineread,7)))		
+		ElseIf Left(lineread,6)="[WDH]=" Then ''for restoring position/size of main window
+				restoreh=valint(RTrim(Mid(lineread,7)))		
+				          
+            '' and modify values to avoid issue with display if erroneus values (negative)
+            'If lft<GetSystemMetrics(SM_XVIRTUALSCREEN) Or lft>(GetSystemMetrics(SM_XVIRTUALSCREEN)+GetSystemMetrics(SM_CXVIRTUALSCREEN)) Then lft=GetSystemMetrics(SM_XVIRTUALSCREEN)
+            'If (rgt-lft)<700 Then rgt=700+lft
+            '
+            'If top<GetSystemMetrics(SM_YVIRTUALSCREEN) Or top>(GetSystemMetrics(SM_YVIRTUALSCREEN)+GetSystemMetrics(SM_CYVIRTUALSCREEN)) Then top=GetSystemMetrics(SM_yVIRTUALSCREEN)
+            'If (bot-top)<500 Then bot=500+top
+
+           'SetWindowPos(windmain,HWND_NOTOPMOST,lft,top,rgt-lft,bot-top,SWP_NOACTIVATE Or SWP_FRAMECHANGED)
+           'dsptyp=0
+           'dsp_size
+           'SetWindowPos(windmain,HWND_NOTOPMOST,lft,top,rgt-lft,bot-top,SWP_NOACTIVATE Or SWP_FRAMECHANGED)
+        
+        
+		'elseif Left(lineread,6)="[CRK]=" Then	'color highlighted keywords
+        '		clrkeyword=ValInt(RTrim(Mid(lineread,7)))
+        'ElseIf Left(lineread,6)="[CCL]=" Then	'color current line
+        '		clrcurline=ValInt(RTrim(Mid(lineread,7)))
+        'ElseIf Left(lineread,6)="[CTB]=" Then	'color tempo breakpoint
+        '		clrtmpbrk=ValInt(RTrim(Mid(lineread,7)))
+		'ElseIf Left(lineread,6)="[CPB]=" Then	'color perm breakpoint
+        '		clrperbrk=ValInt(RTrim(Mid(lineread,7)))		
+        'ElseIf Left(lineread,6)="[JIT]=" Then
+        '	jitprev=RTrim(Mid(lineread,7))           
+		'ElseIf Left(lineread,6)="[DPO]=" Then
+    	'	dspofs=ValInt(RTrim(Mid(lineread,7)))
+           
+        End If        
+    Loop
+    Close #Filein
+    exename=savexe(0)
+    'todo fb_UpdateTooltip(fb_hToolTip,butrrune,"Restart "+exename,"",0)
+End sub
+'===================================================
+'' Drag and drop
+'===================================================
+private sub drag_n_drop
+	messbox("feature to be coded","drag_n_drop")
+end sub
+'-------------------------------------------
+''launch by command line or file explorer
+'-------------------------------------------
+private sub external_launch()
+	if command(0)="" then exit sub ''not launched by command line
+	dim as string debuggee=command(1)
+	if debuggee="" then exit sub ''not debuggee 
+	
+	if instr(debuggee,slash)=0 then debuggee=exepath+slash+debuggee ''debugge without path so exepath added
+	
+	if check_bitness(debuggee)=0 then exit sub ''bitness of debuggee and fbdebugger not corresponding
+	
+	if kill_process("Trying to launch but debuggee still running")=FALSE then exit sub
+	
+	dim as string cmdline=mid(command(-1),len(debuggee)+2)
+	
+	reinit ''reinit all except GUI parts
+	
+	exename=debuggee
+    exe_sav(exename,cmdline)
+
+    If ThreadCreate(@start_pgm)=0 Then
+    	messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
+    endif
+
+end sub
+'--------------------------------------------------------
+'' Debuggee restarted, last debugged (using IDBUTRRUNE) or one of the 9/10 others
+'--------------------------------------------------------
+private sub restart()
+	messbox("feature to be coded","restart)
+	'-----------------------------------------------------------------------------------------
+	'Case 1200 To 1209   
+	'	exename=savexe(LoWord(wparam)-1200)
+	'	treat_file(exename)
+	'-----------------------------------------------------------------------------------------
+	'Case IDBUTRRUNE  'restart exe
+	'	Dim As Double dtempo=FileDateTime(exename)
+	'	If exedate<>0 AndAlso exedate=dtempo Then
+	'		flagrestart=sourcenb
+	'	EndIf
+	'	If wtchcpt Then flagwtch=1 
+	'	treat_file(exename)
+end sub
+'--------------------------------------------------------
+'' Debuggee provided by jitdebugger
+'--------------------------------------------------------
+private sub jitdbg()
+	messbox("feature to be coded","attach")
+	'p=instr(Command,"-p")
+	'	If p<>0 And InStr(Command,"-e")<>0 And InStr(Command,"-g")<>0 Then 'started by 
+	'	dbgprocid=ValInt(Mid(Command,P+3))
+	'	p=InStr(p+3,Command,"-e")
+	'	p=ValInt(Mid(Command,P+3))
+	'	hattach=Cast(HANDLE,p)
+	'	ThreadCreate(@dbg_attach)
+	'	Exit Sub
+	'EndIf  
+end sub
+'================================================================
+'' Add new exe / cmdline to the list  and swap watched/brk
+'================================================================
+private sub exe_sav(exename As String,cmdline As String)
+	 Dim As Integer c
+	 Dim As Double tempdate=FileDateTime(exename)
+	If flagwtch=0 OrElse exedate<>tempdate Then
+		watch_del()
+	EndIf
+    exedate=tempdate
+    For i As Integer =0 To 8
+    	If savexe(0)<>exename Then
+    		Swap savexe(0),savexe(c)
+    		Swap cmdexe(0),cmdexe(c)
+    		
+    		For j As Integer=0 To WTCHMAX
+				Swap wtchexe(0,j),wtchexe(c,j)
+    		Next
+    		
+    		For j As Integer=0 To BRKMAX
+				Swap brkexe(0,j),brkexe(c,j)
+    		Next
+    		
+    		c+=1
+    	Else
+    		Exit For
+    	End If
+    Next
+    savexe(0)=exename
+    If cmdline<>"" Then cmdexe(0)=cmdline
+    ''todo fb_UpdateTooltip(fb_hToolTip,butrrune,"Restart "+exename,"",0)
+    settitle()
+End sub
+'===========================================
+'' restore instruction and resume thread
+'===========================================
+Private sub thread_resume()
+	#ifdef __fb_win32__	
+		writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution
+		resumethread(threadhs)
+	#else
+		''todo LINUX, maybe moved in dbg_linux.bas
+	#endif
+End sub
+'====================================================================================================================
+'' if debuggee running ask for killing return true after killing or if nothing running, false debuggee still running 
+'====================================================================================================================
+private function kill_process(text As String) As Integer
+    dim As Long retcode,lasterr
+    if prun then
+	    If messbox("Kill current running Program ?",text+Chr(10)+Chr(10) _
+	    	       +"USE CARREFULLY SYSTEM CAN BECOME UNSTABLE, LOSS OF DATA, MEMORY LEAK"+Chr(10) _
+	               +"Try to close your program first",MB_YESNO) = RETYES then
+	    	flagkill=true
+		    #ifdef __fb_win32__
+		    	retcode=terminateprocess(dbghand,999)
+		      	lasterr=getlasterror
+		    #else
+		    	''todo linux function from W9
+			#endif
+		    #ifdef fulldbg_prt
+		      	dbg_prt ("return code terminate process ="+Str(retcode)+" lasterror="+Str(lasterr))
+		   	#endif
+			thread_resume()
+			While prun:Sleep 500:Wend 
+			Return TRUE
+	    Else
+	        Return FALSE
+	    endif
+	else
+		Return true
+    end if
+end function
