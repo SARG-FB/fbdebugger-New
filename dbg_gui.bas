@@ -219,7 +219,7 @@ private sub settitle()
 	setwindowtext(hmain,strptr(title))
 end sub
 '=============================================
-'' settings
+'' settings window
 '=============================================
 private sub create_settings()
 	hsettings=OpenWindow("Settings",10,10,500,500)
@@ -267,9 +267,10 @@ private sub gui_init
 	
 	''status bar
 	StatusBarGadget(1,"")
-	SetStatusBarField(1,0,100,"Status")
+	SetStatusBarField(1,0,100,"No program")
 	SetStatusBarField(1,1,200,"Thread number")
-	setstatusbarfield(1,2,-1,"Current file")
+	SetStatusBarField(1,2,200,"UID number Linux")
+	setstatusbarfield(1,3,-1,"Current file")
 	
 	''current line
 	textGadget(GCURRENTLINE,2,28,400,20,"Next exec line : ",SS_NOTIFY )
@@ -290,7 +291,7 @@ private sub gui_init
 	load_button(IDEXEMOD,@"exemod.bmp",360,@"[M]odify execution, continue with line under cursor",)
 	load_button(IDBUTFREE,@"free.bmp",392,@"Release debuged prgm",)
 	load_button(IDBUTKILL,@"kill.bmp",424,@"CAUTION [K]ill process",)
-	load_button(IDBUTRRUNE,@"restart.bmp",466,@"Restart debugging (exe)",,0)
+	load_button(IDBUTRRUNE,@"restart.bmp",466,@"Restart debugging (exe)",TTRRUNE,0)
 	load_button(IDLSTEXE,@"multiexe.bmp",498,@"Last 10 exe(s)",,0)
 	load_button(IDBUTATTCH,@"attachexe.bmp",530,@"Attach running program",,0)
 	load_button(IDBUTFILE,@"files.bmp",562,@"Select EXE/BAS",,0)

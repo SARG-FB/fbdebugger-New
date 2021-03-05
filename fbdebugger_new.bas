@@ -63,31 +63,49 @@ Dim Shared As Integer udtcpt,udtmax 'current, max cpt
 Dim Shared As integer excldnb
 Dim Shared As texcld excldlines(EXCLDMAX)
 
+'THREAD
+
+''Threads
+#ifdef __fb_win32__
+	Dim Shared thread(THREADMAX) As tthread
+	Dim Shared threadnb As Integer =-1
+	Dim Shared threadcur As Integer
+	Dim Shared threadprv As Integer     'previous thread used when mutexunlock released thread or after thread create
+	Dim Shared threadsel As Integer     'thread selected by user, used to send a message if not equal current
+	Dim Shared threadaut As Integer     'number of threads for change when  auto executing
+	Dim Shared threadcontext As HANDLE
+	Dim Shared threadhs As HANDLE       'handle thread to resume
+	Dim Shared dbgprocid As Integer     'pinfo.dwProcessId : debugged process id
+	Dim Shared dbgthreadID As Integer   'pinfo.dwThreadId : debugged thread id
+	Dim Shared dbghand As HANDLE  		'debugged proc handle
+	Dim Shared dbghthread As HANDLE     'debuggee thread handle
+	Dim Shared dbghfile  As HANDLE   	'debugged file handle
+	Dim Shared pinfo As PROCESS_INFORMATION
+#endif
+
 ''miscellanous data
 dim shared as boolean prun=false    ''debuggee running
 dim shared as integer runtype=RTOFF ''running type
 Dim Shared As integer breakcpu=&hCC ''asm code for breakpoint
 
-''last debugged exes / command line parameters
-Dim Shared savexe(9) As String 'last 10 exe, 0=more recent
-Dim Shared cmdexe(9) As String 'last 10 exe
 
 ''put in a ctx with type ??
 dim shared As boolean procnodll
 dim shared As boolean flagmain
+Dim Shared As boolean flagkill =FALSE 'flag if killing process to avoid freeze in thread_del
+Dim Shared As Integer flagrestart=-1  'flag to indicate restart in fact number of bas files to avoid to reload those files
+Dim Shared As Integer flagwtch  =0     'flag =0 clean watched / 1 no cleaning in case of restart 
+Dim Shared As Byte flaglog =0         ' flag for dbg_prt 0 --> no output / 1--> only screen / 2-->only file / 3 --> both
+Dim Shared As Byte flagtrace          ' flag for trace mode : 1 proc / +2 line
+Dim Shared As Byte flagverbose        ' flag for verbose mode
+dim shared as boolean flagupdate = true ''if true proc/var, dump and watched displayed
+
 
 ''handle
 dim shared as HWND hmain,hscint,hsettings
 
 ''for autostepping
 dim shared as integer delayautostep=50
-
-''flags
-''todo type and tflag and flag.restart, etc
-dim shared as boolean flagrestart = true
-Dim Shared flaglog As Byte=0    ' flag for dbg_prt 0 --> no output / 1--> only screen / 2-->only file / 3 --> both
-Dim Shared flagtrace As Byte    ' flag for trace mode : 1 proc / +2 line
-Dim Shared flagverbose As Byte  ' flag for verbose mode
 
 ''watched
 dim Shared wtch(WTCHMAX) As twtch  ''zero based
@@ -113,7 +131,7 @@ Dim Shared As Integer fontcolor
 Dim Shared As String  fontname
 fontname="Courier new"
 
-''for retrieving data from in file
+''for retrieving data from ini file
 Dim Shared As Integer restorefontsize
 Dim Shared As Integer restorefontcolor
 Dim Shared As String  restorefontname
@@ -123,6 +141,12 @@ Dim Shared As Integer restorew
 Dim Shared As Integer restoreh
 
 
+
+
+''codes when debuggee stopped and corresponding texts
+Dim Shared stopcode As Integer
+Dim Shared stoplibel(20) As String*17 =>{"","cursor","tempo break","break","Break var","Break mem"_
+,"Halt by user","Access violation","New thread","Exception"}
 
 ''slash for file WDS<>LNX
 dim shared as zstring *2 slash
@@ -174,12 +198,17 @@ udt(14).nm="Fstring":udt(14).lg=Len(Integer)
 udt(15).nm="fb_Object":udt(15).lg=Len(UInteger)
 udt(16).nm="Boolean":udt(16).lg=Len(boolean)
 
+
+''last debugged exes / command line parameters
+Dim Shared savexe(9) As String 'last 10 exe, 0=more recent
+Dim Shared cmdexe(9) As String 'last 10 exe
 dim shared as string exename
+Dim Shared exedate As Double 'serial date
 
 ''============================
+#include "dbg_gui.bas"
 #include "dbg_tools.bas"
 #include "dbg_extract.bas"
-#include "dbg_gui.bas"
 #include "dbg_buttons.bas"
 #include "dbg_menu.bas"
 
@@ -190,6 +219,7 @@ reinit
 SetStatusBarField(1,0,100,"No debuggee")
 ''for testing todo remove
 exename="D:\telechargements\win9\tmp\test_include_main"
+exe_sav(exename)
 srccur=0
 linecur=10
 rlinecur=14

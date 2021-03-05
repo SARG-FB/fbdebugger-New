@@ -1192,46 +1192,7 @@ private function elf_extract(filename as string) as integer
 	return -1
 end function
 
-'================================================================
-'' check if exe bitness if not wrong 32bit<>64bit windows only 
-'================================================================
 
-function check_bitness(fullname as string) as integer
-	#Ifdef __fb_win32__
-		dim as long bintype
-			getbinarytype(strptr(fullname),@bintype) ''a control to prevent 32bit<>64bit 2020/02/05
-		#Ifdef __FB_64BIT__
-			if bintype=SCS_32BIT_BINARY then
-			   messbox("FBdebugger 64bit","can not be used for debugging 32bit exe...")
-				return 0
-			end if
-		#else
-			if bintype=SCS_64BIT_BINARY then
-				messbox("FBdebugger 32bit","can not be used for debugging 64bit exe...")
-				return 0
-			end if
-		#endif
-	#else
-		dim as ubyte ubyt
-		open fullname for binary as #1
-		get #1,5,ubyt ''offset=4 32bit or 64bit
-		close #1
-		#Ifdef __FB_64BIT__
-			if ubyt<>2 then
-				messbox("FBdebugger 64bit","can not be used for debugging 32bit exe...")
-				close #1
-				return 0
-			end if
-		#else
-			if ubyt<>1 then
-				messbox("FBdebugger 32bit","can not be used for debugging 64bit exe...")
-				close #1
-				return 0
-			end if
-		#endif
-	#endif
-	return -1
-end function
 
 
 

@@ -139,6 +139,8 @@ Const   SRCMAX=1000		   ''max source file
 #define IDCONTHR 120 '''503 'used also with button
 #define IDUPDATE  128
 
+#define TTRRUNE 140 ''tooltip for button rerun
+
 ''NOT ANY MORE USED
 '#define IDWATCH1  120
 '#define IDWATCH2  121
@@ -157,6 +159,9 @@ Const   SRCMAX=1000		   ''max source file
 ''for menu option
 ''tools
 #define MNABOUT 500
+
+''Rerun exe list can be used up to 559
+#define MNSTARTEXE 550
 
 ''for scintilla
 #define KRED    &hFF
@@ -280,6 +285,19 @@ Enum ''type of running
 	RTFREE
 	RTEND
 End enum
+
+Enum ''code stop
+	CSSTEP=0
+	CSCURSOR
+	CSBRKTEMPO
+	CSBRK
+	CSBRKV
+	CSBRKM
+	CSHALTBU
+    CSACCVIOL
+    CSNEWTHRD
+    CSEXCEP
+End Enum
 '================ Lines ==============================================
 Const LINEMAX=100000
 Type tline
@@ -455,6 +473,22 @@ Type tbrkv
 	txt As String	  'name and value just for brkv_box
 End type
 
-''Declares
+''======================== Threads ====================================
+Const THREADMAX=50
+Type tthread
+ hd  As HANDLE    'handle
+ id  As UInteger  'ident
+ pe  As Integer   'flag if true indicates proc end 
+ sv  As Integer   'sav line
+ od  As Integer   'previous line
+ nk  As UInteger  'for naked proc, stack and used as flag
+ st  As Integer   'to keep starting line
+ 'tv  As HTREEITEM 'to keep handle of thread item todo 3 lines 
+ 'plt As HTREEITEM 'to keep handle of last proc of thread in proc/var tview 
+ 'ptv As HTREEITEM 'to keep handle of last proc of thread in thread tview 
+ exc As Integer   'to indicate execution in case of auto 1=yes, 0=no
+ 
+End Type
+''============================= Declares ==============================================
 Declare Function win9AddNewGadget(ByVal gadget As Integer, ByVal hWin As HWND) As integer
 Declare Function win9GetCurrent() As HWND
