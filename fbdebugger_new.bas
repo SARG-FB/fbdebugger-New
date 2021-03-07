@@ -63,10 +63,9 @@ Dim Shared As Integer udtcpt,udtmax 'current, max cpt
 Dim Shared As integer excldnb
 Dim Shared As texcld excldlines(EXCLDMAX)
 
-'THREAD
 
-''Threads
 #ifdef __fb_win32__
+	''Threads
 	Dim Shared thread(THREADMAX) As tthread
 	Dim Shared threadnb As Integer =-1
 	Dim Shared threadcur As Integer
@@ -81,6 +80,14 @@ Dim Shared As texcld excldlines(EXCLDMAX)
 	Dim Shared dbghthread As HANDLE     'debuggee thread handle
 	Dim Shared dbghfile  As HANDLE   	'debugged file handle
 	Dim Shared pinfo As PROCESS_INFORMATION
+
+	''DLL
+	Dim Shared As tdll dlldata(DLLMAX) ''base 1
+	Dim Shared As Integer dllnb
+
+	''attach running exe
+	Dim Shared hattach As HANDLE    'handle to signal attchement done	
+	
 #endif
 
 ''miscellanous data
@@ -101,7 +108,7 @@ Dim Shared As Byte flagverbose        ' flag for verbose mode
 dim shared as boolean flagupdate = true ''if true proc/var, dump and watched displayed
 
 
-''handle
+''handles
 dim shared as HWND hmain,hscint,hsettings
 
 ''for autostepping
@@ -211,7 +218,11 @@ Dim Shared exedate As Double 'serial date
 #include "dbg_extract.bas"
 #include "dbg_buttons.bas"
 #include "dbg_menu.bas"
-
+#Ifdef __fb_win32__
+	#include "dbg_windows.bas"
+#else	
+	
+#EndIf
 
 gui_init
 reinit

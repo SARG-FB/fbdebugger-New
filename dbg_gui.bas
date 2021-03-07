@@ -269,8 +269,10 @@ private sub gui_init
 	StatusBarGadget(1,"")
 	SetStatusBarField(1,0,100,"No program")
 	SetStatusBarField(1,1,200,"Thread number")
-	SetStatusBarField(1,2,200,"UID number Linux")
-	setstatusbarfield(1,3,-1,"Current file")
+	SetStatusBarField(1,2,300,"UID number Linux")
+	SetStatusBarField(1,3,400,"Current source")
+	SetStatusBarField(1,4,500,"Current proc")
+	setstatusbarfield(1,5,-1,"Fast time ?")
 	
 	''current line
 	textGadget(GCURRENTLINE,2,28,400,20,"Next exec line : ",SS_NOTIFY )

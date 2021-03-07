@@ -1,6 +1,5 @@
 ''defines etc for fbdebugger_new
 ''dbg_define.bi
-''
 
 #Define fbdebuggerversion "V 3.00 BETA 32-64bit"
 
@@ -81,14 +80,42 @@
 	#Define EXCEPTION_PRIVILEGED_INSTRUCTION    &HC0000096
 	#Define EXCEPTION_CONTROL_C_EXIT            &HC000013A
 
+
+		''DLL
+	Const DLLMAX=300
+	Type tdll
+		As HANDLE   hdl 'handle to close
+		As UInteger bse 'base address
+		'As HTREEITEM tv 'item treeview to delete     Todo
+		As Integer gblb 'index/number in global var table
+		As Integer gbln 
+		As Integer  lnb 'index/number in line
+		As Integer  lnn 
+		As String   fnm 'full name
+	End Type
+
 ''end of define for windows	
 #endif
 
 #Define TYPESTD 17 ''upper limit for standard type, now 17 for va_list 2020/02/05
 
+'' DATA STAB
+Type udtstab
+	stabs As long    ''offset for string
+	code As UShort   ''stabs type
+	nline As UShort  ''line number
+	ad As Integer   ''address 64bit for gas64
+End Type
+#Define STAB_SZ_MAX 60000  ''max stabs string
+
+Enum
+NODLL
+DLL
+End Enum
+
 ''source code files
 #Define SRCSIZEMAX 5000000 ''max source size
-#Define STAB_SZ_MAX 60000  ''max stabs string
+
 Const   SRCMAX=1000		   ''max source file
 #define GSRCTAB 650        ''panel
 #define GFILELIST 3000     ''file combo

@@ -1191,9 +1191,128 @@ private function elf_extract(filename as string) as integer
 	close #1
 	return -1
 end function
+'============================================================================
+'' PE_extract inside memory from loaded sections (when debuggee is running)
+'============================================================================
+	private sub debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL)
+	'
+	'lastline As UShort=0,firstline As Integer=0
+	'integer -->,proc1,proc2
+	'Dim sourceix As Integer,sourceixs As Integer
+	'Dim As Byte procfg,flag=0,procnodll=TRUE,flagstabd=TRUE 'flags  (flagstabd to skip stabd 68,0,1)
+	'Dim As Integer n=sourcenb+1,temp
+	'Dim procnmt As String
+	
+	dim As Integer pe,flagdll
+	dim as integer secnb
+	dim as string *8 secnm
+	Dim As Integer basestab=0,basestabs=0,baseimg,sizemax,sizestabs
+	Dim As udtstab recupstab
+	Dim recup As ZString *STAB_SZ_MAX
+	
+	flagdll=dllflag
+	vrbgblprev=vrbgbl
 
+	SetStatusBarField(1,0,100,"Loading debug data")
 
+	ReadProcessMemory(dbghand,Cast(LPCVOID,exebase+&h3C),@pe,4,0)
+	pe+=exebase+6 'adr nb section
+	ReadProcessMemory(dbghand,Cast(LPCVOID,pe),@secnb,2,0)
+	#Ifdef __FB_64BIT__
+		pe+=42
+	#else
+		pe+=46 'adr compiled baseimage
+	#endif
+	ReadProcessMemory(dbghand,Cast(LPCVOID,pe),@baseimg,sizeof(integer),0)
+	#Ifdef __FB_64BIT__
+		pe+=&hD8
+	#else
+		pe+=&hC4 'adr sections
+	#EndIf
 
+	For i As UShort =1 To secnb
+		Dim As UInteger basedata,sizedata
+		secnm=String(8,0) 'Init var
+		ReadProcessMemory(dbghand,Cast(LPCVOID,pe),@secnm,8,0) 'read 8 bytes max name size
+	#Ifdef __FB_64BIT__
+		If secnm=".dbgdat" Then
+	#else	
+		If secnm=".stab" Then
+	#endif
+			ReadProcessMemory(dbghand,Cast(LPCVOID,pe+12),@basestab,4,0)
+	#Ifdef __FB_64BIT__
+		ElseIf secnm=".dbgstr" Then
+	#else
+		ElseIf secnm=".stabstr" Then
+	#endif
+			ReadProcessMemory(dbghand,Cast(LPCVOID,pe+12),@basestabs,4,0)
+			ReadProcessMemory(dbghand,Cast(LPCVOID,pe+8),@sizestabs,4,0)
+		EndIf
+		
+		pe+=40
+	Next
+	If basestab=0 OrElse basestabs=0 Then
+		If flagdll=NODLL Then
+			messbox("NO information for Debugging","Compile again with option -g")
+		EndIf
+		Exit Sub
+	Else
+		basestab+=exebase+sizeof(udtstab) ''12 for 32bit / 16 for 64bit could be greater if udtstab is changed
+		basestabs+=exebase
+
+		While 1
+			If ReadProcessMemory(dbghand,Cast(LPCVOID,basestab),@recupstab,sizeof(udtstab),0)=0 Then
+				#Ifdef fulldbg_prt
+					dbg_prt ("error reading memory "+Str(GetLastError))
+				#EndIf
+				messbox("Loading stabs","ERROR When reading memory"):Exit Sub
+			End If
+		   
+			#Ifdef fulldbg_prt
+			dbg_prt ("stabs="+Str(recupstab.stabs)+" "+Str(recupstab.code)+" "+Str(recupstab.nline)+" "+Str(recupstab.ad))
+			#EndIf
+
+			If recupstab.code=0 Then Exit While
+			If sizestabs-recupstab.stabs>STAB_SZ_MAX Then
+			'fb_message("Loading stabs","ERROR not enough space to load stabs string (" + Str(STAB_SZ_MAX) + "), change STAB_SZ_MAX"):Exit Sub
+				sizemax=STAB_SZ_MAX
+			Else
+				sizemax=sizestabs-recupstab.stabs
+			EndIf
+		
+			If ReadProcessMemory(dbghand,Cast(LPCVOID,recupstab.stabs+basestabs),@recup,sizemax,0)=0 Then
+				messbox("Loading stabs","ERROR When reading memory : "+Str(GetLastError)+Chr(10)+"Exit loading"):Exit Sub
+			End If
+
+			#Ifdef fulldbg_prt
+				dbg_prt (recup)
+			#EndIf
+	'=========================================
+			select case as const recupstab.code
+				case 100 '' file name
+					dbg_file(recup,recupstab.ad)
+				case 255 ''not as standard stab freebasic version and maybe other information
+					print "compiled with=";recup
+				Case 32,38,40,128,160 'init common/ var / uninit var / local / parameter
+					parse_var(recup,recupstab.ad)',exebase-baseimg) ''todo
+				case 132 '' file name
+					dbg_include(recup)
+				case 36 ''procedure
+					dbg_proc(recup,recupstab.nline,recupstab.ad)
+				case 68 ''line
+					dbg_line(recupstab.nline,recupstab.ad)
+				case 224 ''address epilog
+					dbg_epilog(recupstab.ad)
+				case 42 ''main entry point
+					'not used
+				case else
+					print "Unknow stab cod=";recupstab.code
+			end select
+	'=========================================
+			basestab+=sizeof(udtstab)
+		Wend
+	EndIf
+end sub
 
 
 
