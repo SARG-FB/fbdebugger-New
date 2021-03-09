@@ -147,13 +147,40 @@ Dim Shared As Integer restorey
 Dim Shared As Integer restorew
 Dim Shared As Integer restoreh
 
-
-
+Dim Shared htviewcur As HWND  'TV1 ou TV2 ou TV3
+Dim Shared htviewvar As HWND 'running proc/var
+Dim Shared htviewprc As HWND 'all proc
+Dim Shared htviewthd As HWND 'all threads
+Dim Shared htviewwch As HWND 'watched variables
+Dim Shared hlviewdump as hwnd 'dump
 
 ''codes when debuggee stopped and corresponding texts
 Dim Shared stopcode As Integer
 Dim Shared stoplibel(20) As String*17 =>{"","cursor","tempo break","break","Break var","Break mem"_
 ,"Halt by user","Access violation","New thread","Exception"}
+
+
+''variable find
+Dim Shared As tvarfind varfind
+
+'''show/expand
+Dim Shared As Integer shwexpnb 'current number of show/expand box
+Dim Shared As tshwexp shwexp(1 To SHWEXPMAX) 'data for show/expand
+Dim Shared As tvrp vrp(SHWEXPMAX,VRPMAX)
+
+dim shared as HMENU HMenusource
+dim shared as HMENU HMenusource2
+dim shared as HMENU HMenusource3
+dim shared as HMENU HMenusource4
+dim shared as HMENU HMenusource5
+dim shared as HMENU HMenuvar
+dim shared as HMENU HMenuvar2
+dim shared as HMENU HMenuprc
+dim shared as HMENU HMenuwch
+dim shared as HMENU HMenuthd
+dim shared as HMENU HMenutools
+
+Dim Shared fasttimer As double
 
 ''slash for file WDS<>LNX
 dim shared as zstring *2 slash
@@ -218,11 +245,13 @@ Dim Shared exedate As Double 'serial date
 #include "dbg_extract.bas"
 #include "dbg_buttons.bas"
 #include "dbg_menu.bas"
+#include "dbg_actions.bas"
 #Ifdef __fb_win32__
 	#include "dbg_windows.bas"
 #else	
 	
 #EndIf
+
 
 gui_init
 reinit
@@ -273,30 +302,6 @@ end if
 ''========================================
 ''========================================
 ''========================================
-
-
-''=================================================
-''contextual menus
-#define MNSETBRK 1001
-#define MNDISAS  1002
-#define MNLOCSRC 1101
-#define MNDISPROC 1102
-#define MNEDITVAR 1201
-#define MNDUMPVAR 1202
-
-var HMenusource=CreatePopMenu()
-MenuItem(1001,HMenusource,"Set breakpoint")
-MenuItem(1002,HMenusource,"Disass line")
-
-var HMenuvar=CreatePopMenu()
-MenuItem(1201,HMenuvar,"Edit var")
-MenuItem(1202,HMenuvar,"Dump var")
-
-
-var HMenuprc=CreatePopMenu()
-MenuItem(1101,HMenuprc,"Locate in source")
-MenuItem(1102,HMenuprc,"Disable proc")
-
 
 
 do

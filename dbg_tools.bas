@@ -1,6 +1,28 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
+
+'=============
+private function proc_verif(p As UShort) As Byte 'return true if proc running
+	For i As UShort =1 To procrnb
+		If procr(i).idx = p Then Return TRUE
+	Next
+	Return FALSE
+End Function
+'===================================
+private function proc_retval(prcnb As Integer) As String
+	Dim p As Integer = proc(prcnb).pt
+	If p Then
+     	If p>220 Then
+			Return String(p-220,"*")+" Function"
+		ElseIf p>200 Then 
+			Return String(p-200,"*")+" Sub"
+		Else
+			Return String(p,"*")+" "+udt(proc(prcnb).rv).nm
+     	End If
+	End If
+	Return udt(proc(prcnb).rv).nm
+End Function
 '===============================================
 '' check if the line is executable return true
 '===============================================

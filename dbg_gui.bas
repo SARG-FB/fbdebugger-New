@@ -46,11 +46,11 @@ private sub line_color(byval pline as integer,byval style as ulong)
 	Send_sci(SCI_SetStyling, endpos-begpos,style)
 end sub
 '==========================================================
-'' displays line current
+'' displays line
 '==========================================================
 private sub line_display(pline as integer)
 	send_sci(SCI_SETFIRSTVISIBLELINE, pline,0)
-	if linecur-send_sci(SCI_GETFIRSTVISIBLELINE,0,0)+5>send_sci(SCI_LINESONSCREEN,0,0) then
+	if pline-send_sci(SCI_GETFIRSTVISIBLELINE,0,0)+5>send_sci(SCI_LINESONSCREEN,0,0) then
 		send_sci(SCI_LINESCROLL,0,+5)
 	else
 		send_sci(SCI_LINESCROLL,0,-5)
@@ -64,6 +64,15 @@ private sub linecur_display()
 	source_change(srccur)
 	line_display(linecur)
 end sub
+'=========================================================
+'' selects the text of line
+'=========================================================
+function line_text(pline as integer)as string
+	var lgt=send_sci(SCI_LINELENGTH,pline,0)
+	var txt=space(lgt) + Chr(0)
+	send_sci(SCI_GETLINE,pline,strptr(txt))
+	return txt
+end function
 '==========================================================
 '' changes current line after restoring previous one
 '==========================================================
@@ -84,10 +93,7 @@ private sub linecur_change(linenew as integer)
 	line_color(linecur,KSTYLECUR)
 	linecur_display()
 	'' display in current line gadget
-	var lgt=send_sci(SCI_LINELENGTH,linecur-1,0)
-	var txt=space(lgt) + Chr(0)
-	send_sci(SCI_GETLINE,linecur-1,strptr(txt))
-	setgadgettext(GCURRENTLINE,"Current line : "+txt)
+	setgadgettext(GCURRENTLINE,"Current line : "+line_text(linecur-1))
 end sub
 '===================================================
 '' set/unset breakpoint markers
@@ -244,6 +250,332 @@ private sub create_settings()
 	textgadget(GTEXTFCOLOR,12,300,200,15,"color",0)
 	
 end sub
+'=========================================================================
+'' enables or disables buttons according the status and updates status
+'=========================================================================
+private sub but_enable()
+ 	select Case runtype
+    	Case RTSTEP 'wait
+			DisableGadget(IDBUTSTEP,0)
+			DisableGadget(IDBUTSTEPP,0)
+			DisableGadget(IDBUTSTEPT,0)
+			DisableGadget(IDBUTSTEPB,0)
+			DisableGadget(IDBUTSTEPM,0)
+			DisableGadget(IDBUTAUTO,0)
+			DisableGadget(IDBUTRUN,0)
+			DisableGadget(IDFASTRUN,0)
+			DisableGadget(IDBUTSTOP,0)
+			DisableGadget(IDCONTHR,0)
+			DisableGadget(IDBUTFREE,0)
+			DisableGadget(IDBUTKILL,0)
+			DisableGadget(IDEXEMOD,0)
+			
+			SetStatusBarField(1,0,100,"Waiting "+stoplibel(stopcode))
+			SetStatusBarField(1,1,200,"Thread "+Str(thread(threadcur).id))
+			SetStatusBarField(1,2,300,"Thread "+Str(thread(threadcur).id))
+			SetStatusBarField(1,3,400,source_name(source(proc(procsv).sr)))
+			SetStatusBarField(1,4,500,proc(procsv).nm)
+			SetStatusBarField(1,5,-1,left(Str(fasttimer),10))
+			'todo frground()
+   		case RTRUN,RTFREE,RTFRUN 'step over / out / free / run / fast run
+			DisableGadget(IDBUTSTEP,1)
+			DisableGadget(IDBUTSTEPP,1)
+			DisableGadget(IDBUTSTEPT,1)
+			DisableGadget(IDBUTSTEPB,1)
+			DisableGadget(IDBUTSTEPM,1)
+			DisableGadget(IDBUTAUTO,1)
+			DisableGadget(IDBUTRUN,1)
+			DisableGadget(IDFASTRUN,1)
+			DisableGadget(IDCONTHR,1)
+			DisableGadget(IDBUTFREE,1)
+			''DisableGadget(IDBUTkill,1) ''to let the possibility to kill the debuggee when running
+			DisableGadget(IDEXEMOD,1)
+			Select Case runtype
+				Case RTRUN
+					SetStatusBarField(1,0,100,"Running")
+				Case RTFRUN
+					SetStatusBarField(1,0,100,"FAST Running")
+				Case else
+					SetStatusBarField(1,0,100,"Released")
+			End Select
+    	Case RTAUTO 'auto
+			DisableGadget(IDBUTSTEP,1)
+			DisableGadget(IDBUTSTEPP,1)
+			DisableGadget(IDBUTSTEPT,1)
+			DisableGadget(IDBUTSTEPB,1)
+			DisableGadget(IDBUTSTEPM,1)
+			DisableGadget(IDBUTAUTO,1)
+			DisableGadget(IDBUTRUN,1)
+			DisableGadget(IDFASTRUN,1)
+			DisableGadget(IDCONTHR,1)
+			DisableGadget(IDBUTFREE,1)
+			DisableGadget(IDBUTKILL,1)
+			DisableGadget(IDEXEMOD,1)
+      		SetStatusBarField(1,0,100,"Auto")
+   		case Else 'prun=1 --> terminated or no pgm
+			DisableGadget(IDBUTSTEP,1)
+			DisableGadget(IDBUTSTEPP,1)
+			DisableGadget(IDBUTSTEPT,1)
+			DisableGadget(IDBUTSTEPB,1)
+			DisableGadget(IDBUTSTEPM,1)
+			DisableGadget(IDBUTAUTO,1)
+			DisableGadget(IDBUTRUN,1)
+			DisableGadget(IDFASTRUN,1)
+			DisableGadget(IDBUTSTOP,1)
+			DisableGadget(IDCONTHR,1)
+			DisableGadget(IDBUTFREE,1)
+			DisableGadget(IDBUTKILL,1)
+			DisableGadget(IDEXEMOD,1)
+    	  	If runtype=RTEND Then SetStatusBarField(1,0,100,"Terminated")
+   	End Select
+End Sub
+
+'=============================================================
+'' enables or disables menu options according the status
+'=============================================================
+private sub menu_enable()
+	dim flag As Integer
+	If prun Then flag=0 Else flag=1
+	SetStateMenu(HMenusource,MNSETBRK,  flag)
+	SetStateMenu(HMenusource,MNSETBRT,  flag)
+	SetStateMenu(HMenusource,MNSETBRKC, flag)
+	SetStateMenu(HMenusource,MNRSTBRKC, flag)
+	SetStateMenu(HMenusource,MNCHGBRKC, flag)
+	SetStateMenu(HMenusource,MNBRKENB,  flag)
+	SetStateMenu(HMenusource,MNCONTHR,  flag)
+	SetStateMenu(HMenusource,MNBUTSTEP, flag)
+	SetStateMenu(HMenusource,MNBUTSTEPP,flag)
+	SetStateMenu(HMenusource,MNBUTSTEPM,flag)
+	SetStateMenu(HMenusource,MNBUTSTEPB,flag)
+	SetStateMenu(HMenusource,MNBUTSTEPT,flag)
+	SetStateMenu(HMenusource,MNBUTRUN,  flag)
+	SetStateMenu(HMenusource,MNEXEMOD,  flag)
+	SetStateMenu(HMenusource,MNFASTRUN, flag)
+	SetStateMenu(HMenusource,MNBUTKILL, flag)
+	SetStateMenu(HMenusource,MNBUTSTOP, flag)
+	SetStateMenu(HMenusource,MNBUTAUTO, flag)
+	SetStateMenu(HMenusource,MNTHRDAUT, flag)
+	SetStateMenu(HMenusource,MNSHWVAR,  flag)
+	SetStateMenu(HMenusource,MNSETWVAR, flag)
+	SetStateMenu(HMenusource,MNLINEADR, flag)
+	SetStateMenu(HMenusource,MNLINEASM, flag)
+	SetStateMenu(HMenusource,MNPROCASM, flag)
+	SetStateMenu(HMenusource,MNREGS,    flag)
+	SetStateMenu(HMenusource2,MNLINEADR,flag)
+	SetStateMenu(HMenusource2,MNLINEASM,flag)
+	SetStateMenu(HMenusource2,MNPROCASM,flag)
+	SetStateMenu(HMenusource2,MNREGS,   flag)
+	
+	SetStateMenu(HMenuvar2,MNSETWTCH,   flag)
+	SetStateMenu(HMenuvar2,MNSETWTTR,   flag)
+	SetStateMenu(HMenuvar,MNSELIDX,     flag)
+	SetStateMenu(HMenuvar,MNTRCKARR,    flag)
+	SetStateMenu(HMenuvar,MNTRCKIDX0,   flag)
+	SetStateMenu(HMenuvar,MNTRCKIDX1,   flag)
+	SetStateMenu(HMenuvar,MNTRCKIDX2,   flag)
+	SetStateMenu(HMenuvar,MNTRCKIDX3,   flag)
+	SetStateMenu(HMenuvar,MNTRCKIDX4,   flag)
+	SetStateMenu(HMenuvar,MNTRCKRST,    flag)
+	
+	SetStateMenu(HMenuvar,MNVARDMP,  flag)
+	SetStateMenu(HMenuvar,MNVAREDT,  flag)
+	SetStateMenu(HMenuvar,MNSHWEXP,  flag)
+	SetStateMenu(HMenuvar,MNVARBRK,  flag)
+	SetStateMenu(HMenuvar,MNSHSTRG,  flag)
+	SetStateMenu(HMenuvar,MNSHCHAR,  flag)
+	SetStateMenu(HMenuvar,MNCHGZSTR, flag)
+	SetStateMenu(HMenuvar,MNLSTVARA, flag)
+	SetStateMenu(HMenuvar,MNLSTVARS, flag)
+	SetStateMenu(HMenuvar,MNCLBVARA, flag)
+	SetStateMenu(HMenuvar,MNCLBVARS, flag)
+	SetStateMenu(HMenuvar,MNPTDUMP , flag)
+	SetStateMenu(HMenuvar,MNFNDVAR , flag)
+	
+	SetStateMenu(HMenuthd,MNTHRDCHG,flag)
+	SetStateMenu(HMenuthd,MNTHRDKLL,flag)
+	SetStateMenu(HMenuthd,MNEXCLINE,flag)
+	SetStateMenu(HMenuthd,MNCREATHR,flag)
+	SetStateMenu(HMenuthd,MNTHRDEXP,flag)
+	SetStateMenu(HMenuthd,MNTHRDCOL,flag)
+	SetStateMenu(HMenuthd,MNLOCPRC, flag)
+	SetStateMenu(HMenuthd,MNSHWPROC,flag) 
+	SetStateMenu(HMenuthd,MNTBCKTRK,flag)
+	SetStateMenu(HMenuthd,MNTCHNING,flag)
+	SetStateMenu(HMenuthd,MNSHPRSRC,flag)
+	SetStateMenu(HMenuthd,MNPRCRADR,flag)
+	SetStateMenu(HMenuthd,MNTHRDLST,flag)
+	
+	SetStateMenu(HMenutools,MNLSTDLL, flag)
+	
+	If wtchcpt AndAlso prun Then flag=0 Else flag=1
+	SetStateMenu(HMenuwch,MNWCHVAR,flag)
+	SetStateMenu(HMenuwch,MNWCHDMP,flag)
+	SetStateMenu(HMenuwch,MNWCHSHW,flag)
+	SetStateMenu(HMenuwch,MNWCHSTG,flag)
+	SetStateMenu(HMenuwch,MNWCHDEL,flag)
+	SetStateMenu(HMenuwch,MNWCHDALL,flag)
+	SetStateMenu(HMenuwch,MNWCHEDT,flag)
+	SetStateMenu(HMenuwch,MNWCHTTGL,flag)
+	SetStateMenu(HMenuwch,MNWCHTTGA,flag)
+	
+	If procnb Then flag=0
+	SetStateMenu(HMenuprc,MNRSTPRC,flag)
+	SetStateMenu(HMenuprc,MNASMPRC,flag)
+	SetStateMenu(HMenuprc,MNSETPRC,flag)
+	SetStateMenu(HMenuprc,MNLOCPRC,flag)
+	SetStateMenu(HMenuprc,MNSORTPRC,flag)
+	
+	SetStateMenu(HMenuvar,MNPBCKTRK,flag)
+	SetStateMenu(HMenuvar,MNPCHNING,flag)
+	SetStateMenu(HMenuvar,MNLOCPRC,flag)
+	SetStateMenu(HMenuvar,MNCALLINE,flag)
+	SetStateMenu(HMenuvar,MNVCLPSE,flag)
+	SetStateMenu(HMenuvar,MNVEXPND,flag)
+	SetStateMenu(HMenuvar,MNASMPRC,flag)
+	
+	If brknb then flag=0
+	SetStateMenu(HMenusource,MNMNGBRK,flag)
+
+End sub
+'=================================================
+''contextual menus
+'================================================
+private sub menu_set()
+
+''menu source
+	HMenusource=CreatePopMenu()
+	MenuItem(MNCONTHR,HMenusource,"Run to Cursor / C")
+	MenuItem(MNBUTSTEP,HMenusource,"Next step / S")
+	MenuItem(MNBUTSTEPP,HMenusource,"Step over procs / O")
+	MenuItem(MNBUTSTEPM,HMenusource,"Step out current proc / E")
+	MenuItem(MNBUTSTEPT,HMenusource,"Step top called proc / T")
+	MenuItem(MNBUTSTEPB,HMenusource,"Step bottom current proc / B")
+	MenuItem(MNBUTRUN,HMenusource,"Run / R")
+	MenuItem(MNFASTRUN,HMenusource,"Fast Run / F")
+	MenuItem(MNBUTSTOP,HMenusource,"Halt running debuggee / H")
+	MenuItem(MNBUTKILL,HMenusource,"Kill debuggee / K")
+	MenuItem(MNBUTAUTO,HMenusource,"Step auto / A")
+	MenuItem(MNTHRDAUT,HMenusource,"Step auto multi threads / D")
+	MenuItem(MNEXEMOD,HMenusource,"Modify execution / M")
+	MenuBar(HMenusource)
+	MenuItem(MNSETBRK,HMenusource,"Set/Clear Breakpoint / F3")
+	MenuItem(MNSETBRKC,HMenusource,"Set/clear Breakpoint with counter Ctrl+F3")
+	MenuItem(MNRSTBRKC,HMenusource,"ReSet initial value counter of a Breakpoint")
+	MenuItem(MNCHGBRKC,HMenusource,"Change value counter of a Breakpoint")
+	MenuItem(MNSETBRT,HMenusource,"Set/Clear tempo Breakpoint / Shift+F3")
+	MenuItem(MNBRKENB,HMenusource,"Enable/disable Breakpoint")
+	MenuItem(MNMNGBRK,HMenusource, "Manage Breakpoints")
+	MenuBar(HMenusource)
+	MenuItem(MNSHWVAR,HMenusource,"Show var"+Chr(9)+"Ctrl+Left click")
+	MenuItem(MNSETWVAR,HMenusource,"Set watched var"+Chr(9)+"Alt+Left click")
+	MenuBar(HMenusource)
+	MenuItem(MNFNDTXT,HMenusource,"Find text / Ctrl+F")
+	MenuItem(MNGOTO,HMenusource,"Goto Line")
+	var HMenusource2=OpenSubMenu(HMenusource,"ASM data")
+	MenuItem(MNLINEADR,HMenusource2,"Line Address")
+	MenuItem(MNLINEASM,HMenusource2, "Asm code of line")
+	MenuItem(MNPROCASM,HMenusource2,"Asm code of proc (from line)")
+	MenuItem(MNREGS,HMenusource2,"Show registers for current thread)")
+	MenuItem(MNACCLINE,HMenusource,"Mark no executable lines")
+	MenuItem(MNFCSSRC,HMenusource,"Focus lines / L")
+
+''menu proc/var
+	HMenuvar=CreatePopMenu()
+	HMenuvar2=OpenSubMenu(HMenuvar,"Set watched")
+	MenuItem(MNSETWTCH,HMenuvar2,"Set watched")
+	MenuItem(MNSETWTTR,HMenuvar2,"Set watched+trace")
+	MenuItem,MNVARBRK,HMenuvar, "Break on var value")
+	MenuBar(HMenuvar)
+	MenuItem(MNSELIDX,HMenuvar, "Select index")
+	HMenuvar5=OpenSubMenu(HMenuvar,"Array tracking")
+	MenuItem(MNTRCKARR,HMenuvar5, "Assign vars to an array")  
+	MenuItem(MNTRCKIDX0,HMenuvar5, "Set Variable for index 1") 
+	MenuItem(MNTRCKIDX1,HMenuvar5, "Set Variable for index 2")
+	MenuItem(MNTRCKIDX2,HMenuvar5, "Set Variable for index 3")
+	MenuItem(MNTRCKIDX3,HMenuvar5, "Set Variable for index 4")
+	MenuItem(MNTRCKIDX4,HMenuvar5, "Set Variable for index 5") 
+	MenuItem(MNTRCKRST,HMenuvar5,  "Reset all choices") 
+	MenuItem(MNVARDMP,HMenuvar, "Variable Dump")
+	MenuItem(MNPTDUMP,HMenuvar, "Pointed data Dump")
+	MenuItem(MNVAREDT,HMenuvar, "Edit var value")
+	MenuItem(MNSHWEXP,HMenuvar, "Show/expand variable")
+	MenuItem(MNSHSTRG,HMenuvar, "Show z/w/string")
+	MenuItem(MNSHCHAR,HMenuvar, "Show char at position")
+	MenuItem(MNCHGZSTR,HMenuvar,"Change (u)byte<>zstring type")
+	MenuBar(HMenuvar)
+	MenuItem(MNLOCPRC,HMenuvar, "Locate proc (source)")
+	MenuItem(MNCALLINE,HMenuvar,"Locate calling line")
+	MenuItem(MNPBCKTRK,HMenuvar,"Proc call Backtracking")
+	MenuItem(MNPCHNIN,HMenuvarG,"Proc call Chaining")
+	MenuItem(MNASMPRC,HMenuvar, "Asm code of proc")
+	MenuItem(MNFNDVAR,HMenuvar, "Find any text")
+	MenuItem(MNVCLPSE,HMenuvar, "Collapse proc/var")
+	MenuItem(MNVEXPND,HMenuvar, "Expand proc/var")
+	HMenuvar3=OpenSubMenu(HMenuvar,"List to log")
+	MenuItem(MNLSTVARA,HMenuvar3, "List all proc/var")  
+	MenuItem(MNLSTVARS,HMenuvar3, "List selected proc/var")
+	HMenuvar4=OpenSubMenu(HMenuvar,"Copy to clipboard")
+	MenuItem(MNCLBVARA,HMenuvar4, "Copy all proc/var")  
+	MenuItem(MNCLBVARS,HMenuvar4, "Copy selected proc/var")
+
+''menu watched
+	HMenuwch=CreatePopMenu()
+	MenuItem(MNWCHVAR,HMenuwch, "Show in var window")
+	MenuItem(MNWCHEDT,HMenuwch, "Edit value")
+	MenuItem(MNWCHDMP,HMenuwch, "Memory Dump")
+	MenuItem(MNWCHSHW,HMenuwch, "Show/expand variable")
+	MenuItem(MNWCHSTG,HMenuwch, "Show z/w/string")
+	MenuBar(HMenuwch)
+	MenuItem(MNWCHTTGL,HMenuwch,"Toggle Tracing")
+	MenuItem(MNWCHTTGA,HMenuwch,"Cancel all Tracing")
+	MenuBar(HMenuwch)
+	MenuItem(MNWCHDEL,HMenuwch,"Delete")
+	MenuItem(MNWCHDALL,HMenuwch,"Delete all")
+
+''menu proc
+	HMenuprc=CreatePopMenu()
+	MenuItem(MNLOCPRC,HMenuprc, "Locate proc (source)")
+	MenuItem(MNASMPRC,HMenuprc, "Asm code of proc")
+	MenuItem(MNSORTPRC,HMenuprc,"Toggle sort by module or by proc")
+	MenuBar(HMenuprc)
+	MenuItem(MNRSTPRC,HMenuprc, "All procs followed")
+	MenuItem(MNSETPRC,HMenuprc, "No proc followed")
+
+''menu thread
+	HMenuthd=CreatePopMenu()
+	MenuItem(MNTHRDCHG,HMenuthd, "Select next thread to be executed")
+	MenuItem(MNEXCLINE,HMenuthd, "Show next executed line (source)")
+	MenuItem(MNCREATHR,HMenuthd, "Show line creating thread (source)")
+	MenuItem(MNLOCPRC,HMenuthd,  "Show first proc of thread (source)")
+	MenuItem(MNSHWPROC,HMenuthd, "Show proc (proc/var)")
+	MenuItem(MNSHPRSRC,HMenuthd, "Show proc (source)")
+	MenuItem(MNTBCKTRK,HMenuthd, "Proc call Backtracking")
+	MenuItem(MNTCHNING,HMenuthd, "Proc call Chaining")
+	MenuItem(MNPRCRADR,HMenuthd, "Proc Addresses")
+	MenuItem(MNTHRDKLL,HMenuthd, "Kill thread")
+	MenuItem(MNTHRDEXP,HMenuthd, "Expand one thread")
+	MenuItem(MNTHRDCOL,HMenuthd, "Collapse all threads")
+	MenuItem(MNTHRDLST,HMenuthd, "List all threads")
+
+''menu tools
+	HMenutools=CreatePopMenu()
+	MenuItem(MNABOUT,HMenutools,   "About")
+	MenuItem(MNCMPINF,HMenutools,  "Compile info")
+	MenuItem(MNDBGHEL,HMenutoolsP, "Help / F1")
+	MenuItem(MNCLIPBRD,HMenutools, "Copy notes to clipboard")
+	MenuItem(MNSHWLOG,HMenutools,  "Show log file")
+	MenuItem(MNHIDLOG,HMenutools,  "Hide log file")
+	MenuItem(MNDELLOG,HMenutools,  "Delete log file")
+	MenuItem(MNSHENUM,HMenutools,  "List enum")
+	MenuItem(MNINFOS,HMenutools,  "Process list")
+	MenuItem(MNLSTDLL,HMenutools, "Dlls list")
+	MenuItem(MNLSTSHC,HMenutools, "Shortcut keys list")
+	MenuItem(MNWINMSG,HMenutools, "Translate Win Message")
+	MenuItem(MNSHWBDH,HMenutools, "Bin/Dec/Hex")
+	MenuItem(MNFRTIMER,HMenutools,"Show fast run timer")
+	MenuItem(MNJITDBG,HMenutools, "Set JIT Debugger")
+End Sub
+
 '===========================================
 '' Initialise all the GUI windows/gadgets
 '===========================================
@@ -277,7 +609,6 @@ private sub gui_init
 	''current line
 	textGadget(GCURRENTLINE,2,28,400,20,"Next exec line : ",SS_NOTIFY )
 	GadgetToolTip(GCURRENTLINE,"next executed line"+chr(13)+"Click on me to reach the line",GCURLINETTIP)
-
 
 	''buttons
 	load_button(IDBUTSTEP,@"step.bmp",8,@"[S]tep/line by line",,0)
@@ -331,7 +662,7 @@ private sub gui_init
 	var htabvar=AddPanelGadgetItem(GRIGHTTABS,0,"Proc/var",,1)
 	'var hbmp = load_Icon("1.ico")
 	'var hbmp1 = load_Icon("2.ico")	
-	treeviewgadget(GTVIEWVAR,0,0,499,299,KTRRESTYLE)
+	htviewvar=treeviewgadget(GTVIEWVAR,0,0,499,299,KTRRESTYLE)
 	''filling treeview for example
 	var Pos_=AddTreeViewItem(GTVIEWVAR,"Myvar udt ",cast (hicon, 0),cast (hicon, 0),0,0)
 	AddTreeViewItem(GTVIEWVAR,"first field",cast (hicon, 0),0,1,Pos_)
@@ -341,7 +672,7 @@ private sub gui_init
 	HideWindow(htabvar,0)
 	''treeview procs
 	var htabprc=AddPanelGadgetItem(GRIGHTTABS,1,"Procs",,1)
-	treeviewgadget(GTVIEWPRC,0,0,499,299,KTRRESTYLE)
+	htviewprc=treeviewgadget(GTVIEWPRC,0,0,499,299,KTRRESTYLE)
 	AddTreeViewItem(GTVIEWPRC,"first proc",cast (hicon, 0),0,0)
 	AddTreeViewItem(GTVIEWPRC,"second proc",cast (hicon, 0),0,0)
 	AddTreeViewItem(GTVIEWPRC,"third proc",cast (hicon, 0),0,0)
@@ -349,10 +680,10 @@ private sub gui_init
 	var htabthrd=AddPanelGadgetItem(GRIGHTTABS,2,"Threads")
 	''treeview watched
 	var htabwatch=AddPanelGadgetItem(GRIGHTTABS,3,"Watched")
-	
+	htviewwch=treeviewgadget(GTVIEWWCH,0,0,499,299,KTRRESTYLE)
 	''dump memory
 	var htabmem=AddPanelGadgetItem(GRIGHTTABS,4,"Memory",,1)
-	ListViewGadget(GDUMPMEM,0,0,499,299,LVS_EX_GRIDLINES)
+	hlviewdump=ListViewGadget(GDUMPMEM,0,0,499,299,LVS_EX_GRIDLINES)
 	AddListViewColumn(GDUMPMEM, "Address",0,0,100)
 	for icol as integer =1 to 4
 		AddListViewColumn(GDUMPMEM, "+0"+str((icol-1)*4),icol,icol,40)
@@ -360,5 +691,7 @@ private sub gui_init
 	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
 	
 	create_settings()
+	
+	menu_set()
 end sub
 

@@ -12,7 +12,7 @@ End Function
 '' open/close a console
 '========================
 'flaglog=0 --> no output / 1--> only screen / 2-->only file / 3 --> both
-private sub dbg_prt(t As String)
+private sub output_wds(t As String)
 	Static As HANDLE scrnnumber
 	Static As Integer filenumber
 	Dim cpt As long,libel As String
@@ -63,6 +63,7 @@ private sub dbg_prt(t As String)
 	If (flaglog And 2) Then Print # filenumber,t   
 
 End Sub
+'=======================================================================
 private function excep_lib(e As Integer) As String 'not managed exception
 	Select Case e
 		Case EXCEPTION_GUARD_PAGE_VIOLATION
@@ -71,7 +72,7 @@ private function excep_lib(e As Integer) As String 'not managed exception
 			Return "EXCEPTION_DATATYPE_MISALIGNMENT" '&H80000002
 		Case EXCEPTION_SINGLE_STEP
 			Return "EXCEPTION_SINGLE_STEP" '&H80000004
-		Case EXCEPTION_ACCESS_VIOLATION '07/10/2014
+		Case EXCEPTION_ACCESS_VIOLATION
 			Return "EXCEPTION_ACCESS_VIOLATION" '&HC0000005
 		Case EXCEPTION_IN_PAGE_ERROR
 			Return "EXCEPTION_IN_PAGE_ERROR" '&HC0000006
@@ -274,9 +275,8 @@ While 1
     						gest_brk(rline(thread(threadcur).sv).ad) 
 								
 							source_change(rline(thread(threadcur).sv).sx) 'display source
-							sel_line(rline(thread(threadcur).sv).nu-1,clrperbrk,2)'Select Line in red               
-							SendMessage(richeditcur,EM_GETSELTEXT,0,Cast(LPARAM,@recup))
-							SendMessage(richeditcur,EM_HIDESELECTION,1,0)'hide selection
+							line_display(rline(thread(threadcur).sv).nu-1)             
+							recup=line_text(rline(thread(threadcur).sv).nu-1)
 							'case error inside proc initialisation (e.g. stack over flow)
 							If adr>rline(thread(threadcur).sv).ad And _
 								adr<rline(thread(threadcur).sv+1).ad And _
@@ -288,17 +288,18 @@ While 1
 							End If
 							
 							libel+="File  : "+source(rline(thread(threadcur).sv).sx)+Chr(13)+ _
-	                  "Proc  : "+proc(rline(thread(threadcur).sv).px).nm+Chr(13)+ _
-	                  "Line  : "+Str(rline(thread(threadcur).sv).nu)+" (selected and put in red)"+Chr(13)+ _
+							"Proc  : "+proc(rline(thread(threadcur).sv).px).nm+Chr(13)+ _
+							"Line  : "+Str(rline(thread(threadcur).sv).nu)+" (selected and put in red)"+Chr(13)+ _
 							recup+Chr(13)+Chr(13)+"Try To continue ? (if yes change values and/or use [M]odify execution)"
 							''todo use classic message and ,MB_SYSTEMMODAL Or MB_ICONSTOP Or 
 							If messbox("EXCEPTION",libel,MB_YESNO) = RETYES Then
 								suspendthread(threadcontext)
-	               		ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
+								ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 							Else
-		               	ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, DBG_EXCEPTION_NOT_HANDLED)
+								ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, DBG_EXCEPTION_NOT_HANDLED)
 							End If
-							SendMessage(richeditcur,EM_HIDESELECTION,0,0)'show selection
+							''todo select line
+							''SendMessage(richeditcur,EM_HIDESELECTION,0,0)'show selection
 	               End With
 					'case Else
 	      			'fb_message("EXCEPTION_DEBUG_EVENT ","Code :"+excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode),MB_SYSTEMMODAL Or MB_ICONSTOP)

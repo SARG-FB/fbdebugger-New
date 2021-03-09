@@ -4,7 +4,12 @@
 #Define fbdebuggerversion "V 3.00 BETA 32-64bit"
 
 '#define fulldbg_prt 'uncomment to get more information
-#Define dbg_prt2 Rem 'used temporary for debugging fbdebugger, change rem by dbg_prt 
+#Define dbg_prt2 Rem 'used temporary for debugging fbdebugger, change rem by dbg_prt
+
+ 'take l char form a string and complete with spaces if needed
+#Define fmt(t,l) Left(t,l)+Space(l-Len(t))+"  "
+#Define fmt2(t,l) Left(t,l)+Space(l-Len(t))
+
 
 #include once "Window9.bi"
 #include once "scintilla.bi"
@@ -12,7 +17,7 @@
 #Include Once "file.bi"
 
 'define data 64bit/32bit
-#Ifdef __FB_64BIT__ 
+#Ifdef __FB_64BIT__
    #Define regip rip
    #Define regbp rbp
    #Define regsp rsp
@@ -86,7 +91,7 @@
 	Type tdll
 		As HANDLE   hdl 'handle to close
 		As UInteger bse 'base address
-		'As HTREEITEM tv 'item treeview to delete     Todo
+		As integer  tv  'item treeview to delete
 		As Integer gblb 'index/number in global var table
 		As Integer gbln 
 		As Integer  lnb 'index/number in line
@@ -94,7 +99,15 @@
 		As String   fnm 'full name
 	End Type
 
-''end of define for windows	
+	'' Output information
+	#define dbg_prt(txt) output_wds(txt)
+	declare sub output_wds(as string)
+''end of define for windows
+
+#else
+	'' Output information
+	define dbg_prt(txt) output_lnx(txt)
+	'declare output_lnx(as string)  todo create output_lnx
 #endif
 
 #Define TYPESTD 17 ''upper limit for standard type, now 17 for va_list 2020/02/05
@@ -139,6 +152,8 @@ Const   SRCMAX=1000		   ''max source file
 #define GRIGHTTABS 200
 #define GTVIEWVAR 300
 #define GTVIEWPRC 301
+#define GTVIEWTHD 302
+#define GTVIEWWCH 302
 #define GDUMPMEM 320
 
 
@@ -183,12 +198,108 @@ Const   SRCMAX=1000		   ''max source file
 #define ENLRVAR   131
 #define ENLRMEM   132
 
-''for menu option
-''tools
-#define MNABOUT 500
+''for menu options
+'' source
+#define MNSETBRK 1000
+#define MNSETBRT MNSETBRK +1
+#define MNMNGBRK MNSETBRK +2
+#define MNCONTHR MNSETBRK +3 'used  alsowithbutton
+#define MNFNDTXT MNSETBRK +4
+#define MNTGLBMK MNSETBRK +5
+#define MNNXTBMK MNSETBRK +6
+#define MNPRVBMK MNSETBRK +7
+#define MNADDNOT MNSETBRK +8
+#define MNGOTO MNSETBRK +9
+#define MNSHWVAR MNSETBRK +10
+#define MNSETWVAR MNSETBRK +11
+#define MNACCLINE MNSETBRK +12
+#define MNFCSSRC MNSETBRK +13
+#define MNLINEADR MNSETBRK +14
+#define MNBRKENB MNSETBRK +15
+#define MNTHRDAUT MNSETBRK +16'automatic execution  alternating threads
+#define MNLINEASM MNSETBRK +17
+#define MNPROCASM MNSETBRK +18
+#define MNREGS MNSETBRK +19
+#define MNSETBRKC MNSETBRK +20
+#define MNCHGBRKC MNSETBRK +21
+#define MNRSTBRKC MNSETBRK +22
 
-''Rerun exe list can be used up to 559
-#define MNSTARTEXE 550
+''proc/var
+#define MNVARDMP MNSETBRK +30
+#define MNVAREDT MNSETBRK +31
+#define MNVARBRK MNSETBRK +32
+#define MNSELIDX MNSETBRK +33
+#define MNSHSTRG MNSETBRK +34
+#define MNSHWEXP MNSETBRK +35
+#define MNSETWTCH MNSETBRK +36
+#define MNSETWTTR MNSETBRK +37
+#define MNCHGZSTR MNSETBRK +38
+#define MNCALLINE MNSETBRK +39
+#define MNLSTVARA MNSETBRK +40'list  all proc/variables
+#define MNLSTVARS MNSETBRK +41'list  onlyselectedand below
+#define MNPBCKTRK MNSETBRK +42'backtrakingfromproc/var
+#define MNPCHNING MNSETBRK +43'chaining  fromproc/var
+#define MNSHCHAR MNSETBRK +44 'show  character  in a  string at a  selectedposition'03/11/2014
+#define MNCLBVARA MNSETBRK +45'copy  to clipboard  all procs/vars '28/11/2014
+#define MNCLBVARS MNSETBRK +46'copy  to clipboard  selectedvar
+#define MNPTDUMP MNSETBRK +47 'dump  deferenced data
+#define MNFNDVAR MNSETBRK +48 'find  procor var in proc/var
+
+''tracking array
+#define MNTRCKIDX0 MNSETBRK +60''variable usedas index
+#define MNTRCKIDX1 MNSETBRK +61
+#define MNTRCKIDX2 MNSETBRK +62
+#define MNTRCKIDX3 MNSETBRK +63
+#define MNTRCKIDX4 MNSETBRK +64
+
+#define MNTRCKARR MNSETBRK +65 ''associate var indexes to an array
+#define MNTRCKRST MNSETBRK +66 ''reset all
+
+'ID for proc
+#define MNRSTPRC MNSETBRK +70 'reset procfollow
+#define MNSETPRC MNSETBRK +71 'setprocfollow
+#define MNSORTPRC MNSETBRK +72'toggle sortby module name/  procname
+#define MNASMPRC MNSETBRK +73 'listingof asm codeof a  proc
+'ID for thread
+#define MNTHRDCHG MNSETBRK +80'select thread
+#define MNLOCPRC MNSETBRK +81 'locate proc(also  usedin menuvar and proc)
+#define MNTHRDKLL MNSETBRK +82'kill  thread
+#define MNEXCLINE MNSETBRK +83'show  nextexecutedline
+#define MNCREATHR MNSETBRK +84'show  linecreatingthread
+#define MNTHRDLST MNSETBRK +85'list  threads
+#define MNSHWPROC MNSETBRK +86'show  procin proc/var
+#define MNSHPRSRC MNSETBRK +87'show  procin source
+#define MNTBCKTRK MNSETBRK +88'backtracking
+#define MNTCHNING MNSETBRK +89'chaining
+#define MNTHRDEXP MNSETBRK +90'expand one thread
+#define MNTHRDCOL MNSETBRK +91'collapse  all threads
+#define MNPRCRADR MNSETBRK +92'addr  about  running procstart,end  stack
+'ID for tools
+#define MNDBGHELP MNSETBRK +100
+#define MNINFOS MNSETBRK +101
+#define MNABOUT MNSETBRK +102
+#define MNWINMSG MNSETBRK +103
+#define MNSHWBDH MNSETBRK +104
+#define MNCLIPBRD MNSETBRK +105
+#define MNDELLOG MNSETBRK +106
+#define MNSHWLOG MNSETBRK +107
+#define MNSHENUM MNSETBRK +108
+#define MNCMPINF MNSETBRK +109
+#define MNJITDBG MNSETBRK +110
+#define MNLSTDLL MNSETBRK +111
+#define MNHIDLOG MNSETBRK +112
+#define MNLSTSHC MNSETBRK +113
+#define MNFRTIMER MNSETBRK +114
+'ID for watched var
+#define MNWCHVAR MNSETBRK +120
+#define MNWCHDMP MNSETBRK +121
+#define MNWCHDEL MNSETBRK +122
+#define MNWCHSTG MNSETBRK +123
+#define MNWCHSHW MNSETBRK +124
+#define MNWCHEDT MNSETBRK +125
+#define MNWCHTTGL MNSETBRK +126
+#define MNWCHTTGA MNSETBRK +127
+#define MNWCHDALL MNSETBRK +128
 
 ''for scintilla
 #define KRED    &hFF
@@ -297,6 +408,10 @@ Const KSIZE8=8
 Const KSIZE10=10
 Const KSIZE12=12
 
+' for proc_find / thread
+Const KFIRST=1
+Const KLAST=2
+
 Enum ''type udt/redim/dim
 	TYUDT
 	TYRDM
@@ -353,7 +468,7 @@ Type tproc
 	rv As Integer  'return value type
 	pt As Long     'counter pointer for return value (** -> 2)
 	rvadr As Integer 'offset for return value adr (for now only dwarf)
-    'tv As HTREEITEM 'in tview2 todo changed for linux
+    tv As integer 'in tview2
     st As Byte     'state followed = not checked
 End Type
 
@@ -361,7 +476,7 @@ Const PROCRMAX=50000 'Running proc
 Type tprocr
 	sk   As UInteger  'stack
 	idx  As UInteger  'index for proc
-	'tv   As HTREEITEM 'index for treeview todo changed for linux
+	tv   As integer 'index for treeview todo changed for linux
 	'lst as uinteger 'future array in LIST
 	cl   As Integer   'calling line
 	thid As Integer   'idx thread
@@ -395,7 +510,7 @@ End type
 Const VRRMAX=200000
 Type tvrr
 	ad    As UInteger 'address
-	'tv    As HTREEITEM 'tview handle  todo changed for linux
+	tv    As integer  'tview handle
 	vr    As Integer  'variable if >0 or component if <0
 	ini   As UInteger 'dyn array address (structure) or initial address in array
 	gofs  As UInteger 'global offset to optimise access
@@ -456,7 +571,7 @@ Const WTCHMAX=19 ''zero based
 Const WTCHALL=9999999
 Type twtch
     hnd As HWND     'handle
-    tvl  As HTREEITEM 'tview handle
+    tvl As integer  'tview handle
     adr As UInteger 'memory address
     typ As Integer  'type for var_sh2
     pnt As Integer  'nb pointer
@@ -510,12 +625,54 @@ Type tthread
  od  As Integer   'previous line
  nk  As UInteger  'for naked proc, stack and used as flag
  st  As Integer   'to keep starting line
- 'tv  As HTREEITEM 'to keep handle of thread item todo 3 lines 
- 'plt As HTREEITEM 'to keep handle of last proc of thread in proc/var tview 
- 'ptv As HTREEITEM 'to keep handle of last proc of thread in thread tview 
+ tv  As integer 'to keep handle of thread item todo 3 lines 
+ plt As integer 'to keep handle of last proc of thread in proc/var tview 
+ ptv As integer 'to keep handle of last proc of thread in thread tview 
  exc As Integer   'to indicate execution in case of auto 1=yes, 0=no
  
 End Type
+
+''variable find
+Type tvarfind
+	ty As Integer
+	pt As Integer
+	nm As String    'var name or description when not a variable
+	pr As Integer   'index of running var parent (if no parent same as ivr)
+	ad As UInteger
+	iv As Integer   'index of running var
+	tv As HWND      'handle treeview
+    tl As integer 'handle line
+End Type
+
+'show/expand
+Const SHWEXPMAX=10 'max shwexp boxes
+Const VRPMAX=5000  'max elements in each treeview
+Type tshwexp
+	bx As HWND     'handle pointed value box   todo check if gadget ?
+	tv As HWND     'corresponding tree view
+	nb As Integer  'number of elements tvrp
+	cu As HWND     'handle of the current index label
+	mn As HWND     'handle of the mini index label
+	mx as HWND     'handle of the max indexlabel
+	curidx As Integer  'current index only for array
+	minidx As Integer  'min index
+	maxidx As Integer  'max index
+	
+	procr  as integer 'index of running proc  (-1 if memory) used to delete the shw/exp when proc is exiting (local var)
+	arradr as integer 'address of pointer in descriptor array (-1 if not a dynamic array)
+	mem    as integer 'if static don't delete the shw/exp when the proc is closed
+	parent as integer 'index of higher parent
+End Type
+Type tvrp
+	nm As String    'name
+	ty As Integer   'type
+	pt As Integer   'is pointer
+	ad As UInteger  'address
+	tl As integer   'line in treeview
+	iv As Integer   'index of variables 
+End Type
+
 ''============================= Declares ==============================================
 Declare Function win9AddNewGadget(ByVal gadget As Integer, ByVal hWin As HWND) As integer
 Declare Function win9GetCurrent() As HWND
+declare function source_name(fullname as string)as string
