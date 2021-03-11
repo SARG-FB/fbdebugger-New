@@ -1,6 +1,48 @@
 ''Windows system for fbdebugger_new
 ''dbg_windows.bi
 
+'=====================================================================
+''finds the dll name
+'=====================================================================
+private function dll_name(FileHandle As HANDLE,t As Integer =1 )As String ' t=1 --> full name, t=2 --> short name
+   Dim As ZString*251 fileName
+   Dim As ZString*512 zstr,dn,tzstr=" :"
+   Dim As HANDLE hfileMap
+   Dim As Long fileSizeHi,fileSizeLo,p
+	Dim As Any Ptr pmem
+	Dim As String tstring 
+   fileSizeLo = GetFileSize(FileHandle, @fileSizeHi)
+   If fileSizeLo = 0 And fileSizeHi=0 Then Return "Empty file." ' cannot map an 0 byte file
+   hfileMap = CreateFileMapping(FileHandle,0,PAGE_READONLY, 0, 1, NULL)
+   If hfileMap Then
+      pMem = MapViewOfFile(hfileMap,FILE_MAP_READ, 0, 0, 1)
+      If pMem Then
+      	GetMappedFileName(GetCurrentProcess(),pMem, @fileName, 250)
+         UnmapViewOfFile(pMem)
+         CloseHandle(hfileMap)
+         If Len(fileName) > 0 Then
+				getlogicaldrivestrings(511,zstr)'get all the device letters c:\ d:\ etc separate by null
+				While zstr[p]
+					tzstr[0]=zstr[p]'replace space by letter
+					querydosdevice(tzstr,dn,511)'get corresponding device name
+					If InStr(fileName,dn) Then
+						tstring=fileName
+						str_replace(tstring,dn,tzstr)
+						If t=1 Then
+							Return tstring 'full name
+						Else
+							Return source_name(tstring) ''extract only name without path
+						EndIf
+					EndIf
+					p+=4'next letter skip ":\<null>"
+				Wend 
+         Else
+            Return "Empty filename."
+         EndIf
+      EndIf
+   End If
+   Return "Empty filemap handle."
+End Function
 '===============================
 '' used with dbg_prt
 '================================
@@ -385,13 +427,13 @@ While 1
 		      For i As Integer=1 To dllnb 
 					closehandle dlldata(i).hdl 'close all the dll handles
 		      Next
-	         watch_sav:brk_sav
+	         watch_sav
+	         brk_sav
 	         ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 	         prun=FALSE
-	      	runtype=RTEND
+	      	 runtype=RTEND
 	         but_enable()
 	         menu_enable()
-	         If dsptyp>99 Then PostMessage(windmain,WM_COMMAND,IDBUTMINI,0) 'restore full display !!!
 	         Exit While
          
 		Case LOAD_DLL_DEBUG_EVENT
@@ -475,7 +517,7 @@ While 1
 							'create in brkexe for use in next dll loading
 							For n As Integer = BRKMAX To 1 Step-1 'search by the last slot, later if there are BRKMAX brkpt this one will be lost
 								If brkexe(0,n)="" Then 'find an empty slot if not data is lost
-									brkexe(0,n)=name_extract(source(brkol(m).isrc))+","+Str(brkol(m).nline)+","+Str(brkol(m).typ)
+									brkexe(0,n)=source_name(source(brkol(m).isrc))+","+Str(brkol(m).nline)+","+Str(brkol(m).typ)
 								EndIf
 								Exit For
 							Next

@@ -63,7 +63,7 @@ sub button_action(button as integer)
 			var HMenuexe=CreatePopMenu()
 			For iitem As integer =0 To 9
 				If savexe(iitem)<>"" Then
-					MenuItem(MNSTARTEXE+iitem,HMenuexe,savexe(iitem))
+					MenuItem(MNEXEFILE0+iitem,HMenuexe,savexe(iitem))
 					If iitem=0 Then MenuBar(HMenuexe)
 				EndIf
 			Next
@@ -74,7 +74,7 @@ sub button_action(button as integer)
 		'case IDEXEMOD
 		'case IDBUTSTEPB
 		'case IDBUTSTEPT
-		case IDCONTHR ''503 'used also with button
+		case IDBUTCURSR
 			messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
 			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
 		'case IDUPDATE

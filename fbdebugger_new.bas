@@ -94,7 +94,7 @@ Dim Shared As texcld excldlines(EXCLDMAX)
 dim shared as boolean prun=false    ''debuggee running
 dim shared as integer runtype=RTOFF ''running type
 Dim Shared As integer breakcpu=&hCC ''asm code for breakpoint
-
+Dim Shared As Integer dsptyp=0      ''type of display : 0 normal/ 1 source/ 2 var/ 3 memory
 
 ''put in a ctx with type ??
 dim shared As boolean procnodll
@@ -106,13 +106,13 @@ Dim Shared As Byte flaglog =0         ' flag for dbg_prt 0 --> no output / 1--> 
 Dim Shared As Byte flagtrace          ' flag for trace mode : 1 proc / +2 line
 Dim Shared As Byte flagverbose        ' flag for verbose mode
 dim shared as boolean flagupdate = true ''if true proc/var, dump and watched displayed
-
+Dim Shared as boolean flagattach      ' flag for attach
 
 ''handles
 dim shared as HWND hmain,hscint,hsettings
 
 ''for autostepping
-dim shared as integer delayautostep=50
+dim shared as integer autostep=50
 
 ''watched
 dim Shared wtch(WTCHMAX) As twtch  ''zero based
@@ -175,6 +175,9 @@ dim shared as HMENU HMenusource4
 dim shared as HMENU HMenusource5
 dim shared as HMENU HMenuvar
 dim shared as HMENU HMenuvar2
+dim shared as HMENU HMenuvar3
+dim shared as HMENU HMenuvar4
+dim shared as HMENU HMenuvar5
 dim shared as HMENU HMenuprc
 dim shared as HMENU HMenuwch
 dim shared as HMENU HMenuthd
@@ -245,7 +248,6 @@ Dim Shared exedate As Double 'serial date
 #include "dbg_extract.bas"
 #include "dbg_buttons.bas"
 #include "dbg_menu.bas"
-#include "dbg_actions.bas"
 #Ifdef __fb_win32__
 	#include "dbg_windows.bas"
 #else	
@@ -318,15 +320,15 @@ do
 			if EventHwnd=hsettings then
 				''todo put in a dedicated proc
 				cmdexe(0)=GetGadgetText(GCMDLPARAM)
-				delayautostep=valint(GetGadgetText(GAUTODELAY))
-				if delayautostep<50 then
-					delayautostep=50
-					SetGadgetText(GAUTODELAY,str(delayautostep))
-					messbox("Delay for autostepping","Too small, reset to "+str(delayautostep))
-				elseIf delayautostep>10000 then
-					delayautostep=10000
-					SetGadgetText(GAUTODELAY,str(delayautostep))
-					messbox("Delay for autostepping","Too big, reset to "+str(delayautostep))
+				autostep=valint(GetGadgetText(GAUTODELAY))
+				if autostep<50 then
+					autostep=50
+					SetGadgetText(GAUTODELAY,str(autostep))
+					messbox("Delay for autostepping","Too small, reset to "+str(autostep))
+				elseIf autostep>10000 then
+					autostep=10000
+					SetGadgetText(GAUTODELAY,str(autostep))
+					messbox("Delay for autostepping","Too big, reset to "+str(autostep))
 				end if
 			end if
 		end if
@@ -345,12 +347,6 @@ do
 				else
 					messbox("Error setting breakpoint","Not an executable line")
 				end if
-			case MNDISAS
-				MessBox("","Disass line")
-			case MNLOCSRC
-				MessBox("","Locate in source")
-			case MNDISPROC
-				MessBox("","Disable proc")
 		End select
 	ElseIf event=eventrbdown then
 		if GlobalMouseX<500 then

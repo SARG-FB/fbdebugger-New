@@ -158,7 +158,7 @@ Const   SRCMAX=1000		   ''max source file
 
 
 
-'buttons main screen
+'button main screen also used for menu
 #define IDBUTSTEP   101
 #define IDBUTSTEPP  102
 #define IDBUTSTEPM  103
@@ -178,8 +178,8 @@ Const   SRCMAX=1000		   ''max source file
 #define IDEXEMOD    117
 #define IDBUTSTEPB  118
 #define IDBUTSTEPT  119
-#define IDCONTHR 120 '''503 'used also with button
-#define IDUPDATE  128
+#define IDBUTCURSR  120
+#define IDUPDATE    128
 
 #define TTRRUNE 140 ''tooltip for button rerun
 
@@ -203,12 +203,11 @@ Const   SRCMAX=1000		   ''max source file
 #define MNSETBRK 1000
 #define MNSETBRT MNSETBRK +1
 #define MNMNGBRK MNSETBRK +2
-#define MNCONTHR MNSETBRK +3 'used  alsowithbutton
+'#define MNCONTHR MNSETBRK +3 'used  alsowithbutton
 #define MNFNDTXT MNSETBRK +4
 #define MNTGLBMK MNSETBRK +5
 #define MNNXTBMK MNSETBRK +6
 #define MNPRVBMK MNSETBRK +7
-#define MNADDNOT MNSETBRK +8
 #define MNGOTO MNSETBRK +9
 #define MNSHWVAR MNSETBRK +10
 #define MNSETWVAR MNSETBRK +11
@@ -217,9 +216,9 @@ Const   SRCMAX=1000		   ''max source file
 #define MNLINEADR MNSETBRK +14
 #define MNBRKENB MNSETBRK +15
 #define MNTHRDAUT MNSETBRK +16'automatic execution  alternating threads
-#define MNLINEASM MNSETBRK +17
-#define MNPROCASM MNSETBRK +18
-#define MNREGS MNSETBRK +19
+#define MNASMLINE MNSETBRK +17
+#define MNASMPRCL MNSETBRK +18
+#define MNASMREGS MNSETBRK +19
 #define MNSETBRKC MNSETBRK +20
 #define MNCHGBRKC MNSETBRK +21
 #define MNRSTBRKC MNSETBRK +22
@@ -246,7 +245,7 @@ Const   SRCMAX=1000		   ''max source file
 #define MNFNDVAR MNSETBRK +48 'find  procor var in proc/var
 
 ''tracking array
-#define MNTRCKIDX0 MNSETBRK +60''variable usedas index
+#define MNTRCKIDX0 MNSETBRK +60''variable used as index
 #define MNTRCKIDX1 MNSETBRK +61
 #define MNTRCKIDX2 MNSETBRK +62
 #define MNTRCKIDX3 MNSETBRK +63
@@ -300,6 +299,17 @@ Const   SRCMAX=1000		   ''max source file
 #define MNWCHTTGL MNSETBRK +126
 #define MNWCHTTGA MNSETBRK +127
 #define MNWCHDALL MNSETBRK +128
+
+#define MNEXEFILE0 MNSETBRK +140
+#define MNEXEFILE1 MNSETBRK +141
+#define MNEXEFILE2 MNSETBRK +142
+#define MNEXEFILE3 MNSETBRK +143
+#define MNEXEFILE4 MNSETBRK +144
+#define MNEXEFILE5 MNSETBRK +145
+#define MNEXEFILE6 MNSETBRK +146
+#define MNEXEFILE7 MNSETBRK +147
+#define MNEXEFILE8 MNSETBRK +148
+#define MNEXEFILE9 MNSETBRK +149
 
 ''for scintilla
 #define KRED    &hFF
@@ -440,6 +450,24 @@ Enum ''code stop
     CSNEWTHRD
     CSEXCEP
 End Enum
+
+Union pointeurs
+	pxxx As Any Ptr
+	pinteger As Integer Ptr
+	puinteger As UInteger Ptr
+	psingle As Single Ptr
+	pdouble As Double Ptr
+	plongint As LongInt Ptr
+	pulongint As ULongInt Ptr
+	pbyte As Byte Ptr
+	pubyte As UByte Ptr
+	pshort As Short Ptr
+	pushort As UShort Ptr
+	pstring As String Ptr
+	pzstring As ZString Ptr
+	pwstring As WString Ptr
+End Union
+
 '================ Lines ==============================================
 Const LINEMAX=100000
 Type tline
@@ -676,3 +704,4 @@ End Type
 Declare Function win9AddNewGadget(ByVal gadget As Integer, ByVal hWin As HWND) As integer
 Declare Function win9GetCurrent() As HWND
 declare function source_name(fullname as string)as string
+declare function dll_name(FileHandle As HANDLE,t As Integer =1 )As String
