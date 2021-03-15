@@ -110,9 +110,14 @@ Dim Shared as boolean flagattach      ' flag for attach
 
 ''handles
 dim shared as HWND hmain,hscint,hsettings
+dim shared as hwnd hdumpbx ''window for handling dump
 
 ''for autostepping
 dim shared as integer autostep=50
+' input_box
+Dim Shared inputval As ZString *25
+Dim Shared inputtyp As Byte
+dim shared as hwnd hinputbx ''window for handling inputval
 
 ''watched
 dim Shared wtch(WTCHMAX) As twtch  ''zero based
@@ -131,6 +136,16 @@ Dim Shared as String brkexe(9,BRKMAX) 'to save breakpoints by session
 Dim Shared brkv As tbrkv 
 Dim Shared brkv2 As tbrkv 'copie for use inside brkv_box
 Dim Shared brkvhnd As HWND   'handle
+
+''Backtracking
+Dim Shared As Integer bcktrkpr
+
+''dump memory
+Dim Shared dumplines As Integer =20 'nb lines(default 20)
+Dim Shared dumpadr As Integer    'address for dump
+Dim Shared dumpdec As Integer =0 'value dump dec=0 or hexa=50
+Dim Shared dumpnbcol As Integer
+Dim Shared dumptyp As Integer =1
 
 ''font
 Dim Shared As Integer fontsize=KSIZE8
@@ -330,24 +345,14 @@ do
 					SetGadgetText(GAUTODELAY,str(autostep))
 					messbox("Delay for autostepping","Too big, reset to "+str(autostep))
 				end if
+			elseif EventHwnd=hinputbx then ''resets inputval and closes box
+				inputval=""
+				hidewindow(hinputbx,1)
 			end if
 		end if
 	end if
 	If event=EventMenu then
-		Select case EventNumber
-			case MNSETBRK
-				MessBox("","Set breakpoint")
-				static as integer brk
-				brk+=1
-				if brk=5 then brk=0
-				print srccur,line_cursor,brk,srcdisplayed
-				
-				if line_check(line_cursor) then
-					breakpoint_marker(srccur,line_cursor,brk)
-				else
-					messbox("Error setting breakpoint","Not an executable line")
-				end if
-		End select
+		menu_action(EventNumber)
 	ElseIf event=eventrbdown then
 		if GlobalMouseX<500 then
 			DisplayPopupMenu(HMenusource, GlobalMouseX,GlobalMouseY)

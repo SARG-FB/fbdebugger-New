@@ -1,4 +1,4 @@
-''debug data extraction 
+''debug data extraction
 ''dbg_extract.bas
 
 '#ifdef  __fb_linux__

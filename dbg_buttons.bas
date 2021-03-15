@@ -32,34 +32,36 @@ sub select_file()
 
 end sub
 
-
-
-	'load_button(ENLRSRC,@"source.bmp",692,@"Enlarge/reduce source",)
-	'load_button(ENLRVAR,@"varproc.bmp",724,@"Enlarge/reduce proc/var",)
-	'load_button(ENLRMEM,@"memory.bmp",756,@ "Enlarge/reduce dump memory",)
-
 sub button_action(button as integer)
 	select case button
 		case IDBUTSTEP
 			rlinecur+=1
 			linecur_change(rlinecur)
-		'case IDBUTSTEPP
-		'case IDBUTSTEPM
-		'case IDBUTAUTO
-		'case IDBUTRUN
-		'case IDBUTSTOP
-		'case IDBUTMINI
-		'case IDBUTFREE
+			messbox("feature not implemented","button = IDBUTSTEP")
+		case IDBUTSTEPP
+			messbox("feature not implemented","button = IDBUTSTEPP")
+		case IDBUTSTEPM
+			messbox("feature not implemented","button = IDBUTSTEPM")
+		case IDBUTAUTO
+			messbox("feature not implemented","button = IDBUTAUTO")
+		case IDBUTRUN
+			messbox("feature not implemented","button = IDBUTRUN")
+		case IDBUTSTOP
+			messbox("feature not implemented","button = IDBUTSTOP")
+		case IDBUTFREE
+			messbox("feature not implemented","button = IDBUTFREE")
 		case IDBUTTOOL
 			HideWindow(hsettings,0)
+			messbox("feature not implemented","button = IDBUTTOOL")
 		case IDBUTFILE
 			select_file
-		case IDBUTRRUNE
+		case IDBUTRERUN
 			restart()
-		'case IDBUTATTCH
-		'case IDBUTKILL
-		'case IDNOTES
-		case IDLSTEXE
+		case IDBUTATTCH
+			messbox("feature not implemented","button = IDBUTATTACH")
+		case IDBUTKILL
+			messbox("feature not implemented","button = IDBUTKILL")
+		case IDBUTLASTEXE
 			var HMenuexe=CreatePopMenu()
 			For iitem As integer =0 To 9
 				If savexe(iitem)<>"" Then
@@ -69,15 +71,26 @@ sub button_action(button as integer)
 			Next
 			DisplayPopupMenu(HMenuexe, GlobalMouseX,GlobalMouseY)
 			Delete_Menu(HMenuexe)
-		case IDFASTRUN
+		case IDBUTFASTRUN
+			messbox("feature not implemented","button = IDBUTFASTRUN")
 			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
-		'case IDEXEMOD
-		'case IDBUTSTEPB
-		'case IDBUTSTEPT
+		case IDBUTEXEMOD
+			messbox("feature not implemented","button = IDBUTEXEMOD")
+		case IDBUTSTEPB
+			messbox("feature not implemented","button = IDBUTSTEPB")
+		case IDBUTSTEPT
+			messbox("feature not implemented","button = IDBUTSTEPT")
 		case IDBUTCURSR
 			messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
 			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
-		'case IDUPDATE
+		case IDBUTUPDATE
+			messbox("feature not implemented","button = IDBUTUPDATE")
+		case IDBUTENLRSRC
+			messbox("feature not implemented","button = IDBUTENLRSRC" )
+		case IDBUTENLRVAR
+			messbox("feature not implemented","button = IDBUTENLRVAR" )
+		case IDBUTENLRMEM
+			messbox("feature not implemented","button = IDBUTENLRMEM" )
 
 		case GSCINTILLA
 
@@ -93,7 +106,12 @@ sub button_action(button as integer)
 		case GAUTODELAY
 
 		case GCMDLPARAM
-
+		
+		case INPUTVALOK 
+			input_check()
+		case INPUTVALCANCEL
+			inputval=""
+		hidewindow(hinputbx,1)
 		case else
 			messbox("feature not implemented","sorry gadget="+str(button))
 	end select

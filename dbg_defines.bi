@@ -1,5 +1,5 @@
 ''defines etc for fbdebugger_new
-''dbg_define.bi
+''dbg_define.bi 
 
 #Define fbdebuggerversion "V 3.00 BETA 32-64bit"
 
@@ -155,7 +155,11 @@ Const   SRCMAX=1000		   ''max source file
 #define GTVIEWTHD 302
 #define GTVIEWWCH 302
 #define GDUMPMEM 320
-
+#define TABIDXVAR 0
+#define TABIDXPRC 1
+#define TABIDXTHD 2
+#define TABIDXWCH 3
+#define TABIDXDMP 4
 
 
 'button main screen also used for menu
@@ -165,23 +169,23 @@ Const   SRCMAX=1000		   ''max source file
 #define IDBUTAUTO   104
 #define IDBUTRUN    105
 #define IDBUTSTOP   106
-#define IDBUTMINI   107
+''not used   107
 #define IDBUTFREE   108
 #define IDBUTTOOL   109
 #define IDBUTFILE   110
-#define IDBUTRRUNE  111
+#define IDBUTRERUN  111
 #define IDBUTATTCH  112
 #define IDBUTKILL   113
-#define IDNOTES     114
-#define IDLSTEXE    115
-#define IDFASTRUN   116
-#define IDEXEMOD    117
+''not used   114
+#define IDBUTLASTEXE 115
+#define IDBUTFASTRUN 116
+#define IDBUTEXEMOD  117
 #define IDBUTSTEPB  118
 #define IDBUTSTEPT  119
 #define IDBUTCURSR  120
-#define IDUPDATE    128
+#define IDBUTUPDATE 128
 
-#define TTRRUNE 140 ''tooltip for button rerun
+#define TTRERUN 140 ''tooltip for button rerun
 
 ''NOT ANY MORE USED
 '#define IDWATCH1  120
@@ -194,9 +198,9 @@ Const   SRCMAX=1000		   ''max source file
 '#define IDDUMP    127
 
 
-#define ENLRSRC   130
-#define ENLRVAR   131
-#define ENLRMEM   132
+#define IDBUTENLRSRC   130
+#define IDBUTENLRVAR   131
+#define IDBUTENLRMEM   132
 
 ''for menu options
 '' source
@@ -319,6 +323,7 @@ Const   SRCMAX=1000		   ''max source file
 #define KORANGE &h04A0FB
 #define KPURPLE &hEB80EB
 #define KGREY   &h808080
+#define KWHITE  &hFFFFFF
 
 #define RETYES 6
 #define RETNO  7
@@ -396,6 +401,11 @@ end extern
 #define GTEXTFTYPE 716
 #define GTEXTFSIZE 717
 #define GTEXTFCOLOR 718
+
+''for inputval box
+#define GINPUTVAL      720
+#define INPUTVALOK     721
+#define INPUTVALCANCEL 722
 
 Union valeurs
 vinteger As Integer
@@ -672,7 +682,7 @@ Type tvarfind
     tl As integer 'handle line
 End Type
 
-'show/expand
+''show/expand
 Const SHWEXPMAX=10 'max shwexp boxes
 Const VRPMAX=5000  'max elements in each treeview
 Type tshwexp
@@ -700,8 +710,16 @@ Type tvrp
 	iv As Integer   'index of variables 
 End Type
 
+
+''Backtracking
+Type tbcktrk
+	As Integer bcw
+	As Integer frw
+End Type
 ''============================= Declares ==============================================
 Declare Function win9AddNewGadget(ByVal gadget As Integer, ByVal hWin As HWND) As integer
 Declare Function win9GetCurrent() As HWND
 declare function source_name(fullname as string)as string
 declare function dll_name(FileHandle As HANDLE,t As Integer =1 )As String
+declare function var_find2(tv As HWND) As Integer
+declare sub proc_del(j As Integer,t As Integer=1)

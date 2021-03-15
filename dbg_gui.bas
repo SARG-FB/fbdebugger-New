@@ -1,6 +1,55 @@
 ''gui for fbdebuuger_new
 ''dbg_gui.bas
 
+'================================================================================
+'' finds child of an item
+'================================================================================
+private function FindChildTreeviewItem(iGadget as long, Item As Integer ) as integer
+	#ifdef __fb_win32__
+		return sendmessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_CHILD,Cast(LPARAM,item))
+	#else
+		messbox("Missing feature for linux","FindChildtreeviewItem")
+		return 0
+	#endif
+end function
+'================================================================================
+'' finds parent of an item
+'================================================================================
+private function FindParentTreeviewItem(iGadget as long, Item As Integer ) as integer
+	#ifdef __fb_win32__
+		return sendmessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_PARENT,Cast(LPARAM,item))
+	#else
+		messbox("Missing feature for linux","FindParentTreeviewItem")
+		return 0
+	#endif
+end function
+'=======================================================================================
+'' displays an item in a treeview (can be removed when the feature will be added in W9
+'=======================================================================================
+private Sub SetSelectTreeViewItem(iGadget As Long  , Item As Integer )
+	#ifdef __fb_win32__
+		setfocus(Gadgetid(iGadget))
+		sendmessage(Gadgetid(iGadget) , TVM_SELECTITEM ,  TVGN_CARET , Cast(lparam, Item))
+	#else
+		Dim As Any Ptr treeview = Gadgetid(iGadget)
+		Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
+		Dim As GtkTreeSelection Ptr selection = gtk_tree_view_get_selection (treeview)
+		Dim As GtkTreeIter iter , iterfirst
+		Dim As GtkTreePath Ptr path
+		If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
+			iter.stamp =  iterfirst.stamp
+			iter.user_data = Cast(Any Ptr,Item)
+			path = gtk_tree_model_get_path(treestore, @iter)
+			gtk_tree_view_scroll_to_cell (treeview, path, NULL, True, 0.5, 0.0)
+			gtk_tree_view_expand_to_path(treeview,path)
+			If gtk_tree_view_row_expanded(treeview , path) Then
+				gtk_tree_view_collapse_row(treeview , path )
+			Endif
+			gtk_tree_selection_select_path(selection, path)		
+			gtk_tree_path_free(path)		
+		Endif
+	#endif
+End Sub
 '=====================
 ''Loading of buttons
 '=====================
@@ -98,10 +147,23 @@ end sub
 '===================================================
 '' set/unset breakpoint markers
 '===================================================
-sub breakpoint_marker(src as integer,pline as integer,brk as integer)
-	source_change(src)
-	if brk then
-		send_sci(SCI_MARKERADD, pline-1, brk)
+sub brk_marker(brkidx as integer)
+	dim as integer src,pline=brkol(brkidx).nline,typ
+	
+	if brkol(brkidx).typ>2 then
+		typ=4 ''disabled --> marker
+	else
+		if brkol(brkidx).cntrsav then
+			typ=3 ''if counter<>0 --> marker 3
+		else
+			typ=brkol(brkidx).typ  ''permanent or tempo --> marker 1 or 2
+		EndIf
+	EndIf
+	
+	source_change(brkol(brkidx).isrc)
+	
+	if typ then
+		send_sci(SCI_MARKERADD, pline-1, typ)
 	else
 		send_sci(SCI_MARKERDELETE, pline-1, -1)
 	end if
@@ -190,11 +252,10 @@ private sub create_sci(gadget as long, x as Long, y as Long , w as Long , h as L
 	send_sci(SCI_MarkerDefine, 4,SC_MARK_FULLRECT)
 	send_sci(SCI_MarkerDefine, 5,SC_MARK_SHORTARROW)
 	''color markers
-	send_sci(SCI_MARKERSETFORE,0,KBLUE)
-	send_sci(SCI_MARKERSETBACK,0,KBLUE)
+	send_sci(SCI_MARKERSETFORE,0,KRED)
+	send_sci(SCI_MARKERSETBACK,0,KWHITE)
 	send_sci(SCI_MARKERSETFORE,1,KRED)
 	send_sci(SCI_MARKERSETBACK,1,KRED)
-
 	send_sci(SCI_MARKERSETFORE,2,KORANGE)
 	send_sci(SCI_MARKERSETBACK,2,KORANGE)
 	send_sci(SCI_MARKERSETFORE,3,KPURPLE)
@@ -227,7 +288,7 @@ end sub
 '=============================================
 '' settings window
 '=============================================
-private sub create_settings()
+private sub create_settingsbx()
 	hsettings=OpenWindow("Settings",10,10,500,500)
 	centerWindow(hsettings)
 	groupgadget(LOGGROUP,10,10,450,85,"Log  fbdebugger path"+slash+"dbg_log.txt")
@@ -250,6 +311,17 @@ private sub create_settings()
 	textgadget(GTEXTFCOLOR,12,300,200,15,"color",0)
 	
 end sub
+'=============================================
+'' inputval window
+'=============================================
+private sub create_inputbx()
+	hinputbx=OpenWindow("",10,10,80,150)
+	centerWindow(hinputbx)
+	StringGadget(GINPUTVAL,10,10,100,15,"")
+	ButtonGadget (INPUTVALOK, 10, 40, 60, 15,  "Ok")
+	ButtonGadget (INPUTVALCANCEL, 10, 40, 60, 15,  "Cancel")
+	hidewindow(hinputbx,1)
+end sub	
 '=========================================================================
 '' enables or disables buttons according the status and updates status
 '=========================================================================
@@ -263,12 +335,12 @@ private sub but_enable()
 			DisableGadget(IDBUTSTEPM,0)
 			DisableGadget(IDBUTAUTO,0)
 			DisableGadget(IDBUTRUN,0)
-			DisableGadget(IDFASTRUN,0)
+			DisableGadget(IDBUTFASTRUN,0)
 			DisableGadget(IDBUTSTOP,0)
 			DisableGadget(IDBUTCURSR,0)
 			DisableGadget(IDBUTFREE,0)
 			DisableGadget(IDBUTKILL,0)
-			DisableGadget(IDEXEMOD,0)
+			DisableGadget(IDBUTEXEMOD,0)
 			
 			SetStatusBarField(1,0,100,"Waiting "+stoplibel(stopcode))
 			SetStatusBarField(1,1,200,"Thread "+Str(thread(threadcur).id))
@@ -285,11 +357,11 @@ private sub but_enable()
 			DisableGadget(IDBUTSTEPM,1)
 			DisableGadget(IDBUTAUTO,1)
 			DisableGadget(IDBUTRUN,1)
-			DisableGadget(IDFASTRUN,1)
+			DisableGadget(IDBUTFASTRUN,1)
 			DisableGadget(IDBUTCURSR,1)
 			DisableGadget(IDBUTFREE,1)
 			''DisableGadget(IDBUTkill,1) ''to let the possibility to kill the debuggee when running
-			DisableGadget(IDEXEMOD,1)
+			DisableGadget(IDBUTEXEMOD,1)
 			Select Case runtype
 				Case RTRUN
 					SetStatusBarField(1,0,100,"Running")
@@ -306,11 +378,11 @@ private sub but_enable()
 			DisableGadget(IDBUTSTEPM,1)
 			DisableGadget(IDBUTAUTO,1)
 			DisableGadget(IDBUTRUN,1)
-			DisableGadget(IDFASTRUN,1)
+			DisableGadget(IDBUTFASTRUN,1)
 			DisableGadget(IDBUTCURSR,1)
 			DisableGadget(IDBUTFREE,1)
 			DisableGadget(IDBUTKILL,1)
-			DisableGadget(IDEXEMOD,1)
+			DisableGadget(IDBUTEXEMOD,1)
       		SetStatusBarField(1,0,100,"Auto")
    		case Else 'prun=1 --> terminated or no pgm
 			DisableGadget(IDBUTSTEP,1)
@@ -320,12 +392,12 @@ private sub but_enable()
 			DisableGadget(IDBUTSTEPM,1)
 			DisableGadget(IDBUTAUTO,1)
 			DisableGadget(IDBUTRUN,1)
-			DisableGadget(IDFASTRUN,1)
+			DisableGadget(IDBUTFASTRUN,1)
 			DisableGadget(IDBUTSTOP,1)
 			DisableGadget(IDBUTCURSR,1)
 			DisableGadget(IDBUTFREE,1)
 			DisableGadget(IDBUTKILL,1)
-			DisableGadget(IDEXEMOD,1)
+			DisableGadget(IDBUTEXEMOD,1)
     	  	If runtype=RTEND Then SetStatusBarField(1,0,100,"Terminated")
    	End Select
 End Sub
@@ -349,8 +421,8 @@ private sub menu_enable()
 	SetStateMenu(HMenusource,IDBUTSTEPB,flag)
 	SetStateMenu(HMenusource,IDBUTSTEPT,flag)
 	SetStateMenu(HMenusource,IDBUTRUN,  flag)
-	SetStateMenu(HMenusource,IDEXEMOD,  flag)
-	SetStateMenu(HMenusource,IDFASTRUN, flag)
+	SetStateMenu(HMenusource,IDBUTEXEMOD,  flag)
+	SetStateMenu(HMenusource,IDBUTFASTRUN, flag)
 	SetStateMenu(HMenusource,IDBUTKILL, flag)
 	SetStateMenu(HMenusource,IDBUTSTOP, flag)
 	SetStateMenu(HMenusource,IDBUTAUTO, flag)
@@ -446,12 +518,12 @@ private sub menu_set()
 	MenuItem(IDBUTSTEPT,HMenusource,"Step top called proc / T")
 	MenuItem(IDBUTSTEPB,HMenusource,"Step bottom current proc / B")
 	MenuItem(IDBUTRUN,HMenusource,"Run / R")
-	MenuItem(IDFASTRUN,HMenusource,"Fast Run / F")
+	MenuItem(IDBUTFASTRUN,HMenusource,"Fast Run / F")
 	MenuItem(IDBUTSTOP,HMenusource,"Halt running debuggee / H")
 	MenuItem(IDBUTKILL,HMenusource,"Kill debuggee / K")
 	MenuItem(IDBUTAUTO,HMenusource,"Step auto / A")
 	MenuItem(MNTHRDAUT,HMenusource,"Step auto multi threads / D")
-	MenuItem(IDEXEMOD,HMenusource,"Modify execution / M")
+	MenuItem(IDBUTEXEMOD,HMenusource,"Modify execution / M")
 	MenuBar(HMenusource)
 	MenuItem(MNSETBRK,HMenusource,"Set/Clear Breakpoint / F3")
 	MenuItem(MNSETBRKC,HMenusource,"Set/clear Breakpoint with counter Ctrl+F3")
@@ -613,21 +685,19 @@ private sub gui_init
 	load_button(IDBUTAUTO,@"auto.bmp",200,@"Step [A]utomatically, stopped by [H]alt",)
 	load_button(IDBUTRUN,@"run.bmp",232,@"[R]un, stopped by [H]alt",)
 	load_button(IDBUTSTOP,@"stop.bmp",264,@"[H]alt running pgm",)
-	load_button(IDFASTRUN,@"fastrun.bmp",328,@"[F]AST Run to cursor",)
-	load_button(IDEXEMOD,@"exemod.bmp",360,@"[M]odify execution, continue with line under cursor",)
+	load_button(IDBUTFASTRUN,@"fastrun.bmp",328,@"[F]AST Run to cursor",)
+	load_button(IDBUTEXEMOD,@"exemod.bmp",360,@"[M]odify execution, continue with line under cursor",)
 	load_button(IDBUTFREE,@"free.bmp",392,@"Release debuged prgm",)
 	load_button(IDBUTKILL,@"kill.bmp",424,@"CAUTION [K]ill process",)
-	load_button(IDBUTRRUNE,@"restart.bmp",466,@"Restart debugging (exe)",TTRRUNE,0)
-	load_button(IDLSTEXE,@"multiexe.bmp",498,@"Last 10 exe(s)",,0)
+	load_button(IDBUTRERUN,@"restart.bmp",466,@"Restart debugging (exe)",TTRERUN,0)
+	load_button(IDBUTLASTEXE,@"multiexe.bmp",498,@"Last 10 exe(s)",,0)
 	load_button(IDBUTATTCH,@"attachexe.bmp",530,@"Attach running program",,0)
 	load_button(IDBUTFILE,@"files.bmp",562,@"Select EXE/BAS",,0)
-	load_button(IDNOTES,@"notes.bmp",596,@"Open or close notes",,0)
-	''missing line for the icon of the second notes
 	load_button(IDBUTTOOL,@"tools.bmp",628,"Some usefull....Tools",,0)
-	load_button(IDUPDATE,@"update.bmp",660,@"Update On /Update off : variables, dump",,0)
-	load_button(ENLRSRC,@"source.bmp",692,@"Enlarge/reduce source",)
-	load_button(ENLRVAR,@"varproc.bmp",724,@"Enlarge/reduce proc/var",)
-	load_button(ENLRMEM,@"memory.bmp",756,@ "Enlarge/reduce dump memory",)
+	load_button(IDBUTUPDATE,@"update.bmp",660,@"Update On /Update off : variables, dump",,0)
+	load_button(IDBUTENLRSRC,@"source.bmp",692,@"Enlarge/reduce source",)
+	load_button(IDBUTENLRVAR,@"varproc.bmp",724,@"Enlarge/reduce proc/var",)
+	load_button(IDBUTENLRMEM,@"memory.bmp",756,@ "Enlarge/reduce dump memory",)
 	
 	''bmb(25)=Loadbitmap(fb_hinstance,Cast(LPSTR,MAKEINTRESOURCE(1025))) 'if toogle noupdate
 	''no sure to implement this one	 
@@ -678,13 +748,13 @@ private sub gui_init
 	var htabmem=AddPanelGadgetItem(GRIGHTTABS,4,"Memory",,1)
 	hlviewdump=ListViewGadget(GDUMPMEM,0,0,499,299,LVS_EX_GRIDLINES)
 	AddListViewColumn(GDUMPMEM, "Address",0,0,100)
-	for icol as integer =1 to 4
-		AddListViewColumn(GDUMPMEM, "+0"+str((icol-1)*4),icol,icol,40)
-	next
+	'for icol as integer =1 to 4
+		'AddListViewColumn(GDUMPMEM, "+0"+str((icol-1)*4),icol,icol,40)
+	'next
 	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
 	
-	create_settings()
-	
+	create_settingsbx()
+	create_inputbx()
 	menu_set()
 end sub
 
