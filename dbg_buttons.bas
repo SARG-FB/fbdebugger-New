@@ -31,30 +31,65 @@ sub select_file()
     'endif
 
 end sub
-
+'==============================================================
+'' handles actions for each button
+'==============================================================
 sub button_action(button as integer)
 	select case button
-		case IDBUTSTEP
-			rlinecur+=1
-			linecur_change(rlinecur)
-			messbox("feature not implemented","button = IDBUTSTEP")
-		case IDBUTSTEPP
-			messbox("feature not implemented","button = IDBUTSTEPP")
-		case IDBUTSTEPM
-			messbox("feature not implemented","button = IDBUTSTEPM")
-		case IDBUTAUTO
-			messbox("feature not implemented","button = IDBUTAUTO")
+		case IDBUTSTEP 'STEP
+			stopcode=0
+			bcktrk_close
+			thread_resume()
+		case IDBUTSTEPP 'STEP+ over
+			procin=procsk
+			runtype=RTRUN
+			but_enable()
+			bcktrk_close
+			thread_resume()
+		Case IDBUTSTEPM 'STEP- out
+			If (threadcur<>0 andalso proc_find(thread(threadcur).id,KLAST)<>proc_find(thread(threadcur).id,KFIRST)) _
+			OrElse (threadcur=0 AndAlso proc(procr(proc_find(thread(0).id,KLAST)).idx).nm<>"main") Then 'impossible to go out first proc of thread, constructor for shared
+				procad=procsv
+				runtype=RTRUN
+				but_enable()
+			End If
+			bcktrk_close
+			thread_resume()
+        Case IDBUTAUTO 'simple thread auto
+			runtype=RTAUTO
+			but_enable()
+			bcktrk_close
+			thread_resume()
 		case IDBUTRUN
-			messbox("feature not implemented","button = IDBUTRUN")
+			runtype=RTRUN
+			but_enable()
+			bcktrk_close
+			fasttimer=Timer
+			thread_resume()
 		case IDBUTSTOP
-			messbox("feature not implemented","button = IDBUTSTOP")
+			If runtype=RTFREE Or runtype=RTFRUN Then
+				runtype=RTFRUN 'to treat free as fast
+				For i As Integer = 1 To linenb 'restore every breakpoint
+					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
+				Next
+			Else
+				runtype=RTSTEP:procad=0:procin=0:proctop=FALSE:procbot=0
+			EndIf
+			Stopcode=CSHALTBU
 		case IDBUTFREE
-			messbox("feature not implemented","button = IDBUTFREE")
+		   If messbox("FREE","Release debugged prgm",MB_YESNO)=RETYES Then
+				For i As Integer = 1 To linenb 'restore old instructions
+					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@rLine(i).sv,1,0)
+				Next
+				runtype=RTFREE
+				but_enable()
+				thread_resume()
+			End If
 		case IDBUTTOOL
 			HideWindow(hsettings,0)
 			messbox("feature not implemented","button = IDBUTTOOL")
 		case IDBUTFILE
-			select_file
+			select_file()
 		case IDBUTRERUN
 			restart()
 		case IDBUTATTCH
@@ -72,19 +107,41 @@ sub button_action(button as integer)
 			DisplayPopupMenu(HMenuexe, GlobalMouseX,GlobalMouseY)
 			Delete_Menu(HMenuexe)
 		case IDBUTFASTRUN
-			messbox("feature not implemented","button = IDBUTFASTRUN")
+			bcktrk_close
+			but_enable()
+			fastrun()
 			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
 		case IDBUTEXEMOD
 			messbox("feature not implemented","button = IDBUTEXEMOD")
-		case IDBUTSTEPB
-			messbox("feature not implemented","button = IDBUTSTEPB")
-		case IDBUTSTEPT
-			messbox("feature not implemented","button = IDBUTSTEPT")
+        Case IDBUTSTEPB 'STEP at bottom of proc
+			If rline(thread(threadcur).sv).ad<>proc(procsv).fn Then 'if current line is end of proc simple step
+				procbot=procsv
+				runtype=RTRUN
+				but_enable()
+			EndIf
+			bcktrk_close
+			thread_resume()
+        Case IDBUTSTEPT 'STEP at top of proc
+			If rline(thread(threadcur).sv).ad<>proc(procsv).fn Then 'if current line is end of proc simple step
+				proctop=TRUE
+				runtype=RTRUN
+				but_enable()
+			EndIf
+			bcktrk_close
+			thread_resume()
 		case IDBUTCURSR
 			messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
 			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
 		case IDBUTUPDATE
-			messbox("feature not implemented","button = IDBUTUPDATE")
+			if flagupdate=true then
+				flagupdate=false
+				SendMessage(butupdate,BM_SETIMAGE,IMAGE_BITMAP,Cast(LPARAM,bmb(25)))
+			else
+				flagupdate=true
+				SendMessage(butupdate,BM_SETIMAGE,IMAGE_BITMAP,Cast(LPARAM,bmb(24)))
+				var_sh()
+				dump_sh()
+			end if
 		case IDBUTENLRSRC
 			messbox("feature not implemented","button = IDBUTENLRSRC" )
 		case IDBUTENLRVAR

@@ -18,6 +18,7 @@ test_include2.bas
 test_include_main
 test_include_main.a64
 test_include_main.bas
+for_test_gui.bas
 test_win9.exe
 Window9.bi
 window9.chm

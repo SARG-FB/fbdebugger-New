@@ -1,6 +1,17 @@
 ''defines etc for fbdebugger_new
 ''dbg_define.bi 
 
+
+#macro mydefine(d,v)
+	#define ##d v
+	if defarray(v)<>"" then 
+		print "error value ";v;" for ";##d; " already used by ";defarray(v)
+	else	
+		defarray(v)=##d
+	end if
+#endmacro
+
+
 #Define fbdebuggerversion "V 3.00 BETA 32-64bit"
 
 '#define fulldbg_prt 'uncomment to get more information
@@ -407,6 +418,40 @@ end extern
 #define INPUTVALOK     721
 #define INPUTVALCANCEL 722
 
+''for dump memory
+#define GDUMPAPPLY 730
+#define GDUMPADR   731
+
+#define GDUMPTSIZE 732
+#define GDUMPSIZE  733
+
+#define GDUMPMOVEGRP 734
+#define GDUMPCL 735
+#define GDUMPCP 736
+#define GDUMPLL 737
+#define GDUMPLP 738
+#define GDUMPPL 739
+#define GDUMPPP 740
+
+#define GDUMUSEGRP 741
+#define GDUMPNEW 742
+#define GDUMPWCH  743
+#define GDUMPBRK  744
+#define GDUMPSHW  745
+
+#define GDUMPPTRGRP 746
+#define GDUMPPTRNO  747
+#define GDUMPPTR1   748
+#define GDUMPPTR2   749
+
+#define GDUMPBASEGRP 750
+#define GDUMPDEC 751
+#define GDUMPHEX 752
+
+#define GDUMPSGNGRP 753
+#define GDUMPSGN 754
+#define GDUMPUSGN 755
+
 Union valeurs
 vinteger As Integer
 vuinteger As UInteger
@@ -716,6 +761,10 @@ Type tbcktrk
 	As Integer bcw
 	As Integer frw
 End Type
+
+''index box
+Const INDEXBOXMAX=9
+
 ''============================= Declares ==============================================
 Declare Function win9AddNewGadget(ByVal gadget As Integer, ByVal hWin As HWND) As integer
 Declare Function win9GetCurrent() As HWND
@@ -723,3 +772,4 @@ declare function source_name(fullname as string)as string
 declare function dll_name(FileHandle As HANDLE,t As Integer =1 )As String
 declare function var_find2(tv As HWND) As Integer
 declare sub proc_del(j As Integer,t As Integer=1)
+declare sub dsp_change(index As Integer)

@@ -1,6 +1,9 @@
 '=================================================================
 '===== DEBUGGER FOR FREEBASIC === (C) 2006-2021 Laurent GRAS =====
 '=================================================================
+
+dim shared as string defarray(99999) ''remove me when all runs finely
+
 #include once "dbg_defines.bi"
 
 ''source files
@@ -139,13 +142,15 @@ Dim Shared brkvhnd As HWND   'handle
 
 ''Backtracking
 Dim Shared As Integer bcktrkpr
+Dim Shared As HWND bcktrkbx
+
 
 ''dump memory
 Dim Shared dumplines As Integer =20 'nb lines(default 20)
 Dim Shared dumpadr As Integer    'address for dump
 Dim Shared dumpdec As Integer =0 'value dump dec=0 or hexa=50
 Dim Shared dumpnbcol As Integer
-Dim Shared dumptyp As Integer =1
+Dim Shared dumptyp As Integer =2
 
 ''font
 Dim Shared As Integer fontsize=KSIZE8
@@ -199,6 +204,12 @@ dim shared as HMENU HMenuthd
 dim shared as HMENU HMenutools
 
 Dim Shared fasttimer As double
+
+
+''index box
+Dim Shared hindexbx(INDEXBOXMAX) As HWND
+Dim Shared autoupd(INDEXBOXMAX) As BOOLEAN
+
 
 ''slash for file WDS<>LNX
 dim shared as zstring *2 slash

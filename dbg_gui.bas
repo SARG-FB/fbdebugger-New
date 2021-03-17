@@ -2,27 +2,117 @@
 ''dbg_gui.bas
 
 '================================================================================
-'' finds child of an item
+'' Returns first child of an item
 '================================================================================
-private function FindChildTreeviewItem(iGadget as long, Item As Integer ) as integer
-	#ifdef __fb_win32__
-		return sendmessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_CHILD,Cast(LPARAM,item))
-	#else
-		messbox("Missing feature for linux","FindChildtreeviewItem")
-		return 0
-	#endif
-end function
+private Function GetChildItemTreeView(iGadget As Long , iItem As Integer) As Integer
+    
+    #ifdef __fb_win32__
+        
+        Return Cast(Integer,SendMessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_CHILD,Cast(LPARAM,iItem)))
+        
+    #else
+        
+        Dim As Any Ptr treeview = Gadgetid(iGadget)
+        
+        Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
+        
+        Dim As GtkTreeIter iterChild , iterfirst , iterParent
+        
+        If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
+            
+            iterParent.stamp =  iterfirst.stamp
+            
+            iterParent.user_data = Cast(Any Ptr,iItem)
+            
+            if gtk_tree_model_iter_children(treestore, @iterChild , @iterParent ) then
+                
+                If iterChild.stamp Then
+                    
+                    Return Cast(Integer , iterChild.user_data)
+                    
+                Endif
+                
+            EndIf
+
+        Endif
+        
+    #endif
+    
+End Function
 '================================================================================
-'' finds parent of an item
+'' Returns next child of an item
 '================================================================================
-private function FindParentTreeviewItem(iGadget as long, Item As Integer ) as integer
-	#ifdef __fb_win32__
-		return sendmessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_PARENT,Cast(LPARAM,item))
-	#else
-		messbox("Missing feature for linux","FindParentTreeviewItem")
-		return 0
-	#endif
-end function
+Function GetNextChildItemTreeView(iGadget As Long , iItem As Integer) As Integer
+    
+    #ifdef __fb_win32__
+        
+        Return Cast(Integer,SendMessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_NEXT,Cast(LPARAM,iItem)))
+        
+    #else
+        
+        Dim As Any Ptr treeview = Gadgetid(iGadget)
+        
+        Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
+        
+        Dim As GtkTreeIter iterChild , iterfirst 
+        
+        If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
+            
+            iterChild.stamp = iterfirst.stamp
+            
+            iterChild.user_data = Cast(Any Ptr,iItem)
+            
+            if gtk_tree_model_iter_next(treestore, @iterChild) then
+                
+                If iterChild.stamp Then
+                    
+                    Return Cast(Integer , iterChild.user_data)
+                    
+                Endif
+                
+            EndIf
+
+        Endif
+        
+    #endif
+    
+End Function
+'================================================================================
+'' returns parent of an item
+'================================================================================
+private Function GetParentItemTreeView(iGadget As Long , iItem As Integer) As Integer
+    
+    #ifdef __fb_win32__
+        
+        Return Cast(Integer,SendMessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_PARENT,Cast(LPARAM,iItem)))
+        
+    #else
+        
+        Dim As Any Ptr treeview = Gadgetid(iGadget)
+        
+        Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
+        
+        Dim As GtkTreeIter iterChild , iterfirst , iterParent
+        
+        If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
+            
+            iterChild.stamp =  iterfirst.stamp
+            
+            iterChild.user_data = Cast(Any Ptr,iItem)
+            
+            gtk_tree_model_iter_parent(treestore, @iterParent , @iterChild )
+            
+            If iterParent.stamp Then
+                
+                Return Cast(Integer , iterParent.user_data)
+                
+            Endif
+            
+        Endif
+        
+    #endif
+    
+End Function
 '=======================================================================================
 '' displays an item in a treeview (can be removed when the feature will be added in W9
 '=======================================================================================
@@ -53,9 +143,9 @@ End Sub
 '=====================
 ''Loading of buttons
 '=====================
-private sub load_button(id as integer,button_name as zstring ptr,xcoord as integer,tooltiptext as zstring ptr=0,idtooltip as integer=-1,disab as long=1)
-	Var HIMAGE=Load_image("."+slash+"buttons"+slash+*button_name)
-	ButtonImageGadget(id,xcoord,0,30,26,HIMAGE,  BS_BITMAP)
+private sub load_button(id as integer,button_name as zstring ptr,xcoord as integer,ycoord as integer=0,tooltiptext as zstring ptr=0,idtooltip as integer=-1,disab as long=1)
+	Var himage=Load_image("."+slash+"buttons"+slash+*button_name)
+	ButtonImageGadget(id,xcoord,ycoord,30,26,himage,  BS_BITMAP)
 	if tooltiptext then
 		if idtooltip<>-1 then
 			GadgetToolTip(id,*tooltiptext,idtooltip)
@@ -194,6 +284,61 @@ end sub
 		'? pSn->nmhdr.hwndFrom ' hwnd sciHWND
 	End Sub
 #endif
+
+'=============================================================
+'' creates the window for handling parameters of dump memory
+'=============================================================
+private sub create_dumpbx()
+	hdumpbx=OpenWindow("Handling dump parameters",10,10,354,320,WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	centerWindow(hdumpbx)
+
+	load_button(IDBUTENLRMEM,@"memory.bmp",300,5,@"Reduce the window",,0)
+	
+	ButtonGadget(GDUMPAPPLY,12,5,110,15,"Apply address : ")
+	stringgadget(GDUMPADR,130,5,75,15,"123456789")
+
+	textgadget(GDUMPTSIZE,12,25,105,15,"Size of column : ",0)
+	ListBoxGadget(GDUMPSIZE,130,25,75,70)
+	AddListBoxItem(GDUMPSIZE,"1 byte")
+	AddListBoxItem(GDUMPSIZE,"2 bytes")
+	AddListBoxItem(GDUMPSIZE,"4 bytes")	
+	AddListBoxItem(GDUMPSIZE,"8 bytes")
+	SetItemListBox(GDUMPSIZE,dumptyp)
+	
+	groupgadget(GDUMPBASEGRP,10,90,130,40,"Dec or hex")
+	optiongadget(GDUMPDEC,15,107,50,18,"Dec")
+	optiongadget(GDUMPHEX,70,107,50,18,"Hex")
+	SetGadgetState(GDUMPDEC,1)	
+	
+	groupgadget(GDUMPSGNGRP,160,90,145,40,"Signed or Unsigned")
+	optiongadget(GDUMPSGN,165,107,50,18,"Sgn")
+	optiongadget(GDUMPUSGN,220,107,52,18,"Usgn")	
+	SetGadgetState(GDUMPSGN,1)
+	
+	groupgadget(GDUMPMOVEGRP,10,136,205,46,"Move by Cell / Line / Page")
+	ButtonGadget(GDUMPCL,12, 154, 30, 20,  "C-")
+	ButtonGadget(GDUMPCP,44, 154, 30, 20,  "C+")
+	ButtonGadget(GDUMPLL,80, 154, 30, 20,  "L-")
+	ButtonGadget(GDUMPLP,112, 154, 30, 20,  "L+")
+	ButtonGadget(GDUMPPL,148, 154, 30, 20,  "P-")
+	ButtonGadget(GDUMPPP,180, 154, 30, 20,  "P+")
+	
+	groupgadget(GDUMUSEGRP,10,185,338,100,"Use cell value for")
+	ButtonGadget(GDUMPNEW,12,202,80,20,"NEW ADR")
+	ButtonGadget(GDUMPWCH,95,202,80, 20,  "WATCHED")
+	ButtonGadget(GDUMPBRK,178,202,80, 20,  "BREAK ON")
+	ButtonGadget(GDUMPSHW,260,202,80, 20,  "SHW/EXP")
+
+	groupgadget(GDUMPPTRGRP,15,230,250,50,"Use value as pointer")
+	optiongadget(GDUMPPTRNO,20,255,80,18,"No ptr")
+	optiongadget(GDUMPPTR1,100,255,50,18,"x 1")
+	optiongadget(GDUMPPTR2,180,255,50,18,"x 2")
+	SetGadgetState(GDUMPPTRNO,1)
+		
+	hidewindow(hdumpbx,0)
+	
+end sub
+
 '============================
 ''create scintilla windows
 '============================
@@ -289,7 +434,7 @@ end sub
 '' settings window
 '=============================================
 private sub create_settingsbx()
-	hsettings=OpenWindow("Settings",10,10,500,500)
+	hsettings=OpenWindow("Settings",10,10,500,500,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hsettings)
 	groupgadget(LOGGROUP,10,10,450,85,"Log  fbdebugger path"+slash+"dbg_log.txt")
 	optiongadget(GNOLOG,12,32,80,18,"No log")
@@ -309,7 +454,7 @@ private sub create_settingsbx()
 	textgadget(GTEXTFTYPE,12,260,200,15,"type",0)
 	textgadget(GTEXTFSIZE,12,280,200,15,"size",0)
 	textgadget(GTEXTFCOLOR,12,300,200,15,"color",0)
-	
+	hidewindow(hsettings,0)
 end sub
 '=============================================
 '' inputval window
@@ -676,28 +821,28 @@ private sub gui_init
 	GadgetToolTip(GCURRENTLINE,"next executed line"+chr(13)+"Click on me to reach the line",GCURLINETTIP)
 
 	''buttons
-	load_button(IDBUTSTEP,@"step.bmp",8,@"[S]tep/line by line",,0)
-	load_button(IDBUTCURSR,@"runto.bmp",40,@"Run to [C]ursor",,0)
-	load_button(IDBUTSTEPP,@"step_over.bmp",72,@"Step [O]ver sub/func",)
-	load_button(IDBUTSTEPT,@"step_start.bmp",104,@"[T]op next called sub/func",)
-	load_button(IDBUTSTEPB,@"step_end.bmp",136,@"[B}ottom current sub/func",)
-	load_button(IDBUTSTEPM,@"step_out.bmp",168,@"[E]xit current sub/func",)
-	load_button(IDBUTAUTO,@"auto.bmp",200,@"Step [A]utomatically, stopped by [H]alt",)
-	load_button(IDBUTRUN,@"run.bmp",232,@"[R]un, stopped by [H]alt",)
-	load_button(IDBUTSTOP,@"stop.bmp",264,@"[H]alt running pgm",)
-	load_button(IDBUTFASTRUN,@"fastrun.bmp",328,@"[F]AST Run to cursor",)
-	load_button(IDBUTEXEMOD,@"exemod.bmp",360,@"[M]odify execution, continue with line under cursor",)
-	load_button(IDBUTFREE,@"free.bmp",392,@"Release debuged prgm",)
-	load_button(IDBUTKILL,@"kill.bmp",424,@"CAUTION [K]ill process",)
-	load_button(IDBUTRERUN,@"restart.bmp",466,@"Restart debugging (exe)",TTRERUN,0)
-	load_button(IDBUTLASTEXE,@"multiexe.bmp",498,@"Last 10 exe(s)",,0)
-	load_button(IDBUTATTCH,@"attachexe.bmp",530,@"Attach running program",,0)
-	load_button(IDBUTFILE,@"files.bmp",562,@"Select EXE/BAS",,0)
-	load_button(IDBUTTOOL,@"tools.bmp",628,"Some usefull....Tools",,0)
-	load_button(IDBUTUPDATE,@"update.bmp",660,@"Update On /Update off : variables, dump",,0)
-	load_button(IDBUTENLRSRC,@"source.bmp",692,@"Enlarge/reduce source",)
-	load_button(IDBUTENLRVAR,@"varproc.bmp",724,@"Enlarge/reduce proc/var",)
-	load_button(IDBUTENLRMEM,@"memory.bmp",756,@ "Enlarge/reduce dump memory",)
+	load_button(IDBUTSTEP,@"step.bmp",8,,@"[S]tep/line by line",,0)
+	load_button(IDBUTCURSR,@"runto.bmp",40,,@"Run to [C]ursor",,0)
+	load_button(IDBUTSTEPP,@"step_over.bmp",72,,@"Step [O]ver sub/func",)
+	load_button(IDBUTSTEPT,@"step_start.bmp",104,,@"[T]op next called sub/func",)
+	load_button(IDBUTSTEPB,@"step_end.bmp",136,,@"[B}ottom current sub/func",)
+	load_button(IDBUTSTEPM,@"step_out.bmp",168,,@"[E]xit current sub/func",)
+	load_button(IDBUTAUTO,@"auto.bmp",200,,@"Step [A]utomatically, stopped by [H]alt",)
+	load_button(IDBUTRUN,@"run.bmp",232,,@"[R]un, stopped by [H]alt",)
+	load_button(IDBUTSTOP,@"stop.bmp",264,,@"[H]alt running pgm",)
+	load_button(IDBUTFASTRUN,@"fastrun.bmp",328,,@"[F]AST Run to cursor",)
+	load_button(IDBUTEXEMOD,@"exemod.bmp",360,,@"[M]odify execution, continue with line under cursor",)
+	load_button(IDBUTFREE,@"free.bmp",392,,@"Release debuged prgm",)
+	load_button(IDBUTKILL,@"kill.bmp",424,,@"CAUTION [K]ill process",)
+	load_button(IDBUTRERUN,@"restart.bmp",466,,@"Restart debugging (exe)",TTRERUN,0)
+	load_button(IDBUTLASTEXE,@"multiexe.bmp",498,,@"Last 10 exe(s)",,0)
+	load_button(IDBUTATTCH,@"attachexe.bmp",530,,@"Attach running program",,0)
+	load_button(IDBUTFILE,@"files.bmp",562,,@"Select EXE/BAS",,0)
+	load_button(IDBUTTOOL,@"tools.bmp",628,,@"Some usefull....Tools",,0)
+	load_button(IDBUTUPDATE,@"update.bmp",660,,@"Update On /Update off : variables, dump",,0)
+	load_button(IDBUTENLRSRC,@"source.bmp",692,,@"Enlarge/reduce source",)
+	load_button(IDBUTENLRVAR,@"varproc.bmp",724,,@"Enlarge/reduce proc/var",)
+	load_button(IDBUTENLRMEM,@"memory.bmp",756,,@ "Enlarge/reduce dump memory",)
 	
 	''bmb(25)=Loadbitmap(fb_hinstance,Cast(LPSTR,MAKEINTRESOURCE(1025))) 'if toogle noupdate
 	''no sure to implement this one	 
@@ -755,6 +900,7 @@ private sub gui_init
 	
 	create_settingsbx()
 	create_inputbx()
+	create_dumpbx()
 	menu_set()
 end sub
 
