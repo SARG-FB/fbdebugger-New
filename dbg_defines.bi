@@ -1,7 +1,19 @@
 ''defines etc for fbdebugger_new
 ''dbg_define.bi 
 
-
+'enum gadgetsmainwindow
+    '
+    'MAIN_one
+    'MAIN_two
+    '
+'End Enum
+'
+'enum gadgetdialog
+    '
+    'DLG_one = MAIN_two+1
+    'DLG_two
+    '
+'End Enum
 #macro mydefine(d,v)
 	#define ##d v
 	if defarray(v)<>"" then 
@@ -172,6 +184,8 @@ Const   SRCMAX=1000		   ''max source file
 #define TABIDXWCH 3
 #define TABIDXDMP 4
 
+''log
+#define GEDITOR 330
 
 'button main screen also used for menu
 #define IDBUTSTEP   101
@@ -301,7 +315,7 @@ Const   SRCMAX=1000		   ''max source file
 #define MNCMPINF MNSETBRK +109
 #define MNJITDBG MNSETBRK +110
 #define MNLSTDLL MNSETBRK +111
-#define MNHIDLOG MNSETBRK +112
+'#define MNHIDLOG MNSETBRK +112 todo not used
 #define MNLSTSHC MNSETBRK +113
 #define MNFRTIMER MNSETBRK +114
 'ID for watched var
@@ -338,6 +352,73 @@ Const   SRCMAX=1000		   ''max source file
 
 #define RETYES 6
 #define RETNO  7
+
+#define KSHOW 0
+#define KHIDE 1
+
+''for breakpoint management
+enum 
+	GBRKDEL01=801
+	GBRKDEL02
+	GBRKDEL03
+	GBRKDEL04
+	GBRKDEL05
+	GBRKDEL06
+	GBRKDEL07
+	GBRKDEL08
+	GBRKDEL09
+	GBRKDEL10
+	GBRKDSB01
+	GBRKDSB02
+	GBRKDSB03
+	GBRKDSB04
+	GBRKDSB05
+	GBRKDSB06
+	GBRKDSB07
+	GBRKDSB08
+	GBRKDSB09
+	GBRKDSB10
+	GBRKLINE01
+	GBRKLINE02
+	GBRKLINE03
+	GBRKLINE04
+	GBRKLINE05
+	GBRKLINE06
+	GBRKLINE07
+	GBRKLINE08
+	GBRKLINE09
+	GBRKLINE10
+	GBRKCLOSE
+	GBRKDELALL
+	GBRKDISABLE
+	GBRKENABLE
+End Enum
+
+''index selection
+enum 
+	GIDXVAR=850
+	GIDXMIN1
+	GIDXMIN5=GIDXMIN1+4
+	GIDXMAX1
+	GIDXMAX5=GIDXMAX1+4
+	GIDXUP1
+	GIDXUP5=GIDXUP1+4
+	GIDXTABLE
+	GIDXAPPLY
+	GIDXDEC
+	GIDXINC
+	GIDXAUTO
+	GIDXUPD
+	GIDXROWP
+	GIDXROWL
+	GIDXPAGEL
+	GIDXPAGEP
+	GIDXBLKL
+	GIDXBLKP
+	GIDXCOLL
+	GIDXCOLP
+	GIDXWIDTH
+end enum
 
 #Ifdef __fb_win32__
 	#define send_sci(b,c,d) sendmessage(hscint,b,c,cast(integer,d))
@@ -773,3 +854,4 @@ declare function dll_name(FileHandle As HANDLE,t As Integer =1 )As String
 declare function var_find2(tv As HWND) As Integer
 declare sub proc_del(j As Integer,t As Integer=1)
 declare sub dsp_change(index As Integer)
+declare sub size_change()

@@ -2,6 +2,19 @@
 ''dbg_gui.bas
 
 '================================================================================
+'' Changes size gadgets when main window is resized
+'===================================================
+private sub size_changed()
+	'messbox("resizing",str(SizeX)+" "+str(SizeY))
+	if sizey>250 then
+		#ifdef __fb_win32__
+			ResizeWindow(hscint,0,65,,WindowClientHeight(hmain)-90)
+		#else
+			messbox("Function not coded under linux","so size remains inchanged")
+		#endif
+	end if
+end sub
+'================================================================================
 '' Returns first child of an item
 '================================================================================
 private Function GetChildItemTreeView(iGadget As Long , iItem As Integer) As Integer
@@ -166,6 +179,7 @@ private sub source_change(numb as integer)
 	ptrdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
 	Send_sci(SCI_ADDREFDOCUMENT,0,ptrdoc)
 	Send_sci(SCI_SETDOCPOINTER,0,sourceptr(numb))
+	srcdisplayed=numb
 end sub
 '===================================================
 '' return line where is the cursor
@@ -250,6 +264,7 @@ sub brk_marker(brkidx as integer)
 		EndIf
 	EndIf
 	
+	src=srcdisplayed
 	source_change(brkol(brkidx).isrc)
 	
 	if typ then
@@ -257,6 +272,38 @@ sub brk_marker(brkidx as integer)
 	else
 		send_sci(SCI_MARKERDELETE, pline-1, -1)
 	end if
+	
+	source_change(src)
+end sub
+'========================================================
+'' displays the breakpoint data
+'========================================================
+private sub brk_manage()
+	dim as string text
+	dim as integer srcprev=srcdisplayed
+	
+	For ibrk as integer =1 To brknb
+		source_change(brkol(ibrk).isrc)
+		text=line_text(brkol(ibrk).nline-1)
+		
+		text=" "+source_name(source(brkol(ibrk).isrc))+" ["+Str(brkol(ibrk).nline)+"] cntr="+Str(brkol(ibrk).counter)+" >> "+Left(Trim(text,Any Chr(9)+" "),50)
+		SetGadgetText(GBRKLINE01+ibrk-1,text)
+		hidegadget(GBRKLINE01+ibrk-1,0)
+
+		hidegadget(GBRKDEL01+ibrk-1,0)
+
+		If brkol(GBRKDSB01+ibrk-1).typ>2 Then text="ENB" Else text="DSB"
+		SetGadgetText(GBRKDSB01+ibrk-1,text)
+		hidegadget(GBRKDSB01+ibrk-1,0)
+	next
+	''hides the last lines
+	For ibrk as integer =brknb+1 to 10
+		hidegadget(GBRKLINE01+ibrk-1,1)
+		hidegadget(GBRKDSB01+ibrk-1,1)
+		hidegadget(GBRKDEL01+ibrk-1,1)
+	next
+	source_change(srcprev)
+	hidewindow(hbrkbx,KSHOW)
 end sub
 '======================================
 '' notification from scintilla gadget
@@ -285,13 +332,73 @@ end sub
 	End Sub
 #endif
 
+'========================================================
+'' creates the wondow for managing the array indexes
+'========================================================
+private sub create_indexbx()
+	dim as integer ypos
+	hindexbx=OpenWindow("Array index management",10,10,800,550)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	centerWindow(hindexbx)
+	hidewindow(hindexbx,KSHOW) 'KHIDE)
+
+	textgadget(GIDXVAR,18,5,501,18,"Variable name + data")
+	
+	For idx as integer =0 To 4
+		textgadget(GIDXMIN1+idx,18,30+28*idx,93,18,"1")
+		textgadget(GIDXMAX1+idx,117,30+28*idx,93,18,"15")
+		spingadget(GIDXUP1+idx,219,27+28*idx,102,25,100,-5,9)
+	next
+
+	buttongadget(GIDXAPPLY,327,27,66,18,"Apply")
+	buttongadget(GIDXDEC,399,27,35,18,"dec")
+	buttongadget(GIDXINC,435,27,35,18,"inc")
+
+	CheckBoxGadget(GIDXAUTO,651,130,100,15,"Auto update")
+	buttongadget(GIDXUPD,651,170,70,18,"Update")
+	buttongadget(GIDXROWP,651,195,70,18,"Row +")
+	buttongadget(GIDXROWL,651,220,70,18,"Row -")
+	buttongadget(GIDXPAGEP,651,245,70,18,"Page +")
+	buttongadget(GIDXPAGEL,651,270,70,18,"Page -")
+	buttongadget(GIDXCOLP,651,295,70,18,"Column +")
+	buttongadget(GIDXCOLL,651,320,70,18,"Column -")
+	buttongadget(GIDXBLKP,651,345,70,18,"Block + >")
+	buttongadget(GIDXBLKL,651,370,70,18,"< Block -")
+	spingadget(GIDXWIDTH,648,400,80,20,80,25,50)
+	listviewgadget(GIDXTABLE,18,170,624,290,LVS_EX_GRIDLINES)
+end sub
+'========================================================
+'' creates the wondow for managing the breakpoint data
+'========================================================
+private sub create_brkbx()
+	dim as integer ypos
+	hbrkbx=OpenWindow("Breakpoint management",10,10,550,350)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	centerWindow(hbrkbx)
+	hidewindow(hbrkbx,KSHOW)'KHIDE)
+
+	For ibrk as integer =0 To 9
+		ypos=24+24*ibrk
+		buttongadget(GBRKDEL01+ibrk,10,ypos,35,18,"DEL")
+		'hidegadget(GBRKDEL01+ibrk,1)
+		buttongadget(GBRKDSB01+ibrk,48,ypos,35,18,"DSB")
+		'hidegadget(GBRKDSB01+ibrk,1)
+		textgadget(GBRKLINE01+ibrk,90,ypos-1,450,18,"Test lenght of line could be greater")
+		'hidegadget(GBRKLINE01+ibrk,1)
+	Next
+
+	buttongadget(GBRKCLOSE,10,290,80,15,"Close")
+	buttongadget(GBRKDELALL,105,290,80,15,"Delete all")
+	buttongadget(GBRKDISABLE,200,290,80,15,"Disable all")
+	buttongadget(GBRKENABLE,285,290,80,15,"Enable all")
+
+end sub
 '=============================================================
 '' creates the window for handling parameters of dump memory
 '=============================================================
 private sub create_dumpbx()
 	hdumpbx=OpenWindow("Handling dump parameters",10,10,354,320,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hdumpbx)
-
+	hidewindow(hdumpbx,KHIDE)
+	
 	load_button(IDBUTENLRMEM,@"memory.bmp",300,5,@"Reduce the window",,0)
 	
 	ButtonGadget(GDUMPAPPLY,12,5,110,15,"Apply address : ")
@@ -334,15 +441,13 @@ private sub create_dumpbx()
 	optiongadget(GDUMPPTR1,100,255,50,18,"x 1")
 	optiongadget(GDUMPPTR2,180,255,50,18,"x 2")
 	SetGadgetState(GDUMPPTRNO,1)
-		
-	hidewindow(hdumpbx,0)
-	
+			
 end sub
 
 '============================
 ''create scintilla windows
 '============================
-private sub create_sci(gadget as long, x as Long, y as Long , w as Long , h as Long  , Exstyle as integer = 0)
+private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as Long  , Exstyle as integer = 0)
 	dim as HWND hsci
 	#ifdef __fb_win32__
 		if dylibload("SciLexer.dll")=0 then ''todo if not loaded -->error and exit
@@ -436,6 +541,8 @@ end sub
 private sub create_settingsbx()
 	hsettings=OpenWindow("Settings",10,10,500,500,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hsettings)
+	hidewindow(hsettings,KHIDE)	
+	
 	groupgadget(LOGGROUP,10,10,450,85,"Log  fbdebugger path"+slash+"dbg_log.txt")
 	optiongadget(GNOLOG,12,32,80,18,"No log")
 	SetGadgetState(GNOLOG,1)''set on overriden by read_ini
@@ -454,7 +561,7 @@ private sub create_settingsbx()
 	textgadget(GTEXTFTYPE,12,260,200,15,"type",0)
 	textgadget(GTEXTFSIZE,12,280,200,15,"size",0)
 	textgadget(GTEXTFCOLOR,12,300,200,15,"color",0)
-	hidewindow(hsettings,0)
+
 end sub
 '=============================================
 '' inputval window
@@ -774,7 +881,6 @@ private sub menu_set()
 	MenuItem(MNDBGHELP,HMenutools, "Help / F1")
 	MenuItem(MNCLIPBRD,HMenutools, "Copy notes to clipboard")
 	MenuItem(MNSHWLOG,HMenutools,  "Show log file")
-	MenuItem(MNHIDLOG,HMenutools,  "Hide log file")
 	MenuItem(MNDELLOG,HMenutools,  "Delete log file")
 	MenuItem(MNSHENUM,HMenutools,  "List enum")
 	MenuItem(MNINFOS,HMenutools,  "Process list")
@@ -789,13 +895,13 @@ End Sub
 '===========================================
 '' Initialise all the GUI windows/gadgets
 '===========================================
-private sub gui_init
+private sub gui_init()
 
 	''main windows
 	hmain=OpenWindow("New FBDEBUGGER with window9 :-)",10,10,1100,500)
 	
 	''scintilla gadget
-	create_sci(GSCINTILLA,0,65,400,WindowClientHeight(hmain)-90,)
+	create_scibx(GSCINTILLA,0,65,400,WindowClientHeight(hmain)-90,)
 
 	''source panel
 	'Var font=LoadFont("Arial",40)
@@ -844,6 +950,7 @@ private sub gui_init
 	load_button(IDBUTENLRVAR,@"varproc.bmp",724,,@"Enlarge/reduce proc/var",)
 	load_button(IDBUTENLRMEM,@"memory.bmp",756,,@ "Enlarge/reduce dump memory",)
 	
+	
 	''bmb(25)=Loadbitmap(fb_hinstance,Cast(LPSTR,MAKEINTRESOURCE(1025))) 'if toogle noupdate
 	''no sure to implement this one	 
 	''load_button(IDBUTMINI,@"minicmd.bmp",296,@ "Mini window",)
@@ -866,8 +973,9 @@ private sub gui_init
 	''right panels
 	PanelGadget(GRIGHTTABS,500,30,499,300)
 	SetGadgetFont(GRIGHTTABS,CINT(LoadFont("Courier New",11)))
+	
 	''treeview proc/var
-	var htabvar=AddPanelGadgetItem(GRIGHTTABS,0,"Proc/var",,1)
+	var htabvar=AddPanelGadgetItem(GRIGHTTABS,TABIDXVAR,"Proc/var",,1)
 	'var hbmp = load_Icon("1.ico")
 	'var hbmp1 = load_Icon("2.ico")	
 	htviewvar=treeviewgadget(GTVIEWVAR,0,0,499,299,KTRRESTYLE)
@@ -877,20 +985,26 @@ private sub gui_init
 	Pos_=AddTreeViewItem(GTVIEWVAR,"my second var",cast (hicon, 0),0,0)
 	AddTreeViewItem(GTVIEWVAR,"first field",cast (hicon, 0),0,0,Pos_)
 	
-	HideWindow(htabvar,0)
+	'HideGadget(GTVIEWVAR,0)
+	hidewindow(htabvar,0)
+	
 	''treeview procs
-	var htabprc=AddPanelGadgetItem(GRIGHTTABS,1,"Procs",,1)
+	var htabprc=AddPanelGadgetItem(GRIGHTTABS,TABIDXPRC,"Procs",,1)
 	htviewprc=treeviewgadget(GTVIEWPRC,0,0,499,299,KTRRESTYLE)
 	AddTreeViewItem(GTVIEWPRC,"first proc",cast (hicon, 0),0,0)
 	AddTreeViewItem(GTVIEWPRC,"second proc",cast (hicon, 0),0,0)
 	AddTreeViewItem(GTVIEWPRC,"third proc",cast (hicon, 0),0,0)
+	
 	''treeview threads
-	var htabthrd=AddPanelGadgetItem(GRIGHTTABS,2,"Threads")
+	var htabthrd=AddPanelGadgetItem(GRIGHTTABS,TABIDXTHD,"Threads",,1)
+	htviewthd=treeviewgadget(GTVIEWTHD,0,0,499,299,KTRRESTYLE)
+		
 	''treeview watched
-	var htabwatch=AddPanelGadgetItem(GRIGHTTABS,3,"Watched")
+	var htabwatch=AddPanelGadgetItem(GRIGHTTABS,TABIDXWCH,"Watched",,1)
 	htviewwch=treeviewgadget(GTVIEWWCH,0,0,499,299,KTRRESTYLE)
+	
 	''dump memory
-	var htabmem=AddPanelGadgetItem(GRIGHTTABS,4,"Memory",,1)
+	var htabmem=AddPanelGadgetItem(GRIGHTTABS,TABIDXDMP,"Memory",,1)
 	hlviewdump=ListViewGadget(GDUMPMEM,0,0,499,299,LVS_EX_GRIDLINES)
 	AddListViewColumn(GDUMPMEM, "Address",0,0,100)
 	'for icol as integer =1 to 4
@@ -898,9 +1012,18 @@ private sub gui_init
 	'next
 	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
 	
+	''for log display
+	hlogbx=OpenWindow("Log file",10,10,450,550,WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	EditorGadget(GEDITOR,10,10,400,500,"Your log file if any")
+	ReadOnlyEditor(GEDITOR,1)
+	hidewindow(hlogbx,KHIDE)
+	
 	create_settingsbx()
 	create_inputbx()
 	create_dumpbx()
+	create_brkbx()
+	create_indexbx
 	menu_set()
+
 end sub
 

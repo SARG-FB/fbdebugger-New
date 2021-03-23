@@ -1,6 +1,521 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
+
+'================================================================================================================================
+
+'Functions to use:
+
+'ExpandTreeViewItem - expand iItem. If iFlagAll = 0 , expand only iItem. If iFlagAll = 1 , expand iItem and all child for a iITem
+
+'CollapseTreeViewItem - collapse iItem and all child for a iItem
+
+'ExpandTreeViewItemALL - expand all items
+
+'CollapseTreeViewItemALL - collapse all items
+
+'=================================================================================================================================
+
+#ifdef __fb_win32__
+	
+	Private Sub RecurExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagExpand As Long)
+		
+		Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
+		
+		If iChild Then 
+			
+			RecurExpandTreeViewItem(iGadget  , iChild , iFlagExpand)
+			
+		Endif
+		
+		Dim As Integer iBr = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_NEXT , Cast(LPARAM,iItem)))
+		
+		If iBr Then
+			
+			RecurExpandTreeViewItem(iGadget  , iBr ,  iFlagExpand)
+			
+		Endif
+		
+		If iFlagExpand Then
+			
+			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
+			
+		Else
+			
+			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_COLLAPSE , Cast(LPARAM,iItem))
+			
+		Endif
+		
+	End Sub
+	
+	Sub ExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagAll As Long)
+		
+		If iFlagAll Then
+			
+			Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
+			
+			If iChild Then 
+				
+				RecurExpandTreeViewItem(iGadget  , iChild , 1)
+				
+			Endif
+			
+			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
+			
+		Else
+			
+			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
+			
+		Endif
+		
+		Dim As Integer iTempItem = iItem
+		
+		While iTempItem
+			
+			iTempItem = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_PARENT , Cast(LPARAM,iTempItem)))
+			
+			If iTempItem Then
+				
+				SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iTempItem))
+				
+			Endif
+			
+		Wend
+		
+	End Sub
+	
+	Sub CollapseTreeViewItem(iGadget As Long  , iItem As Integer)
+		
+		Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
+		
+		If iChild Then 
+			
+			RecurExpandTreeViewItem(iGadget  , iChild , 0)
+			
+		Endif
+		
+		SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_COLLAPSE , Cast(LPARAM,iItem))
+		
+	End Sub
+	
+	Sub ExpandTreeViewItemALL(iGadget As Long)
+		
+		Dim As Integer iRoot = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_ROOT , 0))
+		
+		RecurExpandTreeViewItem(iGadget , iRoot , 1)
+		
+	End Sub
+	
+	Sub CollapseTreeViewItemALL(iGadget As Long)
+		
+		Dim As Integer iRoot = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_ROOT , 0))
+		
+		RecurExpandTreeViewItem(iGadget , iRoot , 0)
+		
+	End Sub
+	
+#else
+	
+	Sub ExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagAll As Long)
+		
+		Dim As Any Ptr treeview = Gadgetid(iGadget)
+		
+		Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
+		
+		Dim As GtkTreeIter iter , iterfirst
+		
+		Dim As GtkTreePath Ptr path
+		
+		If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
+			
+			iter.stamp =  iterfirst.stamp
+			
+			iter.user_data = Cast(Any Ptr,iItem)
+			
+			path = gtk_tree_model_get_path(treestore, @iter)
+			
+			gtk_tree_view_expand_to_path(treeview,path)
+			
+			If iFlagAll Then
+				
+				gtk_tree_view_expand_row(treeview , path , 1)
+				
+			Else
+				
+				gtk_tree_view_expand_row(treeview , path , 0)
+				
+				If gtk_tree_view_row_expanded(treeview , path) Then
+					
+					gtk_tree_view_collapse_row(treeview , path )
+					
+				Endif
+				
+			Endif
+			
+			gtk_tree_path_free(path)
+			
+		Endif
+		
+	End Sub
+	
+	Sub CollapseTreeViewItem(iGadget As Long  , iItem As Integer)
+		
+		Dim As Any Ptr treeview = Gadgetid(iGadget)
+		
+		Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
+		
+		Dim As GtkTreeIter iter , iterfirst
+		
+		Dim As GtkTreePath Ptr path
+		
+		If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
+			
+			iter.stamp =  iterfirst.stamp
+			
+			iter.user_data = Cast(Any Ptr,iItem)
+			
+			path = gtk_tree_model_get_path(treestore, @iter)
+			
+			gtk_tree_view_collapse_row(treeview , path)
+			
+			gtk_tree_path_free(path)
+			
+		Endif
+		
+	End Sub
+	
+	Sub ExpandTreeViewItemALL(iGadget As Long)
+		
+		gtk_tree_view_expand_all(Cast(Any Ptr ,Gadgetid(iGadget)))
+		
+	End Sub
+	
+	Sub CollapseTreeViewItemALL(iGadget As Long)
+		
+		gtk_tree_view_collapse_all(Cast(Any Ptr ,Gadgetid(iGadget)))
+		
+	End Sub
+	
+#endif
+'=================================================
+'' shows string zstring
+'=================================================
+private sub string_show(stringadr as integer)
+	dim as integer f,inc
+	dim as byte buf(32004)
+	dim as string text
+	inc=32000
+	f=stringadr
+	While inc<>0
+		If ReadProcessMemory(dbghand,Cast(LPCVOID,f+inc),@buf(0),4,0) Then
+			f+=inc
+			Exit While
+		Else
+			inc\=2
+		End If
+	Wend
+	ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@buf(0),f-stringadr,0)
+	buf(f-stringadr+1)=0 'end of string if length >32000
+	text=*cast(zstring ptr,@buf(0))
+	SetGadgetText(GEDITOR,text)
+end sub
+'=================================================
+'' shows wstring
+'=================================================
+private sub wstring_show(stringadr as integer)
+	dim wstrg As WString *32001,bufw As UShort
+	dim as integer inc
+	'todo ??? hEdit1   = fb_editw (WStr(""),hWnd,101,0*scalex,0*scaley,400*scalex,250*scaley)
+	inc=0:wstrg=""
+	ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@bufw,2,0)
+	While bufw
+		wstrg[inc]=bufw
+		inc+=1
+		If inc=32000 Then Exit While 'limit if wstring >32000
+		ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr+inc*2),@bufw,2,0)
+	Wend
+	WStrg[inc]=0 'end of wstring
+	SetGadgetText(GEDITOR,wstrg)
+end sub
+'=================================================
+'' lists dll
+'=================================================
+private sub dll_list()
+	dim as string text
+	For i As Integer=1 To dllnb
+		text+=dlldata(i).fnm
+		If dlldata(i).hdl=0 Then text+="  Currently not used"
+		text+=Chr(13)+Chr(10)
+	Next
+	SetGadgetText(GEDITOR,text)
+end sub
+
+'================================================================
+'' finds thread index based on cursor or threadid
+'================================================================
+private function thread_select(id As Integer =0) As Integer 
+	Dim text As string, pr As Integer, thid As Integer
+	Dim As Integer hitem,temp
+
+	If id =0 Then  'take on cursor
+	'get current hitem in tree
+		temp=GetItemTreeView(GTVIEWTHD)
+		Do 'search thread item
+			hitem=temp
+			temp=getParentItemTreeview(ID_In_Number(htviewcur),hitem)
+		Loop While temp
+
+		text=GetTextTreeView(GTVIEWTHD,hitem)
+		thid=ValInt(Mid(text,10,6))
+	Else
+		thid=id
+	End If
+	For p As Integer =0 To threadnb
+		If thid=thread(p).id Then Return p 'find index number
+	Next
+End Function
+'============================================================
+'' shows the next executed line=1 or threadcreate line=2
+'============================================================
+private sub thread_execline(s As Integer,thid As Integer=0) 
+ Dim As Integer thidx,thline
+   thidx=thread_select(thid)
+   If s=1 Then
+		thline=thread(thidx).sv
+   Else
+   	If thidx=0 Then
+   		messbox("Threadcreate line","Main so no such line !!")
+			Exit Sub
+   	EndIf
+   	If thread(thidx).st=0 Then 
+   		messbox("Threadcreate line","Impossible to locate in case of fast run !!")
+			Exit Sub
+   	EndIf
+		thline=thread(thidx).st
+   End If
+	source_change(rline(thline).sx)  ''display source
+    line_display(rline(thline).nu-1) ''Select Line
+End Sub
+'===========================================
+'' kills a thread
+'===========================================
+private sub thread_kill()
+ Dim t As Integer
+   t=thread_select()
+	If t=0 Then
+		messbox("Killing thread","This is the first thread --> process"+Chr(10)+"Use kill process button")
+		Exit Sub
+	EndIf
+	If messbox("Killing thread : "+Str(thread(t).id),"Are you sure ?"+Chr(10)+"It could cause Memory leak, etc.",MB_YESNO)=RETYES Then
+		#ifdef __fb_win32__
+			If terminatethread(thread(t).hd,999)=0 Then
+				messbox("Thread killing","Something goes wrong, error: "+Str(GetLastError))
+			EndIf
+		#else
+			messbox("Feature not coded","thread_kill for linux, maybe make a sub") ''todo
+		#endif
+	EndIf
+End Sub
+'=======================================
+''
+'=======================================
+private sub bcktrk_launch(pr As Integer,typ As Integer)''typ=1 -->simple backtracking / typ=2 -->full backtracking or chaining
+
+	messbox("Feature not yet coded","bcktrk_launch")
+
+	'If bcktrkbx<>0 Then Exit Sub
+	'bcktrkpr=pr
+	'If typ=1 Then
+		'fb_Dialog(@bcktrk1_box,"Proc Backtracking",windmain,300,100,190,40)
+	'Else
+		'fb_Dialog(@bcktrk2_box,"Proc call chaining",windmain,300,500,300,900)
+	'EndIf
+End Sub
+'===============================================================
+'' 1 juste calling / 2 backtracking / 3 chaining
+'===============================================================
+private sub proc_loccall(typ As Integer=1)
+	Dim As Integer hitem,temp,gadget
+	'get current hitem in tree
+	gadget=PanelGadgetGetCursel(GRIGHTTABS)
+	temp=GetItemTreeView(gadget)
+
+	If temp=procr(1).tv AndAlso typ=1 Then
+			messbox("Locate calling line","      Main so no call !!")
+		Exit Sub 	
+	EndIf
+
+	Do 'search index proc
+		hitem=temp
+		temp=GetParentItemTreeView(gadget,hitem)
+	Loop While temp
+
+	For i As Integer =1 To procrnb
+		If procr(i).tv=hitem Then
+			If typ=1 Then
+				If procr(i).cl=-1 Then 
+					'fb_message("Locate calling line","First proc of thread so no call !!"):Exit Sub
+					thread_execline(2):Exit Sub 
+				EndIf
+				temp=procr(i).cl 'calling line
+				source_change(rline(temp).sx) ''display source
+				line_display(rline(temp).nu-1)'Select Line
+			ElseIf typ=2 Then
+				bcktrk_launch(i,1)
+			ElseIf typ=3 Then
+				bcktrk_launch(i,2)
+			EndIf
+			Exit Sub
+  		EndIf
+	Next
+	If typ=2 Then
+		messbox("Locate calling line","Impossible to find with Global shared")
+	elseIf typ=2 Then
+		bcktrk_launch(1,1)
+	ElseIf typ=3 Then
+		bcktrk_launch(1,2)
+	EndIf
+End Sub
+'===================================================================================
+'' check if the line is executable return -1 if false otherwise the rline index
+'===================================================================================
+private function line_exec(pline as integer)as integer
+	For iline as integer =1 To linenb
+		If rline(iline).nu=pline AndAlso rline(iline).sx=srcdisplayed Then
+			return iline
+		end if
+	next
+	return -1
+end function
+'=======================================================
+'' shows address in memory of line where is the cursor
+'========================================================
+private sub line_adr() 
+Dim As Integer l, rl
+
+l=line_cursor()
+rl=line_exec(l)
+
+if rl=-1 Then
+	messbox("Line memory address","Not executable so no address")
+	Exit Sub
+EndIf
+
+For j As Integer =0 To procnb
+	If rline(rl).ad=proc(j).db Then 
+		messbox("Line memory address","Not executable so no address")
+		Exit Sub
+	EndIf
+Next
+messbox("Line memory address","Adr = "+Str(rline(rl).ad)+" / &h "+Hex(rline(rl).ad))
+End Sub
+'=======================================================
+'' displays the inputval box
+'=======================================================
+private sub input_bx(msg as string)
+	hidewindow(hinputbx,0)
+	SetWindowText(hinputbx,msg)
+	SetGadgetText(GINPUTVAL,inputval)
+end sub
+'=========================================================
+'' translates code message to the text (only windows)
+'=========================================================
+private sub winmsg()' winmessage
+	Dim Buffer As String*210
+	inputval=""
+	inputtyp=5
+	input_bx("Window message number")
+	
+	If inputval<>"" Then
+		'Format the message string
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, ByVal 0,ValInt(inputval) , LANG_NEUTRAL, Buffer, 200, ByVal 0)
+		messbox("Windows message","Code : "+inputval+Chr(10)+"Message : "+buffer) 
+	End If
+End Sub
+'===============================
+'' shows value in dec/hex/bin
+'===============================
+private sub dechexbin() 'dec/hex/bin
+inputval=""
+inputtyp=99
+input_bx("Input value HEX(&h) or DEC")
+If inputval<>"" Then
+    messbox("Value in dec, hex and bin","Dec= "+Str(Val(inputval))+Chr(10)+"Hex="+Hex(Val(inputval))+Chr(10)+"Bin="+Bin(Val(inputval)))
+End If
+End Sub
+'===============================
+''Goto selected line number
+'===============================
+private sub line_goto() 
+	Dim Linenb As Integer
+	inputval=""
+	inputtyp=99
+	linenb=line_cursor() ''get line zero based
+	input_bx("Current line "+Str(linenb)+", Goto line ?")
+	Linenb=ValInt(inputval)-1
+	If linenb>=0 Then
+	   line_display(linenb)
+	End If
+End Sub
+'=======================================
+'' lists processes ''todo win32 only
+'=======================================
+private sub process_list()
+	Dim prcinfo As PROCESSENTRY32,snap As HANDLE
+	dim as string text
+	snap=CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, 0)'Take snapshot of running processes
+	If snap <> INVALID_HANDLE_VALUE Then
+		prcinfo.dwSize=SizeOf(PROCESSENTRY32)
+		text="file Process name     ID  Nthread parent id"+Chr(13)+Chr(10)  
+		If Process32First (snap,@prcinfo) Then
+			Do
+				text+=fmt(prcinfo.szExeFile,20)+fmt(Str(prcinfo.th32ProcessID),5)+fmt(Str(prcinfo.cntThreads),3)+fmt(Str(prcinfo.th32ParentProcessID),5)+Chr(13)+Chr(10)    
+			Loop While  Process32Next (snap,@prcinfo)
+		Else
+			messbox("Process list error","Failed to create process list!")
+		End If
+		CloseHandle (snap)
+	End If
+	SetGadgetText(GEDITOR,text)
+end sub
+'=================================================
+'' shows log file
+'=================================================
+private sub log_show()
+		Dim f As Integer,buffer As string, l As Integer,flaguse As Integer
+	If (flaglog And 2) Then 'close if needed
+		flaglog And=1
+		dbg_prt(" $$$$___CLOSE ALL___$$$$ ") ''todo  sub close
+		flaguse=1
+	EndIf
+
+	If Dir(ExePath+"\dbg_log_file.txt")="" Then
+		messbox("Display dbg_log_file.txt","File doesn't exist")
+		Exit Sub
+	EndIf
+
+	f = FreeFile 
+	Open ExePath+"\dbg_log_file.txt" For Binary As #f 
+	l=Lof(f)
+	buffer = space(l)
+	Get #f,,buffer ''get file
+	Close #f
+
+	buffer=left(buffer,l)
+	SetGadgetText(GEDITOR,buffer)
+
+	If flaguse Then flaglog Or=2
+End Sub
+'=================================================
+'' deletes log file if it exists
+'=================================================
+private sub log_del()
+	Dim savflog As Integer=flaglog       'save see below
+	flaglog=flaglog And 1                'change the value but keeps screen output
+	dbg_prt(" $$$$___CLOSE ALL___$$$$ ") 'close the file if needed todo do a sub for closing by spliting the code
+	Kill (ExePath+"\dbg_log_file.txt")   'delete it
+	flaglog=savflog 'restore the value to keep the use of file log
+End Sub
 '=============================================
 private sub bcktrk_close()
 	If bcktrkbx Then 
@@ -12,13 +527,19 @@ End Sub
 '=============================================
 private sub index_update()
 	messbox("To be coded","updates all the index boxes")
-	For iindex As Long =0 To INDEXBOXMAX
-		If hindexbx(iindex)<>0 Then
-			If autoupd(iindex)=TRUE Then 
-				'todo index_update(iindex)
-			EndIf
+	'For iindex As Long =0 To INDEXBOXMAX
+		'If hindexbx(iindex)<>0 Then
+			'If autoupd(iindex)=TRUE Then 
+				''todo index_update(iindex)
+			'EndIf
+		'EndIf	
+	'Next
+	''for now only one index selection box
+	If hindexbx<>0 Then
+		If autoupd=TRUE Then 
+			'todo index_update(iindex)
 		EndIf
-	Next
+	EndIf
 end sub
 '======================================
 private sub dump_sh()
@@ -109,14 +630,6 @@ private function line_call(regip As UInteger) As Integer
 	Next
 	Return linenb	
 End Function
-'=======================================================
-'' displays the inputval box
-'=======================================================
-private sub input_bx(msg as string)
-	hidewindow(hinputbx,0)
-	SetWindowText(hinputbx,msg)
-	SetGadgetText(GINPUTVAL,inputval)
-end sub
 '===================================================
 '' checks if inputval is in the datatype range
 '===================================================
@@ -570,6 +1083,26 @@ private function proc_retval(prcnb As Integer) As String
 	End If
 	Return udt(proc(prcnb).rv).nm
 End Function
+'=======================================
+'' lists threads
+'=======================================
+private sub thread_list()
+	Dim As Integer thid,p
+	dim as string text
+	For i As Integer =0 To threadnb
+		thid=thread(i).id
+		text+="ID="+fmt2(Str(thid),4)+"/"+fmt2(Hex(thid),4)+" HD="+fmt2(Str(thread(i).hd),4)+"/"+fmt2(Hex(thread(i).hd),3)+" : "
+		If thread(i).sv<>-1 Then 'thread debugged	
+			p=proc_find(thid,KLAST)
+			text+=proc(procr(p).idx).nm
+			If threadhs=thread(i).hd Then text+="(next execution)"
+		Else
+			text+="(not debugged, hidden)"
+		End If
+		text+=Chr(13)
+	Next
+	SetGadgetText(GEDITOR,text)
+end sub
 '===========================================
 '' restore instruction and resume thread
 '===========================================
@@ -582,45 +1115,121 @@ Private sub thread_resume()
 		messbox("For Linux","thread_resume() needed to be added")
 	#endif
 End sub
-'================================================================
-private function thread_select(id As Integer =0) As Integer 'find thread index based on cursor or threadid
-	Dim text As string, pr As Integer, thid As Integer
-	Dim As Integer hitem,temp
-
-	If id =0 Then  'take on cursor
+'====================================================================
+'' locates a proc in sources from selected line in current treeview
+'====================================================================
+private sub proc_loc()
+	Dim As Integer hitem,temp,t,gadget
 	'get current hitem in tree
-		temp=GetItemTreeView(GTVIEWTHD)
-		Do 'search thread item
+	gadget=PanelGadgetGetCursel(GRIGHTTABS)
+	temp=GetItemTreeView(gadget)
+	If gadget=GTVIEWVAR Then
+		Do 'search index proc
 			hitem=temp
-			temp=getParentItemTreeview(ID_In_Number(htviewcur),hitem)
+			temp=GetParentItemTreeView(GTVIEWVAR,hitem)
 		Loop While temp
-
-		text=GetTextTreeView(GTVIEWTHD,hitem)
-		thid=ValInt(Mid(text,10,6))
+		temp=0
+		For i As Integer =1 To procrnb
+			If procr(i).tv=hitem Then
+				temp=procr(i).idx
+	         Exit For               
+			EndIf
+		Next
+		If temp=0 Then
+			messbox("Locate proc","Global variables no proc associated !!")
+			Exit Sub
+		EndIf
+	ElseIf gadget=GTVIEWPRC Then
+		hitem=temp
+		For i As Integer =1 To procnb
+			If proc(i).tv=hitem Then
+				temp=i
+	         Exit For               
+			EndIf
+		Next
+	ElseIf gadget=GTVIEWTHD Then
+		t=thread_select()
+		If t=0 Then ''main, select first line
+			temp=procr(1).idx
+		Else
+			temp=procr(proc_find(thread(t).id,KFIRST)).idx
+		EndIf
+	EndIf
+	If proc(temp).nu=-1 Then 
+		messbox("Locate proc","Not possible perhaps add by compiler (ie default constructor, let, etc)")
+		Exit sub
+	EndIf
+	
+	source_change(proc(temp).sr) ''display source
+	line_display(proc(temp).nu-1)  ''Select Line
+End Sub
+'=====================================================
+'=====================================================
+private sub thread_procloc(t As Integer)
+	Dim As Integer hitem,temp,cpt,thid,pr
+	Dim As String text
+	''get current hitem in tree
+	temp=GetItemTreeView(GTVIEWTHD)
+	Do ''search index thread
+		hitem=temp
+		temp=getParentItemTreeview(GTVIEWTHD,hitem)
+		cpt+=1
+	Loop While temp
+	If cpt>1 Then  ''thread item and first proc have same index in procr
+		cpt-=1
 	Else
-		thid=id
-	End If
-	For p As Integer =0 To threadnb
-		If thid=thread(p).id Then Return p 'find index number
+		cpt=1
+	EndIf
+
+	GetTextTreeView(GTVIEWTHD,hitem)
+	thid=ValInt(Mid(text,10,6))
+		
+	For pr =1 To procrnb ''finding proc index
+		If procr(pr).thid=thid Then
+			cpt-=1
+			If cpt=0 Then Exit For
+		EndIf
 	Next
-End Function
-'===========================================================================
-private sub thread_text(th As Integer=-1)'update text of thread(s)
-   Dim libel As String
-   Dim As Integer thid,p,lo,hi
-   If th=-1 Then
-   	lo=0:hi=threadnb
-   Else
-   	lo=th:hi=th
-   EndIf
-   For i As Integer=lo To hi
+		
+	If t=1 Then ''proc in proc/var
+		PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)
+		SetSelectTreeViewItem(GTVIEWVAR,procr(pr).tv)
+	ElseIf t=2 Then'proc in source
+		source_change(proc(procr(pr).idx).sr) ''display source
+		line_display(proc(procr(pr).idx).nu-1) ''Select Line
+	ElseIf t=3 Then'backtracking
+		bcktrk_launch(pr,1)
+	ElseIf t=4 Then'chaining
+		bcktrk_launch(pr,2)	
+	Else 'info about running proc
+		messbox("Proc : "+proc(procr(pr).idx).nm,"Start address ="+Str(proc(procr(pr).idx).db)+"/&h"+Hex(proc(procr(pr).idx).db)+Chr(10)_
+												   +"End   address ="+Str(proc(procr(pr).idx).fn)+"/&h"+Hex(proc(procr(pr).idx).fn)+Chr(10)_
+												   +"Stack address ="+Str(procr(pr).sk)+"/&h"+Hex(procr(pr).sk))
+	End If
+End Sub
+'===========================================
+'' updates text of thread(s)
+'===========================================
+private sub thread_text(th As Integer=-1)
+	Dim libel As String
+	Dim As Integer thid,p,lo,hi
+	If th=-1 Then
+		lo=0:hi=threadnb
+	Else
+		lo=th:hi=th
+	EndIf
+	For i As Integer=lo To hi
 		thid=thread(i).id
 		p=proc_find(thid,KLAST)
 		libel="threadID="+fmt2(Str(thid),4)+" : "+proc(procr(p).idx).nm
-		If flagverbose Then libel+=" HD: "+Str(thread(i).hd)
-		If threadhs=thread(i).hd Then libel+=" (next execution)"
+		If flagverbose Then
+			libel+=" HD: "+Str(thread(i).hd)
+		EndIf
+		If threadhs=thread(i).hd Then
+			libel+=" (next execution)"
+		EndIf
 		RenameItemTreeView(GTVIEWTHD,thread(i).tv,libel)
-   Next
+	Next
 End Sub
 '=======================================================================================
 private sub thread_change(th As Integer =-1)
@@ -981,6 +1590,147 @@ private function var_sh1(i As Integer) As String
       End With
    End If
 End Function
+'==========================================
+private sub watch_check(wname()As String)
+   Dim As Integer dlt,bg,ed,pidx,vidx,tidx,index,p,q,vnb,varb,ispnt,tad
+  	Dim As String pname,vname,vtype
+
+While wname(index)<>""
+	pidx=-1:vidx=-1:p=0:vnb=1
+	
+   p=InStr(wname(index),"/")
+	pname=Mid(wname(index),1,P-1)
+	If InStr(pname,".dll") Then 'shared in dll
+		pidx=0
+	Else
+	'check proc existing ?
+		For i As Integer=1 To procnb
+			If proc(i).nm=pname Then pidx=i:Exit For 
+		Next
+	EndIf
+	'var name : vname,vtype/ and so on then pointer number
+	q=p+1
+	p=InStr(q,wname(index),",")
+	vname=Mid(wname(index),q,p-q)
+	
+	q=p+1
+	p=InStr(q,wname(index),"/")
+	vtype=Mid(wname(index),q,p-q)
+	
+	If pidx=-1 Then
+	  messbox("Watched variables","Proc <"+pname+"> for <"+vname+"> removed, canceled")
+	  index+=1
+	  Continue While 'proc has been removed
+	EndIf
+	'check var existing ?
+	bg=proc(pidx).vr:ed=proc(pidx+1).vr-1
+   If pname="main" Then
+		For i As Integer = 1 To vrbgbl
+		   If vrb(i).nm=vname AndAlso udt(vrb(i).typ).nm=vtype AndAlso vrb(i).arr=0 Then
+				vidx=i
+				tidx=vrb(i).typ
+				ispnt=vrb(i).pt
+				Exit For
+		   End If
+		Next
+   Else
+   	If pidx=0 Then 'DLL [WTC]=dll.dll/B,Integer/0/0
+			For i As Integer= 1 To TYPESTD
+				If udt(i).nm=vtype Then tidx=i:Exit For
+			Next
+			wtch(index).typ=tidx
+			wtch(index).psk=-4
+			wtch(index).vnb=1 'only basic type or pointer
+			wtch(index).idx=pidx
+			wtch(index).pnt=ValInt(Right(wname(index),1))
+			wtch(index).tad=0 'unknown address
+			wtch(index).vnm(vnb)=vname
+			wtch(index).var=0 'not an array
+			wtch(index).vty(vnb)=vtype
+		
+			wtch(index).tvl=AddTreeViewItem(GTVIEWWCH,"",cast (hicon, 0),0,TVI_LAST,0)
+			
+			wtch(index).lbl=pname+"/"+vname+" <"+String(wtch(index).pnt,"*")+" "+udt(tidx).nm+">=Dll not loaded"
+			wtchcpt+=1
+   		index+=1
+   		Continue While
+   	EndIf	
+   EndIf
+   If vidx=-1 Then
+   	'local
+      For i As Integer = bg To ed
+         If vrb(i).nm=vname AndAlso udt(vrb(i).typ).nm=vtype AndAlso vrb(i).arr=0 Then
+         	vidx=i
+            tidx=vrb(i).typ
+            ispnt=vrb(i).pt
+            Exit For
+         End If
+      Next
+   EndIf
+   If vidx=-1 Then
+      'var has been removed
+      messbox("Applying watched variables","<"+vname+"> removed, canceled")
+      index+=1
+      Continue While
+   End If
+	'store value for var_search
+	wtch(index).vnm(vnb)=vname
+	wtch(index).var=0
+	wtch(index).vty(vnb)=vtype
+	varb=vidx
+	'check component
+	q=p+1
+	p=InStr(q,wname(index),",")
+	While p
+      vidx=-1
+      vname=Mid(wname(index),q,p-q)
+		q=p+1
+		p=InStr(q,wname(index),"/")
+		vtype=Mid(wname(index),q,p-q)
+		For i As Integer =udt(tidx).lb To udt(tidx).ub
+         With cudt(i)
+         If .nm=vname AndAlso udt(.typ).nm=vtype AndAlso .arr=0 Then
+            vidx=i:tidx=.typ
+            ispnt=cudt(i).pt
+            Exit For
+         End If
+         End With
+		Next
+		If vidx=-1 Then
+	      'udt has been removed
+	      messbox("Applying watched variables","udt <"+vname+"> removed, canceled")
+	      index+=1
+	      Continue While,While
+		End If
+		vnb+=1
+		wtch(index).vnm(vnb)=vname
+		wtch(index).vty(vnb)=vtype
+		If tidx<=TYPESTD Then Exit While '20/08/215
+		q=p+1
+		p=InStr(q,wname(index),",")
+	Wend
+	tad=ValInt(Mid(wname(index),q,1)) 'tad
+	q+=2
+	If ispnt<>ValInt(Mid(wname(index),q,1)) Then 'pnt
+		'pointer doesn't match
+	   messbox("Applying watched variables",Left(wname(index),Len(wname(index))-2)+" not a pointer or pointer, canceled")
+	   index+=1
+	   Continue While
+	EndIf
+
+	wtch(index).tvl=AddTreeViewItem(GTVIEWWCH,"",cast (hicon, 0),0,TVI_LAST,0)
+	wtch(index).lbl=proc(pidx).nm+"/"+vname+" <"+String(ispnt,"*")+" "+udt(tidx).nm+">=LOCAL NON-EXISTENT"
+	wtch(index).typ=tidx
+	wtch(index).psk=-4
+	wtch(index).vnb=vnb
+	wtch(index).idx=pidx
+	wtch(index).pnt=ispnt
+	wtch(index).tad=tad
+	wtchcpt+=1
+   index+=1
+Wend
+If wtchcpt Then menu_enable()
+End Sub
 '===================================================
 private sub watch_del(i As Integer=WTCHALL)
 	Dim As Integer bg,ed
@@ -2255,26 +3005,17 @@ Else
 EndIf
 End Sub
 '===============================================
-private function proc_verif(p As UShort) As Byte 'return true if proc running
+'' returns true if proc running
+'===============================================
+private function proc_verif(p As UShort) As Byte 
 	For i As UShort =1 To procrnb
 		If procr(i).idx = p Then Return TRUE
 	Next
 	Return FALSE
 End Function
 '===============================================
-'' check if the line is executable return true
-'===============================================
-private function line_check(pline as integer)as boolean
-	For iline as integer =1 To linenb
-		If rline(iline).nu=pline AndAlso rline(iline).sx=srcdisplayed Then
-			return true
-		end if
-	next
-	return false
-end function
-'-----------------------------------------------
 '' Reinitialisation GUI todo move in dbg_gui
-'-----------------------------------------------
+'===============================================
 private sub reinit_gui()
 	dump_set()
 	but_enable()	
@@ -2518,10 +3259,11 @@ End sub
 ''loads the source code files, by slice : n contains the first to be loaded until sourcenb
 ''n=0 for the first loading
 ''=====================================================================
-private sub source_load(n As integer,exedate as double)
+private sub sources_load(n As integer,exedate as double)
 	dim As integer flgt,fnum
 	dim as any ptr ptrdoc
 	if flagrestart Then
+		SetStatusBarField(1,0,100,"Loading sources")
 	   	for isrc As Integer=n To sourcenb ' main index =0
 		   	print "loading ="+source(isrc)
 		   	if FileExists(source(isrc))=0 Then

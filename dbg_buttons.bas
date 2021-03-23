@@ -85,17 +85,27 @@ sub button_action(button as integer)
 				but_enable()
 				thread_resume()
 			End If
+			
 		case IDBUTTOOL
-			HideWindow(hsettings,0)
-			messbox("feature not implemented","button = IDBUTTOOL")
+			If Dir(ExePath+"\dbg_log_file.txt")="" Then 'the file can be deleted by user outside
+				SetStateMenu(HMenutools,MNSHWLOG,1)
+				SetStateMenu(HMenutools,MNDELLOG,1)
+			Else
+				SetStateMenu(HMenutools,MNSHWLOG,0)
+				SetStateMenu(HMenutools,MNDELLOG,0)
+			End If
+            DisplayPopupMenu(HMenutools, GlobalMouseX,GlobalMouseY)
+			
 		case IDBUTFILE
 			select_file()
-		case IDBUTRERUN
+			
+		case IDBUTRERUN ''restart current exe
 			restart()
+			
 		case IDBUTATTCH
 			messbox("feature not implemented","button = IDBUTATTACH")
 		case IDBUTKILL
-			messbox("feature not implemented","button = IDBUTKILL")
+			kill_process("Terminate immediatly no saved data, other option Release")
 		case IDBUTLASTEXE
 			var HMenuexe=CreatePopMenu()
 			For iitem As integer =0 To 9
@@ -135,10 +145,11 @@ sub button_action(button as integer)
 		case IDBUTUPDATE
 			if flagupdate=true then
 				flagupdate=false
-				SendMessage(butupdate,BM_SETIMAGE,IMAGE_BITMAP,Cast(LPARAM,bmb(25)))
+				load_button(IDBUTUPDATE,@"update.bmp",660,,@"Update On /Update off : variables, dump",,0)
+				SetImageGadget(IDBUTUPDATE,Load_image("."+slash+"buttons"+slash+"noupdate.bmp"))
 			else
 				flagupdate=true
-				SendMessage(butupdate,BM_SETIMAGE,IMAGE_BITMAP,Cast(LPARAM,bmb(24)))
+				SetImageGadget(IDBUTUPDATE,Load_image("."+slash+"buttons"+slash+"update.bmp"))
 				var_sh()
 				dump_sh()
 			end if

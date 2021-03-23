@@ -1312,6 +1312,23 @@ end function
 			basestab+=sizeof(udtstab)
 		Wend
 	EndIf
+	
+	''end of extraction ''todo add that for linux when the exe is running
+	globals_load()
+	
+	If procrnb=0 Then
+	   If flagwtch=0 AndAlso wtchexe(0,0)<>"" Then watch_check(wtchexe())
+	   flagwtch=0
+	EndIf
+	
+	'TODO uncomment sources_load(n)
+	'activate buttons/menu after real start
+	but_enable()
+	menu_enable()
+	'apply previous breakpoints	
+	brk_apply 
+	
+	
 end sub
 
 

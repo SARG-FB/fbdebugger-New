@@ -66,6 +66,8 @@ Dim Shared As Integer udtcpt,udtmax 'current, max cpt
 Dim Shared As integer excldnb
 Dim Shared As texcld excldlines(EXCLDMAX)
 
+''log
+dim shared as hwnd hlogbx
 
 #ifdef __fb_win32__
 	''Threads
@@ -134,6 +136,7 @@ Dim Shared wtchnew As Integer 'to keep index after creating new watched
 dim Shared as breakol brkol(BRKMAX)
 dim shared as integer brknb
 Dim Shared as String brkexe(9,BRKMAX) 'to save breakpoints by session
+dim shared as hwnd hbrkbx ''window for managing breakpoints
 
 ''breakpoint on variable/memory (when there is a change)
 Dim Shared brkv As tbrkv 
@@ -206,10 +209,12 @@ dim shared as HMENU HMenutools
 Dim Shared fasttimer As double
 
 
-''index box
-Dim Shared hindexbx(INDEXBOXMAX) As HWND
-Dim Shared autoupd(INDEXBOXMAX) As BOOLEAN
-
+''index box todo ??
+'Dim Shared hindexbx(INDEXBOXMAX) As HWND
+'Dim Shared autoupd(INDEXBOXMAX) As BOOLEAN
+'' index selection
+dim shared as hwnd hindexbx
+Dim Shared As BOOLEAN autoupd
 
 ''slash for file WDS<>LNX
 dim shared as zstring *2 slash
@@ -310,7 +315,7 @@ if elf_extract(exename) then
 		AddComboBoxItem(GFILELIST,source_name(source(isrc)),-1)
 	next
 	'SetGadgetFont(GSRCTAB,CINT(LoadFont("Courier New",10)))
-	source_load(0,filedatetime(exename))
+	sources_load(0,filedatetime(exename))
 	
 	''for testing to be removed
 		
@@ -325,11 +330,11 @@ if elf_extract(exename) then
 	SetStatusBarField(1,0,100,"Waiting")
 end if
 
+''========================================
+''========================================
+''========================================
+''========================================
 
-''========================================
-''========================================
-''========================================
-''========================================
 
 
 do
@@ -361,7 +366,16 @@ do
 				hidewindow(hinputbx,1)
 			end if
 		end if
+		continue do
 	end if
+	
+	if event=EventSize then
+		if EventHwnd=hmain then
+			size_changed()
+		EndIf
+		continue do
+	EndIf
+	
 	If event=EventMenu then
 		menu_action(EventNumber)
 	ElseIf event=eventrbdown then
