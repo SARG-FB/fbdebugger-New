@@ -1,6 +1,203 @@
 ''gui for fbdebuuger_new
 ''dbg_gui.bas
 
+
+
+'================================================================================================================================
+
+'Functions to use:
+
+'ExpandTreeViewItem - expand iItem. If iFlagAll = 0 , expand only iItem. If iFlagAll = 1 , expand iItem and all child for a iITem
+
+'CollapseTreeViewItem - collapse iItem and all child for a iItem
+
+'ExpandTreeViewItemALL - expand all items
+
+'CollapseTreeViewItemALL - collapse all items
+
+'=================================================================================================================================
+
+#ifdef __fb_win32__
+	
+	Private Sub RecurExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagExpand As Long)
+		
+		Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
+		
+		If iChild Then 
+			
+			RecurExpandTreeViewItem(iGadget  , iChild , iFlagExpand)
+			
+		Endif
+		
+		Dim As Integer iBr = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_NEXT , Cast(LPARAM,iItem)))
+		
+		If iBr Then
+			
+			RecurExpandTreeViewItem(iGadget  , iBr ,  iFlagExpand)
+			
+		Endif
+		
+		If iFlagExpand Then
+			
+			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
+			
+		Else
+			
+			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_COLLAPSE , Cast(LPARAM,iItem))
+			
+		Endif
+		
+	End Sub
+	
+	Sub ExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagAll As Long)
+		
+		If iFlagAll Then
+			
+			Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
+			
+			If iChild Then 
+				
+				RecurExpandTreeViewItem(iGadget  , iChild , 1)
+				
+			Endif
+			
+			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
+			
+		Else
+			
+			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
+			
+		Endif
+		
+		Dim As Integer iTempItem = iItem
+		
+		While iTempItem
+			
+			iTempItem = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_PARENT , Cast(LPARAM,iTempItem)))
+			
+			If iTempItem Then
+				
+				SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iTempItem))
+				
+			Endif
+			
+		Wend
+		
+	End Sub
+	
+	Sub CollapseTreeViewItem(iGadget As Long  , iItem As Integer)
+		
+		Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
+		
+		If iChild Then 
+			
+			RecurExpandTreeViewItem(iGadget  , iChild , 0)
+			
+		Endif
+		
+		SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_COLLAPSE , Cast(LPARAM,iItem))
+		
+	End Sub
+	
+	Sub ExpandTreeViewItemALL(iGadget As Long)
+		
+		Dim As Integer iRoot = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_ROOT , 0))
+		
+		RecurExpandTreeViewItem(iGadget , iRoot , 1)
+		
+	End Sub
+	
+	Sub CollapseTreeViewItemALL(iGadget As Long)
+		
+		Dim As Integer iRoot = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_ROOT , 0))
+		
+		RecurExpandTreeViewItem(iGadget , iRoot , 0)
+		
+	End Sub
+	
+#else
+	
+	Sub ExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagAll As Long)
+		
+		Dim As Any Ptr treeview = Gadgetid(iGadget)
+		
+		Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
+		
+		Dim As GtkTreeIter iter , iterfirst
+		
+		Dim As GtkTreePath Ptr path
+		
+		If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
+			
+			iter.stamp =  iterfirst.stamp
+			
+			iter.user_data = Cast(Any Ptr,iItem)
+			
+			path = gtk_tree_model_get_path(treestore, @iter)
+			
+			gtk_tree_view_expand_to_path(treeview,path)
+			
+			If iFlagAll Then
+				
+				gtk_tree_view_expand_row(treeview , path , 1)
+				
+			Else
+				
+				gtk_tree_view_expand_row(treeview , path , 0)
+				
+				If gtk_tree_view_row_expanded(treeview , path) Then
+					
+					gtk_tree_view_collapse_row(treeview , path )
+					
+				Endif
+				
+			Endif
+			
+			gtk_tree_path_free(path)
+			
+		Endif
+		
+	End Sub
+	
+	Sub CollapseTreeViewItem(iGadget As Long  , iItem As Integer)
+		
+		Dim As Any Ptr treeview = Gadgetid(iGadget)
+		
+		Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
+		
+		Dim As GtkTreeIter iter , iterfirst
+		
+		Dim As GtkTreePath Ptr path
+		
+		If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
+			
+			iter.stamp =  iterfirst.stamp
+			
+			iter.user_data = Cast(Any Ptr,iItem)
+			
+			path = gtk_tree_model_get_path(treestore, @iter)
+			
+			gtk_tree_view_collapse_row(treeview , path)
+			
+			gtk_tree_path_free(path)
+			
+		Endif
+		
+	End Sub
+	
+	Sub ExpandTreeViewItemALL(iGadget As Long)
+		
+		gtk_tree_view_expand_all(Cast(Any Ptr ,Gadgetid(iGadget)))
+		
+	End Sub
+	
+	Sub CollapseTreeViewItemALL(iGadget As Long)
+		
+		gtk_tree_view_collapse_all(Cast(Any Ptr ,Gadgetid(iGadget)))
+		
+	End Sub
+	
+#endif
 '================================================================================
 '' Changes size gadgets when main window is resized
 '===================================================
@@ -180,6 +377,7 @@ private sub source_change(numb as integer)
 	Send_sci(SCI_ADDREFDOCUMENT,0,ptrdoc)
 	Send_sci(SCI_SETDOCPOINTER,0,sourceptr(numb))
 	srcdisplayed=numb
+	SetItemComboBox(GFILELIST,srcdisplayed)
 end sub
 '===================================================
 '' return line where is the cursor
@@ -303,7 +501,7 @@ private sub brk_manage()
 		hidegadget(GBRKDEL01+ibrk-1,1)
 	next
 	source_change(srcprev)
-	hidewindow(hbrkbx,KSHOW)
+	hidewindow(hbrkbx,KHIDE)
 end sub
 '======================================
 '' notification from scintilla gadget
@@ -333,13 +531,13 @@ end sub
 #endif
 
 '========================================================
-'' creates the wondow for managing the array indexes
+'' creates the window for managing the array indexes
 '========================================================
 private sub create_indexbx()
 	dim as integer ypos
 	hindexbx=OpenWindow("Array index management",10,10,800,550)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hindexbx)
-	hidewindow(hindexbx,KSHOW) 'KHIDE)
+	hidewindow(hindexbx,KHIDE)
 
 	textgadget(GIDXVAR,18,5,501,18,"Variable name + data")
 	
@@ -367,13 +565,13 @@ private sub create_indexbx()
 	listviewgadget(GIDXTABLE,18,170,624,290,LVS_EX_GRIDLINES)
 end sub
 '========================================================
-'' creates the wondow for managing the breakpoint data
+'' creates the window for managing the breakpoint data
 '========================================================
 private sub create_brkbx()
 	dim as integer ypos
 	hbrkbx=OpenWindow("Breakpoint management",10,10,550,350)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hbrkbx)
-	hidewindow(hbrkbx,KSHOW)'KHIDE)
+	hidewindow(hbrkbx,KHIDE)
 
 	For ibrk as integer =0 To 9
 		ypos=24+24*ibrk
@@ -390,6 +588,60 @@ private sub create_brkbx()
 	buttongadget(GBRKDISABLE,200,290,80,15,"Disable all")
 	buttongadget(GBRKENABLE,285,290,80,15,"Enable all")
 
+end sub
+'==============================================================================
+'' creates the window for managing the breakpoint on variable/memory change
+'==============================================================================
+private sub create_brkvbx()
+	hbrkvbx=OpenWindow("Breakpoint on value",10,10,600,90,WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	centerWindow(hbrkvbx)
+	hidewindow(hbrkvbx,KSHOW) 'KHIDE)
+	textgadget(GBRKVAR,6,6,390,15,"Stop if b<byte>=-88")
+	stringgadget(GBRKVVALUE,459,3,90,15,"-90")
+	buttongadget(GBRKVOK,400,30,45,18,"Apply")
+	buttongadget(GBRKVDEL,450,30,45,18,"Delete")
+	comboboxgadget(GBRKCOND,402,3,54,18)
+end sub
+'==============================================================================
+'' creates the window for Procedure Backtracking
+'==============================================================================
+private sub create_trackbx()
+	htrckbx=OpenWindow("Procedure Backtracking",10,10,550,150,WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	centerWindow(htrckbx)
+	hidewindow(htrckbx,KSHOW) 'KHIDE)
+	
+	buttongadget(GTRACKPRV,5,6,65,15,"Previous")
+	buttongadget(GTRACKCUR,5,27,65,15,"Current")
+	buttongadget(GTRACKNXT,5,48,65,15,"Next")
+	textgadget(GTRACKPPRV,75,6,288,15,"TEST   [testmain.bas]")
+	textgadget(GTRACKPCUR,75,27,288,15,"TEST2   [testmain.bas]")
+	textgadget(GTRACKPNXT,75,48,288,15,"TEST_END   [testmain.bas]")
+end sub
+'========================================================
+'' creates the window for show/expand  (shw/exp)
+'========================================================
+private sub create_shwexpbx()
+
+	hshwexpbx=OpenWindow("Shw/exp : variable",10,10,700,550) ',WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	centerWindow(hshwexpbx)
+	hidewindow(hshwexpbx,KSHOW) 'KHIDE)
+
+	buttongadget(GSHWWCH,510,5,90,18,"Watched")
+	buttongadget(GSHWDMP,510,30,90,18,"Dump")
+	buttongadget(GSHWEDT,510,55,90,18,"Edit")
+	buttongadget(GSHWSTR,510,80,90,18,"Show string")
+	buttongadget(GSHWNEW,510,105,90,18,"New shw/exp")
+	buttongadget(GSHWRPL,510,130,90,18,"Replaces")
+	textgadget(GSHWCUR,510,160,78,15,"Index cur : 2")
+	textgadget(GSHWMIN,510,180,78,15,"Index min : 1")
+	textgadget(GSHWMAX,510,200,78,15,"Index max : 500")
+	buttongadget(GSHWSET,510,220,90,18,"Set index")
+	buttongadget(GSHWRED,610,220,21,18,"-1")
+	buttongadget(GSHWINC,635,220,21,18,"+1")
+	buttongadget(GSHWUPD,510,250,90,18,"Update")
+	buttongadget(GSHWCLOSE,510,290,90,18,"Close all")
+	htviewshw=treeviewgadget(GTVIEWSHW,0,0,500,500,KTRRESTYLE)
+	
 end sub
 '=============================================================
 '' creates the window for handling parameters of dump memory
@@ -589,7 +841,7 @@ private sub but_enable()
 			DisableGadget(IDBUTRUN,0)
 			DisableGadget(IDBUTFASTRUN,0)
 			DisableGadget(IDBUTSTOP,0)
-			DisableGadget(IDBUTCURSR,0)
+			DisableGadget(IDBUTCURSOR,0)
 			DisableGadget(IDBUTFREE,0)
 			DisableGadget(IDBUTKILL,0)
 			DisableGadget(IDBUTEXEMOD,0)
@@ -610,7 +862,7 @@ private sub but_enable()
 			DisableGadget(IDBUTAUTO,1)
 			DisableGadget(IDBUTRUN,1)
 			DisableGadget(IDBUTFASTRUN,1)
-			DisableGadget(IDBUTCURSR,1)
+			DisableGadget(IDBUTCURSOR,1)
 			DisableGadget(IDBUTFREE,1)
 			''DisableGadget(IDBUTkill,1) ''to let the possibility to kill the debuggee when running
 			DisableGadget(IDBUTEXEMOD,1)
@@ -631,7 +883,7 @@ private sub but_enable()
 			DisableGadget(IDBUTAUTO,1)
 			DisableGadget(IDBUTRUN,1)
 			DisableGadget(IDBUTFASTRUN,1)
-			DisableGadget(IDBUTCURSR,1)
+			DisableGadget(IDBUTCURSOR,1)
 			DisableGadget(IDBUTFREE,1)
 			DisableGadget(IDBUTKILL,1)
 			DisableGadget(IDBUTEXEMOD,1)
@@ -646,7 +898,7 @@ private sub but_enable()
 			DisableGadget(IDBUTRUN,1)
 			DisableGadget(IDBUTFASTRUN,1)
 			DisableGadget(IDBUTSTOP,1)
-			DisableGadget(IDBUTCURSR,1)
+			DisableGadget(IDBUTCURSOR,1)
 			DisableGadget(IDBUTFREE,1)
 			DisableGadget(IDBUTKILL,1)
 			DisableGadget(IDBUTEXEMOD,1)
@@ -666,18 +918,18 @@ private sub menu_enable()
 	SetStateMenu(HMenusource,MNRSTBRKC, flag)
 	SetStateMenu(HMenusource,MNCHGBRKC, flag)
 	SetStateMenu(HMenusource,MNBRKENB,  flag)
-	SetStateMenu(HMenusource,IDBUTCURSR,flag)
-	SetStateMenu(HMenusource,IDBUTSTEP, flag)
-	SetStateMenu(HMenusource,IDBUTSTEPP,flag)
-	SetStateMenu(HMenusource,IDBUTSTEPM,flag)
-	SetStateMenu(HMenusource,IDBUTSTEPB,flag)
-	SetStateMenu(HMenusource,IDBUTSTEPT,flag)
-	SetStateMenu(HMenusource,IDBUTRUN,  flag)
-	SetStateMenu(HMenusource,IDBUTEXEMOD,  flag)
-	SetStateMenu(HMenusource,IDBUTFASTRUN, flag)
-	SetStateMenu(HMenusource,IDBUTKILL, flag)
-	SetStateMenu(HMenusource,IDBUTSTOP, flag)
-	SetStateMenu(HMenusource,IDBUTAUTO, flag)
+	SetStateMenu(HMenusource,MNCURSOR,flag)
+	SetStateMenu(HMenusource,MNSTEP, flag)
+	SetStateMenu(HMenusource,MNSTEPP,flag)
+	SetStateMenu(HMenusource,MNSTEPM,flag)
+	SetStateMenu(HMenusource,MNSTEPB,flag)
+	SetStateMenu(HMenusource,MNSTEPT,flag)
+	SetStateMenu(HMenusource,MNRUN,  flag)
+	SetStateMenu(HMenusource,MNEXEMOD,  flag)
+	SetStateMenu(HMenusource,MNFASTRUN, flag)
+	SetStateMenu(HMenusource,MNKILL, flag)
+	SetStateMenu(HMenusource,MNSTOP, flag)
+	SetStateMenu(HMenusource,MNAUTO, flag)
 	SetStateMenu(HMenusource,MNTHRDAUT, flag)
 	SetStateMenu(HMenusource,MNSHWVAR,  flag)
 	SetStateMenu(HMenusource,MNSETWVAR, flag)
@@ -726,7 +978,7 @@ private sub menu_enable()
 	SetStateMenu(HMenuthd,MNPRCRADR,flag)
 	SetStateMenu(HMenuthd,MNTHRDLST,flag)
 	
-	SetStateMenu(HMenutools,MNLSTDLL, flag)
+	SetStateMenu(HMenutools,MNLISTDLL, flag)
 	
 	If wtchcpt<>0 AndAlso prun=true Then flag=0 Else flag=1
 	SetStateMenu(HMenuwch,MNWCHVAR,flag)
@@ -763,19 +1015,19 @@ private sub menu_set()
 
 ''menu source
 	HMenusource=CreatePopMenu()
-	MenuItem(IDBUTCURSR,HMenusource,"Run to Cursor / C")
-	MenuItem(IDBUTSTEP,HMenusource,"Next step / S")
-	MenuItem(IDBUTSTEPP,HMenusource,"Step over procs / O")
-	MenuItem(IDBUTSTEPM,HMenusource,"Step out current proc / E")
-	MenuItem(IDBUTSTEPT,HMenusource,"Step top called proc / T")
-	MenuItem(IDBUTSTEPB,HMenusource,"Step bottom current proc / B")
-	MenuItem(IDBUTRUN,HMenusource,"Run / R")
-	MenuItem(IDBUTFASTRUN,HMenusource,"Fast Run / F")
-	MenuItem(IDBUTSTOP,HMenusource,"Halt running debuggee / H")
-	MenuItem(IDBUTKILL,HMenusource,"Kill debuggee / K")
-	MenuItem(IDBUTAUTO,HMenusource,"Step auto / A")
+	MenuItem(MNSTEP,HMenusource,"Next step / S")
+	MenuItem(MNCURSOR,HMenusource,"Run to Cursor / C")
+	MenuItem(MNSTEPP,HMenusource,"Step over procs / O")
+	MenuItem(MNSTEPM,HMenusource,"Step out current proc / E")
+	MenuItem(MNSTEPT,HMenusource,"Step top called proc / T")
+	MenuItem(MNSTEPB,HMenusource,"Step bottom current proc / B")
+	MenuItem(MNRUN,HMenusource,"Run / R")
+	MenuItem(MNFASTRUN,HMenusource,"Fast Run / F")
+	MenuItem(MNSTOP,HMenusource,"Halt running debuggee / H")
+	MenuItem(MNKILL,HMenusource,"Kill debuggee / K")
+	MenuItem(MNAUTO,HMenusource,"Step auto / A")
 	MenuItem(MNTHRDAUT,HMenusource,"Step auto multi threads / D")
-	MenuItem(IDBUTEXEMOD,HMenusource,"Modify execution / M")
+	MenuItem(MNEXEMOD,HMenusource,"Modify execution / M")
 	MenuBar(HMenusource)
 	MenuItem(MNSETBRK,HMenusource,"Set/Clear Breakpoint / F3")
 	MenuItem(MNSETBRKC,HMenusource,"Set/clear Breakpoint with counter Ctrl+F3")
@@ -879,13 +1131,11 @@ private sub menu_set()
 	MenuItem(MNABOUT,HMenutools,   "About")
 	MenuItem(MNCMPINF,HMenutools,  "Compile info")
 	MenuItem(MNDBGHELP,HMenutools, "Help / F1")
-	MenuItem(MNCLIPBRD,HMenutools, "Copy notes to clipboard")
 	MenuItem(MNSHWLOG,HMenutools,  "Show log file")
 	MenuItem(MNDELLOG,HMenutools,  "Delete log file")
-	MenuItem(MNSHENUM,HMenutools,  "List enum")
-	MenuItem(MNINFOS,HMenutools,  "Process list")
-	MenuItem(MNLSTDLL,HMenutools, "Dlls list")
-	MenuItem(MNLSTSHC,HMenutools, "Shortcut keys list")
+	MenuItem(MNLISTENUM,HMenutools,  "List enum")
+	MenuItem(MNLISTPROCESS,HMenutools,  "Process list")
+	MenuItem(MNLISTDLL,HMenutools, "Dlls list")
 	MenuItem(MNWINMSG,HMenutools, "Translate Win Message")
 	MenuItem(MNSHWBDH,HMenutools, "Bin/Dec/Hex")
 	MenuItem(MNFRTIMER,HMenutools,"Show fast run timer")
@@ -928,7 +1178,7 @@ private sub gui_init()
 
 	''buttons
 	load_button(IDBUTSTEP,@"step.bmp",8,,@"[S]tep/line by line",,0)
-	load_button(IDBUTCURSR,@"runto.bmp",40,,@"Run to [C]ursor",,0)
+	load_button(IDBUTCURSOR,@"runto.bmp",40,,@"Run to [C]ursor",,0)
 	load_button(IDBUTSTEPP,@"step_over.bmp",72,,@"Step [O]ver sub/func",)
 	load_button(IDBUTSTEPT,@"step_start.bmp",104,,@"[T]op next called sub/func",)
 	load_button(IDBUTSTEPB,@"step_end.bmp",136,,@"[B}ottom current sub/func",)
@@ -1018,11 +1268,14 @@ private sub gui_init()
 	ReadOnlyEditor(GEDITOR,1)
 	hidewindow(hlogbx,KHIDE)
 	
+	create_shwexpbx()
 	create_settingsbx()
 	create_inputbx()
 	create_dumpbx()
 	create_brkbx()
-	create_indexbx
+	create_indexbx()
+	create_trackbx()
+	create_brkvbx
 	menu_set()
 
 end sub

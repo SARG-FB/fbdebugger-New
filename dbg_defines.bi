@@ -1,19 +1,13 @@
 ''defines etc for fbdebugger_new
 ''dbg_define.bi 
 
-'enum gadgetsmainwindow
-    '
-    'MAIN_one
-    'MAIN_two
-    '
-'End Enum
-'
-'enum gadgetdialog
-    '
-    'DLG_one = MAIN_two+1
-    'DLG_two
-    '
-'End Enum
+''table of enums
+
+''menu : 1000+
+
+
+
+
 #macro mydefine(d,v)
 	#define ##d v
 	if defarray(v)<>"" then 
@@ -153,15 +147,34 @@ End Enum
 #Define SRCSIZEMAX 5000000 ''max source size
 
 Const   SRCMAX=1000		   ''max source file
-#define GSRCTAB 650        ''panel
-#define GFILELIST 3000     ''file combo
-#define GFILESEL 3001	   ''button for selecting a file
 
-#define GSCINTILLA 5000
+enum
+	GSRCTAB=500       ''panel
+	GFILELIST    ''file combo
+	GFILESEL	   ''button for selecting a file
 
-''current line
-#define GCURRENTLINE 600
-#define GCURLINETTIP 601
+	GSCINTILLA
+
+	''current line
+	GCURRENTLINE
+	GCURLINETTIP
+
+	''right panels
+	GRIGHTTABS
+	GTVIEWVAR
+	GTVIEWPRC
+	GTVIEWTHD
+	GTVIEWWCH
+	GDUMPMEM
+end enum
+
+'' don't change the numbers as direct index for right tabs
+#define TABIDXVAR 0
+#define TABIDXPRC 1
+#define TABIDXTHD 2
+#define TABIDXWCH 3
+#define TABIDXDMP 4
+
 
 ''different styles windows/linux
 #Ifdef __FB_WIN32__
@@ -171,174 +184,182 @@ Const   SRCMAX=1000		   ''max source file
 	#define hicon HBITMAP
 #endif
 
-''right panels
-#define GRIGHTTABS 200
-#define GTVIEWVAR 300
-#define GTVIEWPRC 301
-#define GTVIEWTHD 302
-#define GTVIEWWCH 302
-#define GDUMPMEM 320
-#define TABIDXVAR 0
-#define TABIDXPRC 1
-#define TABIDXTHD 2
-#define TABIDXWCH 3
-#define TABIDXDMP 4
 
-''log
+
+
+
+''log and others uses
 #define GEDITOR 330
 
-'button main screen also used for menu
-#define IDBUTSTEP   101
-#define IDBUTSTEPP  102
-#define IDBUTSTEPM  103
-#define IDBUTAUTO   104
-#define IDBUTRUN    105
-#define IDBUTSTOP   106
-''not used   107
-#define IDBUTFREE   108
-#define IDBUTTOOL   109
-#define IDBUTFILE   110
-#define IDBUTRERUN  111
-#define IDBUTATTCH  112
-#define IDBUTKILL   113
-''not used   114
-#define IDBUTLASTEXE 115
-#define IDBUTFASTRUN 116
-#define IDBUTEXEMOD  117
-#define IDBUTSTEPB  118
-#define IDBUTSTEPT  119
-#define IDBUTCURSR  120
-#define IDBUTUPDATE 128
+'button main screen
+enum
+	IDBUTSTEP=600
+	IDBUTSTEPP
+	IDBUTSTEPM
+	IDBUTAUTO
+	IDBUTRUN
+	IDBUTSTOP
+	IDBUTFREE
+	IDBUTTOOL
+	IDBUTFILE
+	IDBUTRERUN
+	TTRERUN ''tooltip for button rerun
+	IDBUTATTCH
+	IDBUTKILL
+	IDBUTLASTEXE
+	IDBUTFASTRUN
+	IDBUTEXEMOD
+	IDBUTSTEPB
+	IDBUTSTEPT
+	IDBUTCURSOR
+	IDBUTUPDATE
 
-#define TTRERUN 140 ''tooltip for button rerun
+	IDBUTENLRSRC
+	IDBUTENLRVAR
+	IDBUTENLRMEM
+end enum
 
-''NOT ANY MORE USED
-'#define IDWATCH1  120
-'#define IDWATCH2  121
-'#define IDWATCH3  122
-'#define IDWATCH4  123
-'#define IDBRKVAR  124
-'#define IDCURLIG  125
-'#define IDBMKCMB  126
-'#define IDDUMP    127
+'' source menu
+enum
+	MNSTEP=1000
+	MNCURSOR
+	MNSTEPP
+	MNSTEPM
+	MNSTEPT
+	MNSTEPB
+	MNRUN
+	MNFASTRUN
+	MNSTOP
+	MNKILL
+	MNAUTO
+	MNTHRDAUT'automatic execution  alternating threads
+	MNEXEMOD	
+	MNSETBRK
+	MNSETBRKC
+	MNRSTBRKC
+	MNCHGBRKC
+	MNSETBRT
+	MNBRKENB
+	MNMNGBRK
+	MNSHWVAR
+	MNSETWVAR
+	MNFNDTXT
+	MNGOTO
+	MNLINEADR
+	MNASMLINE
+	MNASMPRCL
+	MNASMREGS
+	MNACCLINE
+	MNFCSSRC	
+end enum
 
+''proc/var menu
+enum
+	MNVARDMP=1050
+	MNVAREDT
+	MNVARBRK
+	MNSELIDX
+	MNSHSTRG
+	MNSHWEXP
+	MNSETWTCH
+	MNSETWTTR
+	MNCHGZSTR
+	MNCALLINE
+	MNLSTVARA 'list  all proc/variables
+	MNLSTVARS 'list  onlyselectedand below
+	MNPBCKTRK 'backtrakingfromproc/var
+	MNPCHNING 'chaining  from proc/var
+	MNSHCHAR  'show  character  in a  string at a  selectedposition'03/11/2014
+	MNCLBVARA 'copy  to clipboard  all procs/vars '28/11/2014
+	MNCLBVARS 'copy  to clipboard  selectedvar
+	MNPTDUMP  'dump  deferenced data
+	MNFNDVAR  'find  proc or var in proc/var
+end enum
 
-#define IDBUTENLRSRC   130
-#define IDBUTENLRVAR   131
-#define IDBUTENLRMEM   132
+''tracking array menu
+enum
+	MNTRCKIDX0=1100 ''variable used as index
+	MNTRCKIDX1
+	MNTRCKIDX2
+	MNTRCKIDX3
+	MNTRCKIDX4
+	MNTRCKARR ''associate var indexes to an array
+	MNTRCKRST ''reset all
+end enum
 
-''for menu options
-'' source
-#define MNSETBRK 1000
-#define MNSETBRT MNSETBRK +1
-#define MNMNGBRK MNSETBRK +2
-'#define MNCONTHR MNSETBRK +3 'used  alsowithbutton
-#define MNFNDTXT MNSETBRK +4
-#define MNTGLBMK MNSETBRK +5
-#define MNNXTBMK MNSETBRK +6
-#define MNPRVBMK MNSETBRK +7
-#define MNGOTO MNSETBRK +9
-#define MNSHWVAR MNSETBRK +10
-#define MNSETWVAR MNSETBRK +11
-#define MNACCLINE MNSETBRK +12
-#define MNFCSSRC MNSETBRK +13
-#define MNLINEADR MNSETBRK +14
-#define MNBRKENB MNSETBRK +15
-#define MNTHRDAUT MNSETBRK +16'automatic execution  alternating threads
-#define MNASMLINE MNSETBRK +17
-#define MNASMPRCL MNSETBRK +18
-#define MNASMREGS MNSETBRK +19
-#define MNSETBRKC MNSETBRK +20
-#define MNCHGBRKC MNSETBRK +21
-#define MNRSTBRKC MNSETBRK +22
+'' proc menu
+enum
+	MNRSTPRC=1150  ''reset procfollow
+	MNSETPRC  ''setprocfollow
+	MNSORTPRC ''toggle sortby module name/  procname
+	MNASMPRC  ''listing of asm code of a  proc
+end enum
 
-''proc/var
-#define MNVARDMP MNSETBRK +30
-#define MNVAREDT MNSETBRK +31
-#define MNVARBRK MNSETBRK +32
-#define MNSELIDX MNSETBRK +33
-#define MNSHSTRG MNSETBRK +34
-#define MNSHWEXP MNSETBRK +35
-#define MNSETWTCH MNSETBRK +36
-#define MNSETWTTR MNSETBRK +37
-#define MNCHGZSTR MNSETBRK +38
-#define MNCALLINE MNSETBRK +39
-#define MNLSTVARA MNSETBRK +40'list  all proc/variables
-#define MNLSTVARS MNSETBRK +41'list  onlyselectedand below
-#define MNPBCKTRK MNSETBRK +42'backtrakingfromproc/var
-#define MNPCHNING MNSETBRK +43'chaining  fromproc/var
-#define MNSHCHAR MNSETBRK +44 'show  character  in a  string at a  selectedposition'03/11/2014
-#define MNCLBVARA MNSETBRK +45'copy  to clipboard  all procs/vars '28/11/2014
-#define MNCLBVARS MNSETBRK +46'copy  to clipboard  selectedvar
-#define MNPTDUMP MNSETBRK +47 'dump  deferenced data
-#define MNFNDVAR MNSETBRK +48 'find  procor var in proc/var
+'' thread menu
+enum
+	MNTHRDCHG=1200 ''select thread
+	MNLOCPRC  ''locate proc
+	MNTHRDKLL ''kill  thread
+	MNEXCLINE ''show  next executed line
+	MNCREATHR ''show  line creating thread
+	MNTHRDLST ''list  threads
+	MNSHWPROC ''show  procin proc/var
+	MNSHPRSRC ''show  procin source
+	MNTBCKTRK ''backtracking
+	MNTCHNING ''chaining
+	MNTHRDEXP ''expand one thread
+	MNTHRDCOL ''collapse  all threads
+	MNPRCRADR ''addr  about  running procstart,end  stack
+end enum
 
-''tracking array
-#define MNTRCKIDX0 MNSETBRK +60''variable used as index
-#define MNTRCKIDX1 MNSETBRK +61
-#define MNTRCKIDX2 MNSETBRK +62
-#define MNTRCKIDX3 MNSETBRK +63
-#define MNTRCKIDX4 MNSETBRK +64
+'' tools menu
+enum
+	MNABOUT=1250	
+	MNCMPINF	
+	MNDBGHELP
+	MNSHWLOG	
+	MNDELLOG	
+	MNLISTENUM
+	MNLISTPROCESS
+	MNLISTDLL
+	MNWINMSG
+	MNSHWBDH
+	MNFRTIMER
+	MNJITDBG	
+end enum
 
-#define MNTRCKARR MNSETBRK +65 ''associate var indexes to an array
-#define MNTRCKRST MNSETBRK +66 ''reset all
+'' watched menu
+enum
+	MNWCHVAR=1300
+	MNWCHDMP
+	MNWCHDEL
+	MNWCHSTG
+	MNWCHSHW
+	MNWCHEDT
+	MNWCHTTGL
+	MNWCHTTGA
+	MNWCHDALL
+end enum
 
-'ID for proc
-#define MNRSTPRC MNSETBRK +70 'reset procfollow
-#define MNSETPRC MNSETBRK +71 'setprocfollow
-#define MNSORTPRC MNSETBRK +72'toggle sortby module name/  procname
-#define MNASMPRC MNSETBRK +73 'listingof asm codeof a  proc
-'ID for thread
-#define MNTHRDCHG MNSETBRK +80'select thread
-#define MNLOCPRC MNSETBRK +81 'locate proc(also  usedin menuvar and proc)
-#define MNTHRDKLL MNSETBRK +82'kill  thread
-#define MNEXCLINE MNSETBRK +83'show  nextexecutedline
-#define MNCREATHR MNSETBRK +84'show  linecreatingthread
-#define MNTHRDLST MNSETBRK +85'list  threads
-#define MNSHWPROC MNSETBRK +86'show  procin proc/var
-#define MNSHPRSRC MNSETBRK +87'show  procin source
-#define MNTBCKTRK MNSETBRK +88'backtracking
-#define MNTCHNING MNSETBRK +89'chaining
-#define MNTHRDEXP MNSETBRK +90'expand one thread
-#define MNTHRDCOL MNSETBRK +91'collapse  all threads
-#define MNPRCRADR MNSETBRK +92'addr  about  running procstart,end  stack
-'ID for tools
-#define MNDBGHELP MNSETBRK +100
-#define MNINFOS MNSETBRK +101
-#define MNABOUT MNSETBRK +102
-#define MNWINMSG MNSETBRK +103
-#define MNSHWBDH MNSETBRK +104
-#define MNCLIPBRD MNSETBRK +105
-#define MNDELLOG MNSETBRK +106
-#define MNSHWLOG MNSETBRK +107
-#define MNSHENUM MNSETBRK +108
-#define MNCMPINF MNSETBRK +109
-#define MNJITDBG MNSETBRK +110
-#define MNLSTDLL MNSETBRK +111
-'#define MNHIDLOG MNSETBRK +112 todo not used
-#define MNLSTSHC MNSETBRK +113
-#define MNFRTIMER MNSETBRK +114
-'ID for watched var
-#define MNWCHVAR MNSETBRK +120
-#define MNWCHDMP MNSETBRK +121
-#define MNWCHDEL MNSETBRK +122
-#define MNWCHSTG MNSETBRK +123
-#define MNWCHSHW MNSETBRK +124
-#define MNWCHEDT MNSETBRK +125
-#define MNWCHTTGL MNSETBRK +126
-#define MNWCHTTGA MNSETBRK +127
-#define MNWCHDALL MNSETBRK +128
+'' previous debugged exe
+enum
+	MNEXEFILE0=1350
+	MNEXEFILE1
+	MNEXEFILE2
+	MNEXEFILE3
+	MNEXEFILE4
+	MNEXEFILE5
+	MNEXEFILE6
+	MNEXEFILE7
+	MNEXEFILE8
+	MNEXEFILE9
+end enum
 
-#define MNEXEFILE0 MNSETBRK +140
-#define MNEXEFILE1 MNSETBRK +141
-#define MNEXEFILE2 MNSETBRK +142
-#define MNEXEFILE3 MNSETBRK +143
-#define MNEXEFILE4 MNSETBRK +144
-#define MNEXEFILE5 MNSETBRK +145
-#define MNEXEFILE6 MNSETBRK +146
-#define MNEXEFILE7 MNSETBRK +147
-#define MNEXEFILE8 MNSETBRK +148
-#define MNEXEFILE9 MNSETBRK +149
+''for find text
+enum
+	MNFNDTXUP=1400
+	MNFNDTXDW
+end enum
 
 ''for scintilla
 #define KRED    &hFF
@@ -358,7 +379,7 @@ Const   SRCMAX=1000		   ''max source file
 
 ''for breakpoint management
 enum 
-	GBRKDEL01=801
+	GBRKDEL01=800
 	GBRKDEL02
 	GBRKDEL03
 	GBRKDEL04
@@ -420,6 +441,107 @@ enum
 	GIDXWIDTH
 end enum
 
+''for settings
+enum
+	LOGGROUP=900
+	GNOLOG
+	GSCREENLOG
+	GFILELOG
+	GBOTHLOG
+	GTRACEPROC
+	GTRACELINE
+	GVERBOSE
+	GTEXTDELAY
+	GAUTODELAY
+	GTEXTCMDLP
+	GCMDLPARAM
+
+	FONTGROUP
+	GTEXTFTYPE
+	GTEXTFSIZE
+	GTEXTFCOLOR
+end enum
+
+''for inputval box
+enum
+GINPUTVAL=920
+INPUTVALOK
+INPUTVALCANCEL
+end enum
+
+''for dump memory
+enum
+	GDUMPAPPLY=930
+	GDUMPADR
+
+	GDUMPTSIZE
+	GDUMPSIZE
+
+	GDUMPMOVEGRP
+	GDUMPCL
+	GDUMPCP
+	GDUMPLL
+	GDUMPLP
+	GDUMPPL
+	GDUMPPP
+
+	GDUMUSEGRP
+	GDUMPNEW
+	GDUMPWCH
+	GDUMPBRK
+	GDUMPSHW
+
+	GDUMPPTRGRP
+	GDUMPPTRNO
+	GDUMPPTR1
+	GDUMPPTR2
+
+	GDUMPBASEGRP
+	GDUMPDEC
+	GDUMPHEX
+
+	GDUMPSGNGRP
+	GDUMPSGN
+	GDUMPUSGN
+end enum
+
+''shw/exp
+enum
+	GSHWWCH=960
+	GSHWDMP
+	GSHWEDT
+	GSHWSTR
+	GSHWNEW
+	GSHWRPL
+	GSHWCUR
+	GSHWMIN
+	GSHWMAX
+	GSHWSET
+	GSHWINC
+	GSHWRED
+	GSHWCLOSE
+	GSHWUPD
+	GTVIEWSHW
+end enum
+
+''break on var/mem
+enum
+	GBRKVAR=980
+	GBRKVVALUE
+	GBRKVOK
+	GBRKVDEL
+	GBRKCOND
+end enum
+
+''procedure tracking
+enum
+	GTRACKPRV=990
+	GTRACKCUR
+	GTRACKNXT
+	GTRACKPPRV
+	GTRACKPCUR
+	GTRACKPNXT
+end enum
 #Ifdef __fb_win32__
 	#define send_sci(b,c,d) sendmessage(hscint,b,c,cast(integer,d))
 #else
@@ -463,9 +585,10 @@ end enum
 	#define scintILLA_TYPE_NOTIFICATION scnotification_get_type()
 	#define scintILLA_NOTIFY "sci-notify"
 
-end extern
+	end extern
 
 #endif
+
 #define KSTYLBREAK      1
 #define KSTYLBREAKTEMPO 2
 #define KSTYLBREAKCOUNT 3
@@ -475,63 +598,7 @@ end extern
 #define KSTYLECUR  2
 
 
-''for settings
-#define LOGGROUP 700
-#define GNOLOG   701
-#define GSCREENLOG 702
-#define GFILELOG 703
-#define GBOTHLOG 704
-#define GTRACEPROC 706
-#define GTRACELINE 707
-#define GVERBOSE 710
-#define GTEXTDELAY 711
-#define GAUTODELAY 712
-#define GTEXTCMDLP 713
-#define GCMDLPARAM 714
 
-#define FONTGROUP 715
-#define GTEXTFTYPE 716
-#define GTEXTFSIZE 717
-#define GTEXTFCOLOR 718
-
-''for inputval box
-#define GINPUTVAL      720
-#define INPUTVALOK     721
-#define INPUTVALCANCEL 722
-
-''for dump memory
-#define GDUMPAPPLY 730
-#define GDUMPADR   731
-
-#define GDUMPTSIZE 732
-#define GDUMPSIZE  733
-
-#define GDUMPMOVEGRP 734
-#define GDUMPCL 735
-#define GDUMPCP 736
-#define GDUMPLL 737
-#define GDUMPLP 738
-#define GDUMPPL 739
-#define GDUMPPP 740
-
-#define GDUMUSEGRP 741
-#define GDUMPNEW 742
-#define GDUMPWCH  743
-#define GDUMPBRK  744
-#define GDUMPSHW  745
-
-#define GDUMPPTRGRP 746
-#define GDUMPPTRNO  747
-#define GDUMPPTR1   748
-#define GDUMPPTR2   749
-
-#define GDUMPBASEGRP 750
-#define GDUMPDEC 751
-#define GDUMPHEX 752
-
-#define GDUMPSGNGRP 753
-#define GDUMPSGN 754
-#define GDUMPUSGN 755
 
 Union valeurs
 vinteger As Integer
@@ -554,7 +621,7 @@ Const KSIZE8=8
 Const KSIZE10=10
 Const KSIZE12=12
 
-' for proc_find / thread
+'' for proc_find / thread
 Const KFIRST=1
 Const KLAST=2
 
@@ -586,6 +653,11 @@ Enum ''code stop
     CSNEWTHRD
     CSEXCEP
 End Enum
+
+''for dissassembly
+#define KLINE 1 ''from source code
+#define KPROC 2 ''from source code
+#define KSPROC 3 ''from proc/var
 
 Union pointeurs
 	pxxx As Any Ptr

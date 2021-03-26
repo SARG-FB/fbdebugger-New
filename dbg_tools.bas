@@ -2,201 +2,51 @@
 ''dbg_tools.bas
 
 
-'================================================================================================================================
-
-'Functions to use:
-
-'ExpandTreeViewItem - expand iItem. If iFlagAll = 0 , expand only iItem. If iFlagAll = 1 , expand iItem and all child for a iITem
-
-'CollapseTreeViewItem - collapse iItem and all child for a iItem
-
-'ExpandTreeViewItemALL - expand all items
-
-'CollapseTreeViewItemALL - collapse all items
-
-'=================================================================================================================================
-
-#ifdef __fb_win32__
+'===================
+'' lists enums
+'===================
+private sub enum_list()
+	dim as string text
+	For i As Integer = 1 To udtmax
+		If udt(i).en=i Then ' to avoid duplicate
+			text=udt(i).nm+chr(13)
+			For j As Integer = udt(i).lb To udt(i).ub
+				text+=cudt(j).nm+"="+str(cudt(j).val)+chr(13)
+			Next
+		End If
+	Next
+End Sub
+'=======================================================
+'' lists selected var with the children to log
+'=======================================================
+private sub procvar_list() 
+	Dim text As String, pr As Integer
+	Dim As Integer hitem,temp,level,iparent,inext
+	Dim As hwnd hedit
 	
-	Private Sub RecurExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagExpand As Long)
-		
-		Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
-		
-		If iChild Then 
-			
-			RecurExpandTreeViewItem(iGadget  , iChild , iFlagExpand)
-			
-		Endif
-		
-		Dim As Integer iBr = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_NEXT , Cast(LPARAM,iItem)))
-		
-		If iBr Then
-			
-			RecurExpandTreeViewItem(iGadget  , iBr ,  iFlagExpand)
-			
-		Endif
-		
-		If iFlagExpand Then
-			
-			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
-			
-		Else
-			
-			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_COLLAPSE , Cast(LPARAM,iItem))
-			
-		Endif
-		
-	End Sub
+	'get current hitem in tree
+	hitem=GetItemTreeView(GTVIEWVAR)
 	
-	Sub ExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagAll As Long)
-		
-		If iFlagAll Then
-			
-			Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
-			
-			If iChild Then 
-				
-				RecurExpandTreeViewItem(iGadget  , iChild , 1)
-				
-			Endif
-			
-			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
-			
-		Else
-			
-			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
-			
-		Endif
-		
-		Dim As Integer iTempItem = iItem
-		
-		While iTempItem
-			
-			iTempItem = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_PARENT , Cast(LPARAM,iTempItem)))
-			
-			If iTempItem Then
-				
-				SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iTempItem))
-				
-			Endif
-			
-		Wend
-		
-	End Sub
-	
-	Sub CollapseTreeViewItem(iGadget As Long  , iItem As Integer)
-		
-		Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
-		
-		If iChild Then 
-			
-			RecurExpandTreeViewItem(iGadget  , iChild , 0)
-			
-		Endif
-		
-		SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_COLLAPSE , Cast(LPARAM,iItem))
-		
-	End Sub
-	
-	Sub ExpandTreeViewItemALL(iGadget As Long)
-		
-		Dim As Integer iRoot = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_ROOT , 0))
-		
-		RecurExpandTreeViewItem(iGadget , iRoot , 1)
-		
-	End Sub
-	
-	Sub CollapseTreeViewItemALL(iGadget As Long)
-		
-		Dim As Integer iRoot = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_ROOT , 0))
-		
-		RecurExpandTreeViewItem(iGadget , iRoot , 0)
-		
-	End Sub
-	
-#else
-	
-	Sub ExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagAll As Long)
-		
-		Dim As Any Ptr treeview = Gadgetid(iGadget)
-		
-		Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
-		
-		Dim As GtkTreeIter iter , iterfirst
-		
-		Dim As GtkTreePath Ptr path
-		
-		If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
-			
-			iter.stamp =  iterfirst.stamp
-			
-			iter.user_data = Cast(Any Ptr,iItem)
-			
-			path = gtk_tree_model_get_path(treestore, @iter)
-			
-			gtk_tree_view_expand_to_path(treeview,path)
-			
-			If iFlagAll Then
-				
-				gtk_tree_view_expand_row(treeview , path , 1)
-				
-			Else
-				
-				gtk_tree_view_expand_row(treeview , path , 0)
-				
-				If gtk_tree_view_row_expanded(treeview , path) Then
-					
-					gtk_tree_view_collapse_row(treeview , path )
-					
-				Endif
-				
-			Endif
-			
-			gtk_tree_path_free(path)
-			
-		Endif
-		
-	End Sub
-	
-	Sub CollapseTreeViewItem(iGadget As Long  , iItem As Integer)
-		
-		Dim As Any Ptr treeview = Gadgetid(iGadget)
-		
-		Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
-		
-		Dim As GtkTreeIter iter , iterfirst
-		
-		Dim As GtkTreePath Ptr path
-		
-		If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
-			
-			iter.stamp =  iterfirst.stamp
-			
-			iter.user_data = Cast(Any Ptr,iItem)
-			
-			path = gtk_tree_model_get_path(treestore, @iter)
-			
-			gtk_tree_view_collapse_row(treeview , path)
-			
-			gtk_tree_path_free(path)
-			
-		Endif
-		
-	End Sub
-	
-	Sub ExpandTreeViewItemALL(iGadget As Long)
-		
-		gtk_tree_view_expand_all(Cast(Any Ptr ,Gadgetid(iGadget)))
-		
-	End Sub
-	
-	Sub CollapseTreeViewItemALL(iGadget As Long)
-		
-		gtk_tree_view_collapse_all(Cast(Any Ptr ,Gadgetid(iGadget)))
-		
-	End Sub
-	
-#endif
+	While hitem<>0
+		GetTextTreeView(GTVIEWVAR,hitem)
+		'#Ifdef fulldbg_prt
+			dbg_prt(Space(level*4)+text)
+		'#EndIf
+		temp=GetChildItemTreeView(GTVIEWVAR,hitem)
+		level+=1
+	   While temp=0
+			temp=GetNextChildItemTreeView(GTVIEWVAR,hitem)
+			If temp<>0 Then
+				If inext=temp Then Exit While,While 
+				level-=1:Exit While
+			EndIf
+			hitem=GetParentItemTreeView(GTVIEWVAR,hitem)
+			level-=1
+			If hitem=iparent Then Exit While,While
+	   Wend
+	   hitem=temp
+	Wend
+End Sub
 '=================================================
 '' shows string zstring
 '=================================================
@@ -518,8 +368,8 @@ private sub log_del()
 End Sub
 '=============================================
 private sub bcktrk_close()
-	If bcktrkbx Then 
-		hidewindow(bcktrkbx,1)
+	If htrckbx Then 
+		hidewindow(htrckbx,KHIDE)
 	EndIf
 End Sub
 '=============================================
@@ -2370,9 +2220,7 @@ private sub brkv_set(a As Integer) ''break on variable change
 	Dim Title As String, j As UInteger,ztxt As string,tvi As integer
 	If a=0 Then 'cancel break
 		brkv.adr=0
-		setWindowText(brkvhnd,"Break on var")
-		'menu_chg(,idvarbrk,"Break on var")
-		' Modify_Menu(1001,MenName,"Changed")
+		SetGadgetText(GBRKVAR,"Break on var")
 		Modify_Menu(MNVARBRK,HMenuvar,"Break on var")
 		Exit Sub
 	ElseIf a=1 Then 'new
@@ -2535,8 +2383,7 @@ private function brkv_test() As Byte
 		End Select
 	If flag Then
 		If brkv.ivr=0 Then stopcode=CSBRKM Else stopcode=CSBRKV  ''memory or variable
-		strg1=Space(151)''2017/12/13
-		GetWindowText(brkvhnd,StrPtr(strg1),150)''current string for break on var
+		strg1=getGadgetText(GBRKVAR) ''current string for break on var
 		strg2=var_sh2(brkv.typ,brkv.adr,0) ''last parameter in var_sh2 can be zero because type has been changed and even its a pointer no need *
 		
 		strg3=Left(strg1,InStr(strg1,">"))          ''beginning of string
@@ -2547,7 +2394,7 @@ private function brkv_test() As Byte
 			,MB_YESNO)=RETYES Then
 			brkv_set(0)
 		else
-			SetWindowText(brkvhnd,strg3)
+			SetGadgetText(GBRKVAR,strg3)
 			Modify_Menu(MNVARBRK,HMenuvar,strg3)
 		end if
 		Return TRUE
@@ -3511,6 +3358,26 @@ private sub ini_read()
     exename=savexe(0)
     'todo fb_UpdateTooltip(fb_hToolTip,butrrune,"Restart "+exename,"",0)
 End sub
+''==============================================================================
+'' freeing all before quitting the debugger 
+''==============================================================================
+private sub closes_debugger()
+	dim as zstring *50 text =""
+
+    If prun Then
+    	text=>"CAUTION PROGRAM STILL RUNNING."+Chr(10)+Chr(10)
+    EndIf
+	if messbox("Quit Fbdebugger",text+"Are you sure ?",MB_YESNO)=RETYES then
+		release_doc ''releases scintilla docs
+		''todo free all the objects menus, etc
+		If sourcenb<>-1 Then ''case exiting without stopping debuggee before
+			watch_sav
+			brk_sav 
+		EndIf
+		ini_write()
+		end
+	endif
+end sub
 '===================================================
 '' Drag and drop
 '===================================================

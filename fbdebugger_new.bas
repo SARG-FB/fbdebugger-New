@@ -141,11 +141,11 @@ dim shared as hwnd hbrkbx ''window for managing breakpoints
 ''breakpoint on variable/memory (when there is a change)
 Dim Shared brkv As tbrkv 
 Dim Shared brkv2 As tbrkv 'copie for use inside brkv_box
-Dim Shared brkvhnd As HWND   'handle
+Dim Shared As HWND hbrkvbx  'handle
 
 ''Backtracking
 Dim Shared As Integer bcktrkpr
-Dim Shared As HWND bcktrkbx
+Dim Shared As HWND htrckbx
 
 
 ''dump memory
@@ -190,6 +190,8 @@ Dim Shared As tvarfind varfind
 Dim Shared As Integer shwexpnb 'current number of show/expand box
 Dim Shared As tshwexp shwexp(1 To SHWEXPMAX) 'data for show/expand
 Dim Shared As tvrp vrp(SHWEXPMAX,VRPMAX)
+Dim Shared As hwnd hshwexpbx
+Dim Shared As hwnd htviewshw
 
 dim shared as HMENU HMenusource
 dim shared as HMENU HMenusource2
@@ -277,8 +279,7 @@ Dim Shared exedate As Double 'serial date
 #include "dbg_gui.bas"
 #include "dbg_tools.bas"
 #include "dbg_extract.bas"
-#include "dbg_buttons.bas"
-#include "dbg_menu.bas"
+#include "dbg_actions.bas"
 #Ifdef __fb_win32__
 	#include "dbg_windows.bas"
 #else	
@@ -314,6 +315,8 @@ if elf_extract(exename) then
 		''later sort the files to get them in alphabetic order
 		AddComboBoxItem(GFILELIST,source_name(source(isrc)),-1)
 	next
+	SetItemComboBox(GFILELIST,1)
+	'ShowListComboBox(GFILELIST,TRUE)
 	'SetGadgetFont(GSRCTAB,CINT(LoadFont("Courier New",10)))
 	sources_load(0,filedatetime(exename))
 	
@@ -341,11 +344,7 @@ do
 	Var event=WaitEvent()
 	If Event=EventClose then
 		if EventHwnd=hmain then
-			if messbox("Quit Fbdebugger","Are you sure ? (pgm still running)",MB_YESNO)=6 then
-				''todo need to release doc SCI_RELEASEDOCUMENT(<unused>, pointer doc)
-				release_doc
-				end
-			endif
+			closes_debugger()
 		else
 			HideWindow(EventHwnd,1)
 			if EventHwnd=hsettings then
@@ -401,9 +400,6 @@ do
         	else
         		messbox("Select a file", "before clicking on the button")
         	endif
-		elseif eventnumber()=GCURRENTLINE then
-				messbox("Click on Current line","Jumping to the file/line")
-				linecur_display()
 		elseif eventnumber()=GSRCTAB then
 			Messbox("The selected panel for file:",source(PanelGadgetGetCursel(GSRCTAB)))
 			source_change(PanelGadgetGetCursel(GSRCTAB))
