@@ -2,202 +2,14 @@
 ''dbg_gui.bas
 
 
+Function GetPrevItemTreeView(iGadget As Long , iItem As Integer) As Integer
+	#ifdef __fb_win32__     
+		return Cast(Integer,SendMessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_PREVIOUS,Cast(LPARAM,iItem)))
+	#else
+		messbox("feature missing for linux","GetPrevChildItemTreeView()")
+	#endif
+end function
 
-'================================================================================================================================
-
-'Functions to use:
-
-'ExpandTreeViewItem - expand iItem. If iFlagAll = 0 , expand only iItem. If iFlagAll = 1 , expand iItem and all child for a iITem
-
-'CollapseTreeViewItem - collapse iItem and all child for a iItem
-
-'ExpandTreeViewItemALL - expand all items
-
-'CollapseTreeViewItemALL - collapse all items
-
-'=================================================================================================================================
-
-#ifdef __fb_win32__
-	
-	Private Sub RecurExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagExpand As Long)
-		
-		Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
-		
-		If iChild Then 
-			
-			RecurExpandTreeViewItem(iGadget  , iChild , iFlagExpand)
-			
-		Endif
-		
-		Dim As Integer iBr = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_NEXT , Cast(LPARAM,iItem)))
-		
-		If iBr Then
-			
-			RecurExpandTreeViewItem(iGadget  , iBr ,  iFlagExpand)
-			
-		Endif
-		
-		If iFlagExpand Then
-			
-			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
-			
-		Else
-			
-			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_COLLAPSE , Cast(LPARAM,iItem))
-			
-		Endif
-		
-	End Sub
-	
-	Sub ExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagAll As Long)
-		
-		If iFlagAll Then
-			
-			Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
-			
-			If iChild Then 
-				
-				RecurExpandTreeViewItem(iGadget  , iChild , 1)
-				
-			Endif
-			
-			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
-			
-		Else
-			
-			SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iItem))
-			
-		Endif
-		
-		Dim As Integer iTempItem = iItem
-		
-		While iTempItem
-			
-			iTempItem = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_PARENT , Cast(LPARAM,iTempItem)))
-			
-			If iTempItem Then
-				
-				SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_EXPAND , Cast(LPARAM,iTempItem))
-				
-			Endif
-			
-		Wend
-		
-	End Sub
-	
-	Sub CollapseTreeViewItem(iGadget As Long  , iItem As Integer)
-		
-		Dim As Integer iChild = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_CHILD , Cast(LPARAM,iItem)))
-		
-		If iChild Then 
-			
-			RecurExpandTreeViewItem(iGadget  , iChild , 0)
-			
-		Endif
-		
-		SendMessage(Gadgetid(iGadget), TVM_EXPAND , TVE_COLLAPSE , Cast(LPARAM,iItem))
-		
-	End Sub
-	
-	Sub ExpandTreeViewItemALL(iGadget As Long)
-		
-		Dim As Integer iRoot = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_ROOT , 0))
-		
-		RecurExpandTreeViewItem(iGadget , iRoot , 1)
-		
-	End Sub
-	
-	Sub CollapseTreeViewItemALL(iGadget As Long)
-		
-		Dim As Integer iRoot = Cast(Integer, SendMessage(Gadgetid(iGadget), TVM_GETNEXTITEM , TVGN_ROOT , 0))
-		
-		RecurExpandTreeViewItem(iGadget , iRoot , 0)
-		
-	End Sub
-	
-#else
-	
-	Sub ExpandTreeViewItem(iGadget As Long  , iItem As Integer , iFlagAll As Long)
-		
-		Dim As Any Ptr treeview = Gadgetid(iGadget)
-		
-		Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
-		
-		Dim As GtkTreeIter iter , iterfirst
-		
-		Dim As GtkTreePath Ptr path
-		
-		If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
-			
-			iter.stamp =  iterfirst.stamp
-			
-			iter.user_data = Cast(Any Ptr,iItem)
-			
-			path = gtk_tree_model_get_path(treestore, @iter)
-			
-			gtk_tree_view_expand_to_path(treeview,path)
-			
-			If iFlagAll Then
-				
-				gtk_tree_view_expand_row(treeview , path , 1)
-				
-			Else
-				
-				gtk_tree_view_expand_row(treeview , path , 0)
-				
-				If gtk_tree_view_row_expanded(treeview , path) Then
-					
-					gtk_tree_view_collapse_row(treeview , path )
-					
-				Endif
-				
-			Endif
-			
-			gtk_tree_path_free(path)
-			
-		Endif
-		
-	End Sub
-	
-	Sub CollapseTreeViewItem(iGadget As Long  , iItem As Integer)
-		
-		Dim As Any Ptr treeview = Gadgetid(iGadget)
-		
-		Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
-		
-		Dim As GtkTreeIter iter , iterfirst
-		
-		Dim As GtkTreePath Ptr path
-		
-		If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
-			
-			iter.stamp =  iterfirst.stamp
-			
-			iter.user_data = Cast(Any Ptr,iItem)
-			
-			path = gtk_tree_model_get_path(treestore, @iter)
-			
-			gtk_tree_view_collapse_row(treeview , path)
-			
-			gtk_tree_path_free(path)
-			
-		Endif
-		
-	End Sub
-	
-	Sub ExpandTreeViewItemALL(iGadget As Long)
-		
-		gtk_tree_view_expand_all(Cast(Any Ptr ,Gadgetid(iGadget)))
-		
-	End Sub
-	
-	Sub CollapseTreeViewItemALL(iGadget As Long)
-		
-		gtk_tree_view_collapse_all(Cast(Any Ptr ,Gadgetid(iGadget)))
-		
-	End Sub
-	
-#endif
 '================================================================================
 '' Changes size gadgets when main window is resized
 '===================================================
@@ -211,145 +23,6 @@ private sub size_changed()
 		#endif
 	end if
 end sub
-'================================================================================
-'' Returns first child of an item
-'================================================================================
-private Function GetChildItemTreeView(iGadget As Long , iItem As Integer) As Integer
-    
-    #ifdef __fb_win32__
-        
-        Return Cast(Integer,SendMessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_CHILD,Cast(LPARAM,iItem)))
-        
-    #else
-        
-        Dim As Any Ptr treeview = Gadgetid(iGadget)
-        
-        Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
-        
-        Dim As GtkTreeIter iterChild , iterfirst , iterParent
-        
-        If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
-            
-            iterParent.stamp =  iterfirst.stamp
-            
-            iterParent.user_data = Cast(Any Ptr,iItem)
-            
-            if gtk_tree_model_iter_children(treestore, @iterChild , @iterParent ) then
-                
-                If iterChild.stamp Then
-                    
-                    Return Cast(Integer , iterChild.user_data)
-                    
-                Endif
-                
-            EndIf
-
-        Endif
-        
-    #endif
-    
-End Function
-'================================================================================
-'' Returns next child of an item
-'================================================================================
-Function GetNextChildItemTreeView(iGadget As Long , iItem As Integer) As Integer
-    
-    #ifdef __fb_win32__
-        
-        Return Cast(Integer,SendMessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_NEXT,Cast(LPARAM,iItem)))
-        
-    #else
-        
-        Dim As Any Ptr treeview = Gadgetid(iGadget)
-        
-        Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
-        
-        Dim As GtkTreeIter iterChild , iterfirst 
-        
-        If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
-            
-            iterChild.stamp = iterfirst.stamp
-            
-            iterChild.user_data = Cast(Any Ptr,iItem)
-            
-            if gtk_tree_model_iter_next(treestore, @iterChild) then
-                
-                If iterChild.stamp Then
-                    
-                    Return Cast(Integer , iterChild.user_data)
-                    
-                Endif
-                
-            EndIf
-
-        Endif
-        
-    #endif
-    
-End Function
-'================================================================================
-'' returns parent of an item
-'================================================================================
-private Function GetParentItemTreeView(iGadget As Long , iItem As Integer) As Integer
-    
-    #ifdef __fb_win32__
-        
-        Return Cast(Integer,SendMessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_PARENT,Cast(LPARAM,iItem)))
-        
-    #else
-        
-        Dim As Any Ptr treeview = Gadgetid(iGadget)
-        
-        Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
-        
-        Dim As GtkTreeIter iterChild , iterfirst , iterParent
-        
-        If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
-            
-            iterChild.stamp =  iterfirst.stamp
-            
-            iterChild.user_data = Cast(Any Ptr,iItem)
-            
-            gtk_tree_model_iter_parent(treestore, @iterParent , @iterChild )
-            
-            If iterParent.stamp Then
-                
-                Return Cast(Integer , iterParent.user_data)
-                
-            Endif
-            
-        Endif
-        
-    #endif
-    
-End Function
-'=======================================================================================
-'' displays an item in a treeview (can be removed when the feature will be added in W9
-'=======================================================================================
-private Sub SetSelectTreeViewItem(iGadget As Long  , Item As Integer )
-	#ifdef __fb_win32__
-		setfocus(Gadgetid(iGadget))
-		sendmessage(Gadgetid(iGadget) , TVM_SELECTITEM ,  TVGN_CARET , Cast(lparam, Item))
-	#else
-		Dim As Any Ptr treeview = Gadgetid(iGadget)
-		Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
-		Dim As GtkTreeSelection Ptr selection = gtk_tree_view_get_selection (treeview)
-		Dim As GtkTreeIter iter , iterfirst
-		Dim As GtkTreePath Ptr path
-		If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
-			iter.stamp =  iterfirst.stamp
-			iter.user_data = Cast(Any Ptr,Item)
-			path = gtk_tree_model_get_path(treestore, @iter)
-			gtk_tree_view_scroll_to_cell (treeview, path, NULL, True, 0.5, 0.0)
-			gtk_tree_view_expand_to_path(treeview,path)
-			If gtk_tree_view_row_expanded(treeview , path) Then
-				gtk_tree_view_collapse_row(treeview , path )
-			Endif
-			gtk_tree_selection_select_path(selection, path)		
-			gtk_tree_path_free(path)		
-		Endif
-	#endif
-End Sub
 '=====================
 ''Loading of buttons
 '=====================
@@ -702,11 +375,8 @@ end sub
 private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as Long  , Exstyle as integer = 0)
 	dim as HWND hsci
 	#ifdef __fb_win32__
-		if dylibload("SciLexer.dll")=0 then ''todo if not loaded -->error and exit
-		'if dylibload ( "D:\laurent_divers\fb dev\En-cours\FBDEBUG NEW\asm64_via_llvm\test_a_garder/scintilla" )=0 then
-
-			messbox("SciLexer.dll problem","dll not found"+chr(13)+"Quitting fbdebugger")
-			end
+		if dylibload("SciLexer.dll")=0 then
+			hard_closing("SciLexer.dll not found")
 		end if
 		hsci = CreateWindowEx(Exstyle,"scintilla","", WS_CHILD Or WS_VISIBLE Or WS_CLIPCHILDREN,x,y,w,h,Cast(HWND,win9GetCurrent()), Cast(HMENU,CInt(gadget)), 0, 0)
 		win9AddNewGadget(gadget,hsci)
@@ -852,7 +522,6 @@ private sub but_enable()
 			SetStatusBarField(1,3,400,source_name(source(proc(procsv).sr)))
 			SetStatusBarField(1,4,500,proc(procsv).nm)
 			SetStatusBarField(1,5,-1,left(Str(fasttimer),10))
-			'todo frground()
    		case RTRUN,RTFREE,RTFRUN 'step over / out / free / run / fast run
 			DisableGadget(IDBUTSTEP,1)
 			DisableGadget(IDBUTSTEPP,1)
@@ -1279,4 +948,17 @@ private sub gui_init()
 	menu_set()
 
 end sub
-
+'===============================================
+'' Reinitialisation GUI
+'===============================================
+private sub reinit_gui()
+	dump_set()
+	but_enable()	
+	menu_enable()
+end sub
+'===============================================
+'' Freea all the gadgets
+'===============================================
+private sub freegadgets()
+	messbox("Feature to be coded","freegadgets()"
+end sub

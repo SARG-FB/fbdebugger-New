@@ -5,9 +5,8 @@ fbc_linux_exe
 FBdebugger-pour_recup.bas
 fbdebugger_new.bat
 fbdebugger_new.exe
-libLinked_Lists.a
-libwindow9.a
-libz.a
+*.a
+*.ini
 objdump.bat
 objdump.exe
 scilexer.bi

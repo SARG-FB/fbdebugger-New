@@ -5,15 +5,12 @@
 
 ''menu : 1000+
 
-
-
-
 #macro mydefine(d,v)
 	#define ##d v
-	if defarray(v)<>"" then 
-		print "error value ";v;" for ";##d; " already used by ";defarray(v)
+	if enumdef(v)<>"" then 
+		print "error value ";v;" for ";##d; " already used by ";enumdef(v)
 	else	
-		defarray(v)=##d
+		enumdef(v)=##d
 	end if
 #endmacro
 
@@ -124,7 +121,7 @@
 #else
 	'' Output information
 	define dbg_prt(txt) output_lnx(txt)
-	'declare output_lnx(as string)  todo create output_lnx
+	declare output_lnx(as string)
 #endif
 
 #Define TYPESTD 17 ''upper limit for standard type, now 17 for va_list 2020/02/05
@@ -464,9 +461,9 @@ end enum
 
 ''for inputval box
 enum
-GINPUTVAL=920
-INPUTVALOK
-INPUTVALCANCEL
+	GINPUTVAL=920
+	INPUTVALOK
+	INPUTVALCANCEL
 end enum
 
 ''for dump memory
@@ -699,7 +696,6 @@ Type tproc
 	ed As UInteger 'upper proc end
 	sr As UShort   'source index
 	nu As Long     'line number to quick access
-	'todo remove lastline As Long 'last line of proc (use when dwarf data)
 	vr As UInteger 'lower index variable upper (next proc) -1
 	rv As Integer  'return value type
 	pt As Long     'counter pointer for return value (** -> 2)
@@ -712,7 +708,7 @@ Const PROCRMAX=50000 'Running proc
 Type tprocr
 	sk   As UInteger  'stack
 	idx  As UInteger  'index for proc
-	tv   As integer 'index for treeview todo changed for linux
+	tv   As integer 'index for treeview
 	'lst as uinteger 'future array in LIST
 	cl   As Integer   'calling line
 	thid As Integer   'idx thread
@@ -774,14 +770,7 @@ Type tudt
 	ub As Integer 'upper
 	lg As Integer 'lenght
 	en As Integer 'flag if enum 1 or 0
-
-	''todo remove
-	'index As Integer 'dwarf
-	'what As Integer 'dwarf udt/pointer/array
-	'typ As Integer 'dwarf
-	'dimnb As Long 'dwarf
-	'bounds(5) As UInteger 'dwarf
-End Type
+end Type
 Type tcudt
 	nm As String    'name of components or text for enum
 	Union
@@ -861,7 +850,7 @@ Type tthread
  od  As Integer   'previous line
  nk  As UInteger  'for naked proc, stack and used as flag
  st  As Integer   'to keep starting line
- tv  As integer 'to keep handle of thread item todo 3 lines 
+ tv  As integer 'to keep handle of thread item
  plt As integer 'to keep handle of last proc of thread in proc/var tview 
  ptv As integer 'to keep handle of last proc of thread in thread tview 
  exc As Integer   'to indicate execution in case of auto 1=yes, 0=no
@@ -884,7 +873,7 @@ End Type
 Const SHWEXPMAX=10 'max shwexp boxes
 Const VRPMAX=5000  'max elements in each treeview
 Type tshwexp
-	bx As HWND     'handle pointed value box   todo check if gadget ?
+	bx As HWND     'handle pointed value box
 	tv As HWND     'corresponding tree view
 	nb As Integer  'number of elements tvrp
 	cu As HWND     'handle of the current index label
@@ -927,3 +916,274 @@ declare function var_find2(tv As HWND) As Integer
 declare sub proc_del(j As Integer,t As Integer=1)
 declare sub dsp_change(index As Integer)
 declare sub size_change()
+
+'' could be removed when every enum have been tested
+dim shared as string enumdef(10000)
+enumdef(FONTGROUP)="FONTGROUP"
+enumdef(GAUTODELAY)="GAUTODELAY"
+enumdef(GBOTHLOG)="GBOTHLOG"
+enumdef(GBRKCLOSE)="GBRKCLOSE"
+enumdef(GBRKCOND)="GBRKCOND"
+enumdef(GBRKDEL01)="GBRKDEL01"
+enumdef(GBRKDEL02)="GBRKDEL02"
+enumdef(GBRKDEL03)="GBRKDEL03"
+enumdef(GBRKDEL04)="GBRKDEL04"
+enumdef(GBRKDEL05)="GBRKDEL05"
+enumdef(GBRKDEL06)="GBRKDEL06"
+enumdef(GBRKDEL07)="GBRKDEL07"
+enumdef(GBRKDEL08)="GBRKDEL08"
+enumdef(GBRKDEL09)="GBRKDEL09"
+enumdef(GBRKDEL10)="GBRKDEL10"
+enumdef(GBRKDELALL)="GBRKDELALL"
+enumdef(GBRKDISABLE)="GBRKDISABLE"
+enumdef(GBRKDSB01)="GBRKDSB01"
+enumdef(GBRKDSB02)="GBRKDSB02"
+enumdef(GBRKDSB03)="GBRKDSB03"
+enumdef(GBRKDSB04)="GBRKDSB04"
+enumdef(GBRKDSB05)="GBRKDSB05"
+enumdef(GBRKDSB06)="GBRKDSB06"
+enumdef(GBRKDSB07)="GBRKDSB07"
+enumdef(GBRKDSB08)="GBRKDSB08"
+enumdef(GBRKDSB09)="GBRKDSB09"
+enumdef(GBRKDSB10)="GBRKDSB10"
+enumdef(GBRKENABLE)="GBRKENABLE"
+enumdef(GBRKLINE01)="GBRKLINE01"
+enumdef(GBRKLINE02)="GBRKLINE02"
+enumdef(GBRKLINE03)="GBRKLINE03"
+enumdef(GBRKLINE04)="GBRKLINE04"
+enumdef(GBRKLINE05)="GBRKLINE05"
+enumdef(GBRKLINE06)="GBRKLINE06"
+enumdef(GBRKLINE07)="GBRKLINE07"
+enumdef(GBRKLINE08)="GBRKLINE08"
+enumdef(GBRKLINE09)="GBRKLINE09"
+enumdef(GBRKLINE10)="GBRKLINE10"
+enumdef(GBRKVAR)="GBRKVAR"
+enumdef(GBRKVDEL)="GBRKVDEL"
+enumdef(GBRKVOK)="GBRKVOK"
+enumdef(GBRKVVALUE)="GBRKVVALUE"
+enumdef(GCMDLPARAM)="GCMDLPARAM"
+enumdef(GCURLINETTIP)="GCURLINETTIP"
+enumdef(GCURRENTLINE)="GCURRENTLINE"
+enumdef(GDUMPADR)="GDUMPADR"
+enumdef(GDUMPAPPLY)="GDUMPAPPLY"
+enumdef(GDUMPBASEGRP)="GDUMPBASEGRP"
+enumdef(GDUMPBRK)="GDUMPBRK"
+enumdef(GDUMPCL)="GDUMPCL"
+enumdef(GDUMPCP)="GDUMPCP"
+enumdef(GDUMPDEC)="GDUMPDEC"
+enumdef(GDUMPHEX)="GDUMPHEX"
+enumdef(GDUMPLL)="GDUMPLL"
+enumdef(GDUMPLP)="GDUMPLP"
+enumdef(GDUMPMEM)="GDUMPMEM"
+enumdef(GDUMPMOVEGRP)="GDUMPMOVEGRP"
+enumdef(GDUMPNEW)="GDUMPNEW"
+enumdef(GDUMPPL)="GDUMPPL"
+enumdef(GDUMPPP)="GDUMPPP"
+enumdef(GDUMPPTR1)="GDUMPPTR1"
+enumdef(GDUMPPTR2)="GDUMPPTR2"
+enumdef(GDUMPPTRGRP)="GDUMPPTRGRP"
+enumdef(GDUMPPTRNO)="GDUMPPTRNO"
+enumdef(GDUMPSGN)="GDUMPSGN"
+enumdef(GDUMPSGNGRP)="GDUMPSGNGRP"
+enumdef(GDUMPSHW)="GDUMPSHW"
+enumdef(GDUMPSIZE)="GDUMPSIZE"
+enumdef(GDUMPTSIZE)="GDUMPTSIZE"
+enumdef(GDUMPUSGN)="GDUMPUSGN"
+enumdef(GDUMPWCH)="GDUMPWCH"
+enumdef(GDUMUSEGRP)="GDUMUSEGRP"
+enumdef(GFILELIST)="GFILELIST"
+enumdef(GFILELOG)="GFILELOG"
+enumdef(GFILESEL)="GFILESEL"
+enumdef(GIDXAPPLY)="GIDXAPPLY"
+enumdef(GIDXAUTO)="GIDXAUTO"
+enumdef(GIDXBLKL)="GIDXBLKL"
+enumdef(GIDXBLKP)="GIDXBLKP"
+enumdef(GIDXCOLL)="GIDXCOLL"
+enumdef(GIDXCOLP)="GIDXCOLP"
+enumdef(GIDXDEC)="GIDXDEC"
+enumdef(GIDXINC)="GIDXINC"
+enumdef(GIDXMAX1)="GIDXMAX1"
+enumdef(GIDXMAX5)="GIDXMAX5"
+enumdef(GIDXMIN1)="GIDXMIN1"
+enumdef(GIDXMIN5)="GIDXMIN5"
+enumdef(GIDXPAGEL)="GIDXPAGEL"
+enumdef(GIDXPAGEP)="GIDXPAGEP"
+enumdef(GIDXROWL)="GIDXROWL"
+enumdef(GIDXROWP)="GIDXROWP"
+enumdef(GIDXTABLE)="GIDXTABLE"
+enumdef(GIDXUP1)="GIDXUP1"
+enumdef(GIDXUP5)="GIDXUP5"
+enumdef(GIDXUPD)="GIDXUPD"
+enumdef(GIDXVAR)="GIDXVAR"
+enumdef(GIDXWIDTH)="GIDXWIDTH"
+enumdef(GNOLOG)="GNOLOG"
+enumdef(GRIGHTTABS)="GRIGHTTABS"
+enumdef(GSCINTILLA)="GSCINTILLA"
+enumdef(GSCREENLOG)="GSCREENLOG"
+enumdef(GSHWCLOSE)="GSHWCLOSE"
+enumdef(GSHWCUR)="GSHWCUR"
+enumdef(GSHWDMP)="GSHWDMP"
+enumdef(GSHWEDT)="GSHWEDT"
+enumdef(GSHWINC)="GSHWINC"
+enumdef(GSHWMAX)="GSHWMAX"
+enumdef(GSHWMIN)="GSHWMIN"
+enumdef(GSHWNEW)="GSHWNEW"
+enumdef(GSHWRED)="GSHWRED"
+enumdef(GSHWRPL)="GSHWRPL"
+enumdef(GSHWSET)="GSHWSET"
+enumdef(GSHWSTR)="GSHWSTR"
+enumdef(GSHWUPD)="GSHWUPD"
+enumdef(GSHWWCH)="GSHWWCH"
+enumdef(GSRCTAB)="GSRCTAB"
+enumdef(GTEXTCMDLP)="GTEXTCMDLP"
+enumdef(GTEXTDELAY)="GTEXTDELAY"
+enumdef(GTEXTFCOLOR)="GTEXTFCOLOR"
+enumdef(GTEXTFSIZE)="GTEXTFSIZE"
+enumdef(GTEXTFTYPE)="GTEXTFTYPE"
+enumdef(GTRACELINE)="GTRACELINE"
+enumdef(GTRACEPROC)="GTRACEPROC"
+enumdef(GTRACKCUR)="GTRACKCUR"
+enumdef(GTRACKNXT)="GTRACKNXT"
+enumdef(GTRACKPCUR)="GTRACKPCUR"
+enumdef(GTRACKPNXT)="GTRACKPNXT"
+enumdef(GTRACKPPRV)="GTRACKPPRV"
+enumdef(GTRACKPRV)="GTRACKPRV"
+enumdef(GTVIEWPRC)="GTVIEWPRC"
+enumdef(GTVIEWSHW)="GTVIEWSHW"
+enumdef(GTVIEWTHD)="GTVIEWTHD"
+enumdef(GTVIEWVAR)="GTVIEWVAR"
+enumdef(GTVIEWWCH)="GTVIEWWCH"
+enumdef(GVERBOSE)="GVERBOSE"
+enumdef(IDBUTATTCH)="IDBUTATTCH"
+enumdef(IDBUTAUTO)="IDBUTAUTO"
+enumdef(IDBUTCURSOR)="IDBUTCURSOR"
+enumdef(IDBUTENLRMEM)="IDBUTENLRMEM"
+enumdef(IDBUTENLRSRC)="IDBUTENLRSRC"
+enumdef(IDBUTENLRVAR)="IDBUTENLRVAR"
+enumdef(IDBUTEXEMOD)="IDBUTEXEMOD"
+enumdef(IDBUTFASTRUN)="IDBUTFASTRUN"
+enumdef(IDBUTFILE)="IDBUTFILE"
+enumdef(IDBUTFREE)="IDBUTFREE"
+enumdef(IDBUTKILL)="IDBUTKILL"
+enumdef(IDBUTLASTEXE)="IDBUTLASTEXE"
+enumdef(IDBUTRERUN)="IDBUTRERUN"
+enumdef(IDBUTRUN)="IDBUTRUN"
+enumdef(IDBUTSTEP)="IDBUTSTEP"
+enumdef(IDBUTSTEPB)="IDBUTSTEPB"
+enumdef(IDBUTSTEPM)="IDBUTSTEPM"
+enumdef(IDBUTSTEPP)="IDBUTSTEPP"
+enumdef(IDBUTSTEPT)="IDBUTSTEPT"
+enumdef(IDBUTSTOP)="IDBUTSTOP"
+enumdef(IDBUTTOOL)="IDBUTTOOL"
+enumdef(IDBUTUPDATE)="IDBUTUPDATE"
+enumdef(LOGGROUP)="LOGGROUP"
+enumdef(MNABOUT)="MNABOUT"
+enumdef(MNACCLINE)="MNACCLINE"
+enumdef(MNASMLINE)="MNASMLINE"
+enumdef(MNASMPRC)="MNASMPRC"
+enumdef(MNASMPRCL)="MNASMPRCL"
+enumdef(MNASMREGS)="MNASMREGS"
+enumdef(MNAUTO)="MNAUTO"
+enumdef(MNBRKENB)="MNBRKENB"
+enumdef(MNCALLINE)="MNCALLINE"
+enumdef(MNCHGBRKC)="MNCHGBRKC"
+enumdef(MNCHGZSTR)="MNCHGZSTR"
+enumdef(MNCLBVARA)="MNCLBVARA"
+enumdef(MNCLBVARS)="MNCLBVARS"
+enumdef(MNCMPINF)="MNCMPINF"
+enumdef(MNCREATHR)="MNCREATHR"
+enumdef(MNCURSOR)="MNCURSOR"
+enumdef(MNDBGHELP)="MNDBGHELP"
+enumdef(MNDELLOG)="MNDELLOG"
+enumdef(MNEXCLINE)="MNEXCLINE"
+enumdef(MNEXEFILE0)="MNEXEFILE0"
+enumdef(MNEXEFILE1)="MNEXEFILE1"
+enumdef(MNEXEFILE2)="MNEXEFILE2"
+enumdef(MNEXEFILE3)="MNEXEFILE3"
+enumdef(MNEXEFILE4)="MNEXEFILE4"
+enumdef(MNEXEFILE5)="MNEXEFILE5"
+enumdef(MNEXEFILE6)="MNEXEFILE6"
+enumdef(MNEXEFILE7)="MNEXEFILE7"
+enumdef(MNEXEFILE8)="MNEXEFILE8"
+enumdef(MNEXEFILE9)="MNEXEFILE9"
+enumdef(MNEXEMOD)="MNEXEMOD"
+enumdef(MNFASTRUN)="MNFASTRUN"
+enumdef(MNFCSSRC)="MNFCSSRC"
+enumdef(MNFNDTXDW)="MNFNDTXDW"
+enumdef(MNFNDTXT)="MNFNDTXT"
+enumdef(MNFNDTXUP)="MNFNDTXUP"
+enumdef(MNFNDVAR)="MNFNDVAR"
+enumdef(MNFRTIMER)="MNFRTIMER"
+enumdef(MNGOTO)="MNGOTO"
+enumdef(MNJITDBG)="MNJITDBG"
+enumdef(MNKILL)="MNKILL"
+enumdef(MNLINEADR)="MNLINEADR"
+enumdef(MNLISTDLL)="MNLISTDLL"
+enumdef(MNLISTENUM)="MNLISTENUM"
+enumdef(MNLISTPROCESS)="MNLISTPROCESS"
+enumdef(MNLOCPRC)="MNLOCPRC"
+enumdef(MNLSTVARA)="MNLSTVARA"
+enumdef(MNLSTVARS)="MNLSTVARS"
+enumdef(MNMNGBRK)="MNMNGBRK"
+enumdef(MNPBCKTRK)="MNPBCKTRK"
+enumdef(MNPCHNING)="MNPCHNING"
+enumdef(MNPRCRADR)="MNPRCRADR"
+enumdef(MNPTDUMP)="MNPTDUMP"
+enumdef(MNRSTBRKC)="MNRSTBRKC"
+enumdef(MNRSTPRC)="MNRSTPRC"
+enumdef(MNRUN)="MNRUN"
+enumdef(MNSELIDX)="MNSELIDX"
+enumdef(MNSETBRK)="MNSETBRK"
+enumdef(MNSETBRKC)="MNSETBRKC"
+enumdef(MNSETBRT)="MNSETBRT"
+enumdef(MNSETPRC)="MNSETPRC"
+enumdef(MNSETWTCH)="MNSETWTCH"
+enumdef(MNSETWTTR)="MNSETWTTR"
+enumdef(MNSETWVAR)="MNSETWVAR"
+enumdef(MNSHCHAR)="MNSHCHAR"
+enumdef(MNSHPRSRC)="MNSHPRSRC"
+enumdef(MNSHSTRG)="MNSHSTRG"
+enumdef(MNSHWBDH)="MNSHWBDH"
+enumdef(MNSHWEXP)="MNSHWEXP"
+enumdef(MNSHWLOG)="MNSHWLOG"
+enumdef(MNSHWPROC)="MNSHWPROC"
+enumdef(MNSHWVAR)="MNSHWVAR"
+enumdef(MNSORTPRC)="MNSORTPRC"
+enumdef(MNSTEP)="MNSTEP"
+enumdef(MNSTEPB)="MNSTEPB"
+enumdef(MNSTEPM)="MNSTEPM"
+enumdef(MNSTEPP)="MNSTEPP"
+enumdef(MNSTEPT)="MNSTEPT"
+enumdef(MNSTOP)="MNSTOP"
+enumdef(MNTBCKTRK)="MNTBCKTRK"
+enumdef(MNTCHNING)="MNTCHNING"
+enumdef(MNTHRDAUT)="MNTHRDAUT"
+enumdef(MNTHRDCHG)="MNTHRDCHG"
+enumdef(MNTHRDCOL)="MNTHRDCOL"
+enumdef(MNTHRDEXP)="MNTHRDEXP"
+enumdef(MNTHRDKLL)="MNTHRDKLL"
+enumdef(MNTHRDLST)="MNTHRDLST"
+enumdef(MNTRCKARR)="MNTRCKARR"
+enumdef(MNTRCKIDX0)="MNTRCKIDX0"
+enumdef(MNTRCKIDX1)="MNTRCKIDX1"
+enumdef(MNTRCKIDX2)="MNTRCKIDX2"
+enumdef(MNTRCKIDX3)="MNTRCKIDX3"
+enumdef(MNTRCKIDX4)="MNTRCKIDX4"
+enumdef(MNTRCKRST)="MNTRCKRST"
+enumdef(MNVARBRK)="MNVARBRK"
+enumdef(MNVARDMP)="MNVARDMP"
+enumdef(MNVAREDT)="MNVAREDT"
+enumdef(MNWCHDALL)="MNWCHDALL"
+enumdef(MNWCHDEL)="MNWCHDEL"
+enumdef(MNWCHDMP)="MNWCHDMP"
+enumdef(MNWCHEDT)="MNWCHEDT"
+enumdef(MNWCHSHW)="MNWCHSHW"
+enumdef(MNWCHSTG)="MNWCHSTG"
+enumdef(MNWCHTTGA)="MNWCHTTGA"
+enumdef(MNWCHTTGL)="MNWCHTTGL"
+enumdef(MNWCHVAR)="MNWCHVAR"
+enumdef(MNWINMSG)="MNWINMSG"
+enumdef(TTRERUN)="TTRERUN"
+enumdef(GINPUTVAL)="GINPUTVAL"
+enumdef(INPUTVALCANCEL)="INPUTVALCANCEL"
+enumdef(INPUTVALOK)="INPUTVALOK"

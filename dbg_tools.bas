@@ -35,7 +35,7 @@ private sub procvar_list()
 		temp=GetChildItemTreeView(GTVIEWVAR,hitem)
 		level+=1
 	   While temp=0
-			temp=GetNextChildItemTreeView(GTVIEWVAR,hitem)
+			temp=GetNextItemTreeView(GTVIEWVAR,hitem)
 			If temp<>0 Then
 				If inext=temp Then Exit While,While 
 				level-=1:Exit While
@@ -75,7 +75,7 @@ end sub
 private sub wstring_show(stringadr as integer)
 	dim wstrg As WString *32001,bufw As UShort
 	dim as integer inc
-	'todo ??? hEdit1   = fb_editw (WStr(""),hWnd,101,0*scalex,0*scaley,400*scalex,250*scaley)
+	messbox("Something missing","Need to open a window  for wstring")
 	inc=0:wstrg=""
 	ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@bufw,2,0)
 	While bufw
@@ -162,7 +162,7 @@ private sub thread_kill()
 				messbox("Thread killing","Something goes wrong, error: "+Str(GetLastError))
 			EndIf
 		#else
-			messbox("Feature not coded","thread_kill for linux, maybe make a sub") ''todo
+			messbox("Feature not coded","thread_kill for linux, maybe make a sub")
 		#endif
 	EndIf
 End Sub
@@ -376,11 +376,11 @@ End Sub
 '' updates all the select index boxes
 '=============================================
 private sub index_update()
-	messbox("To be coded","updates all the index boxes")
+	messbox("To be coded improvement","updates all the index boxes")
 	'For iindex As Long =0 To INDEXBOXMAX
 		'If hindexbx(iindex)<>0 Then
 			'If autoupd(iindex)=TRUE Then 
-				''todo index_update(iindex)
+				'' index_update(iindex)
 			'EndIf
 		'EndIf	
 	'Next
@@ -520,7 +520,7 @@ End Sub
 sub hard_closing(errormsg as string)
 	messbox("Need to close fbdebugger",_
 			  "Sorry an unrecoverable problem occurs :"+chr(13)+errormsg+chr(13)+chr(13)+"Report to dev please")
-	''freegadgets()  todo free all gadget number by number
+	freegadgets()
 	close_window(hmain)
 	end
 end sub
@@ -958,10 +958,11 @@ end sub
 '===========================================
 Private sub thread_resume()
 	#ifdef __fb_win32__
+		''moved to dbg_windows.bas
 		writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution
 		resumethread(threadhs)
 	#else
-		''todo LINUX, maybe moved in dbg_linux.bas
+		''LINUX, maybe moved in dbg_linux.bas
 		messbox("For Linux","thread_resume() needed to be added")
 	#endif
 End sub
@@ -1108,15 +1109,15 @@ private sub proc_sh()
 	'SendMessage(tviewprc,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'zone proc
 	For j As Integer =1 To procnb
 		With proc(j)
-			''todo an external sort before filling the treeview
-			'If procsort=KMODULE Then 'sorted by module
-			'	libel=name_extract(source(.sr))+">> "+.nm+":"+proc_retval(j)
-			'Else 'sorted by proc name
+			If procsort=KMODULE Then 'sorted by module
+				'libel=name_extract(source(.sr))+">> "+.nm+":"+proc_retval(j)
+				messbox("feature not coded","sort by module for procs")
+			Else 'sorted by proc name
 				libel=.nm+":"+proc_retval(j)+"   << "+source_name(source(.sr))
-			'EndIf
+			EndIf
 			If flagverbose Then libel+=" ["+Str(.db)+"]"
+			if .st=false then libel+=" X " '' for indicating if the proc is followed
 			.tv=AddTreeViewItem(GTVIEWPRC,libel,cast (hicon, 0),0,TVI_LAST,0)
-			''todo use .st for indicating if the proc is followed
 		End With
 	Next
 End Sub
@@ -1631,13 +1632,8 @@ If wtch(i).ivr=0 Then ''watched memory so adapt dumpmemory to the type
     End If
 Else
 	If vrr(wtch(i).ivr).ad=wtch(i).adr Then
-		'''todo ? ShowWindow(tviewcur,SW_HIDE)
-		''htviewcur=htviewvar
-		''ShowWindow(tviewcur,SW_SHOW)
-		''SendMessage(htab2,TCM_SETCURSEL,0,0)
 		''todo select an item in treeview prc/var for displaying it
 		''SendMessage(tviewvar,TVM_SELECTITEM,TVGN_CARET,Cast(LPARAM,vrr(wtch(i).ivr).tv))
-		''todo ? SetFocus(tviewcur)
 	Else
 		messbox("Select watched variable","Not possible : changed index (different address)")
 	End If
@@ -1812,8 +1808,7 @@ Else 'variable
 				wtch(t).var=0
 			EndIf
      	End If
-		'todo temp=Cast(HTREEITEM,SendMessage(tviewvar,TVM_GETNEXTITEM,TVGN_PARENT,Cast(LPARAM,vrr(iparent).tv)))
-     
+		temp=GetParentItemTreeView(GTVIEWVAR,vrr(iparent).tv)
      	For i As Integer =1 To vrrnb
 			If vrr(i).tv=temp Then iparent=i
      	Next
@@ -1828,12 +1823,6 @@ End Sub
 '==========================================
 private sub watch_set()
 	If wtchcpt>WTCHMAX Then ' free slot not found
-		' change focus
-		'TODO REMOVE '''''ShowWindow(tviewcur,SW_HIDE)
-		''''''''''''''''''tviewcur=tviewwch
-		''''''''''''''''''ShowWindow(tviewcur,SW_SHOW)
-		''''''''''''''''''SetFocus(tviewcur)
-		''''''''''''''''''SendMessage(htab2,TCM_SETCURSEL,3,0)
 		PanelGadgetSetCursel(GRIGHTTABS,TABIDXWCH)
 		messbox("Add watched variable","No free slot, delete one")
 		Exit Sub
@@ -2127,14 +2116,12 @@ private sub proc_new()
 	'thread(threadcur).ptv=Tree_AddItem(,"Proc : "+proc(procsv).nm,TVI_FIRST,tviewthd)
 	AddTreeViewItem(GTVIEWTHD,"Proc : "+proc(procsv).nm,cast (hicon, 0),0,TVI_FIRST,thread(threadcur).ptv)
 	thread_text(threadcur)
-	''RedrawWindow tviewthd, 0, 0, 1	todo USELESS ???
 	var_ini(procrnb,proc(procr(procrnb).idx).vr,proc(procr(procrnb).idx+1).vr-1)
 	procr(procrnb+1).vr=vrrnb+1
 	If proc(procsv).nm="main" Then 
 		procr(procrnb).vr=1 'constructors for shared are executed before main so reset index for first variable of main 04/02/2014
 	EndIf
 	proc_watch(procrnb) 'reactivate watched var
-	'RedrawWindow tviewvar, 0, 0, 1  	todo USELESS ???
 End Sub
 '============================= proc ending ============
 Private sub proc_end()
@@ -2483,8 +2470,6 @@ private sub proc_newfast()
 			If proc(procsv).nm="main" Then procr(procrnb).vr=1 'constructors for shared they are executed before main so reset index for first variable of main 04/02/2014
 			proc_watch(procrnb) 'reactivate watched var
 		Next
-		''todo ? RedrawWindow tviewthd, 0, 0, 1
-		''todo ? RedrawWindow tviewvar, 0, 0, 1
    Next
 End Sub
 '============================================================================
@@ -2698,7 +2683,7 @@ Dim As Integer vridx
 			procr(procrnb+1).vr=vrrnb+1 'to avoid removal of global vars when the first executed proc is not the main one
 		Else
 			procrnb+=1
-			''todo temp=Cast(HTREEITEM,SendMessage(tviewvar,TVM_GETNEXTITEM,TVGN_PREVIOUS,Cast(LPARAM,procr(1).tv)))
+			temp=getprevitemtreeview(GTVIEWVAR,procr(1).tv)
 			If temp=0 Then 'no item before main
 				temp=TVI_FIRST
 			EndIf
@@ -2736,7 +2721,6 @@ Dim As Integer vridx
 			EndIf
 			
 		EndIf
-		'todo remove RedrawWindow tviewvar, 0, 0, 1
 	EndIf
 End Sub
 '======================================================================================================
@@ -2859,15 +2843,7 @@ private function proc_verif(p As UShort) As Byte
 		If procr(i).idx = p Then Return TRUE
 	Next
 	Return FALSE
-End Function
-'===============================================
-'' Reinitialisation GUI todo move in dbg_gui
-'===============================================
-private sub reinit_gui()
-	dump_set()
-	but_enable()	
-	menu_enable()
-end sub
+End function
 '-----------------------------------------------
 '' Reinitialisation
 '-----------------------------------------------
@@ -2998,6 +2974,7 @@ private function kill_process(text As String) As Integer
 		      	lasterr=getlasterror
 		    #else
 		    	''todo linux function from W9
+		    	messbox("Feature missing for Linux","Kill_process")
 			#endif
 		    #ifdef fulldbg_prt
 		      	dbg_prt ("return code terminate process ="+Str(retcode)+" lasterror="+Str(lasterr))
@@ -3055,10 +3032,9 @@ end function
 		  #EndIf
 		  prun=TRUE
 		  runtype=RTSTEP
-		  'wait_debug todo add and uncomment
+		  wait_debug
 	   Else
-	   	   ''todo use std meesage windows with ,MB_ICONERROR Or MB_SYSTEMMODAL ???
-		  messbox("PROBLEM","no debugged pgm -->"+exename+Chr(10)+"error :"+Str(GetLastError()))
+		  messbox("PROBLEM","no debugged pgm -->"+exename+Chr(10)+"error :"+Str(GetLastError()),MB_SYSTEMMODAL)
 	   End If
 #EndIf
 End Sub
@@ -3076,7 +3052,7 @@ private sub exe_sav(exename As String,cmdline As String="")
 	 Dim As Integer c
 	 Dim As Double tempdate=FileDateTime(exename)
 	If flagwtch=0 OrElse exedate<>tempdate Then
-		'todo add watch_del()
+		watch_del()
 	EndIf
     exedate=tempdate
     For i As Integer =0 To 8
@@ -3147,6 +3123,7 @@ private sub sources_load(n As integer,exedate as double)
 	    	if (sourcebuf(0)=&hFF AndAlso sourcebuf(1)=&hFE) then
 	    		''todo
 	    		''setWindowTextW(richedit(i),@sourcebuf(2))
+	    		messbox("Maybe something to do","the source code contains a BOM code so --> unicode")
 			else
 
 				if isrc=0 then
@@ -3356,7 +3333,7 @@ private sub ini_read()
     Loop
     Close #Filein
     exename=savexe(0)
-    'todo fb_UpdateTooltip(fb_hToolTip,butrrune,"Restart "+exename,"",0)
+    SetToolTipText(IDBUTRERUN,TTRERUN,"Restart "+exename)
 End sub
 ''==============================================================================
 '' freeing all before quitting the debugger 

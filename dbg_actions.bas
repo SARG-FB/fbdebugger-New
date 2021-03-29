@@ -227,7 +227,7 @@ private sub menu_action(poption as integer)
             	If brkv.adr<>0 Then brkv_set(2)
 	'=============================================================		
         case else
-        	messbox("Menu feature not implemented","sorry option="+str(poption))
+        	messbox("Menu feature not implemented","sorry option="+str(poption)+" --> enum="+enumdef(poption))
     end select
 end sub
 
@@ -336,7 +336,7 @@ private sub gadget_action(igadget as LONG)
 			Next
 		
 		case else
-        	messbox("Gadget feature not implemented","sorry option="+str(igadget))
+        	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))
 	''others
 	End Select
 end sub
@@ -520,6 +520,6 @@ sub button_action(button as integer)
 			inputval=""
 		hidewindow(hinputbx,1)
 		case else
-			messbox("feature not implemented","sorry gadget="+str(button))
+			messbox("feature not implemented","sorry gadget="+str(button)+" --> enum="+enumdef(button))
 	end select
 end sub

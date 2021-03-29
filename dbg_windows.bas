@@ -1,5 +1,5 @@
 ''Windows system for fbdebugger_new
-''dbg_windows.bi
+''dbg_windows.bas
 
 '=====================================================================
 ''finds the dll name
@@ -333,15 +333,12 @@ While 1
 							"Proc  : "+proc(rline(thread(threadcur).sv).px).nm+Chr(13)+ _
 							"Line  : "+Str(rline(thread(threadcur).sv).nu)+" (selected and put in red)"+Chr(13)+ _
 							recup+Chr(13)+Chr(13)+"Try To continue ? (if yes change values and/or use [M]odify execution)"
-							''todo use classic message and ,MB_SYSTEMMODAL Or MB_ICONSTOP Or 
-							If messbox("EXCEPTION",libel,MB_YESNO) = RETYES Then
+							If messbox("EXCEPTION",libel,MB_YESNO or MB_SYSTEMMODAL) = RETYES Then
 								suspendthread(threadcontext)
 								ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 							Else
 								ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, DBG_EXCEPTION_NOT_HANDLED)
 							End If
-							''todo select line
-							''SendMessage(richeditcur,EM_HIDESELECTION,0,0)'show selection
 	               End With
 					'case Else
 	      			'fb_message("EXCEPTION_DEBUG_EVENT ","Code :"+excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode),MB_SYSTEMMODAL Or MB_ICONSTOP)
@@ -362,18 +359,16 @@ While 1
 		         	dbg_prt ("hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress)) 
 	         	#EndIf
 					If threadnb<THREADMAX Then
-				      threadnb+=1 :thread(threadnb).hd=.hthread:thread(threadnb).id=DebugEv.dwThreadId
-				      threadcontext=.hthread
-				      thread(threadnb).pe=FALSE
-				      thread(threadnb).sv=-1 'used for thread not debugged
-				      ''todo thread(threadnb).plt=0 'used for first proc of thread then keep the last proc
-				      thread(threadnb).st=thread(threadcur).od 'used to keep line origin
-				       ''todo thread(threadnb).tv=0
-				      thread(threadnb).exc=0 'no exec auto
+					      threadnb+=1 :thread(threadnb).hd=.hthread:thread(threadnb).id=DebugEv.dwThreadId
+					      threadcontext=.hthread
+					      thread(threadnb).pe=FALSE
+					      thread(threadnb).sv=-1 'used for thread not debugged
+					      thread(threadnb).plt=0 'used for first proc of thread then keep the last proc
+					      thread(threadnb).st=thread(threadcur).od 'used to keep line origin
+					      thread(threadnb).tv=0
+					      thread(threadnb).exc=0 'no exec auto
 					Else 
-					''todo ,MB_SYSTEMMODAL Or MB_ICONSTOP
-				      messbox("New thread","Number of threads ("+Str(THREADMAX+1)+") exceeded , change the THREADMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY")
-				       ''todo close fbdebugger or increase nb thread avec preserve postmessage(windmain,WM_DESTROY,0,0)
+				      	hard_closing("Number of threads ("+Str(THREADMAX+1)+") exceeded , change the THREADMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY" )
 					EndIf
 	         End With
 	         ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
@@ -385,8 +380,8 @@ While 1
 				threadcontext=.hthread
 				thread(0).pe=FALSE
 				thread(0).sv=0  'used for thread not debugged
-				''todo thread(0).plt=0 'used for first proc of thread then keep the last proc
-				''todo thread(0).tv=0  'handle of thread
+				thread(0).plt=0 'used for first proc of thread then keep the last proc
+				thread(0).tv=0  'handle of thread
 				thread(0).exc=0 'no exec auto
 				#Ifdef fulldbg_prt    
 		  			dbg_prt ("create process debug") 
@@ -416,8 +411,7 @@ While 1
          ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
          
 		Case EXIT_PROCESS_DEBUG_EVENT:
-			''todo ,MB_SYSTEMMODAL
-	         messbox("","END OF DEBUGGED PROCESS")
+	         messbox("","END OF DEBUGGED PROCESS",MB_SYSTEMMODAL)
 	         #Ifdef fulldbg_prt
 		         dbg_prt ("exit process"+Str(debugev.u.exitprocess.dwexitcode))
 	         #EndIf
@@ -440,9 +434,9 @@ While 1
      		Dim loaddll As LOAD_DLL_DEBUG_INFO=DebugEv.u.loaddll
      		Dim As String dllfn
      		Dim As Integer d,delta
-      	#Ifdef fulldbg_prt
-      	   dbg_prt(""):dbg_prt("Load dll event Pid/Tid "+Str(DebugEv.dwProcessId)+" "+Str(DebugEv.dwThreadId))
-      		dbg_prt ("hFile="+Str(loaddll.hFile)+" lpBaseOfDll="+Str(loaddll.lpBaseOfDll)+" "+dll_name(loaddll.hFile))
+      		#ifdef fulldbg_prt
+	      	   	dbg_prt(""):dbg_prt("Load dll event Pid/Tid "+Str(DebugEv.dwProcessId)+" "+Str(DebugEv.dwThreadId))
+	      		dbg_prt ("hFile="+Str(loaddll.hFile)+" lpBaseOfDll="+Str(loaddll.lpBaseOfDll)+" "+dll_name(loaddll.hFile))
 			#EndIf
 
 
@@ -454,23 +448,21 @@ While 1
 			
 			If d=0 Then 'not found
 				If dllnb>=DLLMAX Then 'limit reached
-				''todo ,MB_SYSTEMMODAL Or MB_ICONSTOP
-	      		messbox("New dll","Number of dll ("+Str(DLLMAX)+") exceeded , change the DLLMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY")
-	      		''todo  close fbdebugger postmessage(windmain,WM_DESTROY,0,0)	
+	      			hard_closing("New dll","Number of dll ("+Str(DLLMAX)+") exceeded , change the DLLMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY")
 				EndIf
 				dllnb+=1
-	      	dlldata(dllnb).hdl=loaddll.hfile
-	      	dlldata(dllnb).bse=Cast(UInteger,loaddll.lpBaseOfDll)
-      		debug_extract(Cast(UInteger,loaddll.lpBaseOfDll),dllfn,DLL)
-      		If (linenb-linenbprev)=0 Then 'not debugged so not taking in account
-      			dllnb-=1
-      		Else
+		      	dlldata(dllnb).hdl=loaddll.hfile
+		      	dlldata(dllnb).bse=Cast(UInteger,loaddll.lpBaseOfDll)
+	      		debug_extract(Cast(UInteger,loaddll.lpBaseOfDll),dllfn,DLL)
+	      		If (linenb-linenbprev)=0 Then 'not debugged so not taking in account
+	      			dllnb-=1
+	      		Else
 					dlldata(dllnb).fnm=dllfn
-	      		dlldata(dllnb).gbln=vrbgbl-vrbgblprev
-	      		dlldata(dllnb).gblb=vrbgblprev+1 
-	      		dlldata(dllnb).lnb=linenbprev+1
-	      		dlldata(dllnb).lnn=linenb
-      		End If
+		      		dlldata(dllnb).gbln=vrbgbl-vrbgblprev
+		      		dlldata(dllnb).gblb=vrbgblprev+1 
+		      		dlldata(dllnb).lnb=linenbprev+1
+		      		dlldata(dllnb).lnn=linenb
+	      		End If
 			Else
 				dlldata(d).hdl=loaddll.hfile
       		delta=Cast(Integer,loaddll.lpBaseOfDll-dlldata(d).bse)
