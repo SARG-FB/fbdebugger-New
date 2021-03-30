@@ -448,7 +448,7 @@ While 1
 			
 			If d=0 Then 'not found
 				If dllnb>=DLLMAX Then 'limit reached
-	      			hard_closing("New dll","Number of dll ("+Str(DLLMAX)+") exceeded , change the DLLMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY")
+	      			hard_closing("New dll, Number of dll ("+Str(DLLMAX)+") exceeded , change the DLLMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY")
 				EndIf
 				dllnb+=1
 		      	dlldata(dllnb).hdl=loaddll.hfile

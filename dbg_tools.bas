@@ -112,7 +112,7 @@ private function thread_select(id As Integer =0) As Integer
 		temp=GetItemTreeView(GTVIEWTHD)
 		Do 'search thread item
 			hitem=temp
-			temp=getParentItemTreeview(ID_In_Number(htviewcur),hitem)
+			temp=getParentItemTreeview(GTVIEWTHD,hitem)
 		Loop While temp
 
 		text=GetTextTreeView(GTVIEWTHD,hitem)
@@ -517,48 +517,13 @@ End Sub
 '=========================================================================
 '' something wrong happens so close fbdebugger after displaying a message
 '==========================================================================
-sub hard_closing(errormsg as string)
+private sub hard_closing(errormsg as string)
 	messbox("Need to close fbdebugger",_
 			  "Sorry an unrecoverable problem occurs :"+chr(13)+errormsg+chr(13)+chr(13)+"Report to dev please")
 	freegadgets()
 	close_window(hmain)
 	end
 end sub
-'=======================================================
-private sub dump_set()
-    Dim tmp As String
-	dim as integer lg,delta
-	For icol as integer=1 to dumpnbcol
-		DeleteListViewColumn(GDUMPMEM,1)''delete each time column 1 keep address/ascii
-	Next      
-	Select Case dumptyp
-		Case 2,3,16  'byte/ubyte/boolean    dec/hex
-			dumpnbcol=16 :lg=40
-		Case 5,6  'short/ushort
-			dumpnbcol=8 :lg=60
-		Case 1,8,7  'integer/uinteger
-			dumpnbcol=4 :lg=90
-		Case 9,10  'longinteger/ulonginteger
-			dumpnbcol=2 :lg=160
-		Case 11 'single
-			dumpnbcol=4 :lg=120
-		Case 12 'double
-			dumpnbcol=2 :lg=180
-	End Select
-
-	delta=16/dumpnbcol
-	For icol as integer =1 To dumpnbcol 'nb columns except address and ascii
-		tmp="+"+Right("0"+Str(delta*(icol-1)),2)
-		AddListViewColumn(GDUMPMEM,tmp,icol,icol,lg)
-	Next
-	'recreate dump_box to take in account new parameters
-	If hdumpbx Then
-		'todo recreate window or update type combo ?  option 2 plus simple ? nécessite de créer la box dans dbg_gui
-		'GetWindowRect(hdumpbx,@recbox):destroywindow(hdumpbx)
-		'fb_Dialog(@dump_box,"Manage dump",windmain,283,250,120,150,WS_POPUP Or WS_SYSMENU Or ws_border Or WS_CAPTION)
-		'SetWindowPos(hdumpbx,NULL,recbox.left,recbox.top,0,0,SWP_NOACTIVATE Or SWP_NOZORDER Or SWP_NOSIZE Or SWP_SHOWWINDOW)
-	End If
-End Sub
 '==========================================
 private sub var_dump(tv As HWND,ptd As Long =0) 'dump variable '28/11/2014
 
@@ -2192,10 +2157,9 @@ private sub dsp_change(index As Integer)
 			watch_sh()
 		endif
 		but_enable()
-		  
-		If htviewcur = htviewprc Then
+		If PanelGadgetgetCursel(GRIGHTTABS) = TABIDXPRC Then
 			proc_sh()
-		elseIf htviewcur = htviewthd Then
+		elseIf PanelGadgetgetCursel(GRIGHTTABS) = TABIDXTHD Then
 			thread_text()
 		EndIf
 		index_update()
@@ -2877,8 +2841,7 @@ private sub reinit()
 				'SendMessage(tviewprc,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'procs
 				'SendMessage(tviewthd,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'threads
 				'
-				'ShowWindow(tviewcur,SW_HIDE):tviewcur=tviewvar:ShowWindow(tviewcur,SW_SHOW)
-				'SendMessage(htab2,TCM_SETCURSEL,0,0)
+				PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)
 				'If dsptyp Then dsp_hide(dsptyp)
 				'dsp_sizecalc
 				'threadnb=-1
@@ -3032,7 +2995,7 @@ end function
 		  #EndIf
 		  prun=TRUE
 		  runtype=RTSTEP
-		  wait_debug
+		  wait_debug()
 	   Else
 		  messbox("PROBLEM","no debugged pgm -->"+exename+Chr(10)+"error :"+Str(GetLastError()),MB_SYSTEMMODAL)
 	   End If

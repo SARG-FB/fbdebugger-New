@@ -983,7 +983,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 		if proc(procnb).fn>procfn Then procfn=proc(procnb).fn+1 ' just to be sure to be above see gest_brk
 		
 		''todo be checked ??????
-		'for proc added by fbc (constructor, operator, ...) '11/05/2014 adding >2 to avoid case only one line ...
+		'for proc added by fbc (constructor, operator, ...) ''adding >2 to avoid case only one line ...
 		If proc(procnb).nu=rline(linenb).nu AndAlso linenb>2 then
 			proc(procnb).nu=-1	               	
            	'For i As Integer =1 To linenb

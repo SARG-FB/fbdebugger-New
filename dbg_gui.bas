@@ -1,12 +1,60 @@
 ''gui for fbdebuuger_new
 ''dbg_gui.bas
 
+'=======================================================
+private sub dump_set()
+    Dim tmp As String
+	dim as integer lg,delta
+	For icol as integer=1 to dumpnbcol
+		DeleteListViewColumn(GDUMPMEM,1)''delete each time column 1 keep address/ascii
+	Next      
+	Select Case dumptyp
+		Case 2,3,16  'byte/ubyte/boolean    dec/hex
+			dumpnbcol=16 :lg=40
+		Case 5,6  'short/ushort
+			dumpnbcol=8 :lg=60
+		Case 1,8,7  'integer/uinteger
+			dumpnbcol=4 :lg=90
+		Case 9,10  'longinteger/ulonginteger
+			dumpnbcol=2 :lg=160
+		Case 11 'single
+			dumpnbcol=4 :lg=120
+		Case 12 'double
+			dumpnbcol=2 :lg=180
+	End Select
 
+	delta=16/dumpnbcol
+	For icol as integer =1 To dumpnbcol 'nb columns except address and ascii
+		tmp="+"+Right("0"+Str(delta*(icol-1)),2)
+		AddListViewColumn(GDUMPMEM,tmp,icol,icol,lg)
+	Next
+	'recreate dump_box to take in account new parameters
+	If hdumpbx Then
+		'todo recreate window or update type combo ?  option 2 plus simple ? nécessite de créer la box dans dbg_gui
+		'GetWindowRect(hdumpbx,@recbox):destroywindow(hdumpbx)
+		'fb_Dialog(@dump_box,"Manage dump",windmain,283,250,120,150,WS_POPUP Or WS_SYSMENU Or ws_border Or WS_CAPTION)
+		'SetWindowPos(hdumpbx,NULL,recbox.left,recbox.top,0,0,SWP_NOACTIVATE Or SWP_NOZORDER Or SWP_NOSIZE Or SWP_SHOWWINDOW)
+	End If
+End Sub
+'==================================================
+'' function will be added later in W9
+'==================================================
 Function GetPrevItemTreeView(iGadget As Long , iItem As Integer) As Integer
 	#ifdef __fb_win32__     
 		return Cast(Integer,SendMessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_PREVIOUS,Cast(LPARAM,iItem)))
 	#else
-		messbox("feature missing for linux","GetPrevChildItemTreeView()")
+        Dim As Any Ptr treeview = Gadgetid(iGadget)
+        Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
+        Dim As GtkTreeIter iterChild , iterfirst 
+        If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
+            iterChild.stamp = iterfirst.stamp
+            iterChild.user_data = Cast(Any Ptr,iItem)
+            if gtk_tree_model_iter_previous(treestore, @iterChild) then
+                If iterChild.stamp Then
+                    Return Cast(Integer , iterChild.user_data) 
+                Endif
+            EndIf
+        Endif		
 	#endif
 end function
 
@@ -960,5 +1008,5 @@ end sub
 '' Freea all the gadgets
 '===============================================
 private sub freegadgets()
-	messbox("Feature to be coded","freegadgets()"
+	messbox("Feature to be coded","freegadgets()")
 end sub

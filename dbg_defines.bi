@@ -916,6 +916,8 @@ declare function var_find2(tv As HWND) As Integer
 declare sub proc_del(j As Integer,t As Integer=1)
 declare sub dsp_change(index As Integer)
 declare sub size_change()
+declare sub hard_closing(errormsg as string)
+declare function wait_debug() As Integer
 
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)

@@ -170,7 +170,6 @@ Dim Shared As Integer restorey
 Dim Shared As Integer restorew
 Dim Shared As Integer restoreh
 
-Dim Shared htviewcur As HWND  'TV1 ou TV2 ou TV3
 Dim Shared htviewvar As HWND 'running proc/var
 Dim Shared htviewprc As HWND 'all proc
 Dim Shared htviewthd As HWND 'all threads
