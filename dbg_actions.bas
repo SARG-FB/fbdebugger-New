@@ -259,34 +259,52 @@ private sub gadget_action(igadget as LONG)
 			dump_set()
             dump_sh()
             
-		''moving -/+ the first address by cell/line/page 
-		''''case GDUMPCL ''
-		''''case GDUMPCP
-		''''case GDUMPLL
-		''''case GDUMPLP
-		''''case GDUMPPL
-		''''case GDUMPPP
-		
+		'''moving -/+ the first address by cell/line/page 
+		'case GDUMPCL ''
+		'case GDUMPCP
+		'case GDUMPLL
+		'case GDUMPLP
+		'case GDUMPPL
+		'case GDUMPPP
+		'
 		''adds to newadr,watched, break on mem, shw/exp based on first address
-		''''case GDUMPNEW
-		''''case GDUMPWCH
-		''''case GDUMPBRK
-		''''case GDUMPSHW
-		
+		'case GDUMPNEW
+		'case GDUMPWCH
+		'case GDUMPBRK
+		'case GDUMPSHW
+		'
 		''
-		''''case GDUMPPTRNO
-		''''case GDUMPPTR1
-		''''case GDUMPPTR2
-
-		''''case GDUMPDEC 751
-		''''case GDUMPHEX 752
-
-
-		''''case GDUMPSGN 754
-		''''case GDUMPUSGN 755		
+		'case GDUMPPTRNO
+		'case GDUMPPTR1
+		'case GDUMPPTR2
+'
+		'case GDUMPDEC
+		'case GDUMPHEX
+'
+'
+		'case GDUMPSGN
+		'case GDUMPUSGN 755		
 		
+		case GFILESEL
+        	if GetItemComboBox(GFILELIST)<>-1 then
+        		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
+	        		'MessBox("Jumping to file ="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
+	        		PanelGadgetSetCursel(GSRCTAB,GetItemComboBox(GFILELIST))
+        			source_change(GetItemComboBox(GFILELIST))
+        		else
+        			MessBox("File already displayed",source(GetItemComboBox(GFILELIST)))
+        		endif
+        	else
+        		messbox("Select a file", "before clicking on the button")
+        	endif
+        	
+		case GSRCTAB
+			source_change(PanelGadgetGetCursel(GSRCTAB))
+			
+		case GFILELIST ''nothing to execute with file combo
+
 		Case GBRKCLOSE
-	   		hidewindow(hbrkbx,1)
+	   		hidewindow(hbrkbx,KHIDE)
 	   		
 	   	Case GBRKDEL01 to GBRKDEL10 ''delete one breakpoint
 	         brk_del(igadget-GBRKDEL01+1)
@@ -334,12 +352,34 @@ private sub gadget_action(igadget as LONG)
 					SetGadgetText(GBRKDSB01+ibrk-1,"DSB")
 				EndIf
 			Next
-		
+			
+		case GSCINTILLA
+
+		case GNOLOG
+			''todo update log
+		case GSCREENLOG
+			''todo update log
+		case GFILELOG
+			''todo update log
+		case GBOTHLOG
+			''todo update log
+		'case GVERBOSE
+		case GAUTODELAY
+
+		case GCMDLPARAM ''data used when closing settings box 
+		case GINPUTVALOK
+			input_check()
+			
+		case GINPUTVALCANCEL
+			inputval=""
+			hidewindow(hinputbx,KHIDE)
+			
 		case else
         	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))
 	''others
 	End Select
 end sub
+'==============================================
 sub select_file()
 	#Ifdef __fb_win32__
 		var ddd= OpenFileRequester("Select exe file","C:\","Exe files (*.exe)"_
@@ -365,10 +405,14 @@ sub select_file()
 
     exe_sav(exename,"")
 
-    'If ThreadCreate(@start_pgm)=0 Then
-    	'messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
-    'endif
-
+	#Ifdef __fb_win32__
+		If ThreadCreate(@start_pgm)=0 Then
+			messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
+		endif
+	#else
+		messbox("feature to be coded linux","after selecting file")
+		
+	#endif
 end sub
 '==============================================================
 '' handles actions for each button
@@ -498,28 +542,9 @@ sub button_action(button as integer)
 			messbox("feature not implemented","button = IDBUTENLRVAR" )
 		case IDBUTENLRMEM
 			messbox("feature not implemented","button = IDBUTENLRMEM" )
-
-		case GSCINTILLA
-
-		case GNOLOG
-			''todo update log
-		case GSCREENLOG
-			''todo update log
-		case GFILELOG
-			''todo update log
-		case GBOTHLOG
-			''todo update log
-		'case GVERBOSE
-		case GAUTODELAY
-
-		case GCMDLPARAM
-		
-		case INPUTVALOK 
-			input_check()
-		case INPUTVALCANCEL
-			inputval=""
-		hidewindow(hinputbx,1)
 		case else
-			messbox("feature not implemented","sorry gadget="+str(button)+" --> enum="+enumdef(button))
+			'''todo for now used after gadget_action after remove gadget_action when tests are done for the range values
+			gadget_action(button)
+			'messbox("feature not implemented","sorry button="+str(button)+" --> enum="+enumdef(button))
 	end select
 end sub

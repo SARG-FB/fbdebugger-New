@@ -33,13 +33,13 @@ end union
 '--------------------------------------
 '' check if local var already stored
 '--------------------------------------
-private function local_exist() As long''2016/08/12
+private function local_exist() As long
 	Dim ad As UInteger=vrb(vrbloc).adr
 	For i As Integer = proc(procnb).vr To proc(procnb+1).vr-2
 		If vrb(i).adr=ad AndAlso vrb(i).nm=vrb(vrbloc).nm Then
 			vrbloc-=1
 			proc(procnb+1).vr-=1
-			Return TRUE 'return true if variable local already stored
+			Return true 'return true if variable local already stored
 		EndIf
 	Next
 	Return FALSE
@@ -1204,7 +1204,7 @@ end function
 	'Dim procnmt As String
 	
 	dim As Integer pe,flagdll
-	dim as integer secnb
+	dim as integer secnb,n=sourcenb+1
 	dim as string *8 secnm
 	Dim As Integer basestab=0,basestabs=0,baseimg,sizemax,sizestabs
 	Dim As udtstab recupstab
@@ -1213,7 +1213,7 @@ end function
 	flagdll=dllflag
 	vrbgblprev=vrbgbl
 
-	SetStatusBarField(1,0,100,"Loading debug data")
+	statusbar_text(KSTBSTS,"Loading debug data")
 
 	ReadProcessMemory(dbghand,Cast(LPCVOID,exebase+&h3C),@pe,4,0)
 	pe+=exebase+6 'adr nb section
@@ -1320,13 +1320,13 @@ end function
 	   If flagwtch=0 AndAlso wtchexe(0,0)<>"" Then watch_check(wtchexe())
 	   flagwtch=0
 	EndIf
-	
-	'TODO uncomment sources_load(n)
+	list_all()
+	sources_load(n,filedatetime(exename))
 	'activate buttons/menu after real start
 	but_enable()
 	menu_enable()
 	'apply previous breakpoints	
-	brk_apply 
+	brk_apply()
 	
 	
 end sub

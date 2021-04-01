@@ -147,6 +147,8 @@ Dim Shared As HWND hbrkvbx  'handle
 Dim Shared As Integer bcktrkpr
 Dim Shared As HWND htrckbx
 
+''edit box
+Dim Shared As HWND heditbx
 
 ''dump memory
 Dim Shared dumplines As Integer =20 'nb lines(default 20)
@@ -288,8 +290,10 @@ Dim Shared exedate As Double 'serial date
 
 gui_init
 reinit
+	
+statusbar_text(KSTBSTS,"No debuggee")
 
-SetStatusBarField(1,0,100,"No debuggee")
+goto removeme
 ''for testing todo remove
 exename="D:\telechargements\win9\tmp\test_include_main"
 exe_sav(exename)
@@ -298,10 +302,10 @@ linecur=10
 rlinecur=14
 ''
 settitle()
-SetStatusBarField(1,0,100,"Loading data")
+statusbar_text(KSTBSTS,"Loading data")
 if elf_extract(exename) then
 	list_all
-	SetStatusBarField(1,0,100,"Waiting")
+	statusbar_text(KSTBSTS,"Waiting")
 	print "------------------ after extraction -----------------------"
 	print "Number of files=";sourcenb
 	
@@ -329,44 +333,30 @@ if elf_extract(exename) then
 		next
 		linecur_change(rlinecur)
 	hidewindow(hscint ,0)
-	SetStatusBarField(1,0,100,"Waiting")
+	statusbar_text(KSTBSTS,"Waiting")
 end if
+removeme:
 
-''========================================
-''========================================
-''========================================
-''========================================
-
-
-
+'====================
+''main loop
+'====================
 do
 	Var event=WaitEvent()
+	''closing a window
 	If Event=EventClose then
-		if EventHwnd=hmain then
+		if EventHwnd=hmain then  ''main window
 			closes_debugger()
 		else
 			HideWindow(EventHwnd,1)
-			if EventHwnd=hsettings then
-				''todo put in a dedicated proc
-				cmdexe(0)=GetGadgetText(GCMDLPARAM)
-				autostep=valint(GetGadgetText(GAUTODELAY))
-				if autostep<50 then
-					autostep=50
-					SetGadgetText(GAUTODELAY,str(autostep))
-					messbox("Delay for autostepping","Too small, reset to "+str(autostep))
-				elseIf autostep>10000 then
-					autostep=10000
-					SetGadgetText(GAUTODELAY,str(autostep))
-					messbox("Delay for autostepping","Too big, reset to "+str(autostep))
-				end if
+			if EventHwnd=hsettings then ''settings box
+				settings_update() 
 			elseif EventHwnd=hinputbx then ''resets inputval and closes box
 				inputval=""
-				hidewindow(hinputbx,1)
 			end if
 		end if
 		continue do
 	end if
-	
+	''size changed
 	if event=EventSize then
 		if EventHwnd=hmain then
 			size_changed()
@@ -376,6 +366,7 @@ do
 	
 	If event=EventMenu then
 		menu_action(EventNumber)
+		
 	ElseIf event=eventrbdown then
 		if GlobalMouseX<500 then
 			DisplayPopupMenu(HMenusource, GlobalMouseX,GlobalMouseY)
@@ -387,25 +378,6 @@ do
 			endif
 		endif
 	elseif event=eventgadget then
-		if eventnumber()=GFILESEL then
-        	if GetItemComboBox(GFILELIST)<>-1 then
-        		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
-	        		MessBox("Jumping to file ="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
-	        		PanelGadgetSetCursel(GSRCTAB,GetItemComboBox(GFILELIST))
-        			source_change(GetItemComboBox(GFILELIST))
-        		else
-        			MessBox("File already displayed",source(GetItemComboBox(GFILELIST)))
-        		endif
-        	else
-        		messbox("Select a file", "before clicking on the button")
-        	endif
-		elseif eventnumber()=GSRCTAB then
-			Messbox("The selected panel for file:",source(PanelGadgetGetCursel(GSRCTAB)))
-			source_change(PanelGadgetGetCursel(GSRCTAB))
-		elseif eventnumber()=GFILELIST then
-			''nothing to execute with file combo
-		else
-			button_action(eventnumber())
-		endif
+		button_action(eventnumber())
 	endif
 loop

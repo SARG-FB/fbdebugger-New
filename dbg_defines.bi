@@ -181,12 +181,16 @@ end enum
 	#define hicon HBITMAP
 #endif
 
-
-
-
-
 ''log and others uses
 #define GEDITOR 330
+
+#define GSTATUSBAR 331
+#define KSTBSTS 0
+#define KSTBTHD 1
+#define KSTBUID 2
+#define KSTBSRC 3
+#define KSTBPRC 4
+#define KSTBFRT 5
 
 'button main screen
 enum
@@ -462,8 +466,8 @@ end enum
 ''for inputval box
 enum
 	GINPUTVAL=920
-	INPUTVALOK
-	INPUTVALCANCEL
+	GINPUTVALOK
+	GINPUTVALCANCEL
 end enum
 
 ''for dump memory
@@ -523,7 +527,7 @@ end enum
 
 ''break on var/mem
 enum
-	GBRKVAR=980
+	GBRKVAR=975
 	GBRKVVALUE
 	GBRKVOK
 	GBRKVDEL
@@ -532,13 +536,25 @@ end enum
 
 ''procedure tracking
 enum
-	GTRACKPRV=990
+	GTRACKPRV=980
 	GTRACKCUR
 	GTRACKNXT
 	GTRACKPPRV
 	GTRACKPCUR
 	GTRACKPNXT
 end enum
+
+''editing variable
+enum
+	GEDTVAR=990
+	GEDTVALUE
+	GEDTOK
+	GEDTCANCEL
+	GEDTPTD
+	GEDTPTDVALUE
+	GEDTDUMP
+end enum
+
 #Ifdef __fb_win32__
 	#define send_sci(b,c,d) sendmessage(hscint,b,c,cast(integer,d))
 #else
@@ -919,6 +935,9 @@ declare sub size_change()
 declare sub hard_closing(errormsg as string)
 declare function wait_debug() As Integer
 
+
+
+
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)
 enumdef(FONTGROUP)="FONTGROUP"
@@ -1187,5 +1206,13 @@ enumdef(MNWCHVAR)="MNWCHVAR"
 enumdef(MNWINMSG)="MNWINMSG"
 enumdef(TTRERUN)="TTRERUN"
 enumdef(GINPUTVAL)="GINPUTVAL"
-enumdef(INPUTVALCANCEL)="INPUTVALCANCEL"
-enumdef(INPUTVALOK)="INPUTVALOK"
+enumdef(GINPUTVALCANCEL)="GINPUTVALCANCEL"
+enumdef(GINPUTVALOK)="GINPUTVALOK"
+enumdef(GEDTVAR)="GEDTVAR"
+enumdef(GEDTVALUE)="GEDTVALUE"
+enumdef(GEDTOK)="GEDTOK"
+enumdef(GEDTCANCEL)="GEDTCANCEL"
+enumdef(GEDTPTD)="GEDTPTD"
+enumdef(GEDTPTDVALUE)="GEDTPTDVALUE"
+enumdef(GEDTDUMP)="GEDTDUMP"
+	

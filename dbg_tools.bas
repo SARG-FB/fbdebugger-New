@@ -1,7 +1,22 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
-
+'==============================================
+'' updates settings when settings box is closed
+'==============================================
+private sub settings_update()
+	cmdexe(0)=GetGadgetText(GCMDLPARAM)
+	autostep=valint(GetGadgetText(GAUTODELAY))
+	if autostep<50 then
+		autostep=50
+		SetGadgetText(GAUTODELAY,str(autostep))
+		messbox("Delay for autostepping","Too small, reset to "+str(autostep))
+	elseIf autostep>10000 then
+		autostep=10000
+		SetGadgetText(GAUTODELAY,str(autostep))
+		messbox("Delay for autostepping","Too big, reset to "+str(autostep))
+	end if
+end sub
 '===================
 '' lists enums
 '===================
@@ -501,7 +516,7 @@ private sub input_check()
 	Case 7,8
 		If vald<0 Or vald>4294967395 Then setwindowtext(hinputbx,"min 0,max 4294967395"):vflag=false
 	End Select
-	If vflag Then hidewindow(hinputbx,1) ''hide the window if value is good
+	If vflag Then hidewindow(hinputbx,KHIDE) ''hide the window if value is good
 end sub
 '=====================================================================
 'in string STRG all the occurences of SRCH are replaced by REPL
@@ -3049,7 +3064,7 @@ private sub sources_load(n As integer,exedate as double)
 	dim As integer flgt,fnum
 	dim as any ptr ptrdoc
 	if flagrestart Then
-		SetStatusBarField(1,0,100,"Loading sources")
+		statusbar_text(KSTBSTS,"Loading sources")
 	   	for isrc As Integer=n To sourcenb ' main index =0
 		   	print "loading ="+source(isrc)
 		   	if FileExists(source(isrc))=0 Then
@@ -3066,6 +3081,12 @@ private sub sources_load(n As integer,exedate as double)
 		    	Get #fnum,,sourcebuf() 'get source
 	    	end If
 	    	Close #fnum
+
+			AddPanelGadgetItem(GSRCTAB,isrc,source_name(source(isrc)))
+			''todo later sort the files to get them in alphabetic order
+			AddComboBoxItem(GFILELIST,source_name(source(isrc)),-1)
+
+
 
 	    	''unicode
 	    	'If buf(0)=&hEF AndAlso buf(1)=&hBB AndAlso buf(2)=&hBF Then 'UTF8
@@ -3115,11 +3136,12 @@ private sub sources_load(n As integer,exedate as double)
 		   	Send_sci(SCI_ADDREFDOCUMENT,0,sourceptr(sourcenb))
 			Send_sci(SCI_SETDOCPOINTER,0,currentdoc)
 		end if
-''todo
+		SetItemComboBox(GFILELIST,1)
+		''todo
 		'EnableMenuItem(menutools,IDHIDLOG,MF_GRAYED) 'log file tab canceled so option menu grayed
 	else 'restart with same exe, only the main files are not loaded, dll sources are removed
 
-''todo change later
+		''todo change later
 		'For i As Integer=sourcenb+1 To flagrestart
 		'	setWindowText(richedit(i),""):ShowWindow(richedit(i),SW_HIDE)'hide all the exceding windows (>sourcenb)
 		'	sendmessage(htab1,TCM_DELETEITEM ,i,0) 'delete tabs

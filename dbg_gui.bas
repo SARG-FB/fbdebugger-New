@@ -1,6 +1,27 @@
 ''gui for fbdebuuger_new
 ''dbg_gui.bas
 
+'========================================================
+'' changes the text of a field in statusbar
+'========================================================
+private sub statusbar_text(fieldn as long, text as string)
+	dim as integer fieldpos 
+	select case fieldn
+		Case KSTBSTS
+			fieldpos=200
+		case KSTBTHD
+			fieldpos=300
+		Case KSTBUID
+			fieldpos=400
+		Case KSTBSRC
+			fieldpos=600
+		Case KSTBPRC
+			fieldpos=800
+		case KSTBFRT
+			fieldpos=-1
+	End Select
+	SetStatusBarField(GSTATUSBAR,fieldn,fieldpos,text)
+End Sub
 '=======================================================
 private sub dump_set()
     Dim tmp As String
@@ -250,7 +271,24 @@ end sub
 		'? pSn->nmhdr.hwndFrom ' hwnd sciHWND
 	End Sub
 #endif
-
+'==============================================================================
+'' creates the window for editing variable/memory
+'==============================================================================
+private sub create_editbx()
+	heditbx=OpenWindow("Edit variable",10,10,600,130,WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	centerWindow(heditbx)
+	hidewindow(heditbx,KHIDE)
+	
+	textgadget(GEDTVAR,15,10,445,18,"Fb_myvar <Byval param / ***Zstring>=37415896")
+	stringgadget(GEDTVALUE,450,10,85,15,"37415896")
+	buttongadget(GEDTOK,420,75,75,18,"Apply")
+	buttongadget(GEDTCANCEL,500,75,75,18,"Cancel")	
+	
+	''if pointer
+	textgadget(GEDTPTD,15,35,85,15,"458785")
+	textgadget(GEDTPTDVALUE,105,35,200,18,"String pointed")
+	buttongadget(GEDTDUMP,330,75,75,18,"Ptr dump")
+end sub
 '========================================================
 '' creates the window for managing the array indexes
 '========================================================
@@ -316,7 +354,7 @@ end sub
 private sub create_brkvbx()
 	hbrkvbx=OpenWindow("Breakpoint on value",10,10,600,90,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hbrkvbx)
-	hidewindow(hbrkvbx,KSHOW) 'KHIDE)
+	hidewindow(hbrkvbx,KHIDE)
 	textgadget(GBRKVAR,6,6,390,15,"Stop if b<byte>=-88")
 	stringgadget(GBRKVVALUE,459,3,90,15,"-90")
 	buttongadget(GBRKVOK,400,30,45,18,"Apply")
@@ -327,9 +365,9 @@ end sub
 '' creates the window for Procedure Backtracking
 '==============================================================================
 private sub create_trackbx()
-	htrckbx=OpenWindow("Procedure Backtracking",10,10,550,150,WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	htrckbx=OpenWindow("Procedure Backtracking",10,10,550,100,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(htrckbx)
-	hidewindow(htrckbx,KSHOW) 'KHIDE)
+	hidewindow(htrckbx,KHIDE)
 	
 	buttongadget(GTRACKPRV,5,6,65,15,"Previous")
 	buttongadget(GTRACKCUR,5,27,65,15,"Current")
@@ -345,7 +383,7 @@ private sub create_shwexpbx()
 
 	hshwexpbx=OpenWindow("Shw/exp : variable",10,10,700,550) ',WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hshwexpbx)
-	hidewindow(hshwexpbx,KSHOW) 'KHIDE)
+	hidewindow(hshwexpbx,KHIDE)
 
 	buttongadget(GSHWWCH,510,5,90,18,"Watched")
 	buttongadget(GSHWDMP,510,30,90,18,"Dump")
@@ -540,9 +578,9 @@ private sub create_inputbx()
 	hinputbx=OpenWindow("",10,10,80,150)
 	centerWindow(hinputbx)
 	StringGadget(GINPUTVAL,10,10,100,15,"")
-	ButtonGadget (INPUTVALOK, 10, 40, 60, 15,  "Ok")
-	ButtonGadget (INPUTVALCANCEL, 10, 40, 60, 15,  "Cancel")
-	hidewindow(hinputbx,1)
+	ButtonGadget (GINPUTVALOK, 10, 40, 60, 15,  "Ok")
+	ButtonGadget (GINPUTVALCANCEL, 10, 40, 60, 15,  "Cancel")
+	hidewindow(hinputbx,KHIDE)
 end sub	
 '=========================================================================
 '' enables or disables buttons according the status and updates status
@@ -564,12 +602,13 @@ private sub but_enable()
 			DisableGadget(IDBUTKILL,0)
 			DisableGadget(IDBUTEXEMOD,0)
 			
-			SetStatusBarField(1,0,100,"Waiting "+stoplibel(stopcode))
-			SetStatusBarField(1,1,200,"Thread "+Str(thread(threadcur).id))
-			SetStatusBarField(1,2,300,"Thread "+Str(thread(threadcur).id))
-			SetStatusBarField(1,3,400,source_name(source(proc(procsv).sr)))
-			SetStatusBarField(1,4,500,proc(procsv).nm)
-			SetStatusBarField(1,5,-1,left(Str(fasttimer),10))
+			statusbar_text(KSTBSTS,"Waiting "+stoplibel(stopcode))
+			statusbar_text(KSTBTHD,"Thread "+Str(thread(threadcur).id))
+			statusbar_text(KSTBUID,"Thread "+Str(thread(threadcur).id))
+			statusbar_text(KSTBSRC,source_name(source(proc(procsv).sr)))
+			statusbar_text(KSTBPRC,proc(procsv).nm)
+			statusbar_text(KSTBFRT,left(Str(fasttimer),10))
+			
    		case RTRUN,RTFREE,RTFRUN 'step over / out / free / run / fast run
 			DisableGadget(IDBUTSTEP,1)
 			DisableGadget(IDBUTSTEPP,1)
@@ -585,12 +624,13 @@ private sub but_enable()
 			DisableGadget(IDBUTEXEMOD,1)
 			Select Case runtype
 				Case RTRUN
-					SetStatusBarField(1,0,100,"Running")
+					statusbar_text(KSTBSTS,"Running")
 				Case RTFRUN
-					SetStatusBarField(1,0,100,"FAST Running")
+					statusbar_text(KSTBSTS,"FAST Running")
 				Case else
-					SetStatusBarField(1,0,100,"Released")
+					statusbar_text(KSTBSTS,"Released")
 			End Select
+			
     	Case RTAUTO 'auto
 			DisableGadget(IDBUTSTEP,1)
 			DisableGadget(IDBUTSTEPP,1)
@@ -604,7 +644,7 @@ private sub but_enable()
 			DisableGadget(IDBUTFREE,1)
 			DisableGadget(IDBUTKILL,1)
 			DisableGadget(IDBUTEXEMOD,1)
-      		SetStatusBarField(1,0,100,"Auto")
+      		statusbar_text(KSTBSTS,"Auto")
    		case Else 'prun=1 --> terminated or no pgm
 			DisableGadget(IDBUTSTEP,1)
 			DisableGadget(IDBUTSTEPP,1)
@@ -619,7 +659,7 @@ private sub but_enable()
 			DisableGadget(IDBUTFREE,1)
 			DisableGadget(IDBUTKILL,1)
 			DisableGadget(IDBUTEXEMOD,1)
-    	  	If runtype=RTEND Then SetStatusBarField(1,0,100,"Terminated")
+    	  	If runtype=RTEND Then statusbar_text(KSTBSTS,"Terminated")
    	End Select
 End Sub
 
@@ -881,21 +921,21 @@ private sub gui_init()
 	ButtonGadget(GFILESEL,992,2,30,20,"Go")
 	
 	''status bar
-	StatusBarGadget(1,"")
-	SetStatusBarField(1,0,100,"No program")
-	SetStatusBarField(1,1,200,"Thread number")
-	SetStatusBarField(1,2,300,"UID number Linux")
-	SetStatusBarField(1,3,400,"Current source")
-	SetStatusBarField(1,4,500,"Current proc")
-	setstatusbarfield(1,5,-1,"Fast time ?")
+	StatusBarGadget(GSTATUSBAR,"")
+	statusbar_text(KSTBSTS,"No program")
+	statusbar_text(KSTBTHD,"Thread number")
+	statusbar_text(KSTBUID,"UID number Linux")
+	statusbar_text(KSTBSRC,"Current source")
+	statusbar_text(KSTBPRC,"Current proc")
+	statusbar_text(KSTBFRT,"Fast time ?")
 	
 	''current line
 	textGadget(GCURRENTLINE,2,28,400,20,"Next exec line : ",SS_NOTIFY )
 	GadgetToolTip(GCURRENTLINE,"next executed line"+chr(13)+"Click on me to reach the line",GCURLINETTIP)
 
 	''buttons
-	load_button(IDBUTSTEP,@"step.bmp",8,,@"[S]tep/line by line",,0)
-	load_button(IDBUTCURSOR,@"runto.bmp",40,,@"Run to [C]ursor",,0)
+	load_button(IDBUTSTEP,@"step.bmp",8,,@"[S]tep/line by line",)
+	load_button(IDBUTCURSOR,@"runto.bmp",40,,@"Run to [C]ursor",)
 	load_button(IDBUTSTEPP,@"step_over.bmp",72,,@"Step [O]ver sub/func",)
 	load_button(IDBUTSTEPT,@"step_start.bmp",104,,@"[T]op next called sub/func",)
 	load_button(IDBUTSTEPB,@"step_end.bmp",136,,@"[B}ottom current sub/func",)
@@ -910,7 +950,7 @@ private sub gui_init()
 	load_button(IDBUTRERUN,@"restart.bmp",466,,@"Restart debugging (exe)",TTRERUN,0)
 	load_button(IDBUTLASTEXE,@"multiexe.bmp",498,,@"Last 10 exe(s)",,0)
 	load_button(IDBUTATTCH,@"attachexe.bmp",530,,@"Attach running program",,0)
-	load_button(IDBUTFILE,@"files.bmp",562,,@"Select EXE/BAS",,0)
+	load_button(IDBUTFILE,@"files.bmp",562,,@"Select EXE",,0)
 	load_button(IDBUTTOOL,@"tools.bmp",628,,@"Some usefull....Tools",,0)
 	load_button(IDBUTUPDATE,@"update.bmp",660,,@"Update On /Update off : variables, dump",,0)
 	load_button(IDBUTENLRSRC,@"source.bmp",692,,@"Enlarge/reduce source",)
@@ -947,20 +987,20 @@ private sub gui_init()
 	'var hbmp1 = load_Icon("2.ico")	
 	htviewvar=treeviewgadget(GTVIEWVAR,0,0,499,299,KTRRESTYLE)
 	''filling treeview for example
-	var Pos_=AddTreeViewItem(GTVIEWVAR,"Myvar udt ",cast (hicon, 0),cast (hicon, 0),0,0)
-	AddTreeViewItem(GTVIEWVAR,"first field",cast (hicon, 0),0,1,Pos_)
-	Pos_=AddTreeViewItem(GTVIEWVAR,"my second var",cast (hicon, 0),0,0)
-	AddTreeViewItem(GTVIEWVAR,"first field",cast (hicon, 0),0,0,Pos_)
+	'var Pos_=AddTreeViewItem(GTVIEWVAR,"Myvar udt ",cast (hicon, 0),cast (hicon, 0),0,0)
+	'AddTreeViewItem(GTVIEWVAR,"first field",cast (hicon, 0),0,1,Pos_)
+	'Pos_=AddTreeViewItem(GTVIEWVAR,"my second var",cast (hicon, 0),0,0)
+	'AddTreeViewItem(GTVIEWVAR,"first field",cast (hicon, 0),0,0,Pos_)
 	
 	'HideGadget(GTVIEWVAR,0)
-	hidewindow(htabvar,0)
+	hidewindow(htabvar,KSHOW)
 	
 	''treeview procs
 	var htabprc=AddPanelGadgetItem(GRIGHTTABS,TABIDXPRC,"Procs",,1)
 	htviewprc=treeviewgadget(GTVIEWPRC,0,0,499,299,KTRRESTYLE)
-	AddTreeViewItem(GTVIEWPRC,"first proc",cast (hicon, 0),0,0)
-	AddTreeViewItem(GTVIEWPRC,"second proc",cast (hicon, 0),0,0)
-	AddTreeViewItem(GTVIEWPRC,"third proc",cast (hicon, 0),0,0)
+	'AddTreeViewItem(GTVIEWPRC,"first proc",cast (hicon, 0),0,0)
+	'AddTreeViewItem(GTVIEWPRC,"second proc",cast (hicon, 0),0,0)
+	'AddTreeViewItem(GTVIEWPRC,"third proc",cast (hicon, 0),0,0)
 	
 	''treeview threads
 	var htabthrd=AddPanelGadgetItem(GRIGHTTABS,TABIDXTHD,"Threads",,1)
@@ -979,7 +1019,7 @@ private sub gui_init()
 	'next
 	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
 	
-	''for log display
+	''for log display or other needs
 	hlogbx=OpenWindow("Log file",10,10,450,550,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	EditorGadget(GEDITOR,10,10,400,500,"Your log file if any")
 	ReadOnlyEditor(GEDITOR,1)
@@ -993,6 +1033,7 @@ private sub gui_init()
 	create_indexbx()
 	create_trackbx()
 	create_brkvbx
+	create_editbx()
 	menu_set()
 
 end sub
