@@ -30,6 +30,15 @@ union ustab
 		desc as short
 	end type
 end union
+'=======================================================================
+'' puts the intruction &hCC at the beginning of every executable line
+'=======================================================================
+private sub put_breakcpu(beginline as integer=1)
+	For iline As Integer=beginline to linenb
+		ReadProcessMemory(dbghand,Cast(LPCVOID,rline(iline).ad),@rLine(iline).sv,1,0) 'sav 1 byte before writing &CC
+		WriteProcessMemory(dbghand,Cast(LPVOID,rline(iline).ad),@breakcpu,1,0)
+	Next
+End Sub
 '--------------------------------------
 '' check if local var already stored
 '--------------------------------------
@@ -269,16 +278,16 @@ Else
 
 	''todo remove
 	''If c=udt(15).index Then c=15
-print "in var2=>";gv;" ";gv2;" ";c
-	If c>TYPESTD Then c+=udtcpt 'udt type so adding the decal 20/08/2015
-	If f=TYUDT Then
-		cudt(cudtnb).pt=pp
-		cudt(cudtnb).typ=c
-	Else
-		vrb(*vrbptr).pt=pp
-		vrb(*vrbptr).typ=c
-	End If
-EndIf
+	print "in var2=>";gv;" ";gv2;" ";c
+		If c>TYPESTD Then c+=udtcpt 'udt type so adding the decal 20/08/2015
+		If f=TYUDT Then
+			cudt(cudtnb).pt=pp
+			cudt(cudtnb).typ=c
+		Else
+			vrb(*vrbptr).pt=pp
+			vrb(*vrbptr).typ=c
+		End If
+	EndIf
 End Sub
 
 '------------
@@ -860,7 +869,6 @@ print "fullname=";fullname
 	endif
 	Return strg2
 End Function
-
 '' --------------------------------
 '' check if source already stored
 '' --------------------------------
@@ -922,7 +930,7 @@ end sub
 '' -----------------------
 private sub dbg_line(linenum as integer,ofset as integer)
 	if linenum then
-		if linenum>lastline then
+		'if linenum>lastline then
 			if ofset+proc(procnb).db<>rline(linenb).ad Then ''checking to avoid asm with just comment line
  				linenb+=1
 			endif
@@ -937,9 +945,9 @@ private sub dbg_line(linenum as integer,ofset as integer)
 			If ofset<>0 Then lastline=linenum ''first proc line always coded 1 but ad=0
 			
 			print "linenum=";linenum;" adress=";rline(linenb).ad
-		else
-			print "linenum=";linenum;" not>lastline=";lastline
-		endif		
+		'else
+			'print "linenum=";linenum;" not>lastline=";lastline
+		'endif
 	else
 		print "line number=0"
 	end if
@@ -1321,6 +1329,7 @@ end function
 	   flagwtch=0
 	EndIf
 	list_all()
+	put_breakcpu()
 	sources_load(n,filedatetime(exename))
 	'activate buttons/menu after real start
 	but_enable()

@@ -300,13 +300,13 @@ End Sub
 '===============================
 '' shows value in dec/hex/bin
 '===============================
-private sub dechexbin() 'dec/hex/bin
-inputval=""
-inputtyp=99
-input_bx("Input value HEX(&h) or DEC")
-If inputval<>"" Then
-    messbox("Value in dec, hex and bin","Dec= "+Str(Val(inputval))+Chr(10)+"Hex="+Hex(Val(inputval))+Chr(10)+"Bin="+Bin(Val(inputval)))
-End If
+private sub dechexbin()
+	inputval=""
+	inputtyp=99
+	input_bx("Input value HEX(&h) or DEC")
+	If inputval<>"" Then
+		messbox("Value in dec, hex and bin","Dec= "+Str(Val(inputval))+Chr(10)+"Hex="+Hex(Val(inputval))+Chr(10)+"Bin="+Bin(Val(inputval)))
+	End If
 End Sub
 '===============================
 ''Goto selected line number
@@ -391,7 +391,7 @@ End Sub
 '' updates all the select index boxes
 '=============================================
 private sub index_update()
-	messbox("To be coded improvement","updates all the index boxes")
+	'messbox("To be coded improvement","updates all the index boxes")
 	'For iindex As Long =0 To INDEXBOXMAX
 		'If hindexbx(iindex)<>0 Then
 			'If autoupd(iindex)=TRUE Then 
@@ -939,6 +939,7 @@ end sub
 Private sub thread_resume()
 	#ifdef __fb_win32__
 		''moved to dbg_windows.bas
+		messbox("addr restoing="+str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv))
 		writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution
 		resumethread(threadhs)
 	#else
@@ -1620,7 +1621,7 @@ Else
 End If
 End Sub
 '===========================================
-private sub watch_sav()'save watched
+private sub watch_sav() ''save watched
 'example main/TUTU,TTEST/B,TTITI/C,Integer/pnt 
 '= PROC main,tutu type ttest,B type ttiti, C type integer, nb pointer
    Dim As Integer begb,Endb,stepb
@@ -1630,7 +1631,7 @@ private sub watch_sav()'save watched
 		If wtch(i).psk=-1 OrElse wtch(i).psk=-2 OrElse wtch(i).Var<>0 Then 'not used or memory not saved or array
 			text=""
 		Else  'dll, more than one level and not a basic type on not a pointer ?
-			If wtch(i).idx=0 AndAlso wtch(i).vnb>1 AndAlso wtch(i).typ>TYPESTD AndAlso wtch(i).pnt=0 Then '20/08/2015
+			If wtch(i).idx=0 AndAlso wtch(i).vnb>1 AndAlso wtch(i).typ>TYPESTD AndAlso wtch(i).pnt=0 Then
 				text=""
 			Else
 				If wtch(i).idx=0 Then 'shared in dll
@@ -1648,6 +1649,7 @@ private sub watch_sav()'save watched
 			EndIf
 		EndIf
 		If text="/0/0" Then text=""
+		if right(text,3)="0/0" Then text="" ''todo remove me after
 		wtchexe(0,i)=text
 	Next
 End Sub
@@ -1839,7 +1841,7 @@ private sub watch_trace(t As Integer=WTCHALL)
 			Else 
 				If flaglog=0 Then 
 					If MESSBOX("Tracing var/mem","No log output defined"+Chr(13)+"Open settings ?",MB_YESNO)=RETYES Then 
-						hidewindow(hsettings,0) ''can be changed here
+						hidewindow(hsettings,KSHOW) ''can be changed here
 					EndIf 
 					If flaglog=0 Then 
 						messbox("Tracing var/mem","No log output defined"+Chr(13)+"So doing nothing") 
@@ -2836,11 +2838,17 @@ private sub reinit()
 	'procin=0:procfn=0:procbot=0:proctop=FALSE
 	proc(1).vr=VGBLMAX+1 'for the first stored proc
 	udtcpt=0:udtmax=0
+	
+	SendMessage(htviewvar,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'procs/vars
+	SendMessage(htviewprc,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'procs
+	SendMessage(htviewthd,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'threads
+	SendMessage(htviewwch,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'watched   needed ????
+	
 	'================================================================
 				'	'======== init =========================================
 				'private sub re_ini()
 				'
-				'If TimerID1<>0 Then KillTimer(windmain,TimerID1) ''27/12/26
+				'If TimerID1<>0 Then KillTimer(windmain,TimerID1)
 
 				'brkv.adr=0 'no break on var
 				'brknb=0 'no break on line
@@ -2852,9 +2860,6 @@ private sub reinit()
 				'setwindowtext(windmain,"DEBUG "+ver3264)
 				'
 				'SendMessage(listview1,LVM_DELETEALLITEMS,0,0) 'dump
-				'SendMessage(tviewvar,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'procs/vars
-				'SendMessage(tviewprc,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'procs
-				'SendMessage(tviewthd,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'threads
 				'
 				PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)
 				'If dsptyp Then dsp_hide(dsptyp)
@@ -2900,8 +2905,7 @@ end sub
 '================================================================
 '' check if exe bitness if not wrong 32bit<>64bit windows only
 '================================================================
-
-function check_bitness(fullname as string) as integer
+private function check_bitness(fullname as string) as integer
 	#Ifdef __fb_win32__
 		dim as long bintype
 			getbinarytype(strptr(fullname),@bintype) ''a control to prevent 32bit<>64bit 2020/02/05
@@ -3052,6 +3056,7 @@ private sub exe_sav(exename As String,cmdline As String="")
     	End If
     Next
     savexe(0)=exename
+    messbox("new save(0)","now="+savexe(0))
     If cmdline<>"" Then cmdexe(0)=cmdline
     SetToolTipText(IDBUTRERUN,TTRERUN,exename)
     settitle()
@@ -3236,13 +3241,14 @@ End sub
 private sub ini_read()
 
     Dim filein As Integer,lineread As String, c As Integer=-1,w As Integer,b As Integer
-   Dim As Long lft,top,rgt,bot,p,q
+	Dim As Long lft,top,rgt,bot,p,q
     If Dir(ExePath+slash+"fbdebugger.ini")="" Then
        'fb_message("Init Error","fbdebugger.ini doesn't exist"+chr(10)+"compilation impossible")
        Exit Sub
     End If
     Filein = FreeFile
     Open ExePath+slash+"fbdebugger.ini" For Input As #Filein
+
     Do While Not Eof(Filein)
         Line Input #filein,lineread
 		if Left(lineread,6)="[EXE]=" Then
@@ -3318,7 +3324,9 @@ private sub ini_read()
     Loop
     Close #Filein
     exename=savexe(0)
-    SetToolTipText(IDBUTRERUN,TTRERUN,"Restart "+exename)
+    if exename<>"" then
+		SetToolTipText(IDBUTRERUN,TTRERUN,"Restart "+exename)
+	end if
 End sub
 ''==============================================================================
 '' freeing all before quitting the debugger 
@@ -3333,7 +3341,7 @@ private sub closes_debugger()
 		release_doc ''releases scintilla docs
 		''todo free all the objects menus, etc
 		If sourcenb<>-1 Then ''case exiting without stopping debuggee before
-			watch_sav
+			watch_sav()
 			brk_sav 
 		EndIf
 		ini_write()
@@ -3346,9 +3354,9 @@ end sub
 private sub drag_n_drop
 	messbox("feature to be coded","drag_n_drop")
 end sub
-'-------------------------------------------
+'===================================================
 ''launch by command line or file explorer
-'-------------------------------------------
+'===================================================
 private sub external_launch()
 	if command(0)="" then exit sub ''not launched by command line
 	dim as string debuggee=command(1)
@@ -3367,17 +3375,19 @@ private sub external_launch()
 	exename=debuggee
     exe_sav(exename,cmdline)
 
-    'If ThreadCreate(@start_pgm)=0 Then todo add start_pgm and uncomment
-    	'messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
-    'endif
+	#Ifdef __fb_win32__
+		If ThreadCreate(@start_pgm)=0 Then
+			messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
+		endif
+	#else
+		messbox("feature to be coded linux","after selecting file")
+	#endif
 
 end sub
 '==================================================================================
 '' Debuggee restarted, last debugged (using IDBUTRERUN) or one of the 9/10 others
 '==================================================================================
 private sub restart(byval idx as integer=0)
-	idx-=MNEXEFILE0
-	messbox("Check exe number","restart"+str(idx)+" "+savexe(idx))
 	if idx=0 then
 		Dim As Double dtempo=FileDateTime(exename)
 		If exedate<>0 AndAlso exedate=dtempo Then
@@ -3393,10 +3403,15 @@ private sub restart(byval idx as integer=0)
 	if check_bitness(exename)=0 then exit sub ''bitness of debuggee and fbdebugger not corresponding
 	if kill_process("Trying to launch but debuggee still running")=FALSE then exit sub
 	reinit ''reinit all except GUI parts
-
-	'If ThreadCreate(@start_pgm)=0 Then todo add start_pgm and uncomment
-	'messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
-    'endif
+	settitle()
+	#Ifdef __fb_win32__
+		If ThreadCreate(@start_pgm)=0 Then
+			messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
+		endif
+	#else
+		messbox("feature to be coded linux","after selecting file")
+	#endif    
+    
 end sub
 '--------------------------------------------------------
 '' Debuggee provided by jitdebugger

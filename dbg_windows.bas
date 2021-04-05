@@ -421,8 +421,8 @@ While 1
 		      For i As Integer=1 To dllnb 
 					closehandle dlldata(i).hdl 'close all the dll handles
 		      Next
-	         watch_sav
-	         brk_sav
+	         watch_sav()
+	         brk_sav()
 	         ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 	         prun=FALSE
 	      	 runtype=RTEND
@@ -465,24 +465,24 @@ While 1
 	      		End If
 			Else
 				dlldata(d).hdl=loaddll.hfile
-      		delta=Cast(Integer,loaddll.lpBaseOfDll-dlldata(d).bse)
-      		If delta<>0 Then 'different address so need to change some thing
-      			'lines
-      			For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
+				delta=Cast(Integer,loaddll.lpBaseOfDll-dlldata(d).bse)
+				If delta<>0 Then 'different address so need to change some thing
+					'lines
+					For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
 						rline(i).ad+=delta
-      			Next
-					'globals
-      			For i As Integer=dlldata(dllnb).gblb To dlldata(dllnb).gblb+dlldata(dllnb).gbln-1
-      				vrb(i).adr+=delta
-      			Next
-      		End If
-      		'normally done during debug_extract
-      		For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
-      			ReadProcessMemory(dbghand,Cast(LPCVOID,rline(i).ad),@rLine(i).sv,1,0) 'sav 1 byte before writing &CC
-              	WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
-     			Next
-      		globals_load(d)
-      		brk_apply
+					Next
+						'globals
+					For i As Integer=dlldata(dllnb).gblb To dlldata(dllnb).gblb+dlldata(dllnb).gbln-1
+						vrb(i).adr+=delta
+					Next
+				End If
+				'normally done during debug_extract
+				For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
+					ReadProcessMemory(dbghand,Cast(LPCVOID,rline(i).ad),@rLine(i).sv,1,0) 'sav 1 byte before writing &CC
+					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
+				Next
+				globals_load(d)
+				brk_apply
 			EndIf	
 
       	ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)

@@ -287,8 +287,8 @@ Dim Shared exedate As Double 'serial date
 	
 #EndIf
 
-
 gui_init
+ini_read()
 reinit
 	
 statusbar_text(KSTBSTS,"No debuggee")
@@ -347,7 +347,7 @@ do
 		if EventHwnd=hmain then  ''main window
 			closes_debugger()
 		else
-			HideWindow(EventHwnd,1)
+			HideWindow(EventHwnd,KHIDE)
 			if EventHwnd=hsettings then ''settings box
 				settings_update() 
 			elseif EventHwnd=hinputbx then ''resets inputval and closes box

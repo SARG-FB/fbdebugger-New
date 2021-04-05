@@ -96,7 +96,8 @@ end sub
 ''Loading of buttons
 '=====================
 private sub load_button(id as integer,button_name as zstring ptr,xcoord as integer,ycoord as integer=0,tooltiptext as zstring ptr=0,idtooltip as integer=-1,disab as long=1)
-	Var himage=Load_image("."+slash+"buttons"+slash+*button_name)
+	Var himage=Load_image(exepath+slash+"buttons"+slash+*button_name)
+	print 
 	ButtonImageGadget(id,xcoord,ycoord,30,26,himage,  BS_BITMAP)
 	if tooltiptext then
 		if idtooltip<>-1 then
@@ -548,9 +549,9 @@ end sub
 '=============================================
 private sub create_settingsbx()
 	hsettings=OpenWindow("Settings",10,10,500,500,WS_POPUP or WS_CAPTION or WS_SYSMENU)
-	centerWindow(hsettings)
 	hidewindow(hsettings,KHIDE)	
-	
+	centerWindow(hsettings)
+		
 	groupgadget(LOGGROUP,10,10,450,85,"Log  fbdebugger path"+slash+"dbg_log.txt")
 	optiongadget(GNOLOG,12,32,80,18,"No log")
 	SetGadgetState(GNOLOG,1)''set on overriden by read_ini
@@ -575,12 +576,12 @@ end sub
 '' inputval window
 '=============================================
 private sub create_inputbx()
-	hinputbx=OpenWindow("",10,10,80,150)
+	hinputbx=OpenWindow("",10,10,80,250)
+	hidewindow(hinputbx,KHIDE)
 	centerWindow(hinputbx)
 	StringGadget(GINPUTVAL,10,10,100,15,"")
-	ButtonGadget (GINPUTVALOK, 10, 40, 60, 15,  "Ok")
-	ButtonGadget (GINPUTVALCANCEL, 10, 40, 60, 15,  "Cancel")
-	hidewindow(hinputbx,KHIDE)
+	ButtonGadget (GINPUTVALOK,10,40,60,15,"Ok")
+	ButtonGadget (GINPUTVALCANCEL,80,40,60,15,"Cancel")
 end sub	
 '=========================================================================
 '' enables or disables buttons according the status and updates status
@@ -886,6 +887,7 @@ private sub menu_set()
 ''menu tools
 	HMenutools=CreatePopMenu()
 	MenuItem(MNABOUT,HMenutools,   "About")
+	MenuItem(MNSETTINGS,HMenutools,   "Settings")
 	MenuItem(MNCMPINF,HMenutools,  "Compile info")
 	MenuItem(MNDBGHELP,HMenutools, "Help / F1")
 	MenuItem(MNSHWLOG,HMenutools,  "Show log file")
@@ -905,8 +907,8 @@ End Sub
 private sub gui_init()
 
 	''main windows
-	hmain=OpenWindow("New FBDEBUGGER with window9 :-)",10,10,1100,500)
-	
+	hmain=OpenWindow("",10,10,1100,500)
+	settitle()
 	''scintilla gadget
 	create_scibx(GSCINTILLA,0,65,400,WindowClientHeight(hmain)-90,)
 
@@ -957,7 +959,7 @@ private sub gui_init()
 	load_button(IDBUTENLRVAR,@"varproc.bmp",724,,@"Enlarge/reduce proc/var",)
 	load_button(IDBUTENLRMEM,@"memory.bmp",756,,@ "Enlarge/reduce dump memory",)
 	
-	
+	       
 	''bmb(25)=Loadbitmap(fb_hinstance,Cast(LPSTR,MAKEINTRESOURCE(1025))) 'if toogle noupdate
 	''no sure to implement this one	 
 	''load_button(IDBUTMINI,@"minicmd.bmp",296,@ "Mini window",)

@@ -10,6 +10,9 @@ private sub menu_action(poption as integer)
                	Shell "start http://www.freebasic.net/forum/viewtopic.php?f=8""&t""=13935" 
             endif
             
+        case MNSETTINGS
+			hidewindow(hsettings,KSHOW)	
+         
         case MNTHRDAUT '' multi thread auto
 		    var threadaut=0   
 			For ithd As Integer =0 To threadnb
@@ -380,20 +383,22 @@ private sub gadget_action(igadget as LONG)
 	End Select
 end sub
 '==============================================
+'' 
+'==============================================
 sub select_file()
 	#Ifdef __fb_win32__
-		var ddd= OpenFileRequester("Select exe file","C:\","Exe files (*.exe)"_
+		var selfile= OpenFileRequester("Select exe file","C:\","Exe files (*.exe)"_
 		+Chr(0)+"*.exe"+Chr(0))
 	#else
-		var ddd= OpenFileRequester("Select exe file","","Exe files)"_
+		var selfile= OpenFileRequester("Select exe file","","Exe files)"_
 		+Chr(0)+"*.*"+Chr(0))
 	#endif
-	If ddd="" then
+	If selfile="" then
 		messbox("No file selected","")
 		exename=""
 		exit sub
 	else
-		exename=ddd
+		exename=selfile
 		messbox("File selected",exename)
 	end if
 
@@ -411,7 +416,6 @@ sub select_file()
 		endif
 	#else
 		messbox("feature to be coded linux","after selecting file")
-		
 	#endif
 end sub
 '==============================================================
