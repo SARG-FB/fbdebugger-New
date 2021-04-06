@@ -97,7 +97,6 @@ end sub
 '=====================
 private sub load_button(id as integer,button_name as zstring ptr,xcoord as integer,ycoord as integer=0,tooltiptext as zstring ptr=0,idtooltip as integer=-1,disab as long=1)
 	Var himage=Load_image(exepath+slash+"buttons"+slash+*button_name)
-	print 
 	ButtonImageGadget(id,xcoord,ycoord,30,26,himage,  BS_BITMAP)
 	if tooltiptext then
 		if idtooltip<>-1 then
@@ -122,9 +121,9 @@ private sub source_change(numb as integer)
 	srcdisplayed=numb
 	SetItemComboBox(GFILELIST,srcdisplayed)
 end sub
-'===================================================
-'' return line where is the cursor
-'===================================================
+'=======================================================================================
+'' return line where is the cursor  scintilla first line=0 --> rline=1 so 1 is added
+'=======================================================================================
 private function line_cursor() as integer
 	return Send_sci(SCI_LINEFROMPOSITION,Send_sci(SCI_GETCURRENTPOS,0,0),0)+1
 end function
@@ -161,7 +160,7 @@ end sub
 '=========================================================
 '' selects the text of line
 '=========================================================
-function line_text(pline as integer)as string
+private function line_text(pline as integer)as string
 	var lgt=send_sci(SCI_LINELENGTH,pline,0)
 	var txt=space(lgt) + Chr(0)
 	send_sci(SCI_GETLINE,pline,strptr(txt))
@@ -193,7 +192,7 @@ end sub
 '' set/unset breakpoint markers
 '===================================================
 sub brk_marker(brkidx as integer)
-	dim as integer src,pline=brkol(brkidx).nline,typ
+	dim as integer src,lline=brkol(brkidx).nline-1,typ
 	
 	if brkol(brkidx).typ>2 then
 		typ=4 ''disabled --> marker
@@ -201,17 +200,24 @@ sub brk_marker(brkidx as integer)
 		if brkol(brkidx).cntrsav then
 			typ=3 ''if counter<>0 --> marker 3
 		else
-			typ=brkol(brkidx).typ  ''permanent or tempo --> marker 1 or 2
-		EndIf
-	EndIf
+			if brkidx=0 then
+				if brkol(brkidx).typ=2 then
+					typ=6 ''red circle
+					messbox("red cricle on line=",str(lline+1))
+				end if
+			else
+				typ=brkol(brkidx).typ  ''permanent or tempo --> marker 1 or 2
+			end if
+		End If
+	End If
 	
 	src=srcdisplayed
 	source_change(brkol(brkidx).isrc)
 	
 	if typ then
-		send_sci(SCI_MARKERADD, pline-1, typ)
+		send_sci(SCI_MARKERADD, lline, typ)
 	else
-		send_sci(SCI_MARKERDELETE, pline-1, -1)
+		send_sci(SCI_MARKERDELETE, lline, -1)
 	end if
 	
 	source_change(src)
@@ -510,6 +516,7 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 	send_sci(SCI_MarkerDefine, 3,SC_MARK_FULLRECT)
 	send_sci(SCI_MarkerDefine, 4,SC_MARK_FULLRECT)
 	send_sci(SCI_MarkerDefine, 5,SC_MARK_SHORTARROW)
+	send_sci(SCI_MarkerDefine, 6,SC_MARK_CIRCLE)
 	''color markers
 	send_sci(SCI_MARKERSETFORE,0,KRED)
 	send_sci(SCI_MARKERSETBACK,0,KWHITE)
@@ -523,6 +530,8 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 	send_sci(SCI_MARKERSETBACK,4,KGREY)
 	send_sci(SCI_MARKERSETFORE,5,KGREEN)
 	send_sci(SCI_MARKERSETBACK,5,KGREEN)
+	send_sci(SCI_MARKERSETFORE,6,KRED)
+	send_sci(SCI_MARKERSETBACK,6,KRED)
 	
 	send_sci(SCI_StyleSetFore, 2, KRED)    ''style #2 FG set to red
 	send_sci(SCI_StyleSetBack, 2, KYELLOW) ''style #2 BB set to green
@@ -1003,14 +1012,17 @@ private sub gui_init()
 	'AddTreeViewItem(GTVIEWPRC,"first proc",cast (hicon, 0),0,0)
 	'AddTreeViewItem(GTVIEWPRC,"second proc",cast (hicon, 0),0,0)
 	'AddTreeViewItem(GTVIEWPRC,"third proc",cast (hicon, 0),0,0)
+	hidewindow(htabprc,KSHOW)	
 	
 	''treeview threads
-	var htabthrd=AddPanelGadgetItem(GRIGHTTABS,TABIDXTHD,"Threads",,1)
+	var htabthd=AddPanelGadgetItem(GRIGHTTABS,TABIDXTHD,"Threads",,1)
 	htviewthd=treeviewgadget(GTVIEWTHD,0,0,499,299,KTRRESTYLE)
-		
+	hidewindow(htabthd,KSHOW)	
+	
 	''treeview watched
-	var htabwatch=AddPanelGadgetItem(GRIGHTTABS,TABIDXWCH,"Watched",,1)
+	var htabwch=AddPanelGadgetItem(GRIGHTTABS,TABIDXWCH,"Watched",,1)
 	htviewwch=treeviewgadget(GTVIEWWCH,0,0,499,299,KTRRESTYLE)
+	hidewindow(htabwch,KSHOW)
 	
 	''dump memory
 	var htabmem=AddPanelGadgetItem(GRIGHTTABS,TABIDXDMP,"Memory",,1)

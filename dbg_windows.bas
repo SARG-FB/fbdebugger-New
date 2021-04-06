@@ -294,7 +294,6 @@ While 1
 								dbg_prt (libel)
 								show_context
 							#EndIf
-							'======================= 07/10/2014 =============
 							
 							'If runtype<>RTFRUN And runtype<>RTFREE Then
 							If runtype=RTFRUN OrElse runtype=RTFREE Then	

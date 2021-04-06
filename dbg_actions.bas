@@ -112,11 +112,11 @@ private sub menu_action(poption as integer)
                brk_set(1)
          	Case MNSETBRT 'set tempo brkp
                brk_set(2)
-            Case MNSETBRKC 'set brkp with counter  '03/09/2015
+            Case MNSETBRKC 'set brkp with counter
                brk_set(3)
-         	Case MNCHGBRKC 'change value brkp with counter  '03/09/2015
+         	Case MNCHGBRKC 'change value brkp with counter
          	   brk_set(7)
-         	Case MNRSTBRKC 'reset brkp with counter  '03/09/2015
+         	Case MNRSTBRKC 'reset brkp with counter
          	   brk_set(8)
          	Case MNBRKENB 'enable/disable brkp
                brk_set(4)
@@ -209,7 +209,8 @@ private sub menu_action(poption as integer)
          	messbox("Feature not yet implemented","proc_flw(2)")
            		'proc_flw(2)
          	Case MNSORTPRC
-         		procsort=1-procsort:proc_sh 'toggle type of sort and update display
+         		procsort=1-procsort
+         		proc_sh() 'toggle type of sort and update display
 				
          	Case MNASMPRC
 				messbox("Feature not yet implemented","dissassemble(KSPROC)")
@@ -245,6 +246,7 @@ private sub gadget_action(igadget as LONG)
 		''
 		case GDUMPADR
 		messbox("changing memory address","need to remove me") 
+		
 		case GDUMPAPPLY
 			var txt=GetGadgetText(GDUMPADR)
 			dim as integer newad=Valint(txt)
@@ -303,6 +305,26 @@ private sub gadget_action(igadget as LONG)
         	
 		case GSRCTAB
 			source_change(PanelGadgetGetCursel(GSRCTAB))
+		
+		case GRIGHTTABS
+			select case PanelGadgetGetCursel(GRIGHTTABS)
+				case TABIDXVAR
+					'hidewindow(htabvar,KSHOW)
+					'HideGadget(GTVIEWVAR,0)
+				case TABIDXPRC
+					'hidewindow(htabprc,KSHOW)
+					'HideGadget(GTVIEWPRC,0)
+					proc_sh()
+				case TABIDXTHD
+					'hidewindow(htabthd,KSHOW)
+					'HideGadget(GTVIEWTHD,0)
+				case TABIDXWCH
+					'hidewindow(htabwch,KSHOW)
+					'HideGadget(GTVIEWWCH,0)
+				case TABIDXDMP
+					'hidewindow(htabdmp,KSHOW)
+					'HideGadget(GDUMPMEM,0)
+			end select
 			
 		case GFILELIST ''nothing to execute with file combo
 
@@ -369,7 +391,8 @@ private sub gadget_action(igadget as LONG)
 		'case GVERBOSE
 		case GAUTODELAY
 
-		case GCMDLPARAM ''data used when closing settings box 
+		case GCMDLPARAM ''data used when closing settings box
+		
 		case GINPUTVALOK
 			input_check()
 			
@@ -385,7 +408,7 @@ end sub
 '==============================================
 '' 
 '==============================================
-sub select_file()
+private sub select_file()
 	#Ifdef __fb_win32__
 		var selfile= OpenFileRequester("Select exe file","C:\","Exe files (*.exe)"_
 		+Chr(0)+"*.exe"+Chr(0))
@@ -421,7 +444,7 @@ end sub
 '==============================================================
 '' handles actions for each button
 '==============================================================
-sub button_action(button as integer)
+private sub button_action(button as integer)
 	select case button
 		case IDBUTSTEP 'STEP
 			stopcode=0
@@ -491,8 +514,10 @@ sub button_action(button as integer)
 			
 		case IDBUTATTCH
 			messbox("feature not implemented","button = IDBUTATTACH")
+			
 		case IDBUTKILL
 			kill_process("Terminate immediatly no saved data, other option Release")
+			
 		case IDBUTLASTEXE
 			var HMenuexe=CreatePopMenu()
 			For iitem As integer =0 To 9
@@ -528,7 +553,7 @@ sub button_action(button as integer)
 			thread_resume()
 		case IDBUTCURSOR
 			messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
-			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
+			brk_set(9)
 		case IDBUTUPDATE
 			if flagupdate=true then
 				flagupdate=false

@@ -220,7 +220,7 @@ private sub proc_loccall(typ As Integer=1)
 			If typ=1 Then
 				If procr(i).cl=-1 Then 
 					'fb_message("Locate calling line","First proc of thread so no call !!"):Exit Sub
-					thread_execline(2):Exit Sub 
+					thread_execline(2):Exit Sub
 				EndIf
 				temp=procr(i).cl 'calling line
 				source_change(rline(temp).sx) ''display source
@@ -1085,19 +1085,30 @@ End Sub
 '===========================================================
 private sub proc_sh()
 	Dim libel As String
-	Dim tvi As TVITEM
-	FreeGadget(GTVIEWPRC) ''tdo check if all the 
-	'SendMessage(tviewprc,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'zone proc
+
+	'For iproc As Integer =1 To procnb
+		'DeleteTreeViewItem(GTVIEWPRC,proc(iproc).tv)
+	'next
+	DeleteTreeViewItem(GTVIEWPRC,getparentitemtreeview(GTVIEWPRC,proc(1).tv)) ''delete all by root
+	
+	If procsort=KMODULE Then 'sorted by module
+		messbox("feature not coded","sort by module for procs so forcing by name")
+		procsort=KPROCNM
+	end if
+	
 	For j As Integer =1 To procnb
 		With proc(j)
+			if .st=1 then
+				libel="F> " '' for indicating if the proc is followed
+			else
+				libel=""
+			EndIf
 			If procsort=KMODULE Then 'sorted by module
-				'libel=name_extract(source(.sr))+">> "+.nm+":"+proc_retval(j)
-				messbox("feature not coded","sort by module for procs")
+				'libel+=name_extract(source(.sr))+">> "+.nm+":"+proc_retval(j)
 			Else 'sorted by proc name
-				libel=.nm+":"+proc_retval(j)+"   << "+source_name(source(.sr))
+				libel+=.nm+":"+proc_retval(j)+"   in : "+source_name(source(.sr))
 			EndIf
 			If flagverbose Then libel+=" ["+Str(.db)+"]"
-			if .st=false then libel+=" X " '' for indicating if the proc is followed
 			.tv=AddTreeViewItem(GTVIEWPRC,libel,cast (hicon, 0),0,TVI_LAST,0)
 		End With
 	Next
@@ -1837,7 +1848,7 @@ private sub watch_trace(t As Integer=WTCHALL)
 		Else 'set tracing 
 			If wtch(t).typ>15 AndAlso wtch(t).pnt=0 Then 
 				messbox("Tracing Watched var/mem","Only with pointer or standard type") 
-				Exit Sub 
+				Exit Sub
 			Else 
 				If flaglog=0 Then 
 					If MESSBOX("Tracing var/mem","No log output defined"+Chr(13)+"Open settings ?",MB_YESNO)=RETYES Then 
@@ -1845,7 +1856,7 @@ private sub watch_trace(t As Integer=WTCHALL)
 					EndIf 
 					If flaglog=0 Then 
 						messbox("Tracing var/mem","No log output defined"+Chr(13)+"So doing nothing") 
-						Exit Sub 
+						Exit Sub
 					EndIf 
 				EndIf 
 				If wtch(t).psk=-2 Then 
@@ -1933,6 +1944,9 @@ private sub brk_del(n As Integer)
 	brkol(n).typ=0
 	brkol(n).cntrsav=0
 	brk_marker(n)
+	if n=0 then ''run or fast run
+		exit sub
+	EndIf
 	brknb-=1
 	For i As Integer =n To brknb
 		brkol(i)=brkol(i+1)
@@ -1962,13 +1976,12 @@ End Function
 ''   4=disable / 7=change value counter / 8 reset to initial value / 9=same line
 '=======================================================================
 Private sub brk_set(t As Integer)
-	Dim l As Integer,i As Integer,range As charrange,b As Integer,ln As Integer
-	range.cpmin=-1 :range.cpmax=0
+	Dim l As Integer,i As Integer,ln As Integer
 
 	l=line_cursor() 'get line
 
 	For i=1 To linenb
-		If rline(i).nu=l+1 And rline(i).sx=srcdisplayed Then Exit For 'check nline 
+		If rline(i).nu=l And rline(i).sx=srcdisplayed Then Exit For 'check nline 
 	Next
 	If i>linenb Then messbox("Break point Not possible","Inaccessible line (not executable)") :Exit Sub
 	For j As Integer =1 To procnb
@@ -1977,22 +1990,24 @@ Private sub brk_set(t As Integer)
 	ln=i
 	If t=9 Then 'run to cursor
 		'l N°line/by 0
-		If linecur=l+1 And srcdisplayed=srccur Then
+		If linecur=l And srcdisplayed=srccur Then
 			If messbox("Run to cursor","Same line, continue ?",MB_YESNO)=RETNO Then Exit Sub
 		End If
 		brkol(0).ad=rline(ln).ad
-		brkol(0).typ=2 'to clear when reached
+		brkol(0).typ=2 ''tempo so cleared when reached
 		runtype=RTRUN
 		but_enable()
+		brkol(brknb).nline=l
+		brk_marker(0)
 		thread_resume()
 	Else
 		For i=1 To brknb 'search if still put on this line
-			If brkol(i).nline=l+1 And brkol(i).isrc=srcdisplayed Then Exit For
+			If brkol(i).nline=l And brkol(i).isrc=srcdisplayed Then Exit For
 		Next
 		If i>brknb Then 'not put
 			If brknb=BRKMAX Then messbox("Max of brk reached ("+Str(BRKMAX)+")","Delete one and retry"):Exit Sub
 			brknb+=1
-			brkol(brknb).nline=l+1
+			brkol(brknb).nline=l
 			brkol(brknb).typ=t
 			brkol(brknb).index=ln
 			brkol(brknb).isrc=srcdisplayed
@@ -2007,7 +2022,7 @@ Private sub brk_set(t As Integer)
 				brkol(brknb).cntrsav=brkol(i).counter
 				brkol(brknb).typ=1 'forced permanent
 			EndIf
-	   Else 'still put
+	    Else 'still put
 			If t=7 Then 'change value counter
 				inputval=Str(brkol(i).cntrsav)
 				inputtyp=7 'ulong 
@@ -2063,7 +2078,9 @@ private sub proc_watch(procridx As Integer) 'called with running proc index
 	   EndIf
 	Next
 End Sub
-'====================== new sub ou func ===============
+'=======================================
+'' new procedure sub ou function
+'=======================================
 private sub proc_new()
 	Dim libel As String
 	Dim tv As integer
@@ -2078,9 +2095,9 @@ private sub proc_new()
 		procr(procrnb).cl=-1  ' no real calling line
 		libel="ThID="+Str(procr(procrnb).thid)+" "
 		tv=TVI_LAST 'insert in last position
-		AddTreeViewItem(GTVIEWTHD,"Not filled",cast (hicon, 0),0,TVI_LAST,0)
-		thread(threadcur).ptv=thread(threadcur).tv 'last proc 
-		thread_text() 'put text not only current but all to reset previous thread text 
+		thread(threadcur).tv=AddTreeViewItem(GTVIEWTHD,"Not filled",cast (hicon, 0),0,TVI_LAST,0)
+		thread(threadcur).ptv=thread(threadcur).tv ''last proc 
+		thread_text() ''put text not only current but all to reset previous thread text 
 	Else
 		procr(procrnb).cl=thread(threadcur).od
 		tv=thread(threadcur).plt 'insert after the last item of thread
@@ -2095,8 +2112,7 @@ private sub proc_new()
 	thread(threadcur).plt=procr(procrnb).tv 'keep handle last item
 	
 	'add new proc to thread treeview
-	'thread(threadcur).ptv=Tree_AddItem(,"Proc : "+proc(procsv).nm,TVI_FIRST,tviewthd)
-	AddTreeViewItem(GTVIEWTHD,"Proc : "+proc(procsv).nm,cast (hicon, 0),0,TVI_FIRST,thread(threadcur).ptv)
+	thread(threadcur).ptv=AddTreeViewItem(GTVIEWTHD,"Proc : "+proc(procsv).nm,cast (hicon, 0),0,TVI_FIRST,thread(threadcur).ptv)
 	thread_text(threadcur)
 	var_ini(procrnb,proc(procr(procrnb).idx).vr,proc(procr(procrnb).idx+1).vr-1)
 	procr(procrnb+1).vr=vrrnb+1
@@ -2105,7 +2121,9 @@ private sub proc_new()
 	EndIf
 	proc_watch(procrnb) 'reactivate watched var
 End Sub
-'============================= proc ending ============
+'=============================
+'' end of proc
+'=============================
 Private sub proc_end()
 Dim As Long limit=-1
 Var thid=thread(threadcur).id
@@ -2157,7 +2175,7 @@ private sub var_sh() 'show master var
    watch_sh
 End Sub
 '======================================================
-'' handles dispaly at end of run or when running auto
+'' handles display at end of run or when running auto
 '======================================================
 private sub dsp_change(index As Integer)
 	linecur_change(index)
@@ -2461,7 +2479,7 @@ private sub fastrun()
 
 	l=line_cursor() 'get line
 	For i=1 To linenb
-		If rline(i).nu=l+1 And rline(i).sx=srcdisplayed Then Exit For 'check nline 
+		If rline(i).nu=l And rline(i).sx=srcdisplayed Then Exit For 'check nline 
 	Next
 	If i>linenb Then messbox("Fast run Not possible","Inaccessible line (not executable)") :Exit Sub
 	For j As Integer =1 To procnb 'first line of proc
@@ -2593,6 +2611,7 @@ private sub gest_brk(ad As UInteger)
 			runtype=RTSTEP
 			procad=0:procin=0:proctop=FALSE:procbot=0
 			dsp_change(i)
+			brk_del(0)
 			Exit Sub
 		EndIf
 		'test beakpoint on var
@@ -2621,7 +2640,9 @@ private sub gest_brk(ad As UInteger)
    		brk_test(proccurad) ' cancel breakpoint on line, if command halt not really used
    		proc_newfast   'creating running proc tree 
    		var_sh			'updating information about variables
-   		runtype=RTSTEP:dsp_change(i)
+   		runtype=RTSTEP
+   		dsp_change(i)
+		brk_del(0)
    Else 'RTSTEP or RTAUTO
 		If flagattach Then proc_newfast:flagattach=FALSE
 		'NOTA If rline(i).nu=-1 Then
@@ -2844,6 +2865,7 @@ private sub reinit()
 	SendMessage(htviewthd,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'threads
 	SendMessage(htviewwch,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'watched   needed ????
 	
+	procsort=KPROCNM
 	'================================================================
 				'	'======== init =========================================
 				'private sub re_ini()
@@ -3439,7 +3461,7 @@ private sub exe_mod() 'execution from cursor
 	l=line_cursor
 	
 	For i=1 To linenb  'check nline 
-		If rline(i).nu=l+1 And rline(i).sx=srcdisplayed Then 
+		If rline(i).nu=l And rline(i).sx=srcdisplayed Then 
 			If rline(i+1).nu=l+1 And rline(i+1).sx=srcdisplayed Then i+=1 'weird case : first line main proc 
 			Exit For 
 		End If 
