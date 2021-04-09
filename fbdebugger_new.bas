@@ -209,8 +209,9 @@ dim shared as HMENU HMenuwch
 dim shared as HMENU HMenuthd
 dim shared as HMENU HMenutools
 
-Dim Shared fasttimer As double
+Dim Shared As double fasttimer
 
+dim shared as tedit edit ''data when editing var or mem
 
 ''index box todo ??
 'Dim Shared hindexbx(INDEXBOXMAX) As HWND

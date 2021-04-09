@@ -552,9 +552,14 @@ enum
 	GEDTOK
 	GEDTCANCEL
 	GEDTPTD
-	GEDTPTDVALUE
-	GEDTDUMP
+	GEDTPTDVAL
 end enum
+
+type tedit
+	adr as INTEGER
+	typ as INTEGER
+	pt  as INTEGER
+End Type
 
 #Ifdef __fb_win32__
 	#define send_sci(b,c,d) sendmessage(hscint,b,c,cast(integer,d))
@@ -935,8 +940,8 @@ declare sub dsp_change(index As Integer)
 declare sub size_change()
 declare sub hard_closing(errormsg as string)
 declare function wait_debug() As Integer
-
-
+declare sub dump_sh()
+declare sub var_sh()
 
 
 '' could be removed when every enum have been tested
@@ -1215,6 +1220,7 @@ enumdef(GEDTVALUE)="GEDTVALUE"
 enumdef(GEDTOK)="GEDTOK"
 enumdef(GEDTCANCEL)="GEDTCANCEL"
 enumdef(GEDTPTD)="GEDTPTD"
-enumdef(GEDTPTDVALUE)="GEDTPTDVALUE"
-enumdef(GEDTDUMP)="GEDTDUMP"
+enumdef(GEDTPTDVAL)="GEDTPTDVAL"
+
+
 	

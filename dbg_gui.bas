@@ -293,8 +293,7 @@ private sub create_editbx()
 	
 	''if pointer
 	textgadget(GEDTPTD,15,35,85,15,"458785")
-	textgadget(GEDTPTDVALUE,105,35,200,18,"String pointed")
-	buttongadget(GEDTDUMP,330,75,75,18,"Ptr dump")
+	textgadget(GEDTPTDVAL,105,35,200,18,"String pointed")
 end sub
 '========================================================
 '' creates the window for managing the array indexes

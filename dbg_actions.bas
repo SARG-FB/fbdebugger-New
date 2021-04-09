@@ -3,6 +3,8 @@
 
 '==================================================
 private sub menu_action(poption as integer)
+		dim as INTEGER ivar,typ,pt
+
 	select case poption
 		case MNABOUT
             If messbox("FB DEBUGGER "+ver3264,"Debugger for FreeBASIC (Windows/Linux 32/64)"+Chr(13)+Chr(13)+fbdebuggerversion+" / "+__DATE__+Chr(13)+"(C) L.GRAS  debug @ aliceadsl . fr"+Chr(13)+Chr(13) _
@@ -174,8 +176,8 @@ private sub menu_action(poption as integer)
          	Case MNWCHEDT'edit from watched
 				messbox("Feature not yet implemented","edit_box")
          		'If var_find2(GTVIEWWCH)<>-1 Then 'not local non-existent
-         			'fb_MDialog(@edit_box,"Edit var value (Be carefull)",windmain,283,25,350,50)
-         		'End If
+         		'edit_fill()
+         		
          	Case MNSETWTCH 'set watched first free slot
             	If var_find2(htviewvar)<>-1 Then watch_set()
             Case MNTRCKIDX0 To MNTRCKRST
@@ -194,19 +196,29 @@ private sub menu_action(poption as integer)
          	Case MNCHGZSTR
          	messbox("Feature not yet implemented","zstringbyte_exchange()")
 				'zstringbyte_exchange()
-         	Case MNVAREDT  'edit var value
-         	messbox("Feature not yet implemented","edit_var()")
-				'edit_var()
-         	Case MNSHWEXP  'show and expand variables
-         	messbox("Feature not yet implemented","shwexp_new")
+				
+         	Case MNVAREDT  ''edit var value
+				ivar=var_find()
+				if ivar>0 then
+					typ=vrb(ivar).typ
+					pt=vrb(ivar).pt
+				else
+					ivar=abs(ivar)
+					typ=cudt(ivar).typ
+					pt=cudt(ivar).pt
+				EndIf
+				edit_fill(GetGadgetText(GetItemTreeView(GTVIEWVAR)),vrr(abs(ivar)).ad,typ,pt)
+				
+			Case MNSHWEXP  'show and expand variables
+				messbox("Feature not yet implemented","shwexp_new")
 				'shwexp_new(htviewvar)
             Case MNVARBRK  'break on var value
 				brkv_set(1)  
          	Case MNRSTPRC 'reset all proc
-         	messbox("Feature not yet implemented","proc_flw(1)")
+				messbox("Feature not yet implemented","proc_flw(1)")
          		'proc_flw(1)
          	Case MNSETPRC 'set all proc
-         	messbox("Feature not yet implemented","proc_flw(2)")
+				messbox("Feature not yet implemented","proc_flw(2)")
            		'proc_flw(2)
          	Case MNSORTPRC
          		procsort=1-procsort
@@ -229,6 +241,7 @@ private sub menu_action(poption as integer)
             	'fb_find(1,sfind)
             Case MNVARBRK 'update break on var
             	If brkv.adr<>0 Then brkv_set(2)
+
 	'=============================================================		
         case else
         	messbox("Menu feature not implemented","sorry option="+str(poption)+" --> enum="+enumdef(poption))
@@ -240,10 +253,12 @@ private sub gadget_action(igadget as LONG)
 		Case GCURRENTLINE
 			messbox("Click on Current line","Jumping to the file/line")
 			linecur_display()
-				
+			
+			
+		            	
+    case GTVIEWWCH
+        
 	''Dump memory
-	
-		''
 		case GDUMPADR
 		messbox("changing memory address","need to remove me") 
 		
@@ -377,7 +392,10 @@ private sub gadget_action(igadget as LONG)
 					SetGadgetText(GBRKDSB01+ibrk-1,"DSB")
 				EndIf
 			Next
-			
+		
+		case GEDTOK
+			edit_update()
+		
 		case GSCINTILLA
 
 		case GNOLOG

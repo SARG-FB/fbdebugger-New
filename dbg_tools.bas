@@ -1,6 +1,117 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
+
+'=====================================
+'' checks and updates value for edt 
+'=====================================
+private sub edit_update()
+	
+  dim As Integer vflag,p2,typtemp
+  Dim As valeurs edt 
+  dim As Double vald
+  dim as string txt
+  
+  
+	txt=GetGadgetText(GEDTVALUE)
+	vald=Val(txt)
+	vflag=1
+
+	If edit.pt Then
+	   typtemp=7
+	Else
+	   typtemp=edit.typ
+	EndIf
+
+	Select Case As Const typtemp
+		Case 2
+			If vald<-128 Or vald>127 Then
+				setwindowtext(heditbx,"min -128,max 127"):vflag=0
+			else
+				edt.vbyte=ValInt(txt) :p2=1
+			end if
+		Case 3
+			If vald<0 Or vald>255 Then
+				setwindowtext(heditbx,"min 0,max 255"):vflag=0
+			else
+				edt.vubyte=ValUInt(txt) :p2=1
+			end if
+		Case 5
+			If vald<-32768 Or vald>32767 Then
+				setwindowtext(heditbx,"min -32768,max 32767"):vflag=0
+			else
+				edt.vshort=ValInt(txt) :p2=2
+			end if
+		Case 6
+			If vald<0 Or vald>65535 Then
+				setwindowtext(heditbx,"min 0,max 65535"):vflag=0
+			else
+				edt.vushort=ValUInt(txt) :p2=2
+			end if
+		Case 1
+			If vald<-2147483648 Or vald>2147483648 then
+				setwindowtext(heditbx,"min -2147483648,max +2147483647"):vflag=0
+			else
+				edt.vinteger=ValInt(txt) :p2=4
+			end if
+		Case 7
+			#Ifdef __FB_64BIT__
+				If Vald<0 Or vald>18446744073709551615 Then
+					setwindowtext(heditbx,"min 0,max 18446744073709551615"):vflag=0
+				else
+					edt.vulongint=ValULng(txt) :p2=8
+				end if
+			#Else
+				If vald<0 Or vald>4294967395 Then 
+					setwindowtext(heditbx,"min 0,max 4294967395"):vflag=0
+				else
+					edt.vuinteger=ValUInt(txt) :p2=4
+				end if
+			#EndIf
+		Case 8
+			If vald<0 Or vald>4294967395 Then
+				setwindowtext(heditbx,"min 0,max 4294967395"):vflag=0
+			else
+				edt.vuinteger=ValUInt(txt) :p2=4
+			end if
+		Case 9
+			If Vald<-9223372036854775808  Or vald>9223372036854775807 Then
+				setwindowtext(heditbx,"min -9223372036854775808,max 9223372036854775807"):vflag=0
+			else
+				edt.vlongint=ValLng(txt) :p2=8
+			end if
+		Case 10
+			If Vald<0 Or vald>18446744073709551615 Then
+				setwindowtext(heditbx,"min 0,max 18446744073709551615"):vflag=0
+			else
+				edt.vulongint=ValULng(txt) :p2=8
+			end if
+		Case 16
+			If vald>1 or vald<-1 Then
+				SetWindowText(heditbx,"Authorized value only 0 or 1"):vflag=0
+			else
+				edt.vbyte=ValInt(txt) :p2=1
+			end if
+		Case 11
+			edt.vsingle=Val(txt) :p2=4
+		Case 12
+			edt.vdouble=Val(txt) :p2=8
+		Case Else
+			#Ifdef __FB_64BIT__
+				edt.vulongint=ValULng(txt) :p2=8
+			#Else
+				edt.vuinteger=ValUInt(txt) :p2=4
+			#EndIf
+	End Select
+
+	if vflag then
+		hidewindow(heditbx,KHIDE)
+		writeprocessmemory(dbghand,Cast(LPVOID,edit.adr),@edt,p2,0)
+		var_sh()
+		dump_sh()
+		''todo update watched ?
+	end if
+end sub
 '==============================================
 '' updates settings when settings box is closed
 '==============================================
@@ -585,41 +696,44 @@ For i As Integer =1 To vrrnb
     If vrr(i).tv=hitemp Then Return i
 Next
 End Function
+
+'==========================================================
+'' returns the variable index under the cursor in tviewvar
 '==========================================================
 private function var_find() As Integer 'return NULL if error
-Dim hitem As Integer
-'get current hitem in tree
-hitem=GetItemTreeView(GTVIEWVAR)
-For i As Integer = 1 To vrrnb 'search index variable
-	If vrr(i).tv=hitem Then 
-		If vrr(i).ad=0 Then messbox("Variable selection error","Dynamic array not yet sized !!"):Return 0
-		If vrr(i).vr<0 Then
-			Return -i
-		Else
-			Return i
-		EndIf
-	End If   	
-Next
-messbox("Variable selection error","          Select only a variable")
-Return 0
+	Dim hitem As Integer
+	'get current hitem in tree
+	hitem=GetItemTreeView(GTVIEWVAR)
+	For i As Integer = 1 To vrrnb 'search index variable
+		If vrr(i).tv=hitem Then 
+			If vrr(i).ad=0 Then messbox("Variable selection error","Dynamic array not yet sized !!"):Return 0
+			If vrr(i).vr<0 Then
+				Return -i
+			Else
+				Return i
+			EndIf
+		End If   	
+	Next
+	messbox("Variable selection error","          Select only a variable")
+	Return 0
 End Function
 '===========================================================================
 private sub var_fill(i As Integer)
-If vrr(i).vr<0 Then
-    varfind.ty=cudt(-vrr(i).vr).Typ
-    varfind.pt=cudt(-vrr(i).vr).pt
-    varfind.nm=cudt(-vrr(i).vr).nm
-    varfind.pr=vrr(var_parent(vrr(i).tv)).vr'index of the vrb
-Else
-    varfind.ty=vrb(vrr(i).vr).Typ
-    varfind.pt=vrb(vrr(i).vr).pt
-    varfind.nm=vrb(vrr(i).vr).nm
-    varfind.pr=vrr(i).vr 'no parent so himself, index of the vrb
-End If
-varfind.ad=vrr(i).ad
-varfind.iv=i
-varfind.tv=htviewvar '
-varfind.tl=vrr(i).tv 'handle line
+	If vrr(i).vr<0 Then
+		varfind.ty=cudt(-vrr(i).vr).Typ
+		varfind.pt=cudt(-vrr(i).vr).pt
+		varfind.nm=cudt(-vrr(i).vr).nm
+		varfind.pr=vrr(var_parent(vrr(i).tv)).vr'index of the vrb
+	Else
+		varfind.ty=vrb(vrr(i).vr).Typ
+		varfind.pt=vrb(vrr(i).vr).pt
+		varfind.nm=vrb(vrr(i).vr).nm
+		varfind.pr=vrr(i).vr 'no parent so himself, index of the vrb
+	End If
+	varfind.ad=vrr(i).ad
+	varfind.iv=i
+	varfind.tv=htviewvar '
+	varfind.tl=vrr(i).tv 'handle line
 End Sub
 '======================================================
 private function Val_string(strg As String)As String
@@ -1082,6 +1196,7 @@ private sub thread_change(th As Integer =-1)
 	threadsel=threadcur
 	dsp_change(thread(threadcur).sv)
 End Sub
+
 '===========================================================
 private sub proc_sh()
 	Dim libel As String
@@ -1130,7 +1245,7 @@ private function enum_find(t As Integer,v As Integer) As String
 End Function
 
 '======================================================
-private function var_sh2(t As Integer,pany As UInteger,p As UByte,sOffset As String="") As String
+private function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="") As String
 	Dim adr As UInteger,varlib As String
 	Union lpointers
 	#If __FB64BIT__
@@ -1244,6 +1359,87 @@ private function var_sh2(t As Integer,pany As UInteger,p As UByte,sOffset As Str
 	End If
 	Return varlib
 End Function
+'==============================================
+'' prepares dump for string/fstring/zstring
+'==============================================
+private sub dump_string(adr as integer,typ as integer)
+	dumpadr=adr
+	dumptyp=2
+	if typ=13 then ''string
+		ReadProcessMemory(dbghand,Cast(LPCVOID,dumpadr),@dumpadr,SizeOf(Integer),0)'string address 27/07/2015
+	end if
+	dump_set()
+	dump_sh()
+	PanelGadgetSetCursel(GRIGHTTABS,TABIDXDMP)
+end sub
+'============================================================
+'' manages editing of var (src=0) or mem (src=1)
+'============================================================
+private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer)
+	dim as integer p2,aptr
+	If (typ=4 Or typ=13 Or typ=14 Or typ=15) And pt=0 Then
+	   messbox("Edit variable error","Select only a numeric variable"+Chr(13)+"For string use change with dump")
+	   dump_string(adr,typ)
+	   hidewindow(heditbx,KHIDE)
+	   exit sub
+	End If
+
+	If typ>TYPESTD And pt=0 And udt(typ).en=0 Then
+	   messbox("Edit variable error","Select only a numeric variable")
+	   hidewindow(heditbx,KHIDE)
+	   Exit sub
+	End If
+
+
+	setgadgettext(GEDTVAR,txt)
+	txt=Mid(txt,InStr(txt,"=")+1,25)
+	If typ=16 Then 'boolean
+		txt=IIf(txt="False","0","1")
+	EndIf
+	setgadgettext(GEDTVALUE,txt)
+
+	If pt Then 'pointer
+		If pt>220 Then
+			p2=pt-220
+		ElseIf pt>200 Then
+			p2=pt-200
+		Else
+			p2=pt
+		End If
+		aptr=adr
+		For j As Integer = 1 To p2 'only the last pointer is displayed
+			ReadProcessMemory(dbghand,Cast(LPCVOID,aptr),@aptr,SizeOf(Integer),0)
+			setgadgettext(GEDTPTD,Str(aptr))
+		next
+		If adr Then ''if null address do nothing 
+			If pt>200 Then
+				proc_name(adr)''procedure name
+			Else
+				txt=var_sh2(typ,aptr)
+				txt=Mid(txt,InStr(txt,"=")+1,90)
+				If typ=16 Then 'boolean
+					txt=iif(txt="False","0","1")
+				EndIf   
+				setgadgettext(GEDTPTDVAL,txt) ''pointed value
+			End If
+			'If (typ<>4 And typ<>13 And typ<>14 And typ<>15 And pt<200) Or  udt(typ).en Then
+				'hidegadget(GEDTPTDVALMODIF,KSHOW)
+				'setgadgettext(GEDTVALMODIF,Str(Val(txt)))
+			'End If
+			'hidegadget(GEDTDUMP,KSHOW)
+		Else
+			setgadgettext(GEDTPTDVAL,"Null address, Nothing to display")
+		End If
+		hidegadget(GEDTPTD,KSHOW)
+		hidegadget(GEDTPTDVAL,KSHOW)
+	else
+		hidegadget(GEDTPTD,KHIDE)
+		hidegadget(GEDTPTDVAL,KHIDE)
+	End If
+	edit.adr=adr
+	edit.typ=typ
+	edit.pt =pt
+end sub
 '==============================================================================
 ''to propagate address dynamaic array or after changing index or erase
 '==============================================================================
