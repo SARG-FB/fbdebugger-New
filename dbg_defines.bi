@@ -5,16 +5,6 @@
 
 ''menu : 1000+
 
-#macro mydefine(d,v)
-	#define ##d v
-	if enumdef(v)<>"" then 
-		print "error value ";v;" for ";##d; " already used by ";enumdef(v)
-	else	
-		enumdef(v)=##d
-	end if
-#endmacro
-
-
 #Define fbdebuggerversion "V 3.00 BETA 32-64bit"
 
 '#define fulldbg_prt 'uncomment to get more information
@@ -120,7 +110,7 @@
 
 #else
 	'' Output information
-	define dbg_prt(txt) output_lnx(txt)
+	#define dbg_prt(txt) output_lnx(txt)
 	declare output_lnx(as string)
 #endif
 
@@ -564,7 +554,7 @@ End Type
 #Ifdef __fb_win32__
 	#define send_sci(b,c,d) sendmessage(hscint,b,c,cast(integer,d))
 #else
-	#define send_sci(b,c,d) scintilla_send_message(cast(scintillaobject ptr,scint),b,c,cast(integer,d))
+	#define send_sci(b,c,d) scintilla_send_message(cast(scintillaobject ptr,hscint),b,c,cast(integer,d))
 	extern "C"
 
 	type scintillaObject as _scintillaObject

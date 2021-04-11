@@ -285,7 +285,7 @@ Dim Shared exedate As Double 'serial date
 #Ifdef __fb_win32__
 	#include "dbg_windows.bas"
 #else	
-	
+	#include "dbg_linux.bas"
 #EndIf
 
 gui_init

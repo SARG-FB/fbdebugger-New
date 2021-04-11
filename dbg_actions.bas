@@ -200,14 +200,14 @@ private sub menu_action(poption as integer)
          	Case MNVAREDT  ''edit var value
 				ivar=var_find()
 				if ivar>0 then
-					typ=vrb(ivar).typ
-					pt=vrb(ivar).pt
+					typ=vrb(vrr(ivar).vr).typ
+					pt=vrb(vrr(ivar).vr).pt
 				else
 					ivar=abs(ivar)
-					typ=cudt(ivar).typ
-					pt=cudt(ivar).pt
+					typ=cudt(vrr(ivar).vr).typ
+					pt=cudt(vrr(ivar).vr).pt
 				EndIf
-				edit_fill(GetGadgetText(GetItemTreeView(GTVIEWVAR)),vrr(abs(ivar)).ad,typ,pt)
+				edit_fill(GetTextTreeView(GTVIEWVAR,GetItemTreeView(GTVIEWVAR)),vrr(abs(ivar)).ad,typ,pt)
 				
 			Case MNSHWEXP  'show and expand variables
 				messbox("Feature not yet implemented","shwexp_new")
@@ -255,7 +255,7 @@ private sub gadget_action(igadget as LONG)
 			linecur_display()
 			
 			
-		            	
+	case GTVIEWVAR	
     case GTVIEWWCH
         
 	''Dump memory
@@ -392,10 +392,14 @@ private sub gadget_action(igadget as LONG)
 					SetGadgetText(GBRKDSB01+ibrk-1,"DSB")
 				EndIf
 			Next
-		
+		'' edit var or mem
 		case GEDTOK
 			edit_update()
-		
+		case GEDTCANCEL
+			hidewindow(heditbx,KHIDE)
+		case GEDTVALUE
+			''do nothing
+			
 		case GSCINTILLA
 
 		case GNOLOG

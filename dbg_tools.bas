@@ -1167,7 +1167,7 @@ private sub thread_text(th As Integer=-1)
 	For i As Integer=lo To hi
 		thid=thread(i).id
 		p=proc_find(thid,KLAST)
-		libel="threadID="+fmt2(Str(thid),4)+" : "+proc(procr(p).idx).nm
+		libel="threadID="+fmt2(Str(thid),6)+" : "+proc(procr(p).idx).nm
 		If flagverbose Then
 			libel+=" HD: "+Str(thread(i).hd)
 		EndIf
@@ -1377,6 +1377,7 @@ end sub
 '============================================================
 private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer)
 	dim as integer p2,aptr
+
 	If (typ=4 Or typ=13 Or typ=14 Or typ=15) And pt=0 Then
 	   messbox("Edit variable error","Select only a numeric variable"+Chr(13)+"For string use change with dump")
 	   dump_string(adr,typ)
@@ -1436,6 +1437,7 @@ private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer
 		hidegadget(GEDTPTD,KHIDE)
 		hidegadget(GEDTPTDVAL,KHIDE)
 	End If
+	hidewindow(heditbx,KSHOW)
 	edit.adr=adr
 	edit.typ=typ
 	edit.pt =pt
@@ -2288,12 +2290,12 @@ private sub proc_new()
 	
 	'test if first proc of thread
 	If thread(threadcur).plt=0 Then
-		procr(procrnb).cl=-1  ' no real calling line
+		procr(procrnb).cl=-1  ''no real calling line
 		libel="ThID="+Str(procr(procrnb).thid)+" "
-		tv=TVI_LAST 'insert in last position
 		thread(threadcur).tv=AddTreeViewItem(GTVIEWTHD,"Not filled",cast (hicon, 0),0,TVI_LAST,0)
 		thread(threadcur).ptv=thread(threadcur).tv ''last proc 
-		thread_text() ''put text not only current but all to reset previous thread text 
+		thread_text() ''put text not only current but all to reset previous thread text
+		tv=TVI_LAST ''insert in last position
 	Else
 		procr(procrnb).cl=thread(threadcur).od
 		tv=thread(threadcur).plt 'insert after the last item of thread
@@ -2304,7 +2306,7 @@ private sub proc_new()
 	libel+=proc(procsv).nm+":"+proc_retval(procsv)
 	If flagverbose Then libel+=" ["+Str(proc(procsv).db)+"]"
 
-	procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,libel,cast (hicon, 0),0,TVI_LAST,tv)
+	procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,libel,cast (hicon, 0),0,tv,0)
 	thread(threadcur).plt=procr(procrnb).tv 'keep handle last item
 	
 	'add new proc to thread treeview

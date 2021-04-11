@@ -282,11 +282,11 @@ end sub
 '' creates the window for editing variable/memory
 '==============================================================================
 private sub create_editbx()
-	heditbx=OpenWindow("Edit variable",10,10,600,130,WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	heditbx=OpenWindow("Edit variable",10,10,600,135)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(heditbx)
 	hidewindow(heditbx,KHIDE)
 	
-	textgadget(GEDTVAR,15,10,445,18,"Fb_myvar <Byval param / ***Zstring>=37415896")
+	textgadget(GEDTVAR,15,10,445,18,"Fb_myvar <Byval param / **Zstring>=37415896")
 	stringgadget(GEDTVALUE,450,10,85,15,"37415896")
 	buttongadget(GEDTOK,420,75,75,18,"Apply")
 	buttongadget(GEDTCANCEL,500,75,75,18,"Cancel")	
@@ -1011,17 +1011,17 @@ private sub gui_init()
 	'AddTreeViewItem(GTVIEWPRC,"first proc",cast (hicon, 0),0,0)
 	'AddTreeViewItem(GTVIEWPRC,"second proc",cast (hicon, 0),0,0)
 	'AddTreeViewItem(GTVIEWPRC,"third proc",cast (hicon, 0),0,0)
-	hidewindow(htabprc,KSHOW)	
+	'hidewindow(htabprc,KSHOW)	
 	
 	''treeview threads
 	var htabthd=AddPanelGadgetItem(GRIGHTTABS,TABIDXTHD,"Threads",,1)
 	htviewthd=treeviewgadget(GTVIEWTHD,0,0,499,299,KTRRESTYLE)
-	hidewindow(htabthd,KSHOW)	
+	'hidewindow(htabthd,KSHOW)	
 	
 	''treeview watched
 	var htabwch=AddPanelGadgetItem(GRIGHTTABS,TABIDXWCH,"Watched",,1)
 	htviewwch=treeviewgadget(GTVIEWWCH,0,0,499,299,KTRRESTYLE)
-	hidewindow(htabwch,KSHOW)
+	'hidewindow(htabwch,KSHOW)
 	
 	''dump memory
 	var htabmem=AddPanelGadgetItem(GRIGHTTABS,TABIDXDMP,"Memory",,1)
