@@ -2869,29 +2869,30 @@ private sub gest_brk(ad As UInteger)
 
 End Sub
 '====================================================================
-''  load shared and common variables, input default=no dll number
+''  load shared and common variables, default=no dll number (d=0)
 '====================================================================
 private sub globals_load(d As Integer=0)
-Dim temp As integer
-Dim As Integer vb,ve 'begin/end index global vars
-Dim As Integer vridx 
+	Dim temp As integer
+	Dim As Integer vb,ve 'begin/end index global vars
+	Dim As Integer vridx
+	messbox("in globals_load",str(vrbgblprev)+" "+str(vrbgbl))
 	If vrbgblprev<>vrbgbl Then 'need to do ?
 		If vrbgblprev=0 Then
-			AddTreeViewItem(GTVIEWVAR,"Globals (shared/common) in : main ",cast (hicon, 0),0,0,0) 'only first time
-			var_ini(procrnb,1,vrbgbl)'add vrbgblprev instead 1
+			procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,"Globals (shared/common) in : main ",cast (hicon, 0),0,0,0) 'only first time
+			var_ini(procrnb,1,vrbgbl) ''add vrbgblprev instead 1
 			'dbg_prt2("procrnb="+Str(procrnb))
-			procr(procrnb+1).vr=vrrnb+1 'to avoid removal of global vars when the first executed proc is not the main one
+			procr(procrnb+1).vr=vrrnb+1 ''to avoid removal of global vars when the first executed proc is not the main one
 		Else
 			procrnb+=1
 			temp=getprevitemtreeview(GTVIEWVAR,procr(1).tv)
 			If temp=0 Then 'no item before main
 				temp=TVI_FIRST
 			EndIf
-			If d=0 Then 'called from extract stabs
+			If d=0 Then ''called from extract stabs
 				d=dllnb
 				vb=vrbgblprev+1
 				ve=vrbgbl
-			Else
+			Else ''from load_dll
 				vb=dlldata(d).gblb
 				ve=dlldata(d).gblb+dlldata(d).gbln-1
 			End If
@@ -2979,7 +2980,7 @@ Next
 
 If t=1 Then 'not dll
 	th=thread_select(procr(j).thid) 'find thread index
-	''todo parent=Cast(HTREEITEM,sendmessage(tviewthd,TVM_GETNEXTITEM,TVGN_PARENT,Cast(LPARAM,thread(th).ptv))) 'find parent of last proc item
+	parent=GetParentItemTreeView(GTVIEWTHD,thread(th).ptv)
 	DeleteTreeViewItem(GTVIEWTHD,thread(th).ptv) ''delete item
 	thread(th).ptv=parent 'parent becomes the last
 	thread_text(th) 'update thread text
@@ -3044,24 +3045,48 @@ private function proc_verif(p As UShort) As Byte
 	Next
 	Return FALSE
 End function
-'-----------------------------------------------
+'====================================================================================================================
+'' deletes all the elements of a treeview
+'' firstly find the most prev item of a higher level item then delete all the siblings and finally the first one
+'====================================================================================================================
+private sub deleteallitemstreeview(byval gadget as long,byval item as INTEGER)
+	dim as INTEGER itemprev,itemnext
+
+	'messbox("delete first item="+str(item),gettexttreeview(gadget,item))
+
+	'itemprev=GetPrevItemTreeView(gadget,item)
+	
+	do
+		itemprev=item
+		item=GetPrevItemTreeView(gadget,item)
+	loop until item=0
+	'' now itemprev contains the first item of the treeview
+	
+	itemnext=getnextitemtreeview(gadget,itemprev)
+	while itemnext<>0	
+		'messbox("delete="+str(item),gettexttreeview(gadget,itemnext))
+		DeleteTreeViewItem(gadget,itemnext)
+		itemnext=getnextitemtreeview(gadget,itemprev)
+	wend
+	DeleteTreeViewItem(gadget,itemprev)
+end sub
+'==============================
 '' Reinitialisation
-'-----------------------------------------------
+'==============================
 private sub reinit()
 	vrbgbl=0:vrbloc=VGBLMAX:vrbgblprev=0
 	prun=FALSE
 	runtype=RTOFF
 	flagmain=true
-	sourcenb=-1
+	sourcenb=-1:dllnb=0
 	vrrnb=0:procnb=0:procrnb=0:linenb=0:cudtnb=0:arrnb=0:procr(1).vr=1
 	'procin=0:procfn=0:procbot=0:proctop=FALSE
 	proc(1).vr=VGBLMAX+1 'for the first stored proc
 	udtcpt=0:udtmax=0
-	
-	SendMessage(htviewvar,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'procs/vars
-	SendMessage(htviewprc,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'procs
-	SendMessage(htviewthd,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'threads
-	SendMessage(htviewwch,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'watched   needed ????
+	deleteallitemstreeview(GTVIEWVAR,thread(0).plt)
+	deleteallitemstreeview(GTVIEWTHD,thread(0).tv)
+	'todo DeleteTreeViewItem(GTVIEWWCH,0)
+	'SendMessage(htviewwch,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'watched   needed ????
 	
 	procsort=KPROCNM
 	'================================================================

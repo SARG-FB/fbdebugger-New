@@ -1,6 +1,8 @@
 ''gui for fbdebuuger_new
 ''dbg_gui.bas
 
+''todo Sous Windows, il s'agit de InvalidateRect, sous Linux gtk_widget_queue_draw_area ou gdk_window_invalidate_rect ou gdk_window_invalidate_region
+
 '========================================================
 '' changes the text of a field in statusbar
 '========================================================
@@ -282,12 +284,12 @@ end sub
 '' creates the window for editing variable/memory
 '==============================================================================
 private sub create_editbx()
-	heditbx=OpenWindow("Edit variable",10,10,600,135)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	heditbx=OpenWindow("Edit variable",10,10,700,135)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(heditbx)
 	hidewindow(heditbx,KHIDE)
 	
 	textgadget(GEDTVAR,15,10,445,18,"Fb_myvar <Byval param / **Zstring>=37415896")
-	stringgadget(GEDTVALUE,450,10,85,15,"37415896")
+	stringgadget(GEDTVALUE,450,10,160,15,"3741589637415896")
 	buttongadget(GEDTOK,420,75,75,18,"Apply")
 	buttongadget(GEDTCANCEL,500,75,75,18,"Cancel")	
 	

@@ -71,7 +71,7 @@ dim shared as hwnd hlogbx
 
 #ifdef __fb_win32__
 	''Threads
-	Dim Shared thread(THREADMAX) As tthread
+	Dim Shared thread(THREADMAX) As tthread  ''zero based
 	Dim Shared threadnb As Integer =-1
 	Dim Shared threadcur As Integer
 	Dim Shared threadprv As Integer     'previous thread used when mutexunlock released thread or after thread create
