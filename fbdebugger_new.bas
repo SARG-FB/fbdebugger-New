@@ -152,10 +152,10 @@ Dim Shared As HWND heditbx
 
 ''dump memory
 Dim Shared dumplines As Integer =20 'nb lines(default 20)
-Dim Shared dumpadr As Integer    'address for dump
-Dim Shared dumpdec As Integer =0 'value dump dec=0 or hexa=50
+Dim Shared dumpadr   As Integer    'address for dump
+Dim Shared dumpbase  As Integer =0 'value dump dec=0 or hexa=50
 Dim Shared dumpnbcol As Integer
-Dim Shared dumptyp As Integer =2
+Dim Shared dumptyp   As Integer =2
 
 ''font
 Dim Shared As Integer fontsize=KSIZE8
@@ -176,7 +176,7 @@ Dim Shared htviewvar As HWND 'running proc/var
 Dim Shared htviewprc As HWND 'all proc
 Dim Shared htviewthd As HWND 'all threads
 Dim Shared htviewwch As HWND 'watched variables
-Dim Shared hlviewdump as hwnd 'dump
+Dim Shared hlviewdmp as hwnd 'dump
 
 ''codes when debuggee stopped and corresponding texts
 Dim Shared stopcode As Integer
@@ -367,15 +367,21 @@ do
 	
 	If event=EventMenu then
 		menu_action(EventNumber)
-		
+	'' contextual menu
 	ElseIf event=eventrbdown then
 		if GlobalMouseX<500 then
 			DisplayPopupMenu(HMenusource, GlobalMouseX,GlobalMouseY)
 		else
-			if PanelGadgetGetCursel(GRIGHTTABS)=0 then
+			if PanelGadgetGetCursel(GRIGHTTABS)=TABIDXVAR then
 				DisplayPopupMenu(HMenuvar, GlobalMouseX,GlobalMouseY)
-			elseif PanelGadgetGetCursel(GRIGHTTABS)=1 then
+			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXPRC then
 				DisplayPopupMenu(HMenuprc, GlobalMouseX,GlobalMouseY)
+			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXTHD then
+				DisplayPopupMenu(HMenuthd, GlobalMouseX,GlobalMouseY)
+			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXWCH then
+				DisplayPopupMenu(HMenuwch, GlobalMouseX,GlobalMouseY)
+			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXDMP then
+				hidewindow(hdumpbx,KSHOW)
 			endif
 		endif
 	elseif event=eventgadget then

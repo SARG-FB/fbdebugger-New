@@ -518,6 +518,35 @@ private sub index_update()
 	EndIf
 end sub
 '======================================
+'' changes the sign for some datatypes
+'======================================
+private sub dump_sign()
+	Select Case dumptyp
+		Case 2
+			dumptyp=3
+		Case 3
+			dumptyp=2
+		Case 5
+			dumptyp=6
+		Case 6
+			dumptyp=5
+		Case 1
+			dumptyp=8
+		Case 8
+			dumptyp=1
+		Case 9
+			dumptyp=10
+		Case 10
+			dumptyp=9
+		Case else
+			messbox("Changing sign","Not allowed for this datatype")
+			exit sub
+	end select
+	dump_sh()
+End Sub
+'======================================
+'' 
+'======================================
 private sub dump_sh()
 	Dim As String tmp
 	Dim buf(16) As UByte,r As Integer,ad As UInteger
@@ -527,13 +556,13 @@ private sub dump_sh()
 	
 	DeleteListViewItemsAll(GDUMPMEM) ''delete all items
 	ad=dumpadr
-	For jline as integer =1 To dumplines
-		AddListViewItem(GDUMPMEM,str(ad),0,jline-1,0) ''adress
+	For jline as integer =0 To dumplines-1
+		AddListViewItem(GDUMPMEM,str(ad),0,jline,0) ''adress
 		ReadProcessMemory(dbghand,Cast(LPCVOID,ad),@buf(0),16,@r)
 		ad+=r
 		ptrs.pxxx=@buf(0)
-		For icol as integer =0 To dumpnbcol-1
-		  Select Case dumptyp+dumpdec
+		For icol as integer =1 To dumpnbcol
+		  Select Case dumptyp+dumpbase
 			 Case 2,16,66 'byte/dec/sng - boolean hex or dec
 				tmp=Str(*ptrs.pbyte)
 				ptrs.pbyte+=1
@@ -593,7 +622,7 @@ private sub dump_sh()
 		Next
 		AddListViewItem(GDUMPMEM,ascii,0,jline,dumpnbcol+1)
 	Next 
-	If errorformat Then messbox("Error format","Impossible to display single or double in hex"+Chr(13)+"Retry with another format")
+	If errorformat Then messbox("Error format="+str(dumptyp+dumpbase),"Impossible to display single or double in hex"+Chr(13)+"Retry with another format")
 End Sub
 '==========================================
 '' finds the calling line for proc
@@ -680,8 +709,10 @@ private sub var_dump(tv As HWND,ptd As Long =0) 'dump variable '28/11/2014
 			 dumptyp=8 'default for pudt and any
 	   End Select
 	End If
+	PanelGadgetSetCursel(GRIGHTTABS,TABIDXDMP)
 	dump_set()
 	dump_sh()
+
 End Sub
 '==========================================================
 private function var_parent(child As integer) As Integer 'find var master parent
@@ -1412,7 +1443,7 @@ private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer
 			ReadProcessMemory(dbghand,Cast(LPCVOID,aptr),@aptr,SizeOf(Integer),0)
 			setgadgettext(GEDTPTD,Str(aptr))
 		next
-		If adr Then ''if null address do nothing 
+		If aptr Then ''if null address do nothing 
 			If pt>200 Then
 				proc_name(adr)''procedure name
 			Else
@@ -1423,11 +1454,11 @@ private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer
 				EndIf   
 				setgadgettext(GEDTPTDVAL,txt) ''pointed value
 			End If
-			'If (typ<>4 And typ<>13 And typ<>14 And typ<>15 And pt<200) Or  udt(typ).en Then
-				'hidegadget(GEDTPTDVALMODIF,KSHOW)
-				'setgadgettext(GEDTVALMODIF,Str(Val(txt)))
-			'End If
-			'hidegadget(GEDTDUMP,KSHOW)
+			If (typ<>4 And typ<>13 And typ<>14 And typ<>15 And pt<200) Or  udt(typ).en Then
+				hidegadget(GEDTPTDEDT,KSHOW)
+				edit.ptdadr=aptr
+				edit.ptdval=txt
+			End If
 		Else
 			setgadgettext(GEDTPTDVAL,"Null address, Nothing to display")
 		End If
@@ -1435,6 +1466,7 @@ private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer
 		hidegadget(GEDTPTDVAL,KSHOW)
 	else
 		hidegadget(GEDTPTD,KHIDE)
+		hidegadget(GEDTPTDEDT,KHIDE)
 		hidegadget(GEDTPTDVAL,KHIDE)
 	End If
 	hidewindow(heditbx,KSHOW)
@@ -2875,7 +2907,6 @@ private sub globals_load(d As Integer=0)
 	Dim temp As integer
 	Dim As Integer vb,ve 'begin/end index global vars
 	Dim As Integer vridx
-	messbox("in globals_load",str(vrbgblprev)+" "+str(vrbgbl))
 	If vrbgblprev<>vrbgbl Then 'need to do ?
 		If vrbgblprev=0 Then
 			procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,"Globals (shared/common) in : main ",cast (hicon, 0),0,0,0) 'only first time

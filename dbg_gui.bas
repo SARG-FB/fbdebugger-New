@@ -27,37 +27,44 @@ End Sub
 '=======================================================
 private sub dump_set()
     Dim tmp As String
-	dim as integer lg,delta
+	dim as integer lg,delta,combo
 	For icol as integer=1 to dumpnbcol
-		DeleteListViewColumn(GDUMPMEM,1)''delete each time column 1 keep address/ascii
-	Next      
-	Select Case dumptyp
-		Case 2,3,16  'byte/ubyte/boolean    dec/hex
-			dumpnbcol=16 :lg=40
-		Case 5,6  'short/ushort
-			dumpnbcol=8 :lg=60
-		Case 1,8,7  'integer/uinteger
-			dumpnbcol=4 :lg=90
-		Case 9,10  'longinteger/ulonginteger
-			dumpnbcol=2 :lg=160
-		Case 11 'single
-			dumpnbcol=4 :lg=120
-		Case 12 'double
-			dumpnbcol=2 :lg=180
-	End Select
-
+		DeleteListViewColumn(GDUMPMEM,1) ''delete each time column 1 keep address/ascii
+	Next
+	if dumptyp>=100 then ''change number of bytes
+		combo=dumptyp-100
+		select case combo
+			Case 0
+				dumpnbcol=16 :lg=40
+			Case 1
+				dumpnbcol=8 :lg=60
+			Case 2
+				dumpnbcol=4 :lg=120
+			Case 3
+				dumpnbcol=2 :lg=160
+		End Select
+	else
+		Select Case dumptyp
+			Case 2,3,16  'byte/ubyte/boolean    dec/hex
+				dumpnbcol=16 :lg=40:combo=0
+			Case 5,6  'short/ushort
+				dumpnbcol=8 :lg=60:combo=1
+			Case 1,8,7  'integer/uinteger
+				dumpnbcol=4 :lg=90:combo=2
+			Case 9,10  'longinteger/ulonginteger
+				dumpnbcol=2 :lg=160:combo=3
+			Case 11 'single
+				dumpnbcol=4 :lg=120:combo=2
+			Case 12 'double
+				dumpnbcol=2 :lg=180:combo=3
+		End Select
+	EndIf
 	delta=16/dumpnbcol
 	For icol as integer =1 To dumpnbcol 'nb columns except address and ascii
 		tmp="+"+Right("0"+Str(delta*(icol-1)),2)
 		AddListViewColumn(GDUMPMEM,tmp,icol,icol,lg)
 	Next
-	'recreate dump_box to take in account new parameters
-	If hdumpbx Then
-		'todo recreate window or update type combo ?  option 2 plus simple ? nécessite de créer la box dans dbg_gui
-		'GetWindowRect(hdumpbx,@recbox):destroywindow(hdumpbx)
-		'fb_Dialog(@dump_box,"Manage dump",windmain,283,250,120,150,WS_POPUP Or WS_SYSMENU Or ws_border Or WS_CAPTION)
-		'SetWindowPos(hdumpbx,NULL,recbox.left,recbox.top,0,0,SWP_NOACTIVATE Or SWP_NOZORDER Or SWP_NOSIZE Or SWP_SHOWWINDOW)
-	End If
+	SetItemListBox(GDUMPSIZE,combo)
 End Sub
 '==================================================
 '' function will be added later in W9
@@ -296,6 +303,7 @@ private sub create_editbx()
 	''if pointer
 	textgadget(GEDTPTD,15,35,85,15,"458785")
 	textgadget(GEDTPTDVAL,105,35,200,18,"String pointed")
+	buttongadget(GEDTPTDEDT,250,75,90,18,"Edit pointed")
 end sub
 '========================================================
 '' creates the window for managing the array indexes
@@ -348,7 +356,7 @@ private sub create_brkbx()
 		'hidegadget(GBRKDSB01+ibrk,1)
 		textgadget(GBRKLINE01+ibrk,90,ypos-1,450,18,"Test lenght of line could be greater")
 		'hidegadget(GBRKLINE01+ibrk,1)
-	Next
+	next
 
 	buttongadget(GBRKCLOSE,10,290,80,15,"Close")
 	buttongadget(GBRKDELALL,105,290,80,15,"Delete all")
@@ -429,17 +437,13 @@ private sub create_dumpbx()
 	AddListBoxItem(GDUMPSIZE,"2 bytes")
 	AddListBoxItem(GDUMPSIZE,"4 bytes")	
 	AddListBoxItem(GDUMPSIZE,"8 bytes")
-	SetItemListBox(GDUMPSIZE,dumptyp)
 	
 	groupgadget(GDUMPBASEGRP,10,90,130,40,"Dec or hex")
 	optiongadget(GDUMPDEC,15,107,50,18,"Dec")
 	optiongadget(GDUMPHEX,70,107,50,18,"Hex")
 	SetGadgetState(GDUMPDEC,1)	
 	
-	groupgadget(GDUMPSGNGRP,160,90,145,40,"Signed or Unsigned")
-	optiongadget(GDUMPSGN,165,107,50,18,"Sgn")
-	optiongadget(GDUMPUSGN,220,107,52,18,"Usgn")	
-	SetGadgetState(GDUMPSGN,1)
+	ButtonGadget(GDUMPSIGNE,165,107,80,25,"U/Signed")
 	
 	groupgadget(GDUMPMOVEGRP,10,136,205,46,"Move by Cell / Line / Page")
 	ButtonGadget(GDUMPCL,12, 154, 30, 20,  "C-")
@@ -990,7 +994,7 @@ private sub gui_init()
 		sendmessage(hmain,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
 	#endif
 	''right panels
-	PanelGadget(GRIGHTTABS,500,30,499,300)
+	PanelGadget(GRIGHTTABS,500,30,599,400)
 	SetGadgetFont(GRIGHTTABS,CINT(LoadFont("Courier New",11)))
 	
 	''treeview proc/var
@@ -998,22 +1002,13 @@ private sub gui_init()
 	'var hbmp = load_Icon("1.ico")
 	'var hbmp1 = load_Icon("2.ico")	
 	htviewvar=treeviewgadget(GTVIEWVAR,0,0,499,299,KTRRESTYLE)
-	''filling treeview for example
-	'var Pos_=AddTreeViewItem(GTVIEWVAR,"Myvar udt ",cast (hicon, 0),cast (hicon, 0),0,0)
-	'AddTreeViewItem(GTVIEWVAR,"first field",cast (hicon, 0),0,1,Pos_)
-	'Pos_=AddTreeViewItem(GTVIEWVAR,"my second var",cast (hicon, 0),0,0)
-	'AddTreeViewItem(GTVIEWVAR,"first field",cast (hicon, 0),0,0,Pos_)
 	
 	'HideGadget(GTVIEWVAR,0)
-	hidewindow(htabvar,KSHOW)
+	'hidewindow(htabvar,KSHOW)
 	
 	''treeview procs
 	var htabprc=AddPanelGadgetItem(GRIGHTTABS,TABIDXPRC,"Procs",,1)
 	htviewprc=treeviewgadget(GTVIEWPRC,0,0,499,299,KTRRESTYLE)
-	'AddTreeViewItem(GTVIEWPRC,"first proc",cast (hicon, 0),0,0)
-	'AddTreeViewItem(GTVIEWPRC,"second proc",cast (hicon, 0),0,0)
-	'AddTreeViewItem(GTVIEWPRC,"third proc",cast (hicon, 0),0,0)
-	'hidewindow(htabprc,KSHOW)	
 	
 	''treeview threads
 	var htabthd=AddPanelGadgetItem(GRIGHTTABS,TABIDXTHD,"Threads",,1)
@@ -1025,13 +1020,12 @@ private sub gui_init()
 	htviewwch=treeviewgadget(GTVIEWWCH,0,0,499,299,KTRRESTYLE)
 	'hidewindow(htabwch,KSHOW)
 	
+	PanelGadgetSetCursel(GRIGHTTABS,TABIDXPRC)
+	
 	''dump memory
 	var htabmem=AddPanelGadgetItem(GRIGHTTABS,TABIDXDMP,"Memory",,1)
-	hlviewdump=ListViewGadget(GDUMPMEM,0,0,499,299,LVS_EX_GRIDLINES)
+	hlviewdmp=ListViewGadget(GDUMPMEM,0,0,599,365,LVS_EX_GRIDLINES)
 	AddListViewColumn(GDUMPMEM, "Address",0,0,100)
-	'for icol as integer =1 to 4
-		'AddListViewColumn(GDUMPMEM, "+0"+str((icol-1)*4),icol,icol,40)
-	'next
 	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
 	
 	''for log display or other needs

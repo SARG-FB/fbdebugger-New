@@ -254,13 +254,13 @@ private sub gadget_action(igadget as LONG)
 			messbox("Click on Current line","Jumping to the file/line")
 			linecur_display()
 			
-			
-	case GTVIEWVAR	
-    case GTVIEWWCH
-        
-	''Dump memory
+
+		case GTVIEWVAR	
+		case GTVIEWWCH
+  
+		''Dump memory
 		case GDUMPADR
-		messbox("changing memory address","need to remove me") 
+		''not used messbox("changing memory address","need to remove me") 
 		
 		case GDUMPAPPLY
 			var txt=GetGadgetText(GDUMPADR)
@@ -275,7 +275,7 @@ private sub gadget_action(igadget as LONG)
 		''column size in bytes
 		case GDUMPSIZE
 			messbox("list box dump size",str(GetItemListBox(GDUMPSIZE))+" ="+GetListBoxText(GDUMPSIZE,GetItemListBox(GDUMPSIZE)))
-			dumptyp=GetItemListBox(GDUMPSIZE)
+			dumptyp=GetItemListBox(GDUMPSIZE)+100 ''index of combo + 100, dumptyp does not mean anymore a datatype
 			dump_set()
             dump_sh()
             
@@ -297,14 +297,22 @@ private sub gadget_action(igadget as LONG)
 		'case GDUMPPTRNO
 		'case GDUMPPTR1
 		'case GDUMPPTR2
-'
-		'case GDUMPDEC
-		'case GDUMPHEX
-'
-'
-		'case GDUMPSGN
-		'case GDUMPUSGN 755		
-		
+
+		case GDUMPDEC
+			if dumpbase=50 then
+				dumpbase=0
+				dump_sh()
+			end if
+			
+		case GDUMPHEX
+			if dumpbase=0 then
+				dumpbase=50
+				dump_sh()
+			end if
+
+		case GDUMPSIGNE
+			dump_sign()
+			
 		case GFILESEL
         	if GetItemComboBox(GFILELIST)<>-1 then
         		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
@@ -395,8 +403,12 @@ private sub gadget_action(igadget as LONG)
 		'' edit var or mem
 		case GEDTOK
 			edit_update()
+			
 		case GEDTCANCEL
 			hidewindow(heditbx,KHIDE)
+		case GEDTPTDEDT
+			edit_fill("Pointed value="+edit.ptdval,edit.ptdadr,edit.typ,0)
+			
 		case GEDTVALUE
 			''do nothing
 			
@@ -410,7 +422,12 @@ private sub gadget_action(igadget as LONG)
 			''todo update log
 		case GBOTHLOG
 			''todo update log
-		'case GVERBOSE
+			
+		case GVERBOSE
+			flagverbose=1-flagverbose
+			var_sh()
+			proc_sh()
+		
 		case GAUTODELAY
 
 		case GCMDLPARAM ''data used when closing settings box
