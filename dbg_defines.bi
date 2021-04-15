@@ -246,7 +246,7 @@ end enum
 
 ''proc/var menu
 enum
-	MNVARDMP=1050
+	MNVARDMP=1050 '' memory variable dump
 	MNVAREDT
 	MNVARBRK
 	MNSELIDX
@@ -265,6 +265,10 @@ enum
 	MNCLBVARS 'copy  to clipboard  selectedvar
 	MNPTDUMP  'dump  deferenced data
 	MNFNDVAR  'find  proc or var in proc/var
+	MNVARCOLI 'collapse item
+	MNVAREXPI 'expand item
+	MNVARCOLA 'collapse all
+	MNVAREXPA 'expand all
 end enum
 
 ''tracking array menu
@@ -1211,6 +1215,9 @@ enumdef(GEDTCANCEL)="GEDTCANCEL"
 enumdef(GEDTPTD)="GEDTPTD"
 enumdef(GEDTPTDEDT)="GEDTPTDEDT"
 enumdef(GEDTPTDVAL)="GEDTPTDVAL"
-
+enumdef(MNVARCOLI)="MNVARCOLI"
+enumdef(MNVAREXPI)="MNVAREXPI"
+enumdef(MNVARCOLA)="MNVARCOLA"
+enumdef(MNVAREXPA)="MNVAREXPA"
 
 	

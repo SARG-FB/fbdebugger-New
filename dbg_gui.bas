@@ -55,8 +55,12 @@ private sub dump_set()
 				dumpnbcol=2 :lg=160:combo=3
 			Case 11 'single
 				dumpnbcol=4 :lg=120:combo=2
+				dumpbase=0
+				SetGadgetState(GDUMPDEC,1)
 			Case 12 'double
 				dumpnbcol=2 :lg=180:combo=3
+				dumpbase=0
+				SetGadgetState(GDUMPDEC,1)
 		End Select
 	EndIf
 	delta=16/dumpnbcol
@@ -65,6 +69,7 @@ private sub dump_set()
 		AddListViewColumn(GDUMPMEM,tmp,icol,icol,lg)
 	Next
 	SetItemListBox(GDUMPSIZE,combo)
+	SetGadgetText(GDUMPADR,str(dumpadr))
 End Sub
 '==================================================
 '' function will be added later in W9
@@ -312,7 +317,7 @@ private sub create_indexbx()
 	dim as integer ypos
 	hindexbx=OpenWindow("Array index management",10,10,800,550)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hindexbx)
-	hidewindow(hindexbx,KHIDE)
+	hidewindow(hindexbx,KSHOW) 'KHIDE)
 
 	textgadget(GIDXVAR,18,5,501,18,"Variable name + data")
 	
@@ -735,6 +740,10 @@ private sub menu_enable()
 	SetStateMenu(HMenuvar,MNCLBVARS, flag)
 	SetStateMenu(HMenuvar,MNPTDUMP , flag)
 	SetStateMenu(HMenuvar,MNFNDVAR , flag)
+	SetStateMenu(HMenuvar,MNVARCOLI, flag)
+	SetStateMenu(HMenuvar,MNVAREXPI, flag)
+	SetStateMenu(HMenuvar,MNVARCOLA, flag)
+	SetStateMenu(HMenuvar,MNVAREXPA, flag)
 	
 	SetStateMenu(HMenuthd,MNTHRDCHG,flag)
 	SetStateMenu(HMenuthd,MNTHRDKLL,flag)
@@ -858,6 +867,10 @@ private sub menu_set()
 	HMenuvar4=OpenSubMenu(HMenuvar,"Copy to clipboard")
 	MenuItem(MNCLBVARA,HMenuvar4, "Copy all proc/var")  
 	MenuItem(MNCLBVARS,HMenuvar4, "Copy selected proc/var")
+	MenuItem(MNVARCOLI,HMenuvar,  "Collapse Item")
+	MenuItem(MNVAREXPI,HMenuvar,  "Expand item")
+	MenuItem(MNVARCOLA,HMenuvar,  "Collapse All")
+	MenuItem(MNVAREXPA,HMenuvar,  "Expand All")
 
 ''menu watched
 	HMenuwch=CreatePopMenu()
@@ -1020,7 +1033,7 @@ private sub gui_init()
 	htviewwch=treeviewgadget(GTVIEWWCH,0,0,499,299,KTRRESTYLE)
 	'hidewindow(htabwch,KSHOW)
 	
-	PanelGadgetSetCursel(GRIGHTTABS,TABIDXPRC)
+	'PanelGadgetSetCursel(GRIGHTTABS,TABIDXPRC)
 	
 	''dump memory
 	var htabmem=AddPanelGadgetItem(GRIGHTTABS,TABIDXDMP,"Memory",,1)

@@ -213,7 +213,16 @@ private sub menu_action(poption as integer)
 				messbox("Feature not yet implemented","shwexp_new")
 				'shwexp_new(htviewvar)
             Case MNVARBRK  'break on var value
-				brkv_set(1)  
+				brkv_set(1)
+				
+			case MNVARCOLI
+				CollapseTreeViewItem(GTVIEWVAR,GetItemTreeView(GTVIEWVAR))
+			case MNVAREXPI
+				ExpandTreeViewItem(GTVIEWVAR,GetItemTreeView(GTVIEWVAR),1)
+			case MNVARCOLA
+				CollapseTreeViewItemALL(GTVIEWVAR)
+			case MNVAREXPA
+				ExpandTreeViewItemALL(GTVIEWVAR)
          	Case MNRSTPRC 'reset all proc
 				messbox("Feature not yet implemented","proc_flw(1)")
          		'proc_flw(1)
@@ -275,7 +284,17 @@ private sub gadget_action(igadget as LONG)
 		''column size in bytes
 		case GDUMPSIZE
 			messbox("list box dump size",str(GetItemListBox(GDUMPSIZE))+" ="+GetListBoxText(GDUMPSIZE,GetItemListBox(GDUMPSIZE)))
-			dumptyp=GetItemListBox(GDUMPSIZE)+100 ''index of combo + 100, dumptyp does not mean anymore a datatype
+			''forcing type byte/short/long/longint
+			select case GetItemListBox(GDUMPSIZE)
+				Case 1
+					dumptyp=2
+				Case
+					dumptyp=5
+				Case 
+					dumptyp=1
+				Case 
+					dumptyp=9
+			End Select
 			dump_set()
             dump_sh()
             
@@ -306,8 +325,12 @@ private sub gadget_action(igadget as LONG)
 			
 		case GDUMPHEX
 			if dumpbase=0 then
-				dumpbase=50
-				dump_sh()
+				if dumpttp=11 or dumtype=12 then
+					messbox("Error","Impossible to display single or double in hex")
+				else
+					dumpbase=50
+					dump_sh()
+				EndIf
 			end if
 
 		case GDUMPSIGNE

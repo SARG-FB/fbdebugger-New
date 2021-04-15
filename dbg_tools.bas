@@ -552,7 +552,6 @@ private sub dump_sh()
 	Dim buf(16) As UByte,r As Integer,ad As UInteger
 	Dim ascii As String
 	Dim ptrs As pointeurs
-	Dim As Long errorformat
 	
 	DeleteListViewItemsAll(GDUMPMEM) ''delete all items
 	ad=dumpadr
@@ -605,10 +604,6 @@ private sub dump_sh()
 			Case 59,60 'longinteger/hex
 				tmp=Right("000000000000000"+Hex(*ptrs.plongint),16)
 				ptrs.pulongint+=1
-			Case Else
-				tmp="Error"
-				errorformat=1
-				Exit for
 		  End Select
 		  AddListViewItem(GDUMPMEM,tmp,0,jline,icol)
 		Next
@@ -622,7 +617,6 @@ private sub dump_sh()
 		Next
 		AddListViewItem(GDUMPMEM,ascii,0,jline,dumpnbcol+1)
 	Next 
-	If errorformat Then messbox("Error format="+str(dumptyp+dumpbase),"Impossible to display single or double in hex"+Chr(13)+"Retry with another format")
 End Sub
 '==========================================
 '' finds the calling line for proc
@@ -680,7 +674,9 @@ private sub hard_closing(errormsg as string)
 	end
 end sub
 '==========================================
-private sub var_dump(tv As HWND,ptd As Long =0) 'dump variable '28/11/2014
+'' dumps variable memory
+'==========================================
+private sub var_dump(tv As HWND,ptd As Long =0)
 
 	If var_find2(tv)=-1 Then Exit Sub 'search index variable under cursor
 
@@ -709,10 +705,10 @@ private sub var_dump(tv As HWND,ptd As Long =0) 'dump variable '28/11/2014
 			 dumptyp=8 'default for pudt and any
 	   End Select
 	End If
-	PanelGadgetSetCursel(GRIGHTTABS,TABIDXDMP)
+	
 	dump_set()
 	dump_sh()
-
+	PanelGadgetSetCursel(GRIGHTTABS,TABIDXDMP)
 End Sub
 '==========================================================
 private function var_parent(child As integer) As Integer 'find var master parent
