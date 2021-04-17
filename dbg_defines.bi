@@ -733,6 +733,7 @@ Type tprocr
 End type
 ''======================== Arrays =========================================
 Const ARRMAX=1500
+#define KMAXDIM 5
 Type tnlu
 	lb As UInteger
 	ub As UInteger
@@ -937,8 +938,10 @@ declare sub hard_closing(errormsg as string)
 declare function wait_debug() As Integer
 declare sub dump_sh()
 declare sub var_sh()
-
-
+declare sub index_update(listview As integer,idx As Long,limit As Long,idx2 As Long,limit2 As Long,adr As Integer,typ As Long,size As Long)
+declare function var_find() as INTEGER
+declare function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="") As String
+'===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)
 enumdef(FONTGROUP)="FONTGROUP"

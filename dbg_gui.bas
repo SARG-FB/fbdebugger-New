@@ -3,6 +3,201 @@
 
 ''todo Sous Windows, il s'agit de InvalidateRect, sous Linux gtk_widget_queue_draw_area ou gdk_window_invalidate_rect ou gdk_window_invalidate_region
 
+'=======================================================
+'' prepares the window for filling data in index_fill
+'=======================================================
+private sub index_sel()
+	dim as integer typ,typ2,size,sizeline,adr,nbdim,temp,temp1,vlbound(KMAXDIM),vubound(KMAXDIM),delta2
+	dim as boolean flagvar
+	dim as STRING strg,txt	
+	typ2=0
+	indexvar=var_find() 'search index variable under cursor
+	if indexvar=0 then exit sub
+
+	while 2 ''infinite loop
+		if indexvar>0 then ''var type 
+			flagvar=true ''is a var type
+			If vrb(vrr(indexvar).vr).pt Then 'pointer
+			   size=SizeOf(Integer)
+			   typ=1 'integer
+			Else
+			   size=udt(vrb(vrr(indexvar).vr).typ).lg
+			   typ=vrb(vrr(indexvar).vr).typ
+			EndIf
+			If Cast(Integer,vrb(vrr(indexvar).vr).arr)=-1 Then 'dynamic array
+				adr=vrr(indexvar).ini+SizeOf(Integer)
+				readprocessmemory(dbghand,Cast(LPCVOID,adr),@adr,SizeOf(Integer),0)
+				if adr Then
+					adr=vrr(indexvar).ini+4*SizeOf(Integer) 'nb dim
+					readProcessMemory(dbghand,Cast(LPCVOID,adr),@nbdim,SizeOf(Integer),0)
+					#ifdef KNEWARRAYFIELD
+						adr+=SizeOf(Integer) ''skip flag field
+					#endif
+					For k As Integer =0 To nbdim-1
+						adr+=SizeOf(Integer)*2
+						ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@vlbound(k),SizeOf(Integer),0)
+						adr+=SizeOf(Integer)
+						readProcessMemory(dbghand,Cast(LPCVOID,adr),@vubound(k),SizeOf(Integer),0)
+					Next
+					Exit While
+				else
+					messbox("Index selection","Dynamic array not yet defined. Try later")
+					exit sub
+				End If
+			ElseIf vrb(vrr(indexvar).vr).arr Then
+				nbdim=vrb(vrr(indexvar).vr).arr->dm
+				For k As Integer =0 To nbdim-1
+					vlbound(k)=vrb(vrr(indexvar).vr).arr->nlu(k).lb
+					vubound(k)=vrb(vrr(indexvar).vr).arr->nlu(k).ub
+				Next
+				Exit While
+			Else
+				messbox("Index selection","Not an array, Select an other variable")
+				exit sub
+			End If
+
+		'====================================
+		else ''cudt type
+			flagvar=false ''is not a var type
+			indexvar=Abs(indexvar)
+			with cudt(Abs(vrr(indexvar).vr))
+				If .pt Then 'pointer
+					size=SizeOf(Integer)
+					typ=1 'integer
+				Else 
+					size=udt(.typ).lg
+					typ=.typ
+				EndIf
+				If .arr Then
+					If Cast(Integer,.arr)=-1 Then
+						temp1=getparentitemtreeview(GTVIEWVAR,vrr(indexvar).tv) ''finding parent
+						For k As Integer=1 To vrrnb
+							If vrr(k).tv=temp1 Then
+								temp1=k
+								Exit For
+							end if
+						Next
+						adr=vrr(temp1).ad+vrr(indexvar).ini+SizeOf(Integer)
+						ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,4,0) ''ptr instead data, added for dyn array in udt
+						If adr Then
+							adr=vrr(indexvar).ini+4*SizeOf(Integer)*4 'nb dim
+							ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@nbdim,4,0)
+							#ifdef KNEWARRAYFIELD
+								adr+=SizeOf(Integer) ''skip flag field
+							#endif
+							For k As Integer =0 To nbdim-1
+								adr+=SizeOf(Integer)*2
+								ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@vlbound(k),4,0)
+								adr+=SizeOf(Integer)
+								readProcessMemory(dbghand,Cast(LPCVOID,adr),@vubound(k),4,0)
+							Next
+							
+							Exit While
+						Else
+							messbox("Index selection","Dynamic array not yet defined. Try later")
+							exit sub
+						End If
+					Else
+						nbdim=.arr->dm
+						For k As Integer =0 To nbdim-1
+							vlbound(k)=.arr->nlu(k).lb
+							vubound(k)=.arr->nlu(k).ub
+						Next
+					EndIf
+					Exit while
+				Else
+					If typ2=0 Then
+						typ2=.typ
+						delta2=vrr(indexvar).ad
+						strg=" -->"+GetTextTreeView(GTVIEWVAR,vrr(indexvar).tv)
+					EndIf
+					temp1=getparentitemtreeview(GTVIEWVAR,vrr(indexvar).tv) ''finding parent
+					For k As Long =1 To vrrnb
+						If vrr(k).tv=temp1 Then
+							If vrr(k).vr<0 Then
+								indexvar=-k
+							Else
+								indexvar=k
+							EndIf
+							Exit For
+						EndIf
+					Next
+				End If
+			end with
+		EndIf 
+	Wend
+
+	''shows the gadgets
+	For k As Integer =0 To nbdim-1
+		SetGadgetText(GIDXMIN1+k,Str(vlbound(k)))
+		SetGadgetText(GIDXMAX1+k,Str(vubound(k)))
+		SetGadgetState(GIDXUP1+k,vrr(indexvar).ix(k))
+		hidegadget(GIDXMIN1+k,KSHOW)
+		hidegadget(GIDXMAX1+k,KSHOW)
+		hidegadget(GIDXUP1+k,KSHOW)
+	Next
+	''hide the gadgets for the dimensions not used
+	For k As Integer =nbdim to KMAXDIM-1
+		hidegadget(GIDXMIN1+k,KHIDE)
+		hidegadget(GIDXMAX1+k,KHIDE)
+		hidegadget(GIDXUP1+k,KHIDE)
+	next
+
+	txt=GetTextTreeView(GTVIEWVAR,vrr(indexvar).tv)
+	txt+=strg
+	SetGadgetText(GIDXVAR,txt)
+
+	'case where selection done not on an array but a parent is an array
+	If typ2<>0 Then
+		typ=typ2
+		adr=delta2
+		delta2-=vrr(indexvar).ad
+	Else
+		adr=vrr(indexvar).ad
+	EndIf
+
+	If typ>0 AndAlso typ<TYPESTD andalso nbdim<=2 Then
+		dim lvCol   As LVCOLUMN
+		hidegadget(GIDXTABLE,KSHOW)
+		hidegadget(GIDXAUTO,KSHOW)
+		hidegadget(GIDXUPD,KSHOW)
+		hidegadget(GIDXROWP,KSHOW)
+		hidegadget(GIDXROWL,KSHOW)
+		hidegadget(GIDXPAGEP,KSHOW)
+		hidegadget(GIDXPAGEL,KSHOW)
+		hidegadget(GIDXWIDTH,KSHOW)
+				
+	'todo StrPtr() à faire dans gui_init ?
+
+		''displays the array if one or 2 dimensions 
+		If nbdim=2 Then
+			AddListViewColumn(GIDXTABLE,"Index(es)",temp,temp,60)
+			sizeline=(vubound(1)-vlbound(1)+1) 'nb elements last dim
+			For k As Long =vlbound(1) To IIf(sizeline>30,vlbound(1)+30-1,vubound(1)) '30 columns max
+				strg="Idx "+Str(k)
+				var temp  =  k-vlbound(nbdim-1)+1
+				AddListViewColumn(GIDXTABLE,strg,temp,temp,60)
+			Next
+			sizeline*=size ''size in bytes
+			index_update(GIDXTABLE,vrr(indexvar).ix(0),vubound(0),vrr(indexvar).ix(1),vubound(1),adr,typ,sizeline)
+			
+			hidegadget(GIDXCOLP,KSHOW) ''moving by one column or by block (several columns)
+			hidegadget(GIDXCOLL,KSHOW)
+			hidegadget(GIDXBLKP,KSHOW)
+			hidegadget(GIDXBLKL,KSHOW)
+			hidegadget(GIDXWIDTH,KSHOW)
+			
+		Elseif nbdim=1 then
+			''only one dim
+			sizeline=1
+			AddListViewColumn(GIDXTABLE,"value",1,1,495)
+			sizeline*=size ''size in bytes
+			index_update(GIDXTABLE,vrr(indexvar).ix(0),vubound(0),-1,-1,adr,typ,sizeline)
+		End If
+	EndIf
+	hidewindow(hindexbx,KSHOW)
+end sub
+
 '========================================================
 '' changes the text of a field in statusbar
 '========================================================

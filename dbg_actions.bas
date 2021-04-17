@@ -154,20 +154,22 @@ private sub menu_action(poption as integer)
          		procvar_list()
          	Case MNPTDUMP 'dump pointed data
          		var_dump(htviewvar,1)
+         		
             Case MNFNDVAR 'find text proc or var in proc/var tree
             messbox("Feature not yet implemented","procvar_find()")
               	'If hfindbx=0 Then 'findtext not active ? also used in source
 					''procvar_find()
 				'End If
+				
             Case MNSELIDX 'select index in proc/var
-            messbox("Feature not yet implemented","index_sel")
-				'index_sel()
+            'messbox("Feature not yet implemented","index_sel")
+				index_sel()
 
 
          	Case MNWCHDMP'dump for watched
          		var_dump(htviewwch)
          	Case MNWCHSTG'shw string from watched
-         	messbox("Feature not yet implemented","string_sh(htviewwch)")
+         	'messbox("Feature not yet implemented","string_sh(htviewwch)")
          		'string_sh(htviewwch)
          	Case MNWCHSHW'shw/exp from watched
          	messbox("Feature not yet implemented","shwexp_new(htviewwch)")
@@ -286,13 +288,13 @@ private sub gadget_action(igadget as LONG)
 			messbox("list box dump size",str(GetItemListBox(GDUMPSIZE))+" ="+GetListBoxText(GDUMPSIZE,GetItemListBox(GDUMPSIZE)))
 			''forcing type byte/short/long/longint
 			select case GetItemListBox(GDUMPSIZE)
-				Case 1
+				Case 0
 					dumptyp=2
-				Case
+				Case 1
 					dumptyp=5
-				Case 
+				Case 2
 					dumptyp=1
-				Case 
+				Case 3
 					dumptyp=9
 			End Select
 			dump_set()
@@ -325,7 +327,7 @@ private sub gadget_action(igadget as LONG)
 			
 		case GDUMPHEX
 			if dumpbase=0 then
-				if dumpttp=11 or dumtype=12 then
+				if dumptyp=11 or dumptyp=12 then
 					messbox("Error","Impossible to display single or double in hex")
 				else
 					dumpbase=50
@@ -461,7 +463,14 @@ private sub gadget_action(igadget as LONG)
 		case GINPUTVALCANCEL
 			inputval=""
 			hidewindow(hinputbx,KHIDE)
-			
+		
+		case GIDXAPPLY
+			For k As Integer =0 To 4 '' 5 maxi, done for all
+				vrr(indexvar).ix(k)=GetGadgetState(GIDXUP1+k)
+			Next
+			var_sh
+			hidewindow(hindexbx,KHIDE)
+	   			
 		case else
         	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))
 	''others

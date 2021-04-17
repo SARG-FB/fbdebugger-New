@@ -1,7 +1,55 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
+'=============================================
+'' updates the select index box
+'=============================================
+'index_update(listview,vrr(indexvar).ix(0),vubound(0),vrr(indexvar).ix(1),vubound(1),adr,typ,sizeline)
+Private sub index_update(listview As integer,idx As Long,limit As Long,idx2 As Long,limit2 As Long,adr As Integer,typ As Long,size As Long)
+	Dim As String txt
+	Dim As Integer adrsav=adr,idxtemp
+	DeleteListViewItemsAll(GIDXTABLE)
+	''column header (first line)
+	idxtemp=idx2
+	For i As Integer = 1 To  KBLOCKIDX-1 '100 raw max
+		If idxtemp>limit2 Then 'don't display more lines than upper bound
+			'here 20 but normally ==>> sendmessage(Cast(HWND,SendMessage(listview, LVM_GETHEADER,0,0)),HDM_GETITEMCOUNT,0,0) 'nb columns 
+			For j As Long =i To 20   
+				ReplaceTextColumnListView(GIDXTABLE,j,"")
+			Next
+			Exit For 
+		End If
+		If idx2=-1 Andalso limit2=-1 Then
+			txt="value" 'one dim
+		else
+			txt=Str(idxtemp)
+		EndIf
+		ReplaceTextColumnListView(GIDXTABLE,i,txt)
+		idxtemp+=1
+	Next
+	''data
+	For j As Integer = 0 To KBLOCKIDX-1 '100 lines max
+		adrsav=adr
+		idxtemp=idx2
+		If idx>limit Then Exit For 'don't display more lines than upper bound   WARNING dim (5 to 6) not same (1)
+		txt=Str(idx) 'initial index=vrr(i).ix(nbdim-1)
+		'sendmessage(listview,LVM_INSERTITEM,0,Cast(LPARAM,@lvi))
+		ReplaceTextItemListView(GIDXTABLE,j,0,txt)
+			
+		For i As Integer = 1 To  KBLOCKIDX-1 '100 raw max
+			If idxtemp>limit2 Then Exit For 'don't display more lines than upper bound
+			txt=var_sh2(typ,adr,0,"")
+			txt=Mid(txt,InStr(txt,"=")+1) ''only data after "="
+			ReplaceTextItemListView(GIDXTABLE,j,i,txt)
+			adr+=udt(typ).lg
+			idxtemp+=1
+		Next
+		
+		adr=adrsav+size
+		idx+=1
 
+	Next
+End Sub
 '=====================================
 '' checks and updates value for edt 
 '=====================================
@@ -498,25 +546,6 @@ private sub bcktrk_close()
 		hidewindow(htrckbx,KHIDE)
 	EndIf
 End Sub
-'=============================================
-'' updates all the select index boxes
-'=============================================
-private sub index_update()
-	'messbox("To be coded improvement","updates all the index boxes")
-	'For iindex As Long =0 To INDEXBOXMAX
-		'If hindexbx(iindex)<>0 Then
-			'If autoupd(iindex)=TRUE Then 
-				'' index_update(iindex)
-			'EndIf
-		'EndIf	
-	'Next
-	''for now only one index selection box
-	If hindexbx<>0 Then
-		If autoupd=TRUE Then 
-			'todo index_update(iindex)
-		EndIf
-	EndIf
-end sub
 '======================================
 '' changes the sign for some datatypes
 '======================================
@@ -2423,7 +2452,7 @@ private sub dsp_change(index As Integer)
 		elseIf PanelGadgetgetCursel(GRIGHTTABS) = TABIDXTHD Then
 			thread_text()
 		EndIf
-		index_update()
+		''index_update() todo
 	End If
 End Sub
 '========================================================================
