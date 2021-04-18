@@ -1,54 +1,65 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
-'=============================================
+
+'=============================================================================
+'' applies changes in index selection and closes dialog box
+'=============================================================================
+private sub index_apply()
+	For k As Integer =0 To 4 '' 5 maxi, done for all
+		vrr(indexvar).ix(k)=GetGadgetState(GIDXUP1+k)
+	Next
+	var_sh
+	hidewindow(hindexbx,KHIDE)
+end sub
+'=============================================================================
 '' updates the select index box
-'=============================================
+'' listview=GIDXTABLE but listview kept if in the future few index boxes
+'=============================================================================
 'index_update(listview,vrr(indexvar).ix(0),vubound(0),vrr(indexvar).ix(1),vubound(1),adr,typ,sizeline)
 Private sub index_update(listview As integer,idx As Long,limit As Long,idx2 As Long,limit2 As Long,adr As Integer,typ As Long,size As Long)
 	Dim As String txt
-	Dim As Integer adrsav=adr,idxtemp
-	DeleteListViewItemsAll(GIDXTABLE)
-	''column header (first line)
-	idxtemp=idx2
-	For i As Integer = 1 To  KBLOCKIDX-1 '100 raw max
-		If idxtemp>limit2 Then 'don't display more lines than upper bound
-			'here 20 but normally ==>> sendmessage(Cast(HWND,SendMessage(listview, LVM_GETHEADER,0,0)),HDM_GETITEMCOUNT,0,0) 'nb columns 
-			For j As Long =i To 20   
-				ReplaceTextColumnListView(GIDXTABLE,j,"")
-			Next
-			Exit For 
-		End If
-		If idx2=-1 Andalso limit2=-1 Then
-			txt="value" 'one dim
-		else
-			txt=Str(idxtemp)
-		EndIf
-		ReplaceTextColumnListView(GIDXTABLE,i,txt)
-		idxtemp+=1
+	Dim As Integer adrsav=adr,column,iline
+	DeleteListViewItemsAll(listview)
+	for icol as integer= 30 to 0 step -1
+		DeleteListViewColumn(listview,icol)
 	Next
+	''column header (first line)
+	AddListViewColumn(listview,"Index(es)",0,0,60)
+	If idx2=-1 Andalso limit2=-1 Then
+		txt="value" ''one dim
+		AddListViewColumn(listview,"value",1,1,495)
+		idx2=1:limit2=1	
+	else
+		For colindex As Long =idx2 To IIf(limit2-idx2>29,idx2+29,limit2) ''30 columns max
+			txt=Str(colindex)
+			column=colindex-idx2+1
+			AddListViewColumn(listview,txt,column,column,60)
+		Next
+	EndIf
+		''todo if number column inchanged use  : ReplaceTextColumnListView(GIDXTABLE,i,txt)
+	
 	''data
-	For j As Integer = 0 To KBLOCKIDX-1 '100 lines max
-		adrsav=adr
-		idxtemp=idx2
-		If idx>limit Then Exit For 'don't display more lines than upper bound   WARNING dim (5 to 6) not same (1)
-		txt=Str(idx) 'initial index=vrr(i).ix(nbdim-1)
-		'sendmessage(listview,LVM_INSERTITEM,0,Cast(LPARAM,@lvi))
-		ReplaceTextItemListView(GIDXTABLE,j,0,txt)
-			
-		For i As Integer = 1 To  KBLOCKIDX-1 '100 raw max
-			If idxtemp>limit2 Then Exit For 'don't display more lines than upper bound
+	for lineindex as integer = idx to iif(limit-idx>49,idx+49,limit) ''50 lines max
+		iline=lineindex-idx+1
+		AddListViewItem(listview,str(lineindex),0,iline,0) ''displays first index
+	next
+	
+	for lineindex as integer = idx to iif(limit-idx>49,idx+49,limit) ''50 lines max
+		iline=lineindex-idx
+		For colindex As Long =idx2 To IIf(limit2-idx2>29,idx2+29,limit2) ''30 columns max
+			adrsav=adr
 			txt=var_sh2(typ,adr,0,"")
 			txt=Mid(txt,InStr(txt,"=")+1) ''only data after "="
-			ReplaceTextItemListView(GIDXTABLE,j,i,txt)
+			column=colindex-idx2+1
+			'messbox("line"+str(iline)+" col="+str(column),str(adr)+" "+txt+" xx")
+			AddListViewItem(listview,txt,0,iline,column)
+			
 			adr+=udt(typ).lg
-			idxtemp+=1
 		Next
-		
 		adr=adrsav+size
-		idx+=1
-
-	Next
+	next
+	
 End Sub
 '=====================================
 '' checks and updates value for edt 

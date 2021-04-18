@@ -1,13 +1,19 @@
 ''gui for fbdebuuger_new
 ''dbg_gui.bas
 
+'' TIPS ===============================================
 ''todo Sous Windows, il s'agit de InvalidateRect, sous Linux gtk_widget_queue_draw_area ou gdk_window_invalidate_rect ou gdk_window_invalidate_region
+'hwnd=OpenWindow("1",30,30,200,200 , WS_OVERLAPPEDWINDOW) ' style without ws_visible
+'UpdateInfoXServer ' only for Linux
+'CenterWindow(hwnd)
+'hidewindow(hwnd , 0)
+'=======================================================
 
 '=======================================================
 '' prepares the window for filling data in index_fill
 '=======================================================
 private sub index_sel()
-	dim as integer typ,typ2,size,sizeline,adr,nbdim,temp,temp1,vlbound(KMAXDIM),vubound(KMAXDIM),delta2
+	dim as integer typ,typ2,size,sizeline,adr,nbdim,temp,vlbound(KMAXDIM),vubound(KMAXDIM),delta2
 	dim as boolean flagvar
 	dim as STRING strg,txt	
 	typ2=0
@@ -70,14 +76,14 @@ private sub index_sel()
 				EndIf
 				If .arr Then
 					If Cast(Integer,.arr)=-1 Then
-						temp1=getparentitemtreeview(GTVIEWVAR,vrr(indexvar).tv) ''finding parent
+						temp=getparentitemtreeview(GTVIEWVAR,vrr(indexvar).tv) ''finding parent
 						For k As Integer=1 To vrrnb
-							If vrr(k).tv=temp1 Then
-								temp1=k
+							If vrr(k).tv=temp Then
+								temp=k
 								Exit For
 							end if
 						Next
-						adr=vrr(temp1).ad+vrr(indexvar).ini+SizeOf(Integer)
+						adr=vrr(temp).ad+vrr(indexvar).ini+SizeOf(Integer)
 						ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,4,0) ''ptr instead data, added for dyn array in udt
 						If adr Then
 							adr=vrr(indexvar).ini+4*SizeOf(Integer)*4 'nb dim
@@ -111,9 +117,9 @@ private sub index_sel()
 						delta2=vrr(indexvar).ad
 						strg=" -->"+GetTextTreeView(GTVIEWVAR,vrr(indexvar).tv)
 					EndIf
-					temp1=getparentitemtreeview(GTVIEWVAR,vrr(indexvar).tv) ''finding parent
+					temp=getparentitemtreeview(GTVIEWVAR,vrr(indexvar).tv) ''finding parent
 					For k As Long =1 To vrrnb
-						If vrr(k).tv=temp1 Then
+						If vrr(k).tv=temp Then
 							If vrr(k).vr<0 Then
 								indexvar=-k
 							Else
@@ -171,13 +177,13 @@ private sub index_sel()
 
 		''displays the array if one or 2 dimensions 
 		If nbdim=2 Then
-			AddListViewColumn(GIDXTABLE,"Index(es)",temp,temp,60)
+			'AddListViewColumn(GIDXTABLE,"Index(es)",temp,temp,60)
 			sizeline=(vubound(1)-vlbound(1)+1) 'nb elements last dim
-			For k As Long =vlbound(1) To IIf(sizeline>30,vlbound(1)+30-1,vubound(1)) '30 columns max
-				strg="Idx "+Str(k)
-				var temp  =  k-vlbound(nbdim-1)+1
-				AddListViewColumn(GIDXTABLE,strg,temp,temp,60)
-			Next
+			'For k As Long =vlbound(1) To IIf(sizeline>30,vlbound(1)+30-1,vubound(1)) '30 columns max
+				'strg="Idx "+Str(k)
+				'var temp  =  k-vlbound(nbdim-1)+1
+				'AddListViewColumn(GIDXTABLE,strg,temp,temp,60)
+			'Next
 			sizeline*=size ''size in bytes
 			index_update(GIDXTABLE,vrr(indexvar).ix(0),vubound(0),vrr(indexvar).ix(1),vubound(1),adr,typ,sizeline)
 			
@@ -190,9 +196,14 @@ private sub index_sel()
 		Elseif nbdim=1 then
 			''only one dim
 			sizeline=1
-			AddListViewColumn(GIDXTABLE,"value",1,1,495)
+			'AddListViewColumn(GIDXTABLE,"Index(es)",temp,temp,60)
+			'AddListViewColumn(GIDXTABLE,"value",1,1,495)
 			sizeline*=size ''size in bytes
 			index_update(GIDXTABLE,vrr(indexvar).ix(0),vubound(0),-1,-1,adr,typ,sizeline)
+			hidegadget(GIDXCOLL,KHIDE)
+			hidegadget(GIDXBLKP,KHIDE)
+			hidegadget(GIDXBLKL,KHIDE)
+			hidegadget(GIDXWIDTH,KHIDE)
 		End If
 	EndIf
 	hidewindow(hindexbx,KSHOW)
@@ -512,7 +523,7 @@ private sub create_indexbx()
 	dim as integer ypos
 	hindexbx=OpenWindow("Array index management",10,10,800,550)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hindexbx)
-	hidewindow(hindexbx,KSHOW) 'KHIDE)
+	hidewindow(hindexbx,KHIDE)
 
 	textgadget(GIDXVAR,18,5,501,18,"Variable name + data")
 	

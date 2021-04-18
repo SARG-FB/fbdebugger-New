@@ -465,12 +465,51 @@ private sub gadget_action(igadget as LONG)
 			hidewindow(hinputbx,KHIDE)
 		
 		case GIDXAPPLY
-			For k As Integer =0 To 4 '' 5 maxi, done for all
-				vrr(indexvar).ix(k)=GetGadgetState(GIDXUP1+k)
+			index_apply()
+			
+		case GIDXINC
+			For k As Integer = indexdata.nbdim-1 To 0 Step -1
+				If indexdata.vubound(k)<>vrr(indexdata.var).ix(k) Then
+					setGadgetState(GIDXUP1+k,vrr(indexdata.indexvar).ix(k)+1) ''increase next dimension
+					For j As Integer = k+1 To indexdata.nbdim-1
+						setGadgetState(GIDXUP1+j,indexdata.vlbound(j)) ''init dimension
+					Next
+					index_apply()
+					exit sub
+				EndIf
 			Next
-			var_sh
-			hidewindow(hindexbx,KHIDE)
-	   			
+	   		For k As Integer = 0 To indexdata.nbdim 'loop so all index at the beginning
+	     		setGadgetState(GIDXUP1+k,indexdata.vlbound(k))
+	     	Next
+	     	index_apply()
+	     	
+	    case GIDXDEC
+			For k As Integer = indexdata.nbdim-1 To 0 Step -1
+				If indexdata.vubound(k)<>vrr(indexdata.var).ix(k) Then
+					setGadgetState(GIDXUP1+k,vrr(indexdata.indexvar).ix(k)-1) ''decrease next dimension
+					For j As Integer = k+1 To indexdata.nbdim-1
+						setGadgetState(GIDXUP1+j,indexdata.vlbound(j)) ''init dimension
+					Next
+					index_apply()
+					exit sub
+				EndIf
+			Next
+	   		For k As Integer = 0 To indexdata.nbdim 'loop so all index at the beginning
+	     		setGadgetState(GIDXUP1+k,indexdata.vlbound(k))
+	     	Next
+	     	index_apply()
+	     	
+	    case GIDXCOLP
+			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)<indexdata.vubound(indexdata.nbdim-1) Then
+				vrr(indexdata.indexvar).ix(indexdata.nbdim-1)+=1
+				SendMessage(updown(indexdata.nbdim-1),UDM_SETPOS32,0,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
+				setGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
+				index_apply()
+			EndIf
+	     	
+	     	
+	     	
+	     	
 		case else
         	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))
 	''others
