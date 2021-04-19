@@ -437,6 +437,16 @@ enum
 	GIDXWIDTH
 end enum
 
+type tindexdata
+		indexvar as INTEGER
+		sizeline as INTEGER
+		nbdim 	 as INTEGER
+		vlbound(4) as integer
+		vubound(4) as integer
+		adr as INTEGER
+		typ as INTEGEr
+End Type
+	
 ''for settings
 enum
 	LOGGROUP=900

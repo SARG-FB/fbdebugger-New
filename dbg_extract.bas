@@ -1323,7 +1323,7 @@ end function
 	
 	''end of extraction ''todo add that for linux when the exe is running
 	globals_load()
-	
+
 	If procrnb=0 Then
 	   If flagwtch=0 AndAlso wtchexe(0,0)<>"" Then watch_check(wtchexe())
 	   flagwtch=0
@@ -1336,7 +1336,6 @@ end function
 	menu_enable()
 	'apply previous breakpoints	
 	brk_apply()
-	
 	
 end sub
 

@@ -1,13 +1,61 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
+'====================================
+'' click on a cell in listview
+'====================================
+	  	'lvp=Cast(NMLISTVIEW Ptr,lparam)
+	   'If lvp->hdr.hwndFrom=listview AndAlso lvp->hdr.code =NM_CLICK Then
+	 		'If lvp->iitem<>-1 Then  'click not on a line gives -1
+	 		   'If nbdim>1 Then decal=2 Else decal=1
+				'vrr(indexvar).ix(nbdim-decal)+=lvp->iitem
+				'If vrr(indexvar).ix(nbdim-decal)>vubound(indexcur,nbdim-decal) Then vrr(indexvar).ix(nbdim-decal)=vubound(indexcur,nbdim-decal) 
+				'SendMessage(updown(indexcur,nbdim-decal),UDM_SETPOS32,0,vrr(indexvar).ix(nbdim-decal))
+				'
+				'If nbdim=2 Then
+				   'If lvp->isubitem>1 Then
+				      'vrr(indexvar).ix(nbdim-1)+=lvp->isubitem-1 'usefull only when at least second column
+	   			   'If vrr(indexvar).ix(nbdim-1)>vubound(indexcur,nbdim-1) Then vrr(indexvar).ix(nbdim-1)=vubound(indexcur,nbdim-1) 
+				      'SendMessage(updown(indexcur,nbdim-1),UDM_SETPOS32,0,vrr(indexvar).ix(nbdim-1))
+				   'End If
+				'EndIf
+				'index_fullupdate()
+	 		'EndIf
+	   'End If
+'==============================================
+'' prepares a fully update of listview 
+'==============================================
+private sub index_fullupdate()
+	For k As Integer =0 To indexdata.nbdim-1
+		vrr(indexdata.indexvar).ix(k)=getgadgetstate(GIDXUP+k)
+	Next
 
+	delta=0:total=1
+	For k As Integer = indexdata.nbdim-1 To 0 Step -1
+		delta+=(vrr(indexdata.indexvar).ix(k)-indexdata.vlbound(k))*total
+		total*=(indexdata.vubound(k)-indexdata.vlbound(k)+1)
+	Next
+	If (Cast(Integer,vrb(vrr(indexdata.indexvar).vr).arr)=-1 Andalso flagvar) OrElse (Cast(Integer,cudt(Abs(vrr(indexvar).vr)).arr)=-1 AndAlso flagvar=0) Then 'dynamic array
+		adr=vrr(indexdata.indexvar).ini+SizeOf(Integer)
+		ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,SizeOf(Integer),0) ''ptr instead data
+		adr+=delta*size
+	Else
+		adr=vrr(indexdata.indexvar).ini+delta*size
+	EndIf
+	If typ2<>0 Then adr+=delta2 'add the delta 
+	If indexdata.nbdim>=2 Then
+	---> todo some parameter useless
+		index_update(listview,vrr(indexdata.indexvar).ix(0),indexdata.vubound(0),vrr(indexdata.indexvar).ix(1),indexdata.vubound(1),indexdata.adr,indexdata.typ,indexdata.sizeline)
+	Else
+		index_update(listview,vrr(indexdata.indexvar).ix(0),indexdata.vubound(0),-1,-1,indexdata.adr,indexdata.typ,indexdata.size)
+	EndIf
+end sub
 '=============================================================================
 '' applies changes in index selection and closes dialog box
 '=============================================================================
 private sub index_apply()
 	For k As Integer =0 To 4 '' 5 maxi, done for all
-		vrr(indexvar).ix(k)=GetGadgetState(GIDXUP1+k)
+		vrr(indexdata.indexvar).ix(k)=GetGadgetState(GIDXUP1+k)
 	Next
 	var_sh
 	hidewindow(hindexbx,KHIDE)
@@ -26,8 +74,7 @@ Private sub index_update(listview As integer,idx As Long,limit As Long,idx2 As L
 	Next
 	''column header (first line)
 	AddListViewColumn(listview,"Index(es)",0,0,60)
-	If idx2=-1 Andalso limit2=-1 Then
-		txt="value" ''one dim
+	If idx2=-1 Andalso limit2=-1 Then ''one dim
 		AddListViewColumn(listview,"value",1,1,495)
 		idx2=1:limit2=1	
 	else
@@ -41,25 +88,20 @@ Private sub index_update(listview As integer,idx As Long,limit As Long,idx2 As L
 	
 	''data
 	for lineindex as integer = idx to iif(limit-idx>49,idx+49,limit) ''50 lines max
-		iline=lineindex-idx+1
-		AddListViewItem(listview,str(lineindex),0,iline,0) ''displays first index
-	next
-	
-	for lineindex as integer = idx to iif(limit-idx>49,idx+49,limit) ''50 lines max
 		iline=lineindex-idx
+		AddListViewItem(listview,str(lineindex),0,iline,0) ''displays first index
+	
 		For colindex As Long =idx2 To IIf(limit2-idx2>29,idx2+29,limit2) ''30 columns max
 			adrsav=adr
 			txt=var_sh2(typ,adr,0,"")
 			txt=Mid(txt,InStr(txt,"=")+1) ''only data after "="
 			column=colindex-idx2+1
-			'messbox("line"+str(iline)+" col="+str(column),str(adr)+" "+txt+" xx")
 			AddListViewItem(listview,txt,0,iline,column)
-			
 			adr+=udt(typ).lg
 		Next
 		adr=adrsav+size
 	next
-	
+
 End Sub
 '=====================================
 '' checks and updates value for edt 
@@ -2386,6 +2428,9 @@ private sub proc_new()
 		procr(procrnb).vr=1 'constructors for shared are executed before main so reset index for first variable of main 04/02/2014
 	EndIf
 	proc_watch(procrnb) 'reactivate watched var
+	
+	PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)	''for forcing a windows update
+	
 End Sub
 '=============================
 '' end of proc
@@ -3112,31 +3157,6 @@ private function proc_verif(p As UShort) As Byte
 	Next
 	Return FALSE
 End function
-'====================================================================================================================
-'' deletes all the elements of a treeview
-'' firstly find the most prev item of a higher level item then delete all the siblings and finally the first one
-'====================================================================================================================
-private sub deleteallitemstreeview(byval gadget as long,byval item as INTEGER)
-	dim as INTEGER itemprev,itemnext
-
-	'messbox("delete first item="+str(item),gettexttreeview(gadget,item))
-
-	'itemprev=GetPrevItemTreeView(gadget,item)
-	
-	do
-		itemprev=item
-		item=GetPrevItemTreeView(gadget,item)
-	loop until item=0
-	'' now itemprev contains the first item of the treeview
-	
-	itemnext=getnextitemtreeview(gadget,itemprev)
-	while itemnext<>0	
-		'messbox("delete="+str(item),gettexttreeview(gadget,itemnext))
-		DeleteTreeViewItem(gadget,itemnext)
-		itemnext=getnextitemtreeview(gadget,itemprev)
-	wend
-	DeleteTreeViewItem(gadget,itemprev)
-end sub
 '==============================
 '' Reinitialisation
 '==============================
@@ -3150,8 +3170,10 @@ private sub reinit()
 	'procin=0:procfn=0:procbot=0:proctop=FALSE
 	proc(1).vr=VGBLMAX+1 'for the first stored proc
 	udtcpt=0:udtmax=0
-	deleteallitemstreeview(GTVIEWVAR,thread(0).plt)
-	deleteallitemstreeview(GTVIEWTHD,thread(0).tv)
+	'deleteallitemstreeview(GTVIEWVAR,thread(0).plt)
+	'deleteallitemstreeview(GTVIEWTHD,thread(0).tv)
+	DeleteTreeViewItemAll(GTVIEWVAR)
+	DeleteTreeViewItemAll(GTVIEWTHD)
 	'todo DeleteTreeViewItem(GTVIEWWCH,0)
 	'SendMessage(htviewwch,TVM_DELETEITEM,0,Cast(LPARAM,TVI_ROOT)) 'watched   needed ????
 	

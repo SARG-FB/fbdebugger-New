@@ -13,7 +13,7 @@
 '' prepares the window for filling data in index_fill
 '=======================================================
 private sub index_sel()
-	dim as integer typ,typ2,size,sizeline,adr,nbdim,temp,vlbound(KMAXDIM),vubound(KMAXDIM),delta2
+	dim as integer typ,typ2,size,sizeline,adr,nbdim,temp,vlbound(KMAXDIM),vubound(KMAXDIM),delta2,indexvar
 	dim as boolean flagvar
 	dim as STRING strg,txt	
 	typ2=0
@@ -201,12 +201,26 @@ private sub index_sel()
 			sizeline*=size ''size in bytes
 			index_update(GIDXTABLE,vrr(indexvar).ix(0),vubound(0),-1,-1,adr,typ,sizeline)
 			hidegadget(GIDXCOLL,KHIDE)
+			hidegadget(GIDXCOLP,KHIDE)
 			hidegadget(GIDXBLKP,KHIDE)
 			hidegadget(GIDXBLKL,KHIDE)
 			hidegadget(GIDXWIDTH,KHIDE)
 		End If
 	EndIf
+	
+	''keep data for next actions
+	indexdata.indexvar=indexvar
+	indexdata.sizeline=sizeline
+	indexdata.nbdim=nbdim
+	for idx as integer =0 to 4
+		indexdata.vlbound(idx)=vlbound(idx)
+		indexdata.vubound(idx)=vubound(idx)
+	next
+	indexdata.adr=adr
+	indexdata.typ=typ
+	
 	hidewindow(hindexbx,KSHOW)
+	
 end sub
 
 '========================================================
@@ -277,28 +291,6 @@ private sub dump_set()
 	SetItemListBox(GDUMPSIZE,combo)
 	SetGadgetText(GDUMPADR,str(dumpadr))
 End Sub
-'==================================================
-'' function will be added later in W9
-'==================================================
-Function GetPrevItemTreeView(iGadget As Long , iItem As Integer) As Integer
-	#ifdef __fb_win32__     
-		return Cast(Integer,SendMessage(Gadgetid(iGadget),TVM_GETNEXTITEM,TVGN_PREVIOUS,Cast(LPARAM,iItem)))
-	#else
-        Dim As Any Ptr treeview = Gadgetid(iGadget)
-        Dim As Any Ptr treestore = Cast(Any Ptr , gtk_tree_view_get_model(treeview))
-        Dim As GtkTreeIter iterChild , iterfirst 
-        If gtk_tree_model_get_iter_first(treestore , @iterfirst) Then
-            iterChild.stamp = iterfirst.stamp
-            iterChild.user_data = Cast(Any Ptr,iItem)
-            if gtk_tree_model_iter_previous(treestore, @iterChild) then
-                If iterChild.stamp Then
-                    Return Cast(Integer , iterChild.user_data) 
-                Endif
-            EndIf
-        Endif		
-	#endif
-end function
-
 '================================================================================
 '' Changes size gadgets when main window is resized
 '===================================================
@@ -1238,8 +1230,6 @@ private sub gui_init()
 	var htabwch=AddPanelGadgetItem(GRIGHTTABS,TABIDXWCH,"Watched",,1)
 	htviewwch=treeviewgadget(GTVIEWWCH,0,0,499,299,KTRRESTYLE)
 	'hidewindow(htabwch,KSHOW)
-	
-	'PanelGadgetSetCursel(GRIGHTTABS,TABIDXPRC)
 	
 	''dump memory
 	var htabmem=AddPanelGadgetItem(GRIGHTTABS,TABIDXDMP,"Memory",,1)

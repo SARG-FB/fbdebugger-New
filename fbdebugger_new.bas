@@ -219,7 +219,7 @@ dim shared as tedit edit ''data when editing var or mem
 '' index selection
 dim shared as hwnd hindexbx
 Dim Shared As BOOLEAN autoupd
-Dim Shared As integer indexvar
+Dim Shared As tindexdata indexdata
 
 ''slash for file WDS<>LNX
 dim shared as zstring *2 slash

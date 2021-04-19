@@ -469,7 +469,7 @@ private sub gadget_action(igadget as LONG)
 			
 		case GIDXINC
 			For k As Integer = indexdata.nbdim-1 To 0 Step -1
-				If indexdata.vubound(k)<>vrr(indexdata.var).ix(k) Then
+				If indexdata.vubound(k)<>vrr(indexdata.indexvar).ix(k) Then
 					setGadgetState(GIDXUP1+k,vrr(indexdata.indexvar).ix(k)+1) ''increase next dimension
 					For j As Integer = k+1 To indexdata.nbdim-1
 						setGadgetState(GIDXUP1+j,indexdata.vlbound(j)) ''init dimension
@@ -485,7 +485,7 @@ private sub gadget_action(igadget as LONG)
 	     	
 	    case GIDXDEC
 			For k As Integer = indexdata.nbdim-1 To 0 Step -1
-				If indexdata.vubound(k)<>vrr(indexdata.var).ix(k) Then
+				If indexdata.vubound(k)<>vrr(indexdata.indexvar).ix(k) Then
 					setGadgetState(GIDXUP1+k,vrr(indexdata.indexvar).ix(k)-1) ''decrease next dimension
 					For j As Integer = k+1 To indexdata.nbdim-1
 						setGadgetState(GIDXUP1+j,indexdata.vlbound(j)) ''init dimension
@@ -502,14 +502,82 @@ private sub gadget_action(igadget as LONG)
 	    case GIDXCOLP
 			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)<indexdata.vubound(indexdata.nbdim-1) Then
 				vrr(indexdata.indexvar).ix(indexdata.nbdim-1)+=1
-				SendMessage(updown(indexdata.nbdim-1),UDM_SETPOS32,0,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
 				setGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
 				index_apply()
 			EndIf
 	     	
+		Case GIDXCOLL
+			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)>indexdata.vlbound(indexdata.nbdim-1) Then
+				vrr(indexdata.indexvar).ix(indexdata.nbdim-1)-=1
+				SetGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
+				index_fullupdate()
+			EndIf	
 	     	
-	     	
-	     	
+		Case GIDXBLKP
+			vrr(indexdata.indexvar).ix(indexdata.nbdim-1)+=KBLOCKIDX
+			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)>indexdata.vubound(indexdata.nbdim-1) Then
+				vrr(indexdata.indexvar).ix(indexdata.nbdim-1)=indexdata.vubound(indexdata.nbdim-1)
+			EndIf
+			SetGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
+			index_fullupdate()
+	
+		Case GIDXBLKL
+			vrr(indexdata.indexvar).ix(indexdata.nbdim-1)-=KBLOCKIDX
+			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)<indexdata.vlbound(indexdata.nbdim-1) Then
+				vrrindexdata.(indexvar).ix(indexdata.nbdim-1)=indexdata.vlbound(indexdata.nbdim-1)
+			EndIf
+			SetGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
+			index_fullupdate()
+			   	
+		Case GIDXROWP
+			If indexdata.nbdim>1 Then decal=2 Else decal=1
+			If vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)<indexdata.vubound(indexdata.nbdim-decal) Then
+				vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)+=1
+				SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
+				index_fullupdate()
+			EndIf
+		
+		Case GIDXROWL
+			If indexdata.nbdim>1 Then decal=2 Else decal=1
+			If vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)>indexdata.vlbound(indexdata.nbdim-decal) Then
+				vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)-=1
+				SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
+				index_fullupdate()
+			EndIf
+			
+		Case GIDXPAGEP
+			If indexdata.nbdim>1 Then decal=2 Else decal=1
+			vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)+=KBLOCKIDX
+			If vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)>indexdata.vubound(indexdata.nbdim-decal) Then
+				vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)=indexdata.vubound(indexdata.nbdim-decal)
+			EndIf
+			SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
+			index_fullupdate()
+		
+		Case GIDXPAGEL
+			If indexdata.nbdim>1 Then decal=2 Else decal=1
+			vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)-=KBLOCKIDX
+			If vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)<indexdata.vlbound(indexdata.nbdim-decal) Then
+				vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)=indexdata.vlbound(indexdata.nbdim-decal)
+			EndIf
+			SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
+			index_fullupdate()
+				
+		Case GIDXAUTO
+			If SendMessage(hautoupd, BM_GETCHECK,0,0)=BST_CHECKED Then autoupd=TRUE Else autoupd=FALSE
+			if getgadgetstate(GIDXAUTO)=1 then
+				indexdata.autoupd=TRUE
+			Else 
+				indexdata.autoupd=FALSE
+			end if
+		
+	   Case GIDXWIDTH
+			var wd =getgadgetstate(GIDXWIDTH)
+			for icol =1 to iif(indexdata.vubound(1)-vrr(indexdata.indexvar).ix(1)>29,30,indexdata.vubound(1)-vrr(indexdata.indexvar).ix(1)+1
+				SetColumnWidthListView(GIDXTABLE,icol,wd)
+			next
+
+			
 		case else
         	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))
 	''others
