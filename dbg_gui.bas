@@ -498,15 +498,15 @@ private sub create_editbx()
 	centerWindow(heditbx)
 	hidewindow(heditbx,KHIDE)
 	
-	textgadget(GEDTVAR,15,10,445,18,"Fb_myvar <Byval param / **Zstring>=37415896")
-	stringgadget(GEDTVALUE,450,10,160,15,"3741589637415896")
-	buttongadget(GEDTOK,420,75,75,18,"Apply")
-	buttongadget(GEDTCANCEL,500,75,75,18,"Cancel")	
+	textgadget(GEDTVAR,15,10,445,30,"Fb_myvar <Byval param / **Zstring>=37415896")
+	stringgadget(GEDTVALUE,450,10,160,30,"3741589637415896")
+	buttongadget(GEDTOK,420,75,75,30,"Apply")
+	buttongadget(GEDTCANCEL,500,75,75,30,"Cancel")	
 	
 	''if pointer
-	textgadget(GEDTPTD,15,35,85,15,"458785")
-	textgadget(GEDTPTDVAL,105,35,200,18,"String pointed")
-	buttongadget(GEDTPTDEDT,250,75,90,18,"Edit pointed")
+	textgadget(GEDTPTD,15,35,85,30,"458785")
+	textgadget(GEDTPTDVAL,105,35,200,30,"String pointed")
+	buttongadget(GEDTPTDEDT,250,75,90,30,"Edit pointed")
 end sub
 '========================================================
 '' creates the window for managing the array indexes
@@ -517,29 +517,29 @@ private sub create_indexbx()
 	centerWindow(hindexbx)
 	hidewindow(hindexbx,KHIDE)
 
-	textgadget(GIDXVAR,18,5,501,18,"Variable name + data")
+	textgadget(GIDXVAR,18,5,501,30,"Variable name + data")
 	
 	For idx as integer =0 To 4
-		textgadget(GIDXMIN1+idx,18,30+28*idx,93,18,"1")
-		textgadget(GIDXMAX1+idx,117,30+28*idx,93,18,"15")
+		textgadget(GIDXMIN1+idx,18,30+28*idx,93,30,"1")
+		textgadget(GIDXMAX1+idx,117,30+28*idx,93,30,"15")
 		spingadget(GIDXUP1+idx,219,27+28*idx,102,25,100,-5,9)
 	next
 
-	buttongadget(GIDXAPPLY,327,27,66,18,"Apply")
-	buttongadget(GIDXDEC,399,27,35,18,"dec")
-	buttongadget(GIDXINC,435,27,35,18,"inc")
+	buttongadget(GIDXAPPLY,327,27,66,30,"Apply")
+	buttongadget(GIDXDEC,399,27,35,30,"dec")
+	buttongadget(GIDXINC,435,27,35,30,"inc")
 
-	CheckBoxGadget(GIDXAUTO,651,130,100,15,"Auto update")
-	buttongadget(GIDXUPD,651,170,70,18,"Update")
-	buttongadget(GIDXROWP,651,195,70,18,"Row +")
-	buttongadget(GIDXROWL,651,220,70,18,"Row -")
-	buttongadget(GIDXPAGEP,651,245,70,18,"Page +")
-	buttongadget(GIDXPAGEL,651,270,70,18,"Page -")
-	buttongadget(GIDXCOLP,651,295,70,18,"Column +")
-	buttongadget(GIDXCOLL,651,320,70,18,"Column -")
-	buttongadget(GIDXBLKP,651,345,70,18,"Block + >")
-	buttongadget(GIDXBLKL,651,370,70,18,"< Block -")
-	spingadget(GIDXWIDTH,648,400,80,20,80,25,50)
+	CheckBoxGadget(GIDXAUTO,651,130,100,30,"Auto update")
+	buttongadget(GIDXUPD,651,170,70,30,"Update")
+	buttongadget(GIDXROWP,651,195,70,30,"Row +")
+	buttongadget(GIDXROWL,651,220,70,30,"Row -")
+	buttongadget(GIDXPAGEP,651,245,70,30,"Page +")
+	buttongadget(GIDXPAGEL,651,270,70,30,"Page -")
+	buttongadget(GIDXCOLP,651,295,70,30,"Column +")
+	buttongadget(GIDXCOLL,651,320,70,30,"Column -")
+	buttongadget(GIDXBLKP,651,345,70,30,"Block + >")
+	buttongadget(GIDXBLKL,651,370,70,30,"< Block -")
+	spingadget(GIDXWIDTH,648,400,80,30,80,25,50)
 	listviewgadget(GIDXTABLE,18,170,624,290,LVS_EX_GRIDLINES)
 end sub
 '========================================================
@@ -553,18 +553,18 @@ private sub create_brkbx()
 
 	For ibrk as integer =0 To 9
 		ypos=24+24*ibrk
-		buttongadget(GBRKDEL01+ibrk,10,ypos,35,18,"DEL")
+		buttongadget(GBRKDEL01+ibrk,10,ypos,35,30,"DEL")
 		'hidegadget(GBRKDEL01+ibrk,1)
-		buttongadget(GBRKDSB01+ibrk,48,ypos,35,18,"DSB")
+		buttongadget(GBRKDSB01+ibrk,48,ypos,35,30,"DSB")
 		'hidegadget(GBRKDSB01+ibrk,1)
-		textgadget(GBRKLINE01+ibrk,90,ypos-1,450,18,"Test lenght of line could be greater")
+		textgadget(GBRKLINE01+ibrk,90,ypos-1,450,30,"Test lenght of line could be greater")
 		'hidegadget(GBRKLINE01+ibrk,1)
 	next
 
-	buttongadget(GBRKCLOSE,10,290,80,15,"Close")
-	buttongadget(GBRKDELALL,105,290,80,15,"Delete all")
-	buttongadget(GBRKDISABLE,200,290,80,15,"Disable all")
-	buttongadget(GBRKENABLE,285,290,80,15,"Enable all")
+	buttongadget(GBRKCLOSE,10,290,80,30,"Close")
+	buttongadget(GBRKDELALL,105,290,80,30,"Delete all")
+	buttongadget(GBRKDISABLE,200,290,80,30,"Disable all")
+	buttongadget(GBRKENABLE,285,290,80,30,"Enable all")
 
 end sub
 '==============================================================================
@@ -574,11 +574,11 @@ private sub create_brkvbx()
 	hbrkvbx=OpenWindow("Breakpoint on value",10,10,600,90,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hbrkvbx)
 	hidewindow(hbrkvbx,KHIDE)
-	textgadget(GBRKVAR,6,6,390,15,"Stop if b<byte>=-88")
-	stringgadget(GBRKVVALUE,459,3,90,15,"-90")
-	buttongadget(GBRKVOK,400,30,45,18,"Apply")
-	buttongadget(GBRKVDEL,450,30,45,18,"Delete")
-	comboboxgadget(GBRKCOND,402,3,54,18)
+	textgadget(GBRKVAR,6,6,390,30,"Stop if b<byte>=-88")
+	stringgadget(GBRKVVALUE,459,3,90,30,"-90")
+	buttongadget(GBRKVOK,400,30,45,30,"Apply")
+	buttongadget(GBRKVDEL,450,30,45,30,"Delete")
+	comboboxgadget(GBRKCOND,402,3,54,30)
 end sub
 '==============================================================================
 '' creates the window for Procedure Backtracking
@@ -588,36 +588,36 @@ private sub create_trackbx()
 	centerWindow(htrckbx)
 	hidewindow(htrckbx,KHIDE)
 	
-	buttongadget(GTRACKPRV,5,6,65,15,"Previous")
-	buttongadget(GTRACKCUR,5,27,65,15,"Current")
-	buttongadget(GTRACKNXT,5,48,65,15,"Next")
-	textgadget(GTRACKPPRV,75,6,288,15,"TEST   [testmain.bas]")
-	textgadget(GTRACKPCUR,75,27,288,15,"TEST2   [testmain.bas]")
-	textgadget(GTRACKPNXT,75,48,288,15,"TEST_END   [testmain.bas]")
+	buttongadget(GTRACKPRV,5,6,65,30,"Previous")
+	buttongadget(GTRACKCUR,5,27,65,30,"Current")
+	buttongadget(GTRACKNXT,5,48,65,30,"Next")
+	textgadget(GTRACKPPRV,75,6,288,30,"TEST   [testmain.bas]")
+	textgadget(GTRACKPCUR,75,27,288,30,"TEST2   [testmain.bas]")
+	textgadget(GTRACKPNXT,75,48,288,30,"TEST_END   [testmain.bas]")
 end sub
 '========================================================
 '' creates the window for show/expand  (shw/exp)
 '========================================================
 private sub create_shwexpbx()
 
-	hshwexpbx=OpenWindow("Shw/exp : variable",10,10,700,550) ',WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	hshwexpbx=OpenWindow("Shw/exp : variable",10,10,700,550,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hshwexpbx)
 	hidewindow(hshwexpbx,KHIDE)
 
-	buttongadget(GSHWWCH,510,5,90,18,"Watched")
-	buttongadget(GSHWDMP,510,30,90,18,"Dump")
-	buttongadget(GSHWEDT,510,55,90,18,"Edit")
-	buttongadget(GSHWSTR,510,80,90,18,"Show string")
-	buttongadget(GSHWNEW,510,105,90,18,"New shw/exp")
-	buttongadget(GSHWRPL,510,130,90,18,"Replaces")
-	textgadget(GSHWCUR,510,160,78,15,"Index cur : 2")
-	textgadget(GSHWMIN,510,180,78,15,"Index min : 1")
-	textgadget(GSHWMAX,510,200,78,15,"Index max : 500")
-	buttongadget(GSHWSET,510,220,90,18,"Set index")
-	buttongadget(GSHWRED,610,220,21,18,"-1")
-	buttongadget(GSHWINC,635,220,21,18,"+1")
-	buttongadget(GSHWUPD,510,250,90,18,"Update")
-	buttongadget(GSHWCLOSE,510,290,90,18,"Close all")
+	buttongadget(GSHWWCH,510,5,90,30,"Watched")
+	buttongadget(GSHWDMP,510,30,90,30,"Dump")
+	buttongadget(GSHWEDT,510,55,90,30,"Edit")
+	buttongadget(GSHWSTR,510,80,90,30,"Show string")
+	buttongadget(GSHWNEW,510,105,90,30,"New shw/exp")
+	buttongadget(GSHWRPL,510,130,90,30,"Replaces")
+	textgadget(GSHWCUR,510,160,78,30,"Index cur : 2")
+	textgadget(GSHWMIN,510,180,78,30,"Index min : 1")
+	textgadget(GSHWMAX,510,200,78,30,"Index max : 500")
+	buttongadget(GSHWSET,510,220,90,30,"Set index")
+	buttongadget(GSHWRED,610,220,21,30,"-1")
+	buttongadget(GSHWINC,635,220,21,30,"+1")
+	buttongadget(GSHWUPD,510,250,90,30,"Update")
+	buttongadget(GSHWCLOSE,510,290,90,30,"Close all")
 	htviewshw=treeviewgadget(GTVIEWSHW,0,0,500,500,KTRRESTYLE)
 	
 end sub
@@ -631,10 +631,10 @@ private sub create_dumpbx()
 	
 	load_button(IDBUTENLRMEM,@"memory.bmp",300,5,@"Reduce the window",,0)
 	
-	ButtonGadget(GDUMPAPPLY,12,5,110,15,"Apply address : ")
-	stringgadget(GDUMPADR,130,5,75,15,"123456789")
+	ButtonGadget(GDUMPAPPLY,12,5,110,30,"Apply address : ")
+	stringgadget(GDUMPADR,130,5,75,30,"123456789")
 
-	textgadget(GDUMPTSIZE,12,25,105,15,"Size of column : ",0)
+	textgadget(GDUMPTSIZE,12,25,105,30,"Size of column : ",0)
 	ListBoxGadget(GDUMPSIZE,130,25,75,70)
 	AddListBoxItem(GDUMPSIZE,"1 byte")
 	AddListBoxItem(GDUMPSIZE,"2 bytes")
@@ -642,8 +642,8 @@ private sub create_dumpbx()
 	AddListBoxItem(GDUMPSIZE,"8 bytes")
 	
 	groupgadget(GDUMPBASEGRP,10,90,130,40,"Dec or hex")
-	optiongadget(GDUMPDEC,15,107,50,18,"Dec")
-	optiongadget(GDUMPHEX,70,107,50,18,"Hex")
+	optiongadget(GDUMPDEC,15,107,50,30,"Dec")
+	optiongadget(GDUMPHEX,70,107,50,30,"Hex")
 	SetGadgetState(GDUMPDEC,1)	
 	
 	ButtonGadget(GDUMPSIGNE,165,107,80,25,"U/Signed")
@@ -657,15 +657,15 @@ private sub create_dumpbx()
 	ButtonGadget(GDUMPPP,180, 154, 30, 20,  "P+")
 	
 	groupgadget(GDUMUSEGRP,10,185,338,100,"Use cell value for")
-	ButtonGadget(GDUMPNEW,12,202,80,20,"NEW ADR")
-	ButtonGadget(GDUMPWCH,95,202,80, 20,  "WATCHED")
-	ButtonGadget(GDUMPBRK,178,202,80, 20,  "BREAK ON")
-	ButtonGadget(GDUMPSHW,260,202,80, 20,  "SHW/EXP")
+	ButtonGadget(GDUMPNEW,12,202,80,30,"NEW ADR")
+	ButtonGadget(GDUMPWCH,95,202,80,30,  "WATCHED")
+	ButtonGadget(GDUMPBRK,178,202,80,30,  "BREAK ON")
+	ButtonGadget(GDUMPSHW,260,202,80,30,  "SHW/EXP")
 
 	groupgadget(GDUMPPTRGRP,15,230,250,50,"Use value as pointer")
-	optiongadget(GDUMPPTRNO,20,255,80,18,"No ptr")
-	optiongadget(GDUMPPTR1,100,255,50,18,"x 1")
-	optiongadget(GDUMPPTR2,180,255,50,18,"x 2")
+	optiongadget(GDUMPPTRNO,20,255,80,30,"No ptr")
+	optiongadget(GDUMPPTR1,100,255,50,30,"x 1")
+	optiongadget(GDUMPPTR2,180,255,50,30,"x 2")
 	SetGadgetState(GDUMPPTRNO,1)
 			
 end sub
@@ -770,35 +770,35 @@ private sub create_settingsbx()
 	centerWindow(hsettings)
 		
 	groupgadget(LOGGROUP,10,10,450,85,"Log  fbdebugger path"+slash+"dbg_log.txt")
-	optiongadget(GNOLOG,12,32,80,18,"No log")
+	optiongadget(GNOLOG,12,32,80,30,"No log")
 	SetGadgetState(GNOLOG,1)''set on overriden by read_ini
-	optiongadget(GSCREENLOG,102,32,80,18,"Screen")
-	optiongadget(GFILELOG,192,32,80,18,"File")
-	optiongadget(GBOTHLOG,282,32,80,18,"Both")
-	CheckBoxGadget(GTRACEPROC,12,70,220,15,"Trace on for proc")
-	CheckBoxGadget(GTRACELINE,232,70,220,15,"Trace on for line")
-	CheckBoxGadget(GVERBOSE,12,100,220,15,"Verbose Mode On for proc/var")
-	textgadget(GTEXTDELAY,12,125,200,15,"50< delay auto (ms) <10000",0)
-	stringgadget(GAUTODELAY,210,125,50,15,str(autostep))
-	textgadget(GTEXTCMDLP,12,155,200,15,"Command line parameters",0)
-	stringgadget(GCMDLPARAM,210,155,200,15,cmdexe(0))
+	optiongadget(GSCREENLOG,102,32,80,30,"Screen")
+	optiongadget(GFILELOG,192,32,80,30,"File")
+	optiongadget(GBOTHLOG,282,32,80,30,"Both")
+	CheckBoxGadget(GTRACEPROC,12,70,220,30,"Trace on for proc")
+	CheckBoxGadget(GTRACELINE,232,70,220,30,"Trace on for line")
+	CheckBoxGadget(GVERBOSE,12,100,220,30,"Verbose Mode On for proc/var")
+	textgadget(GTEXTDELAY,12,125,200,30,"50< delay auto (ms) <10000",0)
+	stringgadget(GAUTODELAY,210,125,50,30,str(autostep))
+	textgadget(GTEXTCMDLP,12,155,200,30,"Command line parameters",0)
+	stringgadget(GCMDLPARAM,210,155,200,30,cmdexe(0))
 	
 	groupgadget(FONTGROUP,10,240,450,80,"Font for source code")
-	textgadget(GTEXTFTYPE,12,260,200,15,"type",0)
-	textgadget(GTEXTFSIZE,12,280,200,15,"size",0)
-	textgadget(GTEXTFCOLOR,12,300,200,15,"color",0)
+	textgadget(GTEXTFTYPE,12,260,200,30,"type",0)
+	textgadget(GTEXTFSIZE,12,280,200,30,"size",0)
+	textgadget(GTEXTFCOLOR,12,300,200,30,"color",0)
 
 end sub
 '=============================================
 '' inputval window
 '=============================================
 private sub create_inputbx()
-	hinputbx=OpenWindow("",10,10,80,250)
+	hinputbx=OpenWindow("",10,10,80,250,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	hidewindow(hinputbx,KHIDE)
 	centerWindow(hinputbx)
-	StringGadget(GINPUTVAL,10,10,100,15,"")
-	ButtonGadget (GINPUTVALOK,10,40,60,15,"Ok")
-	ButtonGadget (GINPUTVALCANCEL,80,40,60,15,"Cancel")
+	StringGadget(GINPUTVAL,10,10,100,30,"")
+	ButtonGadget (GINPUTVALOK,10,40,60,30,"Ok")
+	ButtonGadget (GINPUTVALCANCEL,80,40,60,30,"Cancel")
 end sub	
 '=========================================================================
 '' enables or disables buttons according the status and updates status
@@ -1157,7 +1157,7 @@ private sub gui_init()
 	statusbar_text(KSTBFRT,"Fast time ?")
 	
 	''current line
-	textGadget(GCURRENTLINE,2,28,400,20,"Next exec line : ",SS_NOTIFY )
+	textGadget(GCURRENTLINE,2,28,400,30,"Next exec line : ",SS_NOTIFY )
 	GadgetToolTip(GCURRENTLINE,"next executed line"+chr(13)+"Click on me to reach the line",GCURLINETTIP)
 
 	''buttons
@@ -1210,12 +1210,7 @@ private sub gui_init()
 	
 	''treeview proc/var
 	var htabvar=AddPanelGadgetItem(GRIGHTTABS,TABIDXVAR,"Proc/var",,1)
-	'var hbmp = load_Icon("1.ico")
-	'var hbmp1 = load_Icon("2.ico")	
 	htviewvar=treeviewgadget(GTVIEWVAR,0,0,499,299,KTRRESTYLE)
-	
-	'HideGadget(GTVIEWVAR,0)
-	'hidewindow(htabvar,KSHOW)
 	
 	''treeview procs
 	var htabprc=AddPanelGadgetItem(GRIGHTTABS,TABIDXPRC,"Procs",,1)
@@ -1224,12 +1219,10 @@ private sub gui_init()
 	''treeview threads
 	var htabthd=AddPanelGadgetItem(GRIGHTTABS,TABIDXTHD,"Threads",,1)
 	htviewthd=treeviewgadget(GTVIEWTHD,0,0,499,299,KTRRESTYLE)
-	'hidewindow(htabthd,KSHOW)	
 	
 	''treeview watched
 	var htabwch=AddPanelGadgetItem(GRIGHTTABS,TABIDXWCH,"Watched",,1)
 	htviewwch=treeviewgadget(GTVIEWWCH,0,0,499,299,KTRRESTYLE)
-	'hidewindow(htabwch,KSHOW)
 	
 	''dump memory
 	var htabmem=AddPanelGadgetItem(GRIGHTTABS,TABIDXDMP,"Memory",,1)
