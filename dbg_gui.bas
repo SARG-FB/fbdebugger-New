@@ -9,12 +9,22 @@
 'hidewindow(hwnd , 0)
 '=======================================================
 
+'==================================================================================
+'' checks the current value in a spingadget (replace the control normally done) 
+'==================================================================================
+private sub updown_check(gadget as integer,valuemin as integer,valuemax as INTEGER)
+	var valuecurrent=getgadgetstate(gadget)
+	if valuecurrent>valuemax then
+		setgadgetstate(gadget,valuemax)
+	elseif valuecurrent<valuemin then
+		setgadgetstate(gadget,valuemin)
+	EndIf
+End Sub
 '=======================================================
 '' prepares the window for filling data in index_fill
 '=======================================================
 private sub index_sel()
 	dim as integer typ,typ2,size,sizeline,adr,nbdim,temp,vlbound(KMAXDIM),vubound(KMAXDIM),delta2,indexvar
-	dim as boolean flagvar
 	dim as STRING strg,txt	
 	typ2=0
 	indexvar=var_find() 'search index variable under cursor
@@ -22,7 +32,7 @@ private sub index_sel()
 
 	while 2 ''infinite loop
 		if indexvar>0 then ''var type 
-			flagvar=true ''is a var type
+			indexdata.typvar=true ''is a var type
 			If vrb(vrr(indexvar).vr).pt Then 'pointer
 			   size=SizeOf(Integer)
 			   typ=1 'integer
@@ -64,7 +74,7 @@ private sub index_sel()
 
 		'====================================
 		else ''cudt type
-			flagvar=false ''is not a var type
+			indexdata.typvar=false ''is not a var type
 			indexvar=Abs(indexvar)
 			with cudt(Abs(vrr(indexvar).vr))
 				If .pt Then 'pointer
@@ -211,6 +221,7 @@ private sub index_sel()
 	''keep data for next actions
 	indexdata.indexvar=indexvar
 	indexdata.sizeline=sizeline
+	indexdata.size=size
 	indexdata.nbdim=nbdim
 	for idx as integer =0 to 4
 		indexdata.vlbound(idx)=vlbound(idx)
@@ -218,7 +229,8 @@ private sub index_sel()
 	next
 	indexdata.adr=adr
 	indexdata.typ=typ
-	
+	indexdata.typ2=typ2
+	indexdata.delta2=delta2
 	hidewindow(hindexbx,KSHOW)
 	
 end sub
@@ -494,7 +506,7 @@ end sub
 '' creates the window for editing variable/memory
 '==============================================================================
 private sub create_editbx()
-	heditbx=OpenWindow("Edit variable",10,10,700,135)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	heditbx=OpenWindow("Edit variable",10,10,700,135,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(heditbx)
 	hidewindow(heditbx,KHIDE)
 	
@@ -513,7 +525,7 @@ end sub
 '========================================================
 private sub create_indexbx()
 	dim as integer ypos
-	hindexbx=OpenWindow("Array index management",10,10,800,550)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	hindexbx=OpenWindow("Array index management",10,10,800,550,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hindexbx)
 	hidewindow(hindexbx,KHIDE)
 
@@ -522,7 +534,7 @@ private sub create_indexbx()
 	For idx as integer =0 To 4
 		textgadget(GIDXMIN1+idx,18,30+28*idx,93,30,"1")
 		textgadget(GIDXMAX1+idx,117,30+28*idx,93,30,"15")
-		spingadget(GIDXUP1+idx,219,27+28*idx,102,25,100,-5,9)
+		spingadget(GIDXUP1+idx,219,27+28*idx,102,25,100,-2147483648 ,21474836487)
 	next
 
 	buttongadget(GIDXAPPLY,327,27,66,30,"Apply")
@@ -539,7 +551,7 @@ private sub create_indexbx()
 	buttongadget(GIDXCOLL,651,320,70,30,"Column -")
 	buttongadget(GIDXBLKP,651,345,70,30,"Block + >")
 	buttongadget(GIDXBLKL,651,370,70,30,"< Block -")
-	spingadget(GIDXWIDTH,648,400,80,30,80,25,50)
+	spingadget(GIDXWIDTH,648,400,80,30,80,-2147483648 ,21474836487)
 	listviewgadget(GIDXTABLE,18,170,624,290,LVS_EX_GRIDLINES)
 end sub
 '========================================================
@@ -547,7 +559,7 @@ end sub
 '========================================================
 private sub create_brkbx()
 	dim as integer ypos
-	hbrkbx=OpenWindow("Breakpoint management",10,10,550,350)',WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	hbrkbx=OpenWindow("Breakpoint management",10,10,550,350,WS_POPUP or WS_CAPTION or WS_SYSMENU)
 	centerWindow(hbrkbx)
 	hidewindow(hbrkbx,KHIDE)
 

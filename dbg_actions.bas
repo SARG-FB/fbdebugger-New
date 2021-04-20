@@ -260,6 +260,8 @@ private sub menu_action(poption as integer)
 end sub
 
 private sub gadget_action(igadget as LONG)
+	dim as INTEGER decal
+
 	select case igadget
 		Case GCURRENTLINE
 			messbox("Click on Current line","Jumping to the file/line")
@@ -524,7 +526,7 @@ private sub gadget_action(igadget as LONG)
 		Case GIDXBLKL
 			vrr(indexdata.indexvar).ix(indexdata.nbdim-1)-=KBLOCKIDX
 			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)<indexdata.vlbound(indexdata.nbdim-1) Then
-				vrrindexdata.(indexvar).ix(indexdata.nbdim-1)=indexdata.vlbound(indexdata.nbdim-1)
+				vrr(indexdata.indexvar).ix(indexdata.nbdim-1)=indexdata.vlbound(indexdata.nbdim-1)
 			EndIf
 			SetGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
 			index_fullupdate()
@@ -564,7 +566,6 @@ private sub gadget_action(igadget as LONG)
 			index_fullupdate()
 				
 		Case GIDXAUTO
-			If SendMessage(hautoupd, BM_GETCHECK,0,0)=BST_CHECKED Then autoupd=TRUE Else autoupd=FALSE
 			if getgadgetstate(GIDXAUTO)=1 then
 				indexdata.autoupd=TRUE
 			Else 
@@ -573,7 +574,7 @@ private sub gadget_action(igadget as LONG)
 		
 	   Case GIDXWIDTH
 			var wd =getgadgetstate(GIDXWIDTH)
-			for icol =1 to iif(indexdata.vubound(1)-vrr(indexdata.indexvar).ix(1)>29,30,indexdata.vubound(1)-vrr(indexdata.indexvar).ix(1)+1
+			for icol as integer =1 to iif(indexdata.vubound(1)-vrr(indexdata.indexvar).ix(1)>29,30,indexdata.vubound(1)-vrr(indexdata.indexvar).ix(1)+1)
 				SetColumnWidthListView(GIDXTABLE,icol,wd)
 			next
 

@@ -213,12 +213,8 @@ Dim Shared As double fasttimer
 
 dim shared as tedit edit ''data when editing var or mem
 
-''index box todo ??
-'Dim Shared hindexbx(INDEXBOXMAX) As HWND
-'Dim Shared autoupd(INDEXBOXMAX) As BOOLEAN
 '' index selection
 dim shared as hwnd hindexbx
-Dim Shared As BOOLEAN autoupd
 Dim Shared As tindexdata indexdata
 
 ''slash for file WDS<>LNX

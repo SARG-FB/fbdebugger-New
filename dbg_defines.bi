@@ -440,11 +440,16 @@ end enum
 type tindexdata
 		indexvar as INTEGER
 		sizeline as INTEGER
+		size     as INTEGER
 		nbdim 	 as INTEGER
 		vlbound(4) as integer
 		vubound(4) as integer
-		adr as INTEGER
-		typ as INTEGEr
+		adr as  INTEGER
+		typ as  INTEGEr ''type
+		typ2 as INTEGEr
+		delta2  as INTEGEr
+		autoupd as boolean ''auto update the table
+		typvar  as boolean ''var or cudt
 End Type
 	
 ''for settings

@@ -26,8 +26,9 @@
 '' prepares a fully update of listview 
 '==============================================
 private sub index_fullupdate()
+	dim as integer delta,total,adr
 	For k As Integer =0 To indexdata.nbdim-1
-		vrr(indexdata.indexvar).ix(k)=getgadgetstate(GIDXUP+k)
+		vrr(indexdata.indexvar).ix(k)=getgadgetstate(GIDXUP1+k)
 	Next
 
 	delta=0:total=1
@@ -35,19 +36,19 @@ private sub index_fullupdate()
 		delta+=(vrr(indexdata.indexvar).ix(k)-indexdata.vlbound(k))*total
 		total*=(indexdata.vubound(k)-indexdata.vlbound(k)+1)
 	Next
-	If (Cast(Integer,vrb(vrr(indexdata.indexvar).vr).arr)=-1 Andalso flagvar) OrElse (Cast(Integer,cudt(Abs(vrr(indexvar).vr)).arr)=-1 AndAlso flagvar=0) Then 'dynamic array
+	If (Cast(Integer,vrb(vrr(indexdata.indexvar).vr).arr)=-1 Andalso indexdata.typvar=true) OrElse (Cast(Integer,cudt(Abs(vrr(indexdata.indexvar).vr)).arr)=-1 AndAlso indexdata.typvar=false) Then 'dynamic array
 		adr=vrr(indexdata.indexvar).ini+SizeOf(Integer)
 		ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,SizeOf(Integer),0) ''ptr instead data
-		adr+=delta*size
+		indexdata.adr+=delta*indexdata.size
 	Else
-		adr=vrr(indexdata.indexvar).ini+delta*size
+		indexdata.adr=vrr(indexdata.indexvar).ini+delta*indexdata.size
 	EndIf
-	If typ2<>0 Then adr+=delta2 'add the delta 
+	If indexdata.typ2<>0 Then indexdata.adr+=indexdata.delta2 'add the delta 
 	If indexdata.nbdim>=2 Then
-	---> todo some parameter useless
-		index_update(listview,vrr(indexdata.indexvar).ix(0),indexdata.vubound(0),vrr(indexdata.indexvar).ix(1),indexdata.vubound(1),indexdata.adr,indexdata.typ,indexdata.sizeline)
+	'---> todo some parameter useless
+		index_update(GIDXTABLE,vrr(indexdata.indexvar).ix(0),indexdata.vubound(0),vrr(indexdata.indexvar).ix(1),indexdata.vubound(1),indexdata.adr,indexdata.typ,indexdata.sizeline)
 	Else
-		index_update(listview,vrr(indexdata.indexvar).ix(0),indexdata.vubound(0),-1,-1,indexdata.adr,indexdata.typ,indexdata.size)
+		index_update(GIDXTABLE,vrr(indexdata.indexvar).ix(0),indexdata.vubound(0),-1,-1,indexdata.adr,indexdata.typ,indexdata.size)
 	EndIf
 end sub
 '=============================================================================
@@ -2502,13 +2503,18 @@ private sub dsp_change(index As Integer)
 			watch_array() ''even flagupdate is off watched are updated
 			watch_sh()
 		endif
+		
 		but_enable()
+		
 		If PanelGadgetgetCursel(GRIGHTTABS) = TABIDXPRC Then
 			proc_sh()
 		elseIf PanelGadgetgetCursel(GRIGHTTABS) = TABIDXTHD Then
 			thread_text()
 		EndIf
-		''index_update() todo
+		
+		if indexdata.autoupd then
+			index_fullupdate()
+		EndIf
 	End If
 End Sub
 '========================================================================
