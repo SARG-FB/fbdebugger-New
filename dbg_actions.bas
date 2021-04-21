@@ -573,11 +573,15 @@ private sub gadget_action(igadget as LONG)
 			end if
 
 	   Case GIDXWIDTH
+			updown_check(GIDXWIDTH,50,200)
+
 			var wd =getgadgetstate(GIDXWIDTH)
 			for icol as integer =1 to iif(indexdata.vubound(1)-vrr(indexdata.indexvar).ix(1)>29,30,indexdata.vubound(1)-vrr(indexdata.indexvar).ix(1)+1)
 				SetColumnWidthListView(GIDXTABLE,icol,wd)
 			next
 
+		case GIDXUP1 to GIDXUP1+4
+			updown_check(igadget,indexdata.vlbound(igadget-GIDXUP1),indexdata.vubound(igadget-GIDXUP1))
 
 		case else
         	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))

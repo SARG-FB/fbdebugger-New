@@ -648,7 +648,7 @@ private sub create_dumpbx()
 	AddListBoxItem(GDUMPSIZE,"4 bytes")
 	AddListBoxItem(GDUMPSIZE,"8 bytes")
 
-	groupgadget(GDUMPBASEGRP,10,120,130,50,"Dec or hex")
+	groupgadget(GDUMPBASEGRP,10,120,130,55,"Dec or hex")
 	optiongadget(GDUMPDEC,15,140,50,30,"Dec")
 	optiongadget(GDUMPHEX,70,140,50,30,"Hex")
 	SetGadgetState(GDUMPDEC,1)
