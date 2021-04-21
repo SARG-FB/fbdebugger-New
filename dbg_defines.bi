@@ -1,5 +1,5 @@
 ''defines etc for fbdebugger_new
-''dbg_define.bi 
+''dbg_define.bi
 
 ''table of enums
 
@@ -54,7 +54,7 @@
 	#Include Once "win\richedit.bi"
 	#Include Once "win\tlhelp32.bi"
 	#Include Once "win\shellapi.bi"
-	#Include Once "win\psapi.bi" 
+	#Include Once "win\psapi.bi"
 
 
 	'' if they are not already defined
@@ -97,9 +97,9 @@
 		As UInteger bse 'base address
 		As integer  tv  'item treeview to delete
 		As Integer gblb 'index/number in global var table
-		As Integer gbln 
+		As Integer gbln
 		As Integer  lnb 'index/number in line
-		As Integer  lnn 
+		As Integer  lnn
 		As String   fnm 'full name
 	End Type
 
@@ -224,7 +224,7 @@ enum
 	MNKILL
 	MNAUTO
 	MNTHRDAUT'automatic execution  alternating threads
-	MNEXEMOD	
+	MNEXEMOD
 	MNSETBRK
 	MNSETBRKC
 	MNRSTBRKC
@@ -241,7 +241,7 @@ enum
 	MNASMPRCL
 	MNASMREGS
 	MNACCLINE
-	MNFCSSRC	
+	MNFCSSRC
 end enum
 
 ''proc/var menu
@@ -310,18 +310,18 @@ end enum
 '' tools menu
 enum
 	MNABOUT=1250
-	MNSETTINGS	
-	MNCMPINF	
+	MNSETTINGS
+	MNCMPINF
 	MNDBGHELP
-	MNSHWLOG	
-	MNDELLOG	
+	MNSHWLOG
+	MNDELLOG
 	MNLISTENUM
 	MNLISTPROCESS
 	MNLISTDLL
 	MNWINMSG
 	MNSHWBDH
 	MNFRTIMER
-	MNJITDBG	
+	MNJITDBG
 end enum
 
 '' watched menu
@@ -374,7 +374,7 @@ end enum
 #define KHIDE 1
 
 ''for breakpoint management
-enum 
+enum
 	GBRKDEL01=800
 	GBRKDEL02
 	GBRKDEL03
@@ -412,7 +412,7 @@ enum
 End Enum
 
 ''index selection
-enum 
+enum
 	GIDXVAR=850
 	GIDXMIN1
 	GIDXMIN5=GIDXMIN1+4
@@ -451,7 +451,7 @@ type tindexdata
 		autoupd as boolean ''auto update the table
 		typvar  as boolean ''var or cudt
 End Type
-	
+
 ''for settings
 enum
 	LOGGROUP=900
@@ -850,7 +850,7 @@ End type
 ''========================= Breakpoint on line ===================================
 Const BRKMAX=10 'breakpoint index zero for "run to cursor"
 Type breakol
-	isrc    As UShort   'source index 
+	isrc    As UShort   'source index
 	nline   As UInteger 'num line for display
 	index   As Integer  'index for rline
 	ad      As UInteger 'address
@@ -878,16 +878,16 @@ Const THREADMAX=50
 Type tthread
  hd  As HANDLE    'handle
  id  As UInteger  'ident
- pe  As Integer   'flag if true indicates proc end 
+ pe  As Integer   'flag if true indicates proc end
  sv  As Integer   'sav line
  od  As Integer   'previous line
  nk  As UInteger  'for naked proc, stack and used as flag
  st  As Integer   'to keep starting line
  tv  As integer 'to keep handle of thread item
- plt As integer 'to keep handle of last proc of thread in proc/var tview 
- ptv As integer 'to keep handle of last proc of thread in thread tview 
+ plt As integer 'to keep handle of last proc of thread in proc/var tview
+ ptv As integer 'to keep handle of last proc of thread in thread tview
  exc As Integer   'to indicate execution in case of auto 1=yes, 0=no
- 
+
 End Type
 
 ''variable find
@@ -915,7 +915,7 @@ Type tshwexp
 	curidx As Integer  'current index only for array
 	minidx As Integer  'min index
 	maxidx As Integer  'max index
-	
+
 	procr  as integer 'index of running proc  (-1 if memory) used to delete the shw/exp when proc is exiting (local var)
 	arradr as integer 'address of pointer in descriptor array (-1 if not a dynamic array)
 	mem    as integer 'if static don't delete the shw/exp when the proc is closed
@@ -927,7 +927,7 @@ Type tvrp
 	pt As Integer   'is pointer
 	ad As UInteger  'address
 	tl As integer   'line in treeview
-	iv As Integer   'index of variables 
+	iv As Integer   'index of variables
 End Type
 
 
@@ -1238,4 +1238,3 @@ enumdef(MNVAREXPI)="MNVAREXPI"
 enumdef(MNVARCOLA)="MNVARCOLA"
 enumdef(MNVAREXPA)="MNVAREXPA"
 
-	

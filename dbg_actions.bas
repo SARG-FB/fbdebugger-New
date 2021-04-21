@@ -1,5 +1,5 @@
 ''button/menu/gadget handle for fbdebugger_new
-''dbg_actions.bas 
+''dbg_actions.bas
 
 '==================================================
 private sub menu_action(poption as integer)
@@ -9,14 +9,14 @@ private sub menu_action(poption as integer)
 		case MNABOUT
             If messbox("FB DEBUGGER "+ver3264,"Debugger for FreeBASIC (Windows/Linux 32/64)"+Chr(13)+Chr(13)+fbdebuggerversion+" / "+__DATE__+Chr(13)+"(C) L.GRAS  debug @ aliceadsl . fr"+Chr(13)+Chr(13) _
                +"Select YES for accessing to the dedicated page on the forum"+Chr(13)+"http://www.freebasic.net/forum/viewtopic.php?f=8&t=13935",MB_YESNO)=6 Then
-               	Shell "start http://www.freebasic.net/forum/viewtopic.php?f=8""&t""=13935" 
+               	Shell "start http://www.freebasic.net/forum/viewtopic.php?f=8""&t""=13935"
             endif
-            
+
         case MNSETTINGS
-			hidewindow(hsettings,KSHOW)	
-         
+			hidewindow(hsettings,KSHOW)
+
         case MNTHRDAUT '' multi thread auto
-		    var threadaut=0   
+		    var threadaut=0
 			For ithd As Integer =0 To threadnb
 				If thread(ithd).exc Then
 					threadaut+=1
@@ -29,78 +29,78 @@ private sub menu_action(poption as integer)
 			but_enable()
 			bcktrk_close
 			thread_resume()
-			
+
 		case MNEXEFILE0 to MNEXEFILE9
 			restart(poption-MNEXEFILE0)
-			
+
 		case MNSHWLOG
 			log_show()
-			
+
 		case MNDELLOG
 			log_del()
-			
+
 		Case MNWINMSG
             winmsg()
-            
+
         Case MNSHWBDH
-            dechexbin()	
-			
+            dechexbin()
+
 		Case MNGOTO 'goto line
 			line_goto()
-			
+
       	Case MNLINEADR 'line address (in memory)
          	line_adr()
-         	
+
 		Case MNWCHDEL'delete watch on cursor from watched
          		watch_del(watch_find())
-         		
+
         Case MNWCHDALL'delete all watches
    			if messbox("Delete watched vars","Delete all",MB_YESNO)=RETYES Then
    				watch_del()
    			EndIf
-   			
+
 		Case MNWCHVAR'show in proc/var window from watched
 			watch_sel(watch_find())
-				
+
 		Case MNWCHTTGL 'toggle trace
-			watch_trace(watch_find()) 
-			
+			watch_trace(watch_find())
+
 		Case MNWCHTTGA 'cancel all traces
-			watch_trace()	
-			
+			watch_trace()
+
 		Case MNLOCPRC 'locate proc
 			proc_loc()
-			
+
 		Case MNCALLINE 'locate calling line
 		   proc_loccall(1)
-		   
+
 		Case MNPBCKTRK'backtracking from proc/var
 			proc_loccall(2)
-			
+
 		Case MNPCHNING'chaining from proc/var
 			proc_loccall(3)
-			
+
 		Case MNSHWPROC 'locate proc in proc/var treeview
 			thread_procloc(1)
-			
+
 		Case MNSHPRSRC 'locate proc in source
 			thread_procloc(2)
-						
+
 		Case MNTBCKTRK 'backtracking (from thread)
 			thread_procloc(3)
-			
+
 		Case MNTCHNING 'chaining (from thread)
-			thread_procloc(4) 
-							
+			thread_procloc(4)
+
 		Case MNPRCRADR 'information about running proc
 			thread_procloc(5)
-			
+
 		Case MNTHRDCHG 'change next executed thread
 			thread_change()
-			
+
 		Case MNTHRDKLL 'kill a thread
-			thread_kill()	
-	'==============================================	
+			thread_kill()
+	'==============================================
 		    Case MNLISTPROCESS
                process_list()
          	Case MNLISTDLL
@@ -154,13 +154,13 @@ private sub menu_action(poption as integer)
          		procvar_list()
          	Case MNPTDUMP 'dump pointed data
          		var_dump(htviewvar,1)
-         		
+
             Case MNFNDVAR 'find text proc or var in proc/var tree
             messbox("Feature not yet implemented","procvar_find()")
               	'If hfindbx=0 Then 'findtext not active ? also used in source
 					''procvar_find()
 				'End If
-				
+
             Case MNSELIDX 'select index in proc/var
             'messbox("Feature not yet implemented","index_sel")
 				index_sel()
@@ -174,12 +174,12 @@ private sub menu_action(poption as integer)
          	Case MNWCHSHW'shw/exp from watched
          	messbox("Feature not yet implemented","shwexp_new(htviewwch)")
          		'shwexp_new(htviewwch)
-				
+
          	Case MNWCHEDT'edit from watched
 				messbox("Feature not yet implemented","edit_box")
          		'If var_find2(GTVIEWWCH)<>-1 Then 'not local non-existent
          		'edit_fill()
-         		
+
          	Case MNSETWTCH 'set watched first free slot
             	If var_find2(htviewvar)<>-1 Then watch_set()
             Case MNTRCKIDX0 To MNTRCKRST
@@ -198,7 +198,7 @@ private sub menu_action(poption as integer)
          	Case MNCHGZSTR
          	messbox("Feature not yet implemented","zstringbyte_exchange()")
 				'zstringbyte_exchange()
-				
+
          	Case MNVAREDT  ''edit var value
 				ivar=var_find()
 				if ivar>0 then
@@ -210,13 +210,13 @@ private sub menu_action(poption as integer)
 					pt=cudt(vrr(ivar).vr).pt
 				EndIf
 				edit_fill(GetTextTreeView(GTVIEWVAR,GetItemTreeView(GTVIEWVAR)),vrr(abs(ivar)).ad,typ,pt)
-				
+
 			Case MNSHWEXP  'show and expand variables
 				messbox("Feature not yet implemented","shwexp_new")
 				'shwexp_new(htviewvar)
             Case MNVARBRK  'break on var value
 				brkv_set(1)
-				
+
 			case MNVARCOLI
 				CollapseTreeViewItem(GTVIEWVAR,GetItemTreeView(GTVIEWVAR))
 			case MNVAREXPI
@@ -234,7 +234,7 @@ private sub menu_action(poption as integer)
          	Case MNSORTPRC
          		procsort=1-procsort
          		proc_sh() 'toggle type of sort and update display
-				
+
          	Case MNASMPRC
 				messbox("Feature not yet implemented","dissassemble(KSPROC)")
 				'dissassemble(KSPROC)
@@ -253,7 +253,7 @@ private sub menu_action(poption as integer)
             Case MNVARBRK 'update break on var
             	If brkv.adr<>0 Then brkv_set(2)
 
-	'=============================================================		
+	'=============================================================
         case else
         	messbox("Menu feature not implemented","sorry option="+str(poption)+" --> enum="+enumdef(poption))
     end select
@@ -266,25 +266,25 @@ private sub gadget_action(igadget as LONG)
 		Case GCURRENTLINE
 			messbox("Click on Current line","Jumping to the file/line")
 			linecur_display()
-			
 
-		case GTVIEWVAR	
+
+		case GTVIEWVAR
 		case GTVIEWWCH
-  
+
 		''Dump memory
 		case GDUMPADR
-		''not used messbox("changing memory address","need to remove me") 
-		
+		''not used messbox("changing memory address","need to remove me")
+
 		case GDUMPAPPLY
 			var txt=GetGadgetText(GDUMPADR)
 			dim as integer newad=Valint(txt)
             If readProcessMemory(dbghand,Cast(LPCVOID,newad),strptr(txt),1,0)=0 Then
-				messbox("Error","Invalid Memory Address")              
+				messbox("Error","Invalid Memory Address")
             Else
                 dumpadr=newad
                 dump_sh()
             End If
-            
+
 		''column size in bytes
 		case GDUMPSIZE
 			messbox("list box dump size",str(GetItemListBox(GDUMPSIZE))+" ="+GetListBoxText(GDUMPSIZE,GetItemListBox(GDUMPSIZE)))
@@ -301,8 +301,8 @@ private sub gadget_action(igadget as LONG)
 			End Select
 			dump_set()
             dump_sh()
-            
-		'''moving -/+ the first address by cell/line/page 
+
+		'''moving -/+ the first address by cell/line/page
 		'case GDUMPCL ''
 		'case GDUMPCP
 		'case GDUMPLL
@@ -326,7 +326,7 @@ private sub gadget_action(igadget as LONG)
 				dumpbase=0
 				dump_sh()
 			end if
-			
+
 		case GDUMPHEX
 			if dumpbase=0 then
 				if dumptyp=11 or dumptyp=12 then
@@ -339,7 +339,7 @@ private sub gadget_action(igadget as LONG)
 
 		case GDUMPSIGNE
 			dump_sign()
-			
+
 		case GFILESEL
         	if GetItemComboBox(GFILELIST)<>-1 then
         		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
@@ -352,10 +352,10 @@ private sub gadget_action(igadget as LONG)
         	else
         		messbox("Select a file", "before clicking on the button")
         	endif
-        	
+
 		case GSRCTAB
 			source_change(PanelGadgetGetCursel(GSRCTAB))
-		
+
 		case GRIGHTTABS
 			select case PanelGadgetGetCursel(GRIGHTTABS)
 				case TABIDXVAR
@@ -375,27 +375,27 @@ private sub gadget_action(igadget as LONG)
 					'hidewindow(htabdmp,KSHOW)
 					'HideGadget(GDUMPMEM,0)
 			end select
-			
+
 		case GFILELIST ''nothing to execute with file combo
 
 		Case GBRKCLOSE
 	   		hidewindow(hbrkbx,KHIDE)
-	   		
+
 	   	Case GBRKDEL01 to GBRKDEL10 ''delete one breakpoint
 	         brk_del(igadget-GBRKDEL01+1)
 	         hidegadget(igadget,KHIDE)
 	         hidegadget(igadget-GBRKDEL01+GBRKDSB01,KHIDE)
 	         hidegadget(igadget-GBRKDEL01+GBRKLINE01,KHIDE)
-	         If brknb=0 Then 
-	            hidewindow(hbrkbx,1) ''no more breakpoint so close the window 
+	         If brknb=0 Then
+	            hidewindow(hbrkbx,1) ''no more breakpoint so close the window
 	         EndIf
 
 		Case GBRKLINE01 to GBRKLINE10 ''click on text
 			source_change(brkol(igadget-GBRKLINE01+1).isrc)
 	        line_display(brkol(igadget-GBRKLINE01+1).nline-1)
-	        
+
 		Case GBRKDSB01 to GBRKDSB10 ''enable/disable
-	      	If brkol(igadget-GBRKDSB01+1).typ>2 Then 
+	      	If brkol(igadget-GBRKDSB01+1).typ>2 Then
 	      		brkol(igadget-GBRKDSB01+1).typ-=2
 	      		SetGadgetText(igadget,"DSB")
 	      	Else
@@ -403,25 +403,25 @@ private sub gadget_action(igadget as LONG)
 	      		SetGadgetText(igadget,"ENB")
 	      	EndIf
 	      	brk_marker(igadget-GBRKDSB01+1)
-	      	
+
 	   	Case GBRKDELALL    ''Delete all
 	        	For ibrk As Byte=1 To brknb
 					brk_del(ibrk)
 	        	Next
 	        	hidewindow(hbrkbx,1)
-	        	
+
 	   	Case GBRKDISABLE ''disable all
 	      	For ibrk As integer =1 To brknb
-				If brkol(ibrk).typ<3 Then 
+				If brkol(ibrk).typ<3 Then
 					brkol(ibrk).typ+=2
 					brk_marker(ibrk)
 					SetGadgetText(GBRKDSB01+ibrk-1,"ENB")
 				EndIf
 	      	Next
-	      	
-	   	Case GBRKENABLE ''enable all	
+
+	   	Case GBRKENABLE ''enable all
 			For ibrk As integer =1 To brknb
-				If brkol(ibrk).typ>2 Then 
+				If brkol(ibrk).typ>2 Then
 					brkol(ibrk).typ-=2
 					brk_marker(ibrk)
 					SetGadgetText(GBRKDSB01+ibrk-1,"DSB")
@@ -430,15 +430,15 @@ private sub gadget_action(igadget as LONG)
 		'' edit var or mem
 		case GEDTOK
 			edit_update()
-			
+
 		case GEDTCANCEL
 			hidewindow(heditbx,KHIDE)
 		case GEDTPTDEDT
 			edit_fill("Pointed value="+edit.ptdval,edit.ptdadr,edit.typ,0)
-			
+
 		case GEDTVALUE
 			''do nothing
-			
+
 		case GSCINTILLA
 
 		case GNOLOG
@@ -449,26 +449,26 @@ private sub gadget_action(igadget as LONG)
 			''todo update log
 		case GBOTHLOG
 			''todo update log
-			
+
 		case GVERBOSE
 			flagverbose=1-flagverbose
 			var_sh()
 			proc_sh()
-		
+
 		case GAUTODELAY
 
 		case GCMDLPARAM ''data used when closing settings box
-		
+
 		case GINPUTVALOK
 			input_check()
-			
+
 		case GINPUTVALCANCEL
 			inputval=""
 			hidewindow(hinputbx,KHIDE)
-		
+
 		case GIDXAPPLY
 			index_apply()
-			
+
 		case GIDXINC
 			For k As Integer = indexdata.nbdim-1 To 0 Step -1
 				If indexdata.vubound(k)<>vrr(indexdata.indexvar).ix(k) Then
@@ -484,7 +484,7 @@ private sub gadget_action(igadget as LONG)
 	     		setGadgetState(GIDXUP1+k,indexdata.vlbound(k))
 	     	Next
 	     	index_apply()
-	     	
+
 	    case GIDXDEC
 			For k As Integer = indexdata.nbdim-1 To 0 Step -1
 				If indexdata.vubound(k)<>vrr(indexdata.indexvar).ix(k) Then
@@ -500,21 +500,21 @@ private sub gadget_action(igadget as LONG)
 	     		setGadgetState(GIDXUP1+k,indexdata.vlbound(k))
 	     	Next
 	     	index_apply()
-	     	
+
 	    case GIDXCOLP
 			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)<indexdata.vubound(indexdata.nbdim-1) Then
 				vrr(indexdata.indexvar).ix(indexdata.nbdim-1)+=1
 				setGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
 				index_apply()
 			EndIf
-	     	
+
 		Case GIDXCOLL
 			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)>indexdata.vlbound(indexdata.nbdim-1) Then
 				vrr(indexdata.indexvar).ix(indexdata.nbdim-1)-=1
 				SetGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
 				index_fullupdate()
-			EndIf	
-	     	
+			EndIf
+
 		Case GIDXBLKP
 			vrr(indexdata.indexvar).ix(indexdata.nbdim-1)+=KBLOCKIDX
 			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)>indexdata.vubound(indexdata.nbdim-1) Then
@@ -522,7 +522,7 @@ private sub gadget_action(igadget as LONG)
 			EndIf
 			SetGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
 			index_fullupdate()
-	
+
 		Case GIDXBLKL
 			vrr(indexdata.indexvar).ix(indexdata.nbdim-1)-=KBLOCKIDX
 			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)<indexdata.vlbound(indexdata.nbdim-1) Then
@@ -530,7 +530,7 @@ private sub gadget_action(igadget as LONG)
 			EndIf
 			SetGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
 			index_fullupdate()
-			   	
+
 		Case GIDXROWP
 			If indexdata.nbdim>1 Then decal=2 Else decal=1
 			If vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)<indexdata.vubound(indexdata.nbdim-decal) Then
@@ -538,7 +538,7 @@ private sub gadget_action(igadget as LONG)
 				SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
 				index_fullupdate()
 			EndIf
-		
+
 		Case GIDXROWL
 			If indexdata.nbdim>1 Then decal=2 Else decal=1
 			If vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)>indexdata.vlbound(indexdata.nbdim-decal) Then
@@ -546,7 +546,7 @@ private sub gadget_action(igadget as LONG)
 				SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
 				index_fullupdate()
 			EndIf
-			
+
 		Case GIDXPAGEP
 			If indexdata.nbdim>1 Then decal=2 Else decal=1
 			vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)+=KBLOCKIDX
@@ -555,7 +555,7 @@ private sub gadget_action(igadget as LONG)
 			EndIf
 			SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
 			index_fullupdate()
-		
+
 		Case GIDXPAGEL
 			If indexdata.nbdim>1 Then decal=2 Else decal=1
 			vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)-=KBLOCKIDX
@@ -564,28 +564,28 @@ private sub gadget_action(igadget as LONG)
 			EndIf
 			SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
 			index_fullupdate()
-				
+
 		Case GIDXAUTO
 			if getgadgetstate(GIDXAUTO)=1 then
 				indexdata.autoupd=TRUE
-			Else 
+			Else
 				indexdata.autoupd=FALSE
 			end if
-		
+
 	   Case GIDXWIDTH
 			var wd =getgadgetstate(GIDXWIDTH)
 			for icol as integer =1 to iif(indexdata.vubound(1)-vrr(indexdata.indexvar).ix(1)>29,30,indexdata.vubound(1)-vrr(indexdata.indexvar).ix(1)+1)
 				SetColumnWidthListView(GIDXTABLE,icol,wd)
 			next
 
-			
+
 		case else
         	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))
 	''others
 	End Select
 end sub
 '==============================================
-'' 
+''
 '==============================================
 private sub select_file()
 	#Ifdef __fb_win32__
@@ -674,7 +674,7 @@ private sub button_action(button as integer)
 				but_enable()
 				thread_resume()
 			End If
-			
+
 		case IDBUTTOOL
 			If Dir(ExePath+"\dbg_log_file.txt")="" Then 'the file can be deleted by user outside
 				SetStateMenu(HMenutools,MNSHWLOG,1)
@@ -684,19 +684,19 @@ private sub button_action(button as integer)
 				SetStateMenu(HMenutools,MNDELLOG,0)
 			End If
             DisplayPopupMenu(HMenutools, GlobalMouseX,GlobalMouseY)
-			
+
 		case IDBUTFILE
 			select_file()
-			
+
 		case IDBUTRERUN ''restart current exe
 			restart()
-			
+
 		case IDBUTATTCH
 			messbox("feature not implemented","button = IDBUTATTACH")
-			
+
 		case IDBUTKILL
 			kill_process("Terminate immediatly no saved data, other option Release")
-			
+
 		case IDBUTLASTEXE
 			var HMenuexe=CreatePopMenu()
 			For iitem As integer =0 To 9

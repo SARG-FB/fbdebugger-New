@@ -166,7 +166,7 @@ private sub parse_retval(prcnb As Integer,gv2 As String)
 		p=0
 	End If
 	c=Val(Mid(gv2,e+1))
-	'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used 
+	'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used
 	'done also with simple and array var
 	'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
 	If c=15 Then c=16
@@ -182,7 +182,7 @@ End sub
 '------------------
 '' parse scopes
 '------------------
-private function parse_scope(gv As Byte, ad As UInteger,dlldelta As Integer=0) As Integer 
+private function parse_scope(gv As Byte, ad As UInteger,dlldelta As Integer=0) As Integer
 	Select Case gv
 		Case Asc("S"),Asc("G")     'shared/common
 			If gv=Asc("G") Then If Common_exist(ad) Then Return 0 'to indicate that no needed to continue
@@ -227,7 +227,7 @@ private sub parse_var2(gv As String,f As Byte)
 Dim p As Integer=1,c As Integer,e As Integer,gv2 As String,pp As Integer
 If InStr(gv,"=")=0 Then
 	c=Val(Mid(gv,p,9))
-	'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used 
+	'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used
 	'done also with array just below and param
 	'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
 	If c=15 Then c=16
@@ -270,7 +270,7 @@ Else
 	End If
 	c=Val(Mid(gv2,e+1))
 
-	'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used 
+	'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used
 	'done also with simple var and param
 	'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
 	If c=15 Then c=16
@@ -596,130 +596,130 @@ Select Case  op
 	case "aS"
     Function = "Let"
 	Case "pl"
-    Function = "+" 
+    Function = "+"
 	Case "pL"
     Function = "+="
-Case "mi"        
-    Function = "-"                
-Case "mI"                
-    Function = "-="                
-Case "ml"                
-    Function = "*"                
-Case "mL"                
-    Function = "*="                
+Case "mi"
+    Function = "-"
+Case "mI"
+    Function = "-="
+Case "ml"
+    Function = "*"
+Case "mL"
+    Function = "*="
 Case "dv"
-    Function = "/"                
+    Function = "/"
 Case "dV"
-    Function = "/="                
-Case "Dv"        
-    Function = "\"                
-Case "DV"        
-    Function = "\="                
-Case "rm"                
-    Function = "mod"                
-Case "rM"        
-    Function = "mod="                
-Case "an"                
-    Function = "and"                
-Case "aN"                
-    Function = "and="                
-Case "or"                
-    Function = "or"                
-Case "oR"        
-    Function = "or="                
-Case "aa"                 
-    Function = "andalso"             
-Case "aA"        
-    Function = "andalso="                
-Case "oe"               
-    Function = "orelse"               
-Case "oE"       
-    Function = "orelse="              
-Case "eo"                
-    Function = "xor"                
-Case "eO"                 
-    Function = "xor="              
-Case "ev"                 
-    Function = "eqv"                
-Case "eV"                 
-    Function = "eqv="                
-Case "im"                 
-    Function = "imp"               
-Case "iM"               
-    Function = "imp="               
-Case "ls"                
-    Function = "shl"               
-Case "lS"                
-    Function = "shl="                
-Case "rs"                 
-    Function = "shr"               
-	Case "rS"                 
-    Function = "shr="             
-Case "po"                 
-    Function = "^"               
-Case "pO"        
-    Function = "^="                
-Case "ct"               
-    Function = "&"                
-Case "cT"         
-    Function = "&="                
-	Case "eq" 
-    Function = "eq"                
-Case "gt"                
-    Function = "gt"                
-Case "lt"                
-    Function = "lt"                
-Case "ne"                
-    Function = "ne"                
-Case "ge"                
-    Function = "ge"                
-Case "le"                
-    Function = "le"                
-Case "nt"                
-    Function = "not"                
-	Case "ng"                
-    Function = "neg"                
-	Case"ps"                
-    Function = "ps"                
-	Case "ab"                
-    Function = "ab"                
-	Case "fx"                
-    Function = "fix"                
-Case "fc"                 
-    Function = "frac"                
-Case "sg"                
-    Function = "sgn"                
-Case "fl"                
-    Function = "floor"                
+    Function = "/="
+Case "Dv"
+    Function = "\"
+Case "DV"
+    Function = "\="
+Case "rm"
+    Function = "mod"
+Case "rM"
+    Function = "mod="
+Case "an"
+    Function = "and"
+Case "aN"
+    Function = "and="
+Case "or"
+    Function = "or"
+Case "oR"
+    Function = "or="
+Case "aa"
+    Function = "andalso"
+Case "aA"
+    Function = "andalso="
+Case "oe"
+    Function = "orelse"
+Case "oE"
+    Function = "orelse="
+Case "eo"
+    Function = "xor"
+Case "eO"
+    Function = "xor="
+Case "ev"
+    Function = "eqv"
+Case "eV"
+    Function = "eqv="
+Case "im"
+    Function = "imp"
+Case "iM"
+    Function = "imp="
+Case "ls"
+    Function = "shl"
+Case "lS"
+    Function = "shl="
+Case "rs"
+    Function = "shr"
+	Case "rS"
+    Function = "shr="
+Case "po"
+    Function = "^"
+Case "pO"
+    Function = "^="
+Case "ct"
+    Function = "&"
+Case "cT"
+    Function = "&="
+	Case "eq"
+    Function = "eq"
+Case "gt"
+    Function = "gt"
+Case "lt"
+    Function = "lt"
+Case "ne"
+    Function = "ne"
+Case "ge"
+    Function = "ge"
+Case "le"
+    Function = "le"
+Case "nt"
+    Function = "not"
+	Case "ng"
+    Function = "neg"
+	Case"ps"
+    Function = "ps"
+	Case "ab"
+    Function = "ab"
+	Case "fx"
+    Function = "fix"
+Case "fc"
+    Function = "frac"
+Case "sg"
+    Function = "sgn"
+Case "fl"
+    Function = "floor"
 Case "nw"
-    Function = "new"                
+    Function = "new"
 Case "na"
-    Function = "new []?"                
-Case "dl"        
+    Function = "new []?"
+Case "dl"
     Function = "del"
 Case "da"
-    Function = "del[]?"                
-Case "de"                
-    Function = "."                
-Case "pt"                
-    Function = "->"                
-Case "ad"                
-    Function = "@"                
-Case "fR"                
-    Function = "for"                
-Case "sT"                
-    Function = "step"                
-Case "nX"                
-    Function = "next"                
+    Function = "del[]?"
+Case "de"
+    Function = "."
+Case "pt"
+    Function = "->"
+Case "ad"
+    Function = "@"
+Case "fR"
+    Function = "for"
+Case "sT"
+    Function = "step"
+Case "nX"
+    Function = "next"
 	case "cv"
    	Function = "Cast"
-	Case "C1"                        
+	Case "C1"
 		Function = "(Constructor)"
-	Case "D1"                        
-		Function = "(Destructor)"          
-Case Else                        
-    Function = "Unknow"                
-End Select   
+	Case "D1"
+		Function = "(Destructor)"
+Case Else
+    Function = "Unknow"
+End Select
 End function
 '--------------------
 '' parse procedure
@@ -759,19 +759,19 @@ print "fullname=";fullname
 					strg2+="."+strg3
          	EndIf
       		namecpt+=1
-      		names(namecpt)=mainname           	
+      		names(namecpt)=mainname
 				p+=1+lg'next name
 			Else 'operator
 				strg2+=" "+parse_op(Mid(strg,p,2))+" " 'extract name of operator
 				p+=2
 				mainname=""
-				While Strg[p-1]<>Asc("E") 'more data eg FBSTRING, 
+				While Strg[p-1]<>Asc("E") 'more data eg FBSTRING,
 					lg=ValInt(Mid(strg,p,2))
 					If lg Then
-						If lg>9 Then p+=1 
+						If lg>9 Then p+=1
 						strg3=Mid(strg,p+1,lg) 'extract name and keep it for later
 						If strg3="FBSTRING" Then strg3="string"
-            		If mainname="" Then 
+            		If mainname="" Then
             			mainname=strg3
             			strg2+=strg3
             		Else
@@ -786,7 +786,7 @@ print "fullname=";fullname
 						p+=1
 					EndIf
 				Wend
-				
+
 			EndIf
 		Wend
 	Else
@@ -800,19 +800,19 @@ print "fullname=";fullname
 		   p+=2
 	   End If
 	EndIf
-	
+
 	If strg[p-1]=Asc("E") Then p+=1 'skip "E"
-	
+
 	'parameters
 	mainname=""
 	strg2+="("
 	While p<=Len(strg)
 		lg=ValInt(Mid(strg,p,2))
 		If lg Then
-			If lg>9 Then p+=1 
+			If lg>9 Then p+=1
 			strg3=Mid(strg,p+1,lg) 'extract name and keep it for later
 			If strg3="FBSTRING" Then strg3="String"
-            if mainname="" Then 
+            if mainname="" Then
        			mainname=strg3
        			strg2+=strg3
        		Else
@@ -848,7 +848,7 @@ print "fullname=";fullname
 				strg3=names(strg[p-1]-48)
 				p+=2
 			endif
-	        if mainname="" Then 
+	        if mainname="" Then
        			strg2+=strg3
 	        else
        			strg2+="."+strg3
@@ -937,13 +937,13 @@ private sub dbg_line(linenum as integer,ofset as integer)
 			rline(linenb).ad=ofset+proc(procnb).db
 			rLine(linenb).nu=linenum
 			rLine(linenb).px=procnb
-			
-			''to be checked maybe fixed so useless 
+
+			''to be checked maybe fixed so useless
 			rline(linenb).sx=sourceix ''for line in include and not in a proc
-			
+
 			''to be checked if still usefull
 			If ofset<>0 Then lastline=linenum ''first proc line always coded 1 but ad=0
-			
+
 			print "linenum=";linenum;" adress=";rline(linenb).ad
 		'else
 			'print "linenum=";linenum;" not>lastline=";lastline
@@ -969,31 +969,31 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 				print "main found"
 		 	endif
 			procnodll=true
-	
+
 			procnb+=1
 			proc(procnb).sr=sourceix
 			proc(procnb).nm=procname
 			proc(procnb).db=adr'+exebase-baseimg 'only when <> exebase and baseimg (DLL)
 			''to be added
-			parse_retval(procnb,Mid(strg,InStr(strg,":")+2,99))'return value .rv + pointer .pt 
+			parse_retval(procnb,Mid(strg,InStr(strg,":")+2,99))'return value .rv + pointer .pt
 			proc(procnb).st=1 'state no checked
 			proc(procnb).nu=linenum
 			lastline=0
 			proc(procnb+1).vr=proc(procnb).vr 'in case there is not param nor local var
 			proc(procnb).rvadr=0 'for now only used in gcc case 19/08/2015
-			
+
 			print "proc =";proc(procnb).nm;" in source=";source(proc(procnb).sr)
 		end if
 	else
 		proc(procnb).ed=proc(procnb).db+adr
 		print "end of proc=";proc(procnb).ed
-		
+
 		if proc(procnb).fn>procfn Then procfn=proc(procnb).fn+1 ' just to be sure to be above see gest_brk
-		
+
 		''todo be checked ??????
 		'for proc added by fbc (constructor, operator, ...) ''adding >2 to avoid case only one line ...
 		If proc(procnb).nu=rline(linenb).nu AndAlso linenb>2 then
-			proc(procnb).nu=-1	               	
+			proc(procnb).nu=-1
            	'For i As Integer =1 To linenb
            		'dbg_prt2("Proc db/fn inside for stab="+Hex(proc(procnb).db)+" "+Hex(proc(procnb).fn))
            		'dbg_prt2("Line Adr="+Hex(rline(i).ad)+" "+Str(rline(i).ad))
@@ -1004,7 +1004,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
            		'EndIf
            '	next
 		end if
-		
+
         ''removing {modlevel empty just prolog and epilog
         if proc(procnb).nm="{MODLEVEL}" And proc(procnb).fn-proc(procnb).db <8 Then
              ''removing lines
@@ -1019,12 +1019,12 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
             print "remove modlevel in"+source(proc(procnb).sr)
             procnb-=1 ''removing proc
         end if
-		
+
 	end if
 end sub
 '' ------------------------------------
 '' Handling procedure epilog code=224
-'' ------------------------------------	
+'' ------------------------------------
 private sub dbg_epilog(ofset as integer)
 	proc(procnb).fn=proc(procnb).db+ofset
 	print "epilog of proc=";proc(procnb).fn
@@ -1039,21 +1039,21 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 	ofstr+=1 ''1 based
 	dim as longint buf(1) ''16 bytes
 
-	
+
 	for ibuf as integer =1 to size/16
 		get #1,ofset+1,buf()
 		print ibuf;" "; hex(buf(0));" --> ";
 		stab.full=buf(0)
 		print "C="+str(stab.cod)+" D="+str(stab.desc)+" O="+str(stab.offst);" ";
-		
+
 		strg=space(400)
 		get #1,ofstr+stab.offst,strg
 		strg=""+*strptr(strg)
 		print strg;" ";
-		
+
 		value=buf(1)
 		print "D="+str(value)+" H="+hex(value)
-		
+
 		select case as const stab.cod
 			case 100 '' file name
 				dbg_file(strg,value)
@@ -1096,7 +1096,7 @@ private sub list_all
 	for iline as integer = 1 to linenb
 		print "iline=";iline;" proc=";proc(rline(iline).px).nm;" ";rline(iline).nu;" ";hex(rline(iline).ad)
 	next
-	print 
+	print
 	print "types ----------------------------------------------------------- ";udtmax
 	for iudt as integer=1 to udtmax
 		if udt(iudt).nm<>"" then
@@ -1127,45 +1127,45 @@ private function elf_extract(filename as string) as integer
 	dim lgf As Integer,ulgt as integer,ulg as ulong,usht as ushort,ofset as ulongint,ubyt as ubyte
 	dim as integer start_section,str_section,sect_num,walk_section,dbg_dat_of,dbg_dat_size,dbg_str_of
 	dim as string sect_name=space(40)
-	
+
 	open filename for binary as #1
 	lgf=lof(1)
 	'print "lenght=";lgf
-	
+
 	ofset=of_entry
 	get #1,ofset+1,ulgt
 	'print "entry=";hex(ulgt)
-	
+
 	ofset=of_section
 	get #1,ofset+1,ulgt
 	'print "start section header=";hex(ulgt)
 	start_section=ulgt
-	
+
 	ofset=of_section_size
 	get #1,ofset+1,usht
 	'print "section size=";usht
-	
-	
+
+
 	ofset=of_section_num
 	get #1,ofset+1,usht
 	'print "section number=";usht
 	sect_num=usht
-	
+
 	ofset=of_section_str
 	get #1,ofset+1,usht
 	'print "section string=";usht
-	
+
 	ofset=start_section+(usht)*&h40+&h18 '(&h28 si 32bit)
 	get #1,ofset+1,ulgt
 	'print "start offset string=";hex(ulgt)
 	str_section=ulgt
-	
+
 	''sections
-	
+
 	walk_section=start_section
 	for isec as integer = 1 to sect_num
 		'print "section=";isec;" ";
-		
+
 		ofset=walk_section
 		get #1,ofset+1,ulg ''offset in str table
 		'print "offset string=";ulg;" ";
@@ -1174,7 +1174,7 @@ private function elf_extract(filename as string) as integer
 		get #1,ofset+1,sect_name
 		sect_name=""+*strptr(sect_name)
 		'print "name=";sect_name
-	
+
 		ofset=walk_section+of_offset_infile
 		get #1,ofset+1,ulgt
 		'print "offset in file= ";hex(ulgt);" ";
@@ -1184,18 +1184,18 @@ private function elf_extract(filename as string) as integer
 			dbg_str_of=ulgt
 			exit for ''not anymore section to retrieve
 		end if
-		
+
 		ofset=walk_section+of_size_infile
 		get #1,ofset+1,ulgt
 		'print "size= ";hex(ulgt);" ";ulgt
 		if sect_name=".dbgdat" then
 			dbg_dat_size=ulgt
 		endif
-	
+
 		walk_section+=sect_size
 	next
 	load_dat(dbg_dat_of,dbg_dat_size,dbg_str_of)
-	
+
 	close #1
 	return -1
 end function
@@ -1210,14 +1210,14 @@ end function
 	'Dim As Byte procfg,flag=0,procnodll=TRUE,flagstabd=TRUE 'flags  (flagstabd to skip stabd 68,0,1)
 	'Dim As Integer n=sourcenb+1,temp
 	'Dim procnmt As String
-	
+
 	dim As Integer pe,flagdll
 	dim as integer secnb,n=sourcenb+1
 	dim as string *8 secnm
 	Dim As Integer basestab=0,basestabs=0,baseimg,sizemax,sizestabs
 	Dim As udtstab recupstab
 	Dim recup As ZString *STAB_SZ_MAX
-	
+
 	flagdll=dllflag
 	vrbgblprev=vrbgbl
 
@@ -1244,7 +1244,7 @@ end function
 		ReadProcessMemory(dbghand,Cast(LPCVOID,pe),@secnm,8,0) 'read 8 bytes max name size
 	#Ifdef __FB_64BIT__
 		If secnm=".dbgdat" Then
-	#else	
+	#else
 		If secnm=".stab" Then
 	#endif
 			ReadProcessMemory(dbghand,Cast(LPCVOID,pe+12),@basestab,4,0)
@@ -1256,7 +1256,7 @@ end function
 			ReadProcessMemory(dbghand,Cast(LPCVOID,pe+12),@basestabs,4,0)
 			ReadProcessMemory(dbghand,Cast(LPCVOID,pe+8),@sizestabs,4,0)
 		EndIf
-		
+
 		pe+=40
 	Next
 	If basestab=0 OrElse basestabs=0 Then
@@ -1275,7 +1275,7 @@ end function
 				#EndIf
 				messbox("Loading stabs","ERROR When reading memory"):Exit Sub
 			End If
-		   
+
 			#Ifdef fulldbg_prt
 			dbg_prt ("stabs="+Str(recupstab.stabs)+" "+Str(recupstab.code)+" "+Str(recupstab.nline)+" "+Str(recupstab.ad))
 			#EndIf
@@ -1287,7 +1287,7 @@ end function
 			Else
 				sizemax=sizestabs-recupstab.stabs
 			EndIf
-		
+
 			If ReadProcessMemory(dbghand,Cast(LPCVOID,recupstab.stabs+basestabs),@recup,sizemax,0)=0 Then
 				messbox("Loading stabs","ERROR When reading memory : "+Str(GetLastError)+Chr(10)+"Exit loading"):Exit Sub
 			End If
@@ -1320,7 +1320,7 @@ end function
 			basestab+=sizeof(udtstab)
 		Wend
 	EndIf
-	
+
 	''end of extraction ''todo add that for linux when the exe is running
 	globals_load()
 
@@ -1334,9 +1334,9 @@ end function
 	'activate buttons/menu after real start
 	but_enable()
 	menu_enable()
-	'apply previous breakpoints	
+	'apply previous breakpoints
 	brk_apply()
-	
+
 end sub
 
 

@@ -10,7 +10,7 @@ private function dll_name(FileHandle As HANDLE,t As Integer =1 )As String ' t=1 
    Dim As HANDLE hfileMap
    Dim As Long fileSizeHi,fileSizeLo,p
 	Dim As Any Ptr pmem
-	Dim As String tstring 
+	Dim As String tstring
    fileSizeLo = GetFileSize(FileHandle, @fileSizeHi)
    If fileSizeLo = 0 And fileSizeHi=0 Then Return "Empty file." ' cannot map an 0 byte file
    hfileMap = CreateFileMapping(FileHandle,0,PAGE_READONLY, 0, 1, NULL)
@@ -35,7 +35,7 @@ private function dll_name(FileHandle As HANDLE,t As Integer =1 )As String ' t=1 
 						EndIf
 					EndIf
 					p+=4'next letter skip ":\<null>"
-				Wend 
+				Wend
          Else
             Return "Empty filename."
          EndIf
@@ -46,7 +46,7 @@ End Function
 '===============================
 '' used with dbg_prt
 '================================
-private function CtrlHandler(fdwCtrlType As Integer) As Integer  
+private function CtrlHandler(fdwCtrlType As Integer) As Integer
     'PostMessage(windmain,WM_CLOSE,0,0)
 	Return TRUE
 End Function
@@ -59,15 +59,15 @@ private sub output_wds(t As String)
 	Static As Integer filenumber
 	Dim cpt As long,libel As String
 	Dim As COORD maxcoord
-	Dim As CONSOLE_SCREEN_BUFFER_INFO csbi 
+	Dim As CONSOLE_SCREEN_BUFFER_INFO csbi
 	Dim As SMALL_RECT disparea=Type(0,0,0,0)
 	Dim As Short maxcoordysav
-	If t=" $$$$___CLOSE ALL___$$$$ " Then 
+	If t=" $$$$___CLOSE ALL___$$$$ " Then
 		If scrnnumber<>0 And (flaglog And 1)=0 Then FreeConsole():scrnnumber=0
 		If filenumber And (flaglog And 2)=0 Then Close filenumber:filenumber=0
 		Exit Sub
 	EndIf
-	
+
 	If scrnnumber=0 And (flaglog And 1) Then
 		libel=Chr(13)+Chr(10)+Date+" "+Time+Chr(13)+Chr(10)
 		AllocConsole()
@@ -76,33 +76,33 @@ private sub output_wds(t As String)
 		maxcoord=GetLargestConsoleWindowSize(scrnnumber) 'max values displayed on screen
 		maxcoordysav=maxcoord.y
 		GetConsoleScreenBufferInfo(scrnnumber,@csbi) 'max values using buffer/screen/font
-		
+
 		'change buffer size, only width
 		maxcoord.x*=.5 'reducing by 50% of max possible
 		maxcoord.y=csbi.dwsize.y 'no change
 		SetConsoleScreenBufferSize(scrnnumber,maxcoord)
-		
+
 		'change display,
 		disparea.left=0
 		disparea.top=0
 		disparea.right=maxcoord.x-1
 		disparea.bottom=maxcoordysav*.8 '80% of height max possible
 		SetConsoleWindowInfo(scrnnumber,TRUE,@disparea)
-		
+
 		'align window on the left/top corner of screen
 		SetWindowPos(GetConsoleWindow, 0, 10,10, 0, 0, SWP_NOSIZE Or SWP_NOZORDER)
-		
+
 		SetConsoleCtrlHandler(Cast(PHANDLER_ROUTINE,@CtrlHandler),TRUE)
 		WriteConsole(scrnnumber, StrPtr(libel),Len(libel),@cpt,0)
 	EndIf
-	
+
 	If filenumber=0 And (flaglog And 2) Then
 		filenumber=FreeFile:Open ExePath+"\dbg_log_file.txt"  For Append As filenumber
 		Print #filenumber,Date,Time
 	EndIf
-	
+
 	If (flaglog And 1) Then libel=t+Chr(13)+Chr(10):WriteConsole(scrnnumber, StrPtr(libel),Len(libel),@cpt,0)
-	If (flaglog And 2) Then Print # filenumber,t   
+	If (flaglog And 2) Then Print # filenumber,t
 
 End Sub
 '=======================================================================
@@ -169,7 +169,7 @@ End Function
 '======================================================
 private sub debugstring_read(debugev As debug_event)
 	Dim As WString *400 wstrg
-	Dim As ZString *400 sstrg 
+	Dim As ZString *400 sstrg
 	Dim leng As Integer
 	If debugev.u.debugstring.nDebugStringLength<400 Then
 		leng=debugev.u.debugstring.nDebugStringLength
@@ -177,7 +177,7 @@ private sub debugstring_read(debugev As debug_event)
 		leng=400
 	endif
 
-	If debugev.u.debugstring.fUnicode Then	
+	If debugev.u.debugstring.fUnicode Then
 		ReadProcessMemory(dbghand,Cast(LPCVOID,debugev.u.debugstring.lpDebugStringData),_
 		@wstrg,leng,0)
 		messagebox(0,wstrg,WStr("debug wstring"),MB_OK or MB_SYSTEMMODAL)
@@ -190,36 +190,36 @@ private sub debugstring_read(debugev As debug_event)
 End Sub
 '========================================================
 private function wait_debug() As Integer
-Dim DebugEv As DEBUG_EVENT    ' debugging event information  
+Dim DebugEv As DEBUG_EVENT    ' debugging event information
 Dim dwContinueStatus As Long =DBG_CONTINUE ' exception continuation
 Dim recup As String *300,libel As String
 Dim erreur As Long,cpt As Integer
-Dim As Integer firstchance,flagsecond 
+Dim As Integer firstchance,flagsecond
 Dim As UInteger adr
 Dim As String Accviolstr(1)={"TRYING TO READ","TRYING TO WRITE"}
-' Wait for a debugging event to occur. The second parameter indicates 
-' that the function does not return until a debugging event occurs. 
+' Wait for a debugging event to occur. The second parameter indicates
+' that the function does not return until a debugging event occurs.
 If hattach Then setevent(hattach):hattach=0
 While 1
 	If WaitForDebugEvent(@DebugEv, infinite)=0 Then 'INFINITE ou null ou x
 		erreur=GetLastError
 		ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-		Exit Function  
+		Exit Function
 	End If
-' Process the debugging event code. 
+' Process the debugging event code.
 'dbg_prt("exception code "+Str(DebugEv.dwDebugEventCode))
-	Select Case (DebugEv.dwDebugEventCode) 
-		
+	Select Case (DebugEv.dwDebugEventCode)
+
 		Case EXCEPTION_DEBUG_EVENT
 		'dbg_prt("exception code "+Hex(DebugEv.u.Exception.ExceptionRecord.ExceptionCode))'+DebugEv.u.Exception.dwfirstchance+" adr : "+DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
-		  	firstchance=DebugEv.u.Exception.dwfirstchance 
+		  	firstchance=DebugEv.u.Exception.dwfirstchance
         adr=Cast(UInteger,DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
         'dbg_prt("firstchance="+Str(firstchance))'25/01/2015
-	      If firstchance=0 Then 'second try 
-	         If flagsecond=0 Then 
-               flagsecond=1 
-               firstchance=1               
-               For i As Integer =0 To threadnb 
+	      If firstchance=0 Then 'second try
+	         If flagsecond=0 Then
+               flagsecond=1
+               firstchance=1
+               For i As Integer =0 To threadnb
   					If DebugEv.dwThreadId=thread(i).id Then
   						threadcontext=thread(i).hd:threadhs=threadcontext
                   threadcur=i
@@ -235,11 +235,11 @@ While 1
 	         EndIf
 	      Else
 	        	flagsecond=0
-	      End If 
-		'dbg_prt("CODE "+Str(DebugEv.u.Exception.ExceptionRecord.ExceptionCode)) 
+	      End If
+		'dbg_prt("CODE "+Str(DebugEv.u.Exception.ExceptionRecord.ExceptionCode))
 			If firstchance Then 'if =0 second try so no compute code
 				'dbg_prt("before select case with breakpoint")
-				Select Case (DebugEv.u.Exception.ExceptionRecord.ExceptionCode) 
+				Select Case (DebugEv.u.Exception.ExceptionRecord.ExceptionCode)
 					Case EXCEPTION_BREAKPOINT
 						'dbg_prt("CODE 1")
 						For i As Integer =0 To threadnb 'if msg from thread then flag off
@@ -250,11 +250,11 @@ While 1
 			               		'dbg_prt("found thread="+str(thread(i).id))
 								Exit For
 							End If
-						Next    
+						Next
 						''dbg_prt("CODE 1"+hex(adr))
 						gest_brk(adr)
 			      	ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-			      	
+
 					case Else ' EXCEPTION
 					dbg_prt("Exception in thread="+str(DebugEv.dwThreadId))
 	               With DebugEv.u.Exception.ExceptionRecord
@@ -277,27 +277,27 @@ While 1
 	                        		threadcur=i
 	        						Exit For
 	        					End If
-	        					
-	                	Next  
-	                	
+
+	                	Next
+
 	                	'07/10/2014
    	  					libel=excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode)+Chr(13)+Chr(10) 'need chr(10) to dbg_prt otherwise bad print
-   	  					If DebugEv.u.Exception.ExceptionRecord.ExceptionCode=EXCEPTION_ACCESS_VIOLATION Then 
+   	  					If DebugEv.u.Exception.ExceptionRecord.ExceptionCode=EXCEPTION_ACCESS_VIOLATION Then
 								libel+=Accviolstr(.ExceptionInformation(0))+" AT ADR (dec/hex) : "+Str(.ExceptionInformation(1))+" / "+Hex(.ExceptionInformation(1))+Chr(13)+Chr(10)
    	  					EndIf
-							
-							If flagverbose Then 
+
+							If flagverbose Then
 								libel+=Chr(13)+Chr(10)+"Thread ID "+Str(DebugEv.dwThreadId)+" adr : "+Str(adr)+" / "+Hex(adr)+Chr(13)+Chr(10)
 							EndIf
-								
+
 							#Ifdef fulldbg_prt
 								dbg_prt (libel)
 								show_context
 							#EndIf
-							
+
 							'If runtype<>RTFRUN And runtype<>RTFREE Then
-							If runtype=RTFRUN OrElse runtype=RTFREE Then	
-								runtype=RTFRUN								
+							If runtype=RTFRUN OrElse runtype=RTFREE Then
+								runtype=RTFRUN
 								For i As Integer =1 To linenb
 									'WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)'restore CC
 									If rline(i).ad<=adr AndAlso rline(i+1).ad>adr Then
@@ -307,16 +307,16 @@ While 1
 								Next
 							Else
 								runtype=RTSTEP
-							End If	
+							End If
 							If DebugEv.dwDebugEventCode Then '19/05/2014
 								stopcode=CSACCVIOL
 							Else
 								stopcode=CSEXCEP 'excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode)
 							EndIf
-    						gest_brk(rline(thread(threadcur).sv).ad) 
-								
+    						gest_brk(rline(thread(threadcur).sv).ad)
+
 							source_change(rline(thread(threadcur).sv).sx) 'display source
-							line_display(rline(thread(threadcur).sv).nu-1)             
+							line_display(rline(thread(threadcur).sv).nu-1)
 							recup=line_text(rline(thread(threadcur).sv).nu-1)
 							'case error inside proc initialisation (e.g. stack over flow)
 							If adr>rline(thread(threadcur).sv).ad And _
@@ -327,7 +327,7 @@ While 1
 							Else
 								libel+="Possible error on this line but not SURE"+Chr(13)+Chr(13)
 							End If
-							
+
 							libel+="File  : "+source(rline(thread(threadcur).sv).sx)+Chr(13)+ _
 							"Proc  : "+proc(rline(thread(threadcur).sv).px).nm+Chr(13)+ _
 							"Line  : "+Str(rline(thread(threadcur).sv).nu)+" (selected and put in red)"+Chr(13)+ _
@@ -346,16 +346,16 @@ While 1
 	      			'#EndIf
 	               'ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, DBG_EXCEPTION_NOT_HANDLED)
 				End Select
-			Else'second chance 
+			Else'second chance
 				dbg_prt("second chance")
 	         	ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, DBG_EXCEPTION_NOT_HANDLED)
-			End If  
+			End If
 		Case CREATE_THREAD_DEBUG_EVENT:
 	         With DebugEv.u.Createthread
-	         	#Ifdef fulldbg_prt 
+	         	#Ifdef fulldbg_prt
 		         	dbg_prt(""):dbg_prt ("Create thread : DebugEv.dwProcessId "+Str(DebugEv.dwProcessid))
 		         	dbg_prt ("DebugEv.dwThreadId "+Str(DebugEv.dwThreadId))
-		         	dbg_prt ("hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress)) 
+		         	dbg_prt ("hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress))
 	         	#EndIf
 					If threadnb<THREADMAX Then
 					      threadnb+=1 :thread(threadnb).hd=.hthread:thread(threadnb).id=DebugEv.dwThreadId
@@ -366,13 +366,13 @@ While 1
 					      thread(threadnb).st=thread(threadcur).od 'used to keep line origin
 					      thread(threadnb).tv=0
 					      thread(threadnb).exc=0 'no exec auto
-					Else 
+					Else
 				      	hard_closing("Number of threads ("+Str(THREADMAX+1)+") exceeded , change the THREADMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY" )
 					EndIf
 	         End With
 	         ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-         
-		Case CREATE_PROCESS_DEBUG_EVENT: 
+
+		Case CREATE_PROCESS_DEBUG_EVENT:
 			With DebugEv.u.CreateProcessInfo
 				dbghfile=.hfile' to close the handle and liberate the file .exe
 				threadnb=0:thread(0).hd=.hthread:thread(0).id=DebugEv.dwThreadId
@@ -382,13 +382,13 @@ While 1
 				thread(0).plt=0 'used for first proc of thread then keep the last proc
 				thread(0).tv=0  'handle of thread
 				thread(0).exc=0 'no exec auto
-				#Ifdef fulldbg_prt    
-		  			dbg_prt ("create process debug") 
+				#Ifdef fulldbg_prt
+		  			dbg_prt ("create process debug")
 					dbg_prt ("DebugEv.dwProcessId "+Str(DebugEv.dwProcessid))
 					dbg_prt ("DebugEv.dwThreadId "+Str(DebugEv.dwThreadId))
 		    		dbg_prt ("hFile "+Str(.hfile))
 		    		dbg_prt ("hProcess "+Str(.hprocess))
-					dbg_prt ("hThread "+Str(.hthread))		  
+					dbg_prt ("hThread "+Str(.hthread))
 					dbg_prt ("lpBaseOfImage "+Str(.lpBaseOfImage))
 					dbg_prt ("dwDebugInfoFileOffset "+Str(.dwDebugInfoFileOffset))
 					dbg_prt ("nDebugInfoSize "+Str(.nDebugInfoSize))
@@ -401,14 +401,14 @@ While 1
 				debug_extract(Cast(UInteger,.lpBaseOfImage),exename)
 			End With
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-			
-		Case EXIT_THREAD_DEBUG_EVENT: 
+
+		Case EXIT_THREAD_DEBUG_EVENT:
          #Ifdef fulldbg_prt
         		dbg_prt ("exit thread "+Str(DebugEv.dwProcessId)+" " +Str(DebugEv.dwThreadId)+" "+Str(debugev.u.exitthread.dwexitcode))
         	#EndIf
          If flagkill=FALSE Then thread_del(DebugEv.dwThreadId)
          ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-         
+
 		Case EXIT_PROCESS_DEBUG_EVENT:
 	         messbox("","END OF DEBUGGED PROCESS",MB_SYSTEMMODAL)
 	         #Ifdef fulldbg_prt
@@ -417,7 +417,7 @@ While 1
 	         closehandle(dbghand)
 		      closehandle(dbghfile)
 		      closehandle(dbghthread)
-		      For i As Integer=1 To dllnb 
+		      For i As Integer=1 To dllnb
 					closehandle dlldata(i).hdl 'close all the dll handles
 		      Next
 	         watch_sav()
@@ -428,7 +428,7 @@ While 1
 	         but_enable()
 	         menu_enable()
 	         Exit While
-         
+
 		Case LOAD_DLL_DEBUG_EVENT
      		Dim loaddll As LOAD_DLL_DEBUG_INFO=DebugEv.u.loaddll
      		Dim As String dllfn
@@ -439,12 +439,12 @@ While 1
 			#EndIf
 
 
-			dllfn=dll_name(loaddll.hFile)	
-			'check yet loaded 
+			dllfn=dll_name(loaddll.hFile)
+			'check yet loaded
 			For i As Integer= 1 To dllnb
 				If dllfn=dlldata(i).fnm Then d=i:Exit For
 			Next
-			
+
 			If d=0 Then 'not found
 				If dllnb>=DLLMAX Then 'limit reached
 	      			hard_closing("New dll, Number of dll ("+Str(DLLMAX)+") exceeded , change the DLLMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY")
@@ -458,7 +458,7 @@ While 1
 	      		Else
 					dlldata(dllnb).fnm=dllfn
 		      		dlldata(dllnb).gbln=vrbgbl-vrbgblprev
-		      		dlldata(dllnb).gblb=vrbgblprev+1 
+		      		dlldata(dllnb).gblb=vrbgblprev+1
 		      		dlldata(dllnb).lnb=linenbprev+1
 		      		dlldata(dllnb).lnn=linenb
 	      		End If
@@ -483,11 +483,11 @@ While 1
 				messbox("in dll load=","before globals_load")
 				globals_load(d)
 				brk_apply
-			EndIf	
+			EndIf
 
       	ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 
-		Case UNLOAD_DLL_DEBUG_EVENT 
+		Case UNLOAD_DLL_DEBUG_EVENT
 			Dim unloaddll As UNLOAD_DLL_DEBUG_INFO =DebugEv.u.unloaddll
 			#Ifdef fulldbg_prt
 				dbg_prt(""):dbg_prt("UnLoad dll event "+Str(DebugEv.dwProcessId)+" "+Str(DebugEv.dwThreadId))
@@ -499,9 +499,9 @@ While 1
 					closehandle dlldata(i).hdl
 					dlldata(i).hdl=0
 					For m As Integer =2 To procrnb
-						If procr(m).tv=dlldata(i).tv Then proc_del(m,2):Exit For 'delete procr().tv 
+						If procr(m).tv=dlldata(i).tv Then proc_del(m,2):Exit For 'delete procr().tv
 					Next
-					
+
 					'For m As Integer =1 To brknb 'delete brkpoint but before trying to save it in brkexe
 					Dim As Integer m=1
 					While m<=brknb
@@ -521,14 +521,14 @@ While 1
 				EndIf
 			Next
          	ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-         
+
 		Case OUTPUT_DEBUG_STRING_EVENT
 			#Ifdef fulldbg_prt
     			dbg_prt( "OUTPUT DEBUG")
     		#EndIf
     		debugstring_read(debugev)
     		ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-    		
+
 		Case RIP_EVENT
 			#Ifdef fulldbg_prt
 				dbg_prt( "RIP EVENT")

@@ -91,8 +91,8 @@ dim shared as hwnd hlogbx
 	Dim Shared As Integer dllnb
 
 	''attach running exe
-	Dim Shared hattach As HANDLE    'handle to signal attchement done	
-	
+	Dim Shared hattach As HANDLE    'handle to signal attchement done
+
 #endif
 
 ''miscellanous data
@@ -106,7 +106,7 @@ dim shared As boolean procnodll
 dim shared As boolean flagmain
 Dim Shared As boolean flagkill =FALSE 'flag if killing process to avoid freeze in thread_del
 Dim Shared As Integer flagrestart=-1  'flag to indicate restart in fact number of bas files to avoid to reload those files
-Dim Shared As Integer flagwtch  =0     'flag =0 clean watched / 1 no cleaning in case of restart 
+Dim Shared As Integer flagwtch  =0     'flag =0 clean watched / 1 no cleaning in case of restart
 Dim Shared As Byte flaglog =0         ' flag for dbg_prt 0 --> no output / 1--> only screen / 2-->only file / 3 --> both
 Dim Shared As Byte flagtrace          ' flag for trace mode : 1 proc / +2 line
 Dim Shared As Byte flagverbose        ' flag for verbose mode
@@ -126,9 +126,9 @@ dim shared as hwnd hinputbx ''window for handling inputval
 
 ''watched
 dim Shared wtch(WTCHMAX) As twtch  ''zero based
-Dim Shared wtchcpt As Integer 'counter of watched value, used for the menu 
+Dim Shared wtchcpt As Integer 'counter of watched value, used for the menu
 Dim Shared hwtchbx As HWND    'handle
-Dim Shared wtchidx As Integer 'index for delete 
+Dim Shared wtchidx As Integer 'index for delete
 Dim Shared wtchexe(9,WTCHMAX) As String 'watched var (no memory for next execution)
 Dim Shared wtchnew As Integer 'to keep index after creating new watched
 
@@ -139,7 +139,7 @@ Dim Shared as String brkexe(9,BRKMAX) 'to save breakpoints by session
 dim shared as hwnd hbrkbx ''window for managing breakpoints
 
 ''breakpoint on variable/memory (when there is a change)
-Dim Shared brkv As tbrkv 
+Dim Shared brkv As tbrkv
 Dim Shared brkv2 As tbrkv 'copie for use inside brkv_box
 Dim Shared As HWND hbrkvbx  'handle
 
@@ -281,14 +281,14 @@ Dim Shared exedate As Double 'serial date
 #include "dbg_actions.bas"
 #Ifdef __fb_win32__
 	#include "dbg_windows.bas"
-#else	
+#else
 	#include "dbg_linux.bas"
 #EndIf
 
 gui_init
 ini_read()
 reinit
-	
+
 statusbar_text(KSTBSTS,"No debuggee")
 
 goto removeme
@@ -306,12 +306,12 @@ if elf_extract(exename) then
 	statusbar_text(KSTBSTS,"Waiting")
 	print "------------------ after extraction -----------------------"
 	print "Number of files=";sourcenb
-	
+
 	'hidewindow(scint ,1)
 	for isrc as integer =0 to sourcenb
 		source(isrc)="D:\telechargements\win9\tmp\"+source_name(source(isrc))
 		print "index=";isrc;" file=";source(isrc)
-	
+
 		AddPanelGadgetItem(GSRCTAB,isrc,source_name(source(isrc)))
 		''later sort the files to get them in alphabetic order
 		AddComboBoxItem(GFILELIST,source_name(source(isrc)),-1)
@@ -320,9 +320,9 @@ if elf_extract(exename) then
 	'ShowListComboBox(GFILELIST,TRUE)
 	'SetGadgetFont(GSRCTAB,CINT(LoadFont("Courier New",10)))
 	sources_load(0,filedatetime(exename))
-	
+
 	''for testing to be removed
-		
+
 		'line_color(5,2)
 		'line_color(10,2)
 		'line_color(4,2)
@@ -347,7 +347,7 @@ do
 		else
 			HideWindow(EventHwnd,KHIDE)
 			if EventHwnd=hsettings then ''settings box
-				settings_update() 
+				settings_update()
 			elseif EventHwnd=hinputbx then ''resets inputval and closes box
 				inputval=""
 			end if
@@ -361,7 +361,7 @@ do
 		EndIf
 		continue do
 	EndIf
-	
+
 	If event=EventMenu then
 		menu_action(EventNumber)
 	'' contextual menu
