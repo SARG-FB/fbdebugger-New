@@ -187,12 +187,13 @@ Dim Shared stoplibel(20) As String*17 =>{"","cursor","tempo break","break","Brea
 ''variable find
 Dim Shared As tvarfind varfind
 
-'''show/expand
-Dim Shared As Integer shwexpnb 'current number of show/expand box
-Dim Shared As tshwexp shwexp(1 To SHWEXPMAX) 'data for show/expand
-Dim Shared As tvrp vrp(SHWEXPMAX,VRPMAX)
+''show/expand
+Dim Shared As tshwexp shwexp
 Dim Shared As hwnd hshwexpbx
 Dim Shared As hwnd htviewshw
+Dim Shared As tvrp vrp(VRPMAX)
+
+
 
 dim shared as HMENU HMenusource
 dim shared as HMENU HMenusource2
@@ -350,6 +351,8 @@ do
 				settings_update()
 			elseif EventHwnd=hinputbx then ''resets inputval and closes box
 				inputval=""
+			elseif EventHwnd=hshwexpbx then ''releases shwewp
+				shwexp.free=true
 			end if
 		end if
 		continue do

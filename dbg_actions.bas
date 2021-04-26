@@ -209,11 +209,11 @@ private sub menu_action(poption as integer)
 					typ=cudt(vrr(ivar).vr).typ
 					pt=cudt(vrr(ivar).vr).pt
 				EndIf
-				edit_fill(GetTextTreeView(GTVIEWVAR,GetItemTreeView(GTVIEWVAR)),vrr(abs(ivar)).ad,typ,pt)
+				edit_fill(GetTextTreeView(GTVIEWVAR,GetItemTreeView(GTVIEWVAR)),vrr(ivar).ad,typ,pt)
 
 			Case MNSHWEXP  'show and expand variables
-				messbox("Feature not yet implemented","shwexp_new")
-				'shwexp_new(htviewvar)
+				shwexp_new(GTVIEWVAR)
+
             Case MNVARBRK  'break on var value
 				brkv_set(1)
 
@@ -582,6 +582,72 @@ private sub gadget_action(igadget as LONG)
 
 		case GIDXUP1 to GIDXUP1+4
 			updown_check(igadget,indexdata.vlbound(igadget-GIDXUP1),indexdata.vubound(igadget-GIDXUP1))
+
+		case GSHWWCH
+			var_find2(GadgetID(GTVIEWSHW))
+			varfind.iv=-1
+			varfind.nm=varfind.nm+" ["+Str(varfind.ad)+"]<"
+			watch_set()
+
+		case GSHWDMP
+			var_dump(GadgetID(GTVIEWSHW))
+
+		case GSHWEDT
+			var ivar=var_find2(GadgetID(GTVIEWSHW))
+			edit_fill(GetTextTreeView(GTVIEWSHW,vrp(ivar).tl),vrp(ivar).ad,vrp(ivar).ty,vrp(ivar).pt)
+			shwexp_update() ''update after editing
+
+		'case GSHWSTR
+			'string_sh(GTVIEWSHW)
+
+		case GSHWNEW  ''replaces the current data
+			var_find2(GadgetID(GTVIEWSHW))
+			setwindowtext(hshwexpbx,"Show/expand : "+varfind.nm)
+			shwexp_update(varfind.nm,varfind.ad,varfind.ty,varfind.pt,varfind.iv)
+
+		case GSHWDEC 'index - 1
+			If vrp(1).pt=0 then
+				if shwexp.curidx>shwexp.minidx then
+					shwexp.curidx-=1
+					setgadgettext(GSHWCUR,"Index cur : "+Str(shwexp.curidx))
+					vrp(1).ad-=udt(vrp(1).ty).lg
+					shwexp_update()
+				end if
+			Else
+				messbox("Move","Not possible with pointer"+Chr(13)+"Select (new shw/exp) the pointed value")
+			EndIf
+
+		case GSHWINC 'index + 1
+			If vrp(1).pt=0 then
+				if shwexp.curidx<shwexp.maxidx then
+					shwexp.curidx+=1
+					setgadgettext(GSHWCUR,"Index cur : "+Str(shwexp.curidx))
+					vrp(1).ad+=udt(vrp(1).ty).lg
+					shwexp_update()
+				end if
+			Else
+				messbox("Move","Not possible with pointer"+Chr(13)+"Select (new shw/exp) the pointed value")
+			EndIf
+
+		case GSHWSET 'set index
+			inputval=Str(shwexp.curidx)
+			inputtyp=1
+			input_bx("Type the new value of index")
+			If inputval<>"" then
+				if ValInt(inputval)>=shwexp.minidx and valint(inputval)<=shwexp.maxidx then
+					vrp(1).ad+=(ValInt(inputval)-shwexp.curidx)*udt(vrp(1).ty).lg
+					shwexp.curidx=ValInt(inputval)
+					setgadgettext(GSHWCUR,"Index cur : "+Str(shwexp.curidx))
+					shwexp_update()
+				end if
+			End If
+
+		Case GSHWUPD 'update
+			if shwexp_checkarr <>-1 then 'no redim or smaller redim otherwise delete and create a new box
+				''vrp(1).ad could be changed in checkarr so reassign here
+				shwexp_update()
+			endif
+
 
 		case else
         	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))

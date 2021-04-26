@@ -521,14 +521,12 @@ enum
 	GSHWEDT
 	GSHWSTR
 	GSHWNEW
-	GSHWRPL
 	GSHWCUR
 	GSHWMIN
 	GSHWMAX
 	GSHWSET
 	GSHWINC
-	GSHWRED
-	GSHWCLOSE
+	GSHWDEC
 	GSHWUPD
 	GTVIEWSHW
 end enum
@@ -903,15 +901,15 @@ Type tvarfind
 End Type
 
 ''show/expand
-Const SHWEXPMAX=10 'max shwexp boxes
+''Const SHWEXPMAX=10 'max shwexp boxes
 Const VRPMAX=5000  'max elements in each treeview
 Type tshwexp
-	bx As HWND     'handle pointed value box
-	tv As HWND     'corresponding tree view
+	'bx As HWND     'handle pointed value box
+	'tv As HWND     'corresponding tree view
 	nb As Integer  'number of elements tvrp
-	cu As HWND     'handle of the current index label
-	mn As HWND     'handle of the mini index label
-	mx as HWND     'handle of the max indexlabel
+	'cu As HWND     'handle of the current index label
+	'mn As HWND     'handle of the mini index label
+	'mx as HWND     'handle of the max indexlabel
 	curidx As Integer  'current index only for array
 	minidx As Integer  'min index
 	maxidx As Integer  'max index
@@ -920,6 +918,7 @@ Type tshwexp
 	arradr as integer 'address of pointer in descriptor array (-1 if not a dynamic array)
 	mem    as integer 'if static don't delete the shw/exp when the proc is closed
 	parent as integer 'index of higher parent
+	free   as boolean 'shwexp in use or not
 End Type
 Type tvrp
 	nm As String    'name
@@ -956,6 +955,7 @@ declare sub var_sh()
 declare sub index_update(listview As integer,idx As Long,limit As Long,idx2 As Long,limit2 As Long,adr As Integer,typ As Long,size As Long)
 declare function var_find() as INTEGER
 declare function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="") As String
+declare sub shwexp_init()
 '===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)
@@ -1058,7 +1058,6 @@ enumdef(GNOLOG)="GNOLOG"
 enumdef(GRIGHTTABS)="GRIGHTTABS"
 enumdef(GSCINTILLA)="GSCINTILLA"
 enumdef(GSCREENLOG)="GSCREENLOG"
-enumdef(GSHWCLOSE)="GSHWCLOSE"
 enumdef(GSHWCUR)="GSHWCUR"
 enumdef(GSHWDMP)="GSHWDMP"
 enumdef(GSHWEDT)="GSHWEDT"
@@ -1066,8 +1065,7 @@ enumdef(GSHWINC)="GSHWINC"
 enumdef(GSHWMAX)="GSHWMAX"
 enumdef(GSHWMIN)="GSHWMIN"
 enumdef(GSHWNEW)="GSHWNEW"
-enumdef(GSHWRED)="GSHWRED"
-enumdef(GSHWRPL)="GSHWRPL"
+enumdef(GSHWDEC)="GSHWDEC"
 enumdef(GSHWSET)="GSHWSET"
 enumdef(GSHWSTR)="GSHWSTR"
 enumdef(GSHWUPD)="GSHWUPD"
@@ -1237,4 +1235,4 @@ enumdef(MNVARCOLI)="MNVARCOLI"
 enumdef(MNVAREXPI)="MNVAREXPI"
 enumdef(MNVARCOLA)="MNVARCOLA"
 enumdef(MNVAREXPA)="MNVAREXPA"
-
+enumdef(GSHWSTR)="GSHWSTR"
