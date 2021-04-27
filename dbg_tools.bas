@@ -44,12 +44,10 @@ private sub index_fullupdate()
 		indexdata.adr=vrr(indexdata.indexvar).ini+delta*indexdata.size
 	EndIf
 	If indexdata.typ2<>0 Then indexdata.adr+=indexdata.delta2 'add the delta
-	If indexdata.nbdim>=2 Then
-	'---> todo some parameter useless
-		index_update(GIDXTABLE,vrr(indexdata.indexvar).ix(0),indexdata.vubound(0),vrr(indexdata.indexvar).ix(1),indexdata.vubound(1),indexdata.adr,indexdata.typ,indexdata.sizeline)
-	Else
-		index_update(GIDXTABLE,vrr(indexdata.indexvar).ix(0),indexdata.vubound(0),-1,-1,indexdata.adr,indexdata.typ,indexdata.size)
-	EndIf
+
+	If indexdata.nbdim<=2 Then
+		index_update()
+	end if
 end sub
 '=============================================================================
 '' applies changes in index selection and closes dialog box
@@ -66,8 +64,12 @@ end sub
 '' listview=GIDXTABLE but listview kept if in the future few index boxes
 '=============================================================================
 'index_update(listview,vrr(indexvar).ix(0),vubound(0),vrr(indexvar).ix(1),vubound(1),adr,typ,sizeline)
-Private sub index_update(listview As integer,idx As Long,limit As Long,idx2 As Long,limit2 As Long,adr As Integer,typ As Long,size As Long)
-	Dim As String txt
+'Private sub index_update(listview As integer,idx As Long,limit As Long,idx2 As Long,limit2 As Long,adr As Integer,typ As Long,size As Long)
+Private sub index_update()
+	dim as INTEGER listview=GIDXTABLE,idx=vrr(indexdata.indexvar).ix(0),limit=indexdata.vubound(0)
+	dim as integer idx2=vrr(indexdata.indexvar).ix(1),limit2=indexdata.vubound(1)
+	dim as integer adr=indexdata.adr,typ=indexdata.typ,size=indexdata.sizeline
+	Dim As String  txt
 	Dim As Integer adrsav=adr,column,iline
 	DeleteListViewItemsAll(listview)
 	for icol as integer= 30 to 0 step -1
@@ -75,7 +77,7 @@ Private sub index_update(listview As integer,idx As Long,limit As Long,idx2 As L
 	Next
 	''column header (first line)
 	AddListViewColumn(listview,"Index(es)",0,0,60)
-	If idx2=-1 Andalso limit2=-1 Then ''one dim
+	If indexdata.nbdim=1 Then ''one dim
 		AddListViewColumn(listview,"value",1,1,495)
 		idx2=1:limit2=1
 	else
@@ -988,11 +990,28 @@ private sub dump_sign()
 	dump_sh()
 End Sub
 '======================================
+'' changes the sign for some datatypes
+'======================================
+private sub dump_baseadr()
+	static as integer decbase=1
+	dim as integer ad=dumpadr
+	decbase=1-decbase
+	For jline as integer =0 To dumplines-1
+		if decbase=1 then
+			ReplaceTextItemListView(GDUMPMEM,jline,0,str(ad))
+		else
+			ReplaceTextItemListView(GDUMPMEM,jline,0,hex(ad))
+		end if
+		ad+=16
+	Next
+
+end sub
+'======================================
 ''
 '======================================
 private sub dump_sh()
 	Dim As String tmp
-	Dim buf(16) As UByte,r As Integer,ad As UInteger
+	Dim buf(16) As UByte,r As Integer,ad As Integer
 	Dim ascii As String
 	Dim ptrs As pointeurs
 

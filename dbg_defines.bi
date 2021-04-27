@@ -512,6 +512,7 @@ enum
 	GDUMPHEX
 
 	GDUMPSIGNE
+	GDUMPBASEADR
 end enum
 
 ''shw/exp
@@ -542,12 +543,7 @@ end enum
 
 ''procedure tracking
 enum
-	GTRACKPRV=980
-	GTRACKCUR
-	GTRACKNXT
-	GTRACKPPRV
-	GTRACKPCUR
-	GTRACKPNXT
+	GBCKTRK=980
 end enum
 
 ''editing variable
@@ -952,7 +948,7 @@ declare sub hard_closing(errormsg as string)
 declare function wait_debug() As Integer
 declare sub dump_sh()
 declare sub var_sh()
-declare sub index_update(listview As integer,idx As Long,limit As Long,idx2 As Long,limit2 As Long,adr As Integer,typ As Long,size As Long)
+declare sub index_update()
 declare function var_find() as INTEGER
 declare function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="") As String
 declare sub shwexp_init()
@@ -1027,6 +1023,7 @@ enumdef(GDUMPSHW)="GDUMPSHW"
 enumdef(GDUMPSIZE)="GDUMPSIZE"
 enumdef(GDUMPTSIZE)="GDUMPTSIZE"
 enumdef(GDUMPSIGNE)="GDUMPSIGNE"
+enumdef(GDUMPBASEADR)="GDUMPBASEADR"
 enumdef(GDUMPWCH)="GDUMPWCH"
 enumdef(GDUMUSEGRP)="GDUMUSEGRP"
 enumdef(GFILELIST)="GFILELIST"
@@ -1078,12 +1075,6 @@ enumdef(GTEXTFSIZE)="GTEXTFSIZE"
 enumdef(GTEXTFTYPE)="GTEXTFTYPE"
 enumdef(GTRACELINE)="GTRACELINE"
 enumdef(GTRACEPROC)="GTRACEPROC"
-enumdef(GTRACKCUR)="GTRACKCUR"
-enumdef(GTRACKNXT)="GTRACKNXT"
-enumdef(GTRACKPCUR)="GTRACKPCUR"
-enumdef(GTRACKPNXT)="GTRACKPNXT"
-enumdef(GTRACKPPRV)="GTRACKPPRV"
-enumdef(GTRACKPRV)="GTRACKPRV"
 enumdef(GTVIEWPRC)="GTVIEWPRC"
 enumdef(GTVIEWSHW)="GTVIEWSHW"
 enumdef(GTVIEWTHD)="GTVIEWTHD"
@@ -1236,3 +1227,4 @@ enumdef(MNVAREXPI)="MNVAREXPI"
 enumdef(MNVARCOLA)="MNVARCOLA"
 enumdef(MNVAREXPA)="MNVAREXPA"
 enumdef(GSHWSTR)="GSHWSTR"
+enumdef(GBCKTRK)="GBCKTRK"

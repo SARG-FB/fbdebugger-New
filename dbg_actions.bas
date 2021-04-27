@@ -340,6 +340,9 @@ private sub gadget_action(igadget as LONG)
 		case GDUMPSIGNE
 			dump_sign()
 
+		case GDUMPBASEADR
+			dump_baseadr()
+
 		case GFILESEL
         	if GetItemComboBox(GFILELIST)<>-1 then
         		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then

@@ -146,6 +146,7 @@ Dim Shared As HWND hbrkvbx  'handle
 ''Backtracking
 Dim Shared As Integer bcktrkpr
 Dim Shared As HWND htrckbx
+Dim Shared As HWND hlviewtrck
 
 ''edit box
 Dim Shared As HWND heditbx

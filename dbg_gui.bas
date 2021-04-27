@@ -172,6 +172,19 @@ private sub index_sel()
 		adr=vrr(indexvar).ad
 	EndIf
 
+	''keep data for next actions
+	indexdata.indexvar=indexvar
+	indexdata.nbdim=nbdim
+	for idx as integer =0 to 4
+		indexdata.vlbound(idx)=vlbound(idx)
+		indexdata.vubound(idx)=vubound(idx)
+	next
+	indexdata.adr=adr
+	indexdata.typ=typ
+	indexdata.typ2=typ2
+	indexdata.delta2=delta2
+
+
 	If typ>0 AndAlso typ<TYPESTD andalso nbdim<=2 Then
 		dim lvCol   As LVCOLUMN
 		hidegadget(GIDXTABLE,KSHOW)
@@ -183,19 +196,11 @@ private sub index_sel()
 		hidegadget(GIDXPAGEL,KSHOW)
 		hidegadget(GIDXWIDTH,KSHOW)
 
-	'todo StrPtr() à faire dans gui_init ?
-
+		indexdata.size=size
 		''displays the array if one or 2 dimensions
 		If nbdim=2 Then
-			'AddListViewColumn(GIDXTABLE,"Index(es)",temp,temp,60)
-			sizeline=(vubound(1)-vlbound(1)+1) 'nb elements last dim
-			'For k As Long =vlbound(1) To IIf(sizeline>30,vlbound(1)+30-1,vubound(1)) '30 columns max
-				'strg="Idx "+Str(k)
-				'var temp  =  k-vlbound(nbdim-1)+1
-				'AddListViewColumn(GIDXTABLE,strg,temp,temp,60)
-			'Next
-			sizeline*=size ''size in bytes
-			index_update(GIDXTABLE,vrr(indexvar).ix(0),vubound(0),vrr(indexvar).ix(1),vubound(1),adr,typ,sizeline)
+			indexdata.sizeline=size*(vubound(1)-vlbound(1)+1) 'nb elements last dim
+			index_update()
 
 			hidegadget(GIDXCOLP,KSHOW) ''moving by one column or by block (several columns)
 			hidegadget(GIDXCOLL,KSHOW)
@@ -205,32 +210,29 @@ private sub index_sel()
 
 		Elseif nbdim=1 then
 			''only one dim
-			sizeline=1
-			'AddListViewColumn(GIDXTABLE,"Index(es)",temp,temp,60)
-			'AddListViewColumn(GIDXTABLE,"value",1,1,495)
-			sizeline*=size ''size in bytes
-			index_update(GIDXTABLE,vrr(indexvar).ix(0),vubound(0),-1,-1,adr,typ,sizeline)
+			indexdata.sizeline=size
+			index_update()
 			hidegadget(GIDXCOLL,KHIDE)
 			hidegadget(GIDXCOLP,KHIDE)
 			hidegadget(GIDXBLKP,KHIDE)
 			hidegadget(GIDXBLKL,KHIDE)
 			hidegadget(GIDXWIDTH,KHIDE)
 		End If
+	else
+		hidegadget(GIDXTABLE,KHIDE)
+		hidegadget(GIDXAUTO,KHIDE)
+		hidegadget(GIDXUPD,KHIDE)
+		hidegadget(GIDXROWP,KHIDE)
+		hidegadget(GIDXROWL,KHIDE)
+		hidegadget(GIDXPAGEP,KHIDE)
+		hidegadget(GIDXPAGEL,KHIDE)
+		hidegadget(GIDXWIDTH,KHIDE)
+		hidegadget(GIDXCOLL,KHIDE)
+		hidegadget(GIDXCOLP,KHIDE)
+		hidegadget(GIDXBLKP,KHIDE)
+		hidegadget(GIDXBLKL,KHIDE)
 	EndIf
 
-	''keep data for next actions
-	indexdata.indexvar=indexvar
-	indexdata.sizeline=sizeline
-	indexdata.size=size
-	indexdata.nbdim=nbdim
-	for idx as integer =0 to 4
-		indexdata.vlbound(idx)=vlbound(idx)
-		indexdata.vubound(idx)=vubound(idx)
-	next
-	indexdata.adr=adr
-	indexdata.typ=typ
-	indexdata.typ2=typ2
-	indexdata.delta2=delta2
 	hidewindow(hindexbx,KSHOW)
 
 end sub
@@ -310,7 +312,7 @@ private sub size_changed()
 	'messbox("resizing",str(SizeX)+" "+str(SizeY))
 	if sizey>250 then
 		#ifdef __fb_win32__
-			ResizeWindow(hscint,0,65,,WindowClientHeight(hmain)-90)
+			ResizeWindow(hscint,0,80,,WindowClientHeight(hmain)-100)
 		#else
 			messbox("Function not coded under linux","so size remains inchanged")
 		#endif
@@ -594,15 +596,16 @@ end sub
 '' creates the window for Procedure Backtracking
 '==============================================================================
 private sub create_trackbx()
-	htrckbx=OpenWindow("Procedure Backtracking",10,10,600,150,WS_POPUP or WS_CAPTION or WS_SYSMENU )
+	htrckbx=OpenWindow("Procedure Backtracking",10,10,900,650,WS_POPUP or WS_CAPTION or WS_SYSMENU )
 	centerWindow(htrckbx)
+	hidewindow(htrckbx,KSHOW)
 
-	buttongadget(GTRACKPRV,5,5,65,30,"Previous")
-	buttongadget(GTRACKCUR,5,40,65,30,"Current")
-	buttongadget(GTRACKNXT,5,75,65,30,"Next")
-	textgadget(GTRACKPPRV,75,12,288,30,"TEST   [testmain.bas]")
-	textgadget(GTRACKPCUR,75,47,288,30,"TEST2   [testmain.bas]")
-	textgadget(GTRACKPNXT,75,82,288,30,"TEST_END   [testmain.bas]")
+	hlviewtrck=ListViewGadget(GBCKTRK,0,0,850,600,LVS_EX_GRIDLINES)
+	AddListViewColumn(GBCKTRK, "Procedure           Thread=12345",0,0,200)
+	AddListViewColumn(GBCKTRK, "Calling Line",1,1,200)
+	AddListViewColumn(GBCKTRK, "L. Nbr.",2,2,50)
+	AddListViewColumn(GBCKTRK, "File",3,3,200)
+
 end sub
 '========================================================
 '' creates the window for show/expand  (shw/exp)
@@ -637,7 +640,7 @@ private sub create_dumpbx()
 	load_button(IDBUTENLRMEM,@"memory.bmp",300,5,@"Reduce the window",,0)
 
 	ButtonGadget(GDUMPAPPLY,12,5,110,30,"Apply address : ")
-	stringgadget(GDUMPADR,130,5,75,30,"123456789")
+	stringgadget(GDUMPADR,130,5,80,30,"12345678901")
 
 	textgadget(GDUMPTSIZE,12,40,105,30,"Size of column : ",0)
 	ListBoxGadget(GDUMPSIZE,130,40,75,70)
@@ -646,12 +649,13 @@ private sub create_dumpbx()
 	AddListBoxItem(GDUMPSIZE,"4 bytes")
 	AddListBoxItem(GDUMPSIZE,"8 bytes")
 
-	groupgadget(GDUMPBASEGRP,10,120,130,55,"Dec or hex")
+	groupgadget(GDUMPBASEGRP,10,120,130,55,"Dec / Hex data")
 	optiongadget(GDUMPDEC,15,140,50,30,"Dec")
 	optiongadget(GDUMPHEX,70,140,50,30,"Hex")
 	SetGadgetState(GDUMPDEC,1)
 
-	ButtonGadget(GDUMPSIGNE,165,125,80,25,"U/Signed")
+	ButtonGadget(GDUMPSIGNE,150,125,80,30,"U/Signed")
+	ButtonGadget(GDUMPBASEADR,235,125,95,30,"Dec/Hex adr")
 
 	groupgadget(GDUMPMOVEGRP,10,190,205,60,"Move by Cell / Line / Page")
 	ButtonGadget(GDUMPCL,12, 214, 30, 30,  "C-")
@@ -1135,15 +1139,15 @@ End Sub
 private sub gui_init()
 
 	''main windows
-	hmain=OpenWindow("",10,10,1100,500)
+	hmain=OpenWindow("",10,10,1100,600)
 	settitle()
 	''scintilla gadget
-	create_scibx(GSCINTILLA,0,65,400,WindowClientHeight(hmain)-90,)
+	create_scibx(GSCINTILLA,0,80,450,WindowClientHeight(hmain)-100,)
 
 	''source panel
 	'Var font=LoadFont("Arial",40)
 
-	PanelGadget(GSRCTAB,2,42,400,20)
+	PanelGadget(GSRCTAB,2,52,450,20)
     SetGadgetFont(GSRCTAB,CINT(LoadFont("Courier New",11)))
 
 	''file combo/buuton ''idee mettre dans le menu affichage de la liste (du combo)
