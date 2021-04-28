@@ -720,21 +720,21 @@ End Function
 private sub thread_execline(s As Integer,thid As Integer=0)
  Dim As Integer thidx,thline
    thidx=thread_select(thid)
-   If s=1 Then
+	If s=1 Then
 		thline=thread(thidx).sv
-   Else
-   	If thidx=0 Then
-   		messbox("Threadcreate line","Main so no such line !!")
+	Else
+		If thidx=0 Then
+			messbox("Threadcreate line","Main so no such line !!")
 			Exit Sub
-   	EndIf
-   	If thread(thidx).st=0 Then
-   		messbox("Threadcreate line","Impossible to locate in case of fast run !!")
+		EndIf
+		If thread(thidx).st=0 Then
+			messbox("Threadcreate line","Impossible to locate in case of fast run !!")
 			Exit Sub
-   	EndIf
+		EndIf
 		thline=thread(thidx).st
-   End If
+	End If
 	source_change(rline(thline).sx)  ''display source
-	line_display(rline(thline).nu-1) ''Select Line
+	line_display(rline(thline).nu) ''Select Line
 End Sub
 '===========================================
 '' kills a thread
@@ -756,23 +756,56 @@ private sub thread_kill()
 		#endif
 	EndIf
 End Sub
-'=======================================
-''
-'=======================================
-private sub bcktrk_launch(pr As Integer,typ As Integer)''typ=1 -->simple backtracking / typ=2 -->full backtracking or chaining
+'==============================================================================
+'' displays the call chain for the current thread or for a selected one
+'==============================================================================
+private sub call_chain(thid as integer)
+	Static As Integer procrsav(PROCRMAX),iline,first,prevpr,vproc
+	dim as string txt
+	dim as integer srcprev=srcdisplayed ''save now for restoring and the end of the table filling
+	DeleteListViewItemsAll(GCCHAIN)
+	txt="Calling line               [ThID="+ Str(thid)+"]"
+	ReplaceTextColumnListView(GCCHAIN,0,txt)
+	for iprocr as integer = procrnb to 1 step -1
+		If procr(iprocr).thid=thid Then
+			procrsav(iline)=iprocr ''to make easier the location
+			if first=0 then
+				first=1
+				AddListViewItem(GCCHAIN,proc(procr(iprocr).idx).nm,0,0,0)
 
-	messbox("Feature not yet coded","bcktrk_launch")
+				thread_execline(1,thid)
+				txt=space(31)
+				Send_sci(SCI_GETCURLINE,30,strptr(txt))
+				AddListViewItem(GCCHAIN,txt,0,0,1)
 
-	'If bcktrkbx<>0 Then Exit Sub
-	'bcktrkpr=pr
-	'If typ=1 Then
-		'fb_Dialog(@bcktrk1_box,"Proc Backtracking",windmain,300,100,190,40)
-	'Else
-		'fb_Dialog(@bcktrk2_box,"Proc call chaining",windmain,300,500,300,900)
-	'EndIf
-End Sub
+				txt=Right("______"+Str(linecur),6)
+				AddListViewItem(GCCHAIN,txt,0,0,2)
+				AddListViewItem(GCCHAIN,source(srccur),0,0,3)
+				prevpr=iprocr
+			else
+				iline+=1
+				vproc=procr(iprocr).idx
+				AddListViewItem(GCCHAIN,proc(vproc).nm,0,iline,0)
+
+				source_change(proc(vproc).sr)
+				txt=line_text(rline(procr(iprocr).cl).nu-1) ''calling line
+				AddListViewItem(GCCHAIN,txt,0,iline,1)
+
+				txt=Right("______"+Str(rline(procr(prevpr).cl).nu),6)
+				AddListViewItem(GCCHAIN,txt,0,iline,2)
+
+				txt=source_name(source(proc(vproc).sr))
+				AddListViewItem(GCCHAIN,txt,0,iline,3)
+				prevpr=iprocr
+			end if
+		end if
+	next
+	cchainthid=thid
+	source_change(srcprev)
+	hidewindow(hcchainbx,KSHOW)
+end sub
 '===============================================================
-'' 1 juste calling / 2 backtracking / 3 chaining
+'' 1 juste calling / 2 call chain
 '===============================================================
 private sub proc_loccall(typ As Integer=1)
 	Dim As Integer hitem,temp,gadget
@@ -801,20 +834,12 @@ private sub proc_loccall(typ As Integer=1)
 				source_change(rline(temp).sx) ''display source
 				line_display(rline(temp).nu-1)'Select Line
 			ElseIf typ=2 Then
-				bcktrk_launch(i,1)
-			ElseIf typ=3 Then
-				bcktrk_launch(i,2)
+				messbox("Feature not yet coded","call chain")
 			EndIf
 			Exit Sub
   		EndIf
 	Next
-	If typ=2 Then
-		messbox("Locate calling line","Impossible to find with Global shared")
-	elseIf typ=2 Then
-		bcktrk_launch(1,1)
-	ElseIf typ=3 Then
-		bcktrk_launch(1,2)
-	EndIf
+	messbox("Locate calling line","Impossible to find with Global shared")
 End Sub
 '===================================================================================
 '' check if the line is executable return -1 if false otherwise the rline index
@@ -887,14 +912,15 @@ End Sub
 ''Goto selected line number
 '===============================
 private sub line_goto()
-	Dim Linenb As Integer
+	Dim linegoto As Integer
 	inputval=""
 	inputtyp=99
-	linenb=line_cursor() ''get line zero based
-	input_bx("Current line "+Str(linenb)+", Goto line ?")
-	Linenb=ValInt(inputval)-1
+	'linenb=line_cursor() ''get line zero based
+	input_bx("Current line "+Str(linenb+1)+", Goto line ?")
+	Linegoto=ValInt(inputval)
+	messbox("lin","line="+str(linegoto))
 	If linenb>=0 Then
-	   line_display(linenb)
+	   line_display(linegoto,1)
 	End If
 End Sub
 '=======================================
@@ -955,12 +981,6 @@ private sub log_del()
 	dbg_prt(" $$$$___CLOSE ALL___$$$$ ") 'close the file if needed todo do a sub for closing by spliting the code
 	Kill (ExePath+"\dbg_log_file.txt")   'delete it
 	flaglog=savflog 'restore the value to keep the use of file log
-End Sub
-'=============================================
-private sub bcktrk_close()
-	If htrckbx Then
-		hidewindow(htrckbx,KHIDE)
-	EndIf
 End Sub
 '======================================
 '' changes the sign for some datatypes
@@ -1595,6 +1615,20 @@ private sub proc_loc()
 	source_change(proc(temp).sr) ''display source
 	line_display(proc(temp).nu-1)  ''Select Line
 End Sub
+
+'=====================================================
+'' finds the thread in GTVIEWTHD
+'=====================================================
+private function thread_find() as integer
+	Dim As Integer hitem,temp
+	''get current hitem in tree
+	temp=GetItemTreeView(GTVIEWTHD)
+	Do ''search index thread
+		hitem=temp
+		temp=getParentItemTreeview(GTVIEWTHD,hitem)
+	Loop While temp
+	return hitem
+End function
 '=====================================================
 '=====================================================
 private sub thread_procloc(t As Integer)
@@ -1629,10 +1663,6 @@ private sub thread_procloc(t As Integer)
 	ElseIf t=2 Then'proc in source
 		source_change(proc(procr(pr).idx).sr) ''display source
 		line_display(proc(procr(pr).idx).nu-1) ''Select Line
-	ElseIf t=3 Then'backtracking
-		bcktrk_launch(pr,1)
-	ElseIf t=4 Then'chaining
-		bcktrk_launch(pr,2)
 	Else 'info about running proc
 		messbox("Proc : "+proc(procr(pr).idx).nm,"Start address ="+Str(proc(procr(pr).idx).db)+"/&h"+Hex(proc(procr(pr).idx).db)+Chr(10)_
 												   +"End   address ="+Str(proc(procr(pr).idx).fn)+"/&h"+Hex(proc(procr(pr).idx).fn)+Chr(10)_

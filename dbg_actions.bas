@@ -27,7 +27,7 @@ private sub menu_action(poption as integer)
 			EndIf
 			runtype=RTAUTO
 			but_enable()
-			bcktrk_close
+			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
 
 		case MNEXEFILE0 to MNEXEFILE9
@@ -74,11 +74,8 @@ private sub menu_action(poption as integer)
 		Case MNCALLINE 'locate calling line
 		   proc_loccall(1)
 
-		Case MNPBCKTRK'backtracking from proc/var
-			proc_loccall(2)
-
 		Case MNPCHNING'chaining from proc/var
-			proc_loccall(3)
+			call_chain(threadcur)
 
 		Case MNSHWPROC 'locate proc in proc/var treeview
 			thread_procloc(1)
@@ -86,11 +83,8 @@ private sub menu_action(poption as integer)
 		Case MNSHPRSRC 'locate proc in source
 			thread_procloc(2)
 
-		Case MNTBCKTRK 'backtracking (from thread)
-			thread_procloc(3)
-
-		Case MNTCHNING 'chaining (from thread)
-			thread_procloc(4)
+		Case MNTCHNING ''call chain (from thread)
+			call_chain(ValInt(Mid(GetTextTreeView(GTVIEWTHD,thread_find()),10,6)))
 
 		Case MNPRCRADR 'information about running proc
 			thread_procloc(5)
@@ -258,7 +252,9 @@ private sub menu_action(poption as integer)
         	messbox("Menu feature not implemented","sorry option="+str(poption)+" --> enum="+enumdef(poption))
     end select
 end sub
-
+'============================================
+'' executes action for gadget
+'============================================
 private sub gadget_action(igadget as LONG)
 	dim as INTEGER decal
 
@@ -462,6 +458,8 @@ private sub gadget_action(igadget as LONG)
 
 		case GCMDLPARAM ''data used when closing settings box
 
+		case GINPUTVAL
+
 		case GINPUTVALOK
 			input_check()
 
@@ -651,6 +649,17 @@ private sub gadget_action(igadget as LONG)
 				shwexp_update()
 			endif
 
+			case GCCHAIN
+				'messbox("ITEM="+str(GetItemListView()),"SUBITEM ="+str(GetSubItemListView())+" GetColumnListView="+str(GetColumnListView()))
+				var iline=GetItemListView()
+				if iline=0 then
+					thread_execline(1,cchainthid) 'show next executed line of thread
+				else
+					if GetTextItemListView(GCCHAIN,iline,0)<>"" then
+						source_change(proc(procr(procrsav(iline)).idx).sr)
+						line_display(rline(procr(procrsav(iline)).cl).nu-1,1)
+					end if
+				end if
 
 		case else
         	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))
@@ -700,13 +709,13 @@ private sub button_action(button as integer)
 	select case button
 		case IDBUTSTEP 'STEP
 			stopcode=0
-			bcktrk_close
+			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
 		case IDBUTSTEPP 'STEP+ over
 			procin=procsk
 			runtype=RTRUN
 			but_enable()
-			bcktrk_close
+			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
 		Case IDBUTSTEPM 'STEP- out
 			If (threadcur<>0 andalso proc_find(thread(threadcur).id,KLAST)<>proc_find(thread(threadcur).id,KFIRST)) _
@@ -715,17 +724,17 @@ private sub button_action(button as integer)
 				runtype=RTRUN
 				but_enable()
 			End If
-			bcktrk_close
+			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
         Case IDBUTAUTO 'simple thread auto
 			runtype=RTAUTO
 			but_enable()
-			bcktrk_close
+			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
 		case IDBUTRUN
 			runtype=RTRUN
 			but_enable()
-			bcktrk_close
+			hidewindow(hcchainbx,KHIDE)
 			fasttimer=Timer
 			thread_resume()
 		case IDBUTSTOP
@@ -781,7 +790,7 @@ private sub button_action(button as integer)
 			DisplayPopupMenu(HMenuexe, GlobalMouseX,GlobalMouseY)
 			Delete_Menu(HMenuexe)
 		case IDBUTFASTRUN
-			bcktrk_close
+			hidewindow(hcchainbx,KHIDE)
 			but_enable()
 			fastrun()
 			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
@@ -793,7 +802,7 @@ private sub button_action(button as integer)
 				runtype=RTRUN
 				but_enable()
 			EndIf
-			bcktrk_close
+			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
         Case IDBUTSTEPT 'STEP at top of proc
 			If rline(thread(threadcur).sv).ad<>proc(procsv).fn Then 'if current line is end of proc simple step
@@ -801,7 +810,7 @@ private sub button_action(button as integer)
 				runtype=RTRUN
 				but_enable()
 			EndIf
-			bcktrk_close
+			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
 		case IDBUTCURSOR
 			messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))

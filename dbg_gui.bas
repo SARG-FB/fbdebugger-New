@@ -367,14 +367,16 @@ end sub
 '==========================================================
 '' displays line
 '==========================================================
-private sub line_display(pline as integer)
-	send_sci(SCI_SETFIRSTVISIBLELINE, pline,0)
+private sub line_display(pline as integer,highlight as integer=0)
+	send_sci(SCI_SETFIRSTVISIBLELINE, pline-1,0)
 	if pline-send_sci(SCI_GETFIRSTVISIBLELINE,0,0)+5>send_sci(SCI_LINESONSCREEN,0,0) then
 		send_sci(SCI_LINESCROLL,0,+5)
 	else
 		send_sci(SCI_LINESCROLL,0,-5)
 	end if
-	'print send_sci(SCI_GETFIRSTVISIBLELINE,0,0)
+	if highlight=1 then
+		send_sci( SCI_SETSEL, send_sci( SCI_POSITIONFROMLINE, pLine-1 , 0 ), send_sci( SCI_GETLINEENDPOSITION, pLine-1 , 0 ) )
+	EndIf
 end sub
 '==========================================================
 '' displays line current
@@ -409,8 +411,9 @@ private sub linecur_change(linenew as integer)
 		srcdisplayed=srccur
 	end if
 	linecur=rline(linenew).nu
-	line_color(linecur,KSTYLECUR)
 	linecur_display()
+	line_color(linecur,KSTYLECUR)
+
 	'' display in current line gadget
 	setgadgettext(GCURRENTLINE,"Current line : "+line_text(linecur-1))
 end sub
@@ -593,19 +596,21 @@ private sub create_brkvbx()
 	comboboxgadget(GBRKCOND,402,3,54,35)
 end sub
 '==============================================================================
-'' creates the window for Procedure Backtracking
+'' creates the window for Procedure call chain
 '==============================================================================
-private sub create_trackbx()
-	htrckbx=OpenWindow("Procedure Backtracking",10,10,900,650,WS_POPUP or WS_CAPTION or WS_SYSMENU )
-	centerWindow(htrckbx)
-	hidewindow(htrckbx,KSHOW)
-
-	hlviewtrck=ListViewGadget(GBCKTRK,0,0,850,600,LVS_EX_GRIDLINES)
-	AddListViewColumn(GBCKTRK, "Procedure           Thread=12345",0,0,200)
-	AddListViewColumn(GBCKTRK, "Calling Line",1,1,200)
-	AddListViewColumn(GBCKTRK, "L. Nbr.",2,2,50)
-	AddListViewColumn(GBCKTRK, "File",3,3,200)
-
+private sub create_cchainbx()
+	hcchainbx=OpenWindow("Procedure call chain",10,10,900,650,WS_POPUP or WS_CAPTION or WS_SYSMENU )
+	centerWindow(hcchainbx)
+	#Ifdef __FB_WIN32__
+		Var Style=LVS_EX_GRIDLINES or LVS_EX_FULLROWSELECT
+	#Else
+		Var Style=LVS_EX_GRIDLINES
+	#EndIf
+	hlviewcchain=ListViewGadget(GCCHAIN,0,0,850,600,style)
+	AddListViewColumn(GCCHAIN, "Procedure           Thread=12345",0,0,200)
+	AddListViewColumn(GCCHAIN, "Calling Line",1,1,200)
+	AddListViewColumn(GCCHAIN, "L. Nbr.",2,2,50)
+	AddListViewColumn(GCCHAIN, "File",3,3,200)
 end sub
 '========================================================
 '' creates the window for show/expand  (shw/exp)
@@ -761,7 +766,7 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 	'send_sci(SCI_SETKEYWORDS,0, @"sub function operator constructor destructor")
 	'send_sci(SCI_STYLESETFORE, SCE_B_CONSTANT, 0)
 	'send_sci(SCI_STYLESETFORE, SCE_B_KEYWORD, &hff00ff)
-
+	'send_sci(SCI_USEPOPUP,SC_POPUP_NEVER,0)
 End sub
 '===========================================================
 ''set the title of main window
@@ -958,7 +963,6 @@ private sub menu_enable()
 	SetStateMenu(HMenuthd,MNTHRDCOL,flag)
 	SetStateMenu(HMenuthd,MNLOCPRC, flag)
 	SetStateMenu(HMenuthd,MNSHWPROC,flag)
-	SetStateMenu(HMenuthd,MNTBCKTRK,flag)
 	SetStateMenu(HMenuthd,MNTCHNING,flag)
 	SetStateMenu(HMenuthd,MNSHPRSRC,flag)
 	SetStateMenu(HMenuthd,MNPRCRADR,flag)
@@ -984,7 +988,6 @@ private sub menu_enable()
 	SetStateMenu(HMenuprc,MNLOCPRC,flag)
 	SetStateMenu(HMenuprc,MNSORTPRC,flag)
 
-	SetStateMenu(HMenuvar,MNPBCKTRK,flag)
 	SetStateMenu(HMenuvar,MNPCHNING,flag)
 	SetStateMenu(HMenuvar,MNLOCPRC,flag)
 	SetStateMenu(HMenuvar,MNCALLINE,flag)
@@ -1062,7 +1065,6 @@ private sub menu_set()
 	MenuBar(HMenuvar)
 	MenuItem(MNLOCPRC,HMenuvar, "Locate proc (source)")
 	MenuItem(MNCALLINE,HMenuvar,"Locate calling line")
-	MenuItem(MNPBCKTRK,HMenuvar,"Proc call Backtracking")
 	MenuItem(MNPCHNING,HMenuvar,"Proc call Chaining")
 	MenuItem(MNASMPRC,HMenuvar, "Asm code of proc")
 	MenuItem(MNFNDVAR,HMenuvar, "Find any text")
@@ -1108,8 +1110,7 @@ private sub menu_set()
 	MenuItem(MNLOCPRC,HMenuthd,  "Show first proc of thread (source)")
 	MenuItem(MNSHWPROC,HMenuthd, "Show proc (proc/var)")
 	MenuItem(MNSHPRSRC,HMenuthd, "Show proc (source)")
-	MenuItem(MNTBCKTRK,HMenuthd, "Proc call Backtracking")
-	MenuItem(MNTCHNING,HMenuthd, "Proc call Chaining")
+	MenuItem(MNTCHNING,HMenuthd, "Proc call Chain")
 	MenuItem(MNPRCRADR,HMenuthd, "Proc Addresses")
 	MenuItem(MNTHRDKLL,HMenuthd, "Kill thread")
 	MenuItem(MNTHRDEXP,HMenuthd, "Expand one thread")
@@ -1233,7 +1234,12 @@ private sub gui_init()
 
 	''dump memory
 	var htabmem=AddPanelGadgetItem(GRIGHTTABS,TABIDXDMP,"Memory",,1)
-	hlviewdmp=ListViewGadget(GDUMPMEM,0,0,599,365,LVS_EX_GRIDLINES)
+	#Ifdef __FB_WIN32__
+		Var Style=LVS_EX_GRIDLINES or LVS_EX_FULLROWSELECT
+	#Else
+		Var Style=LVS_EX_GRIDLINES
+	#EndIf
+	hlviewdmp=ListViewGadget(GDUMPMEM,0,0,599,365,style)
 	AddListViewColumn(GDUMPMEM, "Address",0,0,100)
 	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
 
@@ -1249,7 +1255,7 @@ private sub gui_init()
 	create_dumpbx()
 	create_brkbx()
 	create_indexbx()
-	create_trackbx()
+	create_cchainbx()
 	create_brkvbx
 	create_editbx()
 	menu_set()

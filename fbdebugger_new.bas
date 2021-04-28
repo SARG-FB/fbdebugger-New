@@ -143,10 +143,11 @@ Dim Shared brkv As tbrkv
 Dim Shared brkv2 As tbrkv 'copie for use inside brkv_box
 Dim Shared As HWND hbrkvbx  'handle
 
-''Backtracking
-Dim Shared As Integer bcktrkpr
-Dim Shared As HWND htrckbx
-Dim Shared As HWND hlviewtrck
+''call chain
+Dim Shared As HWND hcchainbx
+Dim Shared As HWND hlviewcchain
+dim shared as integer procrsav(PROCRMAX) ''index of procr
+dim shared as integer cchainthid
 
 ''edit box
 Dim Shared As HWND heditbx

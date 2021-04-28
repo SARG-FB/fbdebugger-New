@@ -258,7 +258,6 @@ enum
 	MNCALLINE
 	MNLSTVARA 'list  all proc/variables
 	MNLSTVARS 'list  onlyselectedand below
-	MNPBCKTRK 'backtrakingfromproc/var
 	MNPCHNING 'chaining  from proc/var
 	MNSHCHAR  'show  character  in a  string at a  selectedposition'03/11/2014
 	MNCLBVARA 'copy  to clipboard  all procs/vars '28/11/2014
@@ -300,8 +299,7 @@ enum
 	MNTHRDLST ''list  threads
 	MNSHWPROC ''show  procin proc/var
 	MNSHPRSRC ''show  procin source
-	MNTBCKTRK ''backtracking
-	MNTCHNING ''chaining
+	MNTCHNING ''call chain
 	MNTHRDEXP ''expand one thread
 	MNTHRDCOL ''collapse  all threads
 	MNPRCRADR ''addr  about  running procstart,end  stack
@@ -543,7 +541,7 @@ end enum
 
 ''procedure tracking
 enum
-	GBCKTRK=980
+	GCCHAIN=980
 end enum
 
 ''editing variable
@@ -925,13 +923,6 @@ Type tvrp
 	iv As Integer   'index of variables
 End Type
 
-
-''Backtracking
-Type tbcktrk
-	As Integer bcw
-	As Integer frw
-End Type
-
 ''index box
 Const INDEXBOXMAX=9
 
@@ -1153,7 +1144,6 @@ enumdef(MNLOCPRC)="MNLOCPRC"
 enumdef(MNLSTVARA)="MNLSTVARA"
 enumdef(MNLSTVARS)="MNLSTVARS"
 enumdef(MNMNGBRK)="MNMNGBRK"
-enumdef(MNPBCKTRK)="MNPBCKTRK"
 enumdef(MNPCHNING)="MNPCHNING"
 enumdef(MNPRCRADR)="MNPRCRADR"
 enumdef(MNPTDUMP)="MNPTDUMP"
@@ -1183,7 +1173,6 @@ enumdef(MNSTEPM)="MNSTEPM"
 enumdef(MNSTEPP)="MNSTEPP"
 enumdef(MNSTEPT)="MNSTEPT"
 enumdef(MNSTOP)="MNSTOP"
-enumdef(MNTBCKTRK)="MNTBCKTRK"
 enumdef(MNTCHNING)="MNTCHNING"
 enumdef(MNTHRDAUT)="MNTHRDAUT"
 enumdef(MNTHRDCHG)="MNTHRDCHG"
@@ -1227,4 +1216,4 @@ enumdef(MNVAREXPI)="MNVAREXPI"
 enumdef(MNVARCOLA)="MNVARCOLA"
 enumdef(MNVAREXPA)="MNVAREXPA"
 enumdef(GSHWSTR)="GSHWSTR"
-enumdef(GBCKTRK)="GBCKTRK"
+enumdef(GCCHAIN)="GCCHAIN"
