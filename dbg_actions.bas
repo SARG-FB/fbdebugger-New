@@ -339,6 +339,12 @@ private sub gadget_action(igadget as LONG)
 		case GDUMPBASEADR
 			dump_baseadr()
 
+		case GBRKVDEL
+			brrkv_set(0) ''cancel the break on var
+		
+		case GBRKVOK ''apply
+			brkv_update()		
+			
 		case GFILESEL
         	if GetItemComboBox(GFILELIST)<>-1 then
         		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
@@ -457,15 +463,6 @@ private sub gadget_action(igadget as LONG)
 		case GAUTODELAY
 
 		case GCMDLPARAM ''data used when closing settings box
-
-		case GINPUTVAL
-
-		case GINPUTVALOK
-			input_check()
-
-		case GINPUTVALCANCEL
-			inputval=""
-			hidewindow(hinputbx,KHIDE)
 
 		case GIDXAPPLY
 			index_apply()
@@ -631,17 +628,13 @@ private sub gadget_action(igadget as LONG)
 			EndIf
 
 		case GSHWSET 'set index
-			inputval=Str(shwexp.curidx)
-			inputtyp=1
-			input_bx("Type the new value of index")
-			If inputval<>"" then
-				if ValInt(inputval)>=shwexp.minidx and valint(inputval)<=shwexp.maxidx then
-					vrp(1).ad+=(ValInt(inputval)-shwexp.curidx)*udt(vrp(1).ty).lg
-					shwexp.curidx=ValInt(inputval)
-					setgadgettext(GSHWCUR,"Index cur : "+Str(shwexp.curidx))
-					shwexp_update()
-				end if
-			End If
+			var inputval=input_bx("Show / expand","Type the new value of index",Str(shwexp.curidx),1)
+			if ValInt(inputval)>=shwexp.minidx and valint(inputval)<=shwexp.maxidx then
+				vrp(1).ad+=(ValInt(inputval)-shwexp.curidx)*udt(vrp(1).ty).lg
+				shwexp.curidx=ValInt(inputval)
+				setgadgettext(GSHWCUR,"Index cur : "+Str(shwexp.curidx))
+				shwexp_update()
+			end if
 
 		Case GSHWUPD 'update
 			if shwexp_checkarr <>-1 then 'no redim or smaller redim otherwise delete and create a new box

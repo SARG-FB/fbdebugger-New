@@ -875,23 +875,41 @@ Next
 messbox("Line memory address","Adr = "+Str(rline(rl).ad)+" / &h "+Hex(rline(rl).ad))
 End Sub
 '=======================================================
-'' displays the inputval box
+'' displays the input box and check value
 '=======================================================
-private sub input_bx(msg as string)
-	hidewindow(hinputbx,0)
-	SetWindowText(hinputbx,msg)
-	SetGadgetText(GINPUTVAL,inputval)
-end sub
+private function input_bx(title as string,text1 as string,text2 as string="",inputtyp as INTEGER) as string
+	dim as boolean vflag=true
+	dim as double vald
+	dim as string inputval
+	do
+		inputval=inputbox(title,text1,text2)
+		if inputtyp=99 then
+			vald=Val(inputval)
+			Select Case inputtyp
+				Case 2
+					If vald<-128 Or vald>127 Then text1="min -128,max 127":vflag=false
+				Case 3
+					If vald<0 Or vald>255 Then text1="min 0,max 255":vflag=false
+				Case 5
+					If vald<-32768 Or vald>32767 Then text1="min -32768,max 32767":vflag=false
+				Case 6
+					If vald<0 Or vald>65535 Then text1="min 0,max 65535":vflag=false
+				Case 1
+					If vald<-2147483648 Or vald>2147483648 Then text1="min -2147483648,max +2147483647":vflag=false
+				Case 7,8
+					If vald<0 Or vald>4294967395 Then text1="min 0,max 4294967395":vflag=false
+			End Select
+		end if
+	loop until vflag=true
+	return inputval
+end function
 '=========================================================
 '' translates code message to the text (only windows)
 '=========================================================
 private sub winmsg()
 	Dim Buffer As String*210
-	inputval=""
-	inputtyp=5
-	input_bx("Window message number")
-
-	If inputval<>"" Then
+	var inputval=input_bx("Window message number","Enter the Windows code",,5)
+	If valint(inputval)<>0 Then
 		'Format the message string
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, ByVal 0,ValInt(inputval) , LANG_NEUTRAL, Buffer, 200, ByVal 0)
 		messbox("Windows message","Code : "+inputval+Chr(10)+"Message : "+buffer)
@@ -901,24 +919,16 @@ End Sub
 '' shows value in dec/hex/bin
 '===============================
 private sub dechexbin()
-	inputval=""
-	inputtyp=99
-	input_bx("Input value HEX(&h) or DEC")
-	If inputval<>"" Then
-		messbox("Value in dec, hex and bin","Dec= "+Str(Val(inputval))+Chr(10)+"Hex="+Hex(Val(inputval))+Chr(10)+"Bin="+Bin(Val(inputval)))
-	End If
+	var inputval=input_bx("Display value in dec/hex/bin","Input value HEX("+KAMPERSAND+"h) or DEC",,99)
+	messbox("Value in dec, hex and bin","Dec= "+Str(Val(inputval))+Chr(10)+"Hex="+Hex(Val(inputval))+Chr(10)+"Bin="+Bin(Val(inputval)))
 End Sub
 '===============================
 ''Goto selected line number
 '===============================
 private sub line_goto()
 	Dim linegoto As Integer
-	inputval=""
-	inputtyp=99
-	'linenb=line_cursor() ''get line zero based
-	input_bx("Current line "+Str(linenb+1)+", Goto line ?")
+	var inputval=input_bx("Goto line","Enter a value between 1 to "+str(send_sci(SCI_GETLINECOUNT,0,0)),,99)
 	Linegoto=ValInt(inputval)
-	messbox("lin","line="+str(linegoto))
 	If linenb>=0 Then
 	   line_display(linegoto,1)
 	End If
@@ -1111,29 +1121,6 @@ private function line_call(regip As UInteger) As Integer
 	Next
 	Return linenb
 End Function
-'===================================================
-'' checks if inputval is in the datatype range
-'===================================================
-private sub input_check()
-	dim as boolean vflag=true
-	dim as double vald
-	vald=Val(inputval)
-	Select Case inputtyp
-		Case 2
-		If vald<-128 Or vald>127 Then setwindowtext(hinputbx,"min -128,max 127"):vflag=false
-		Case 3
-		If vald<0 Or vald>255 Then setwindowtext(hinputbx,"min 0,max 255"):vflag=false
-		Case 5
-		If vald<-32768 Or vald>32767 Then setwindowtext(hinputbx,"min -32768,max 32767"):vflag=false
-		Case 6
-		If vald<0 Or vald>65535 Then setwindowtext(hinputbx,"min 0,max 65535"):vflag=false
-		Case 1
-		If vald<-2147483648 Or vald>2147483648 Then setwindowtext(hinputbx,"min -2147483648,max +2147483647"):vflag=false
-	Case 7,8
-		If vald<0 Or vald>4294967395 Then setwindowtext(hinputbx,"min 0,max 4294967395"):vflag=false
-	End Select
-	If vflag Then hidewindow(hinputbx,KHIDE) ''hide the window if value is good
-end sub
 '=====================================================================
 'in string STRG all the occurences of SRCH are replaced by REPL
 '=====================================================================
@@ -2692,7 +2679,8 @@ End Function
 '=======================================================================
 Private sub brk_set(t As Integer)
 	Dim l As Integer,i As Integer,ln As Integer
-
+	dim as string inputval
+	
 	l=line_cursor() 'get line
 
 	For i=1 To linenb
@@ -2730,19 +2718,14 @@ Private sub brk_set(t As Integer)
 			brkol(brknb).cntrsav=0
 			brkol(brknb).counter=0
 			If t=3 Then 'change value counter
-				inputval="0"
-				inputtyp=7 'ulong
-				input_bx("Set value counter for a breakpoint")
+				inputval=input_bx("breakpoint with a counter","Set value counter for a breakpoint","0",7)
 				brkol(brknb).counter=ValUInt(inputval)
 				brkol(brknb).cntrsav=brkol(i).counter
 				brkol(brknb).typ=1 'forced permanent
 			EndIf
 		Else 'still put
 			If t=7 Then 'change value counter
-				inputval=Str(brkol(i).cntrsav)
-				inputtyp=7 'ulong
-				input_bx("Change value counter, remaining= "+Str(brkol(i).counter)+" initial below")
-				If inputval="" Then inputval=Str(brkol(i).cntrsav) 'cancel button selected so no value
+				inputval=input_bx("Change value counter, remaining= "+Str(brkol(i).counter)," initial below"+Str(brkol(i).cntrsav),,7)
 				brkol(i).counter=ValUInt(inputval)
 				brkol(i).cntrsav=brkol(i).counter
 			ElseIf t=8 Then 'reset to initial value
@@ -2923,6 +2906,86 @@ private sub dsp_change(index As Integer)
 		EndIf
 	End If
 End Sub
+'========================================
+'' updates break on var/mem
+'========================================
+private sub brkv_update()
+	var testcond=GetItemComboBox(GBRKCOND)+1
+	brkv.txt+=" Stop if it becomes "
+	brkv.ttb=32 Shr (brkv.tst-1)
+
+	txt=getgadgettext(GBRKVVALUE)
+	vflag=1
+	vald=Val(txt)
+	Select Case brkv.typ
+	   Case 2
+		  If vald<-128 Or vald>127 Then setwindowtext(hwnd,"min -128,max 127"):vflag=0
+	   Case 3
+		  If vald<0 Or vald>255 Then setwindowtext(hwnd,"min 0,max 255"):vflag=0
+	   Case 5
+		  If vald<-32768 Or vald>32767 Then setwindowtext(hwnd,"min -32768,max 32767"):vflag=0
+	   Case 6
+		  If vald<0 Or vald>65535 Then setwindowtext(hwnd,"min 0,max 65535"):vflag=0
+	   Case 1
+		  If vald<-2147483648 Or vald>2147483648 Then setwindowtext(hwnd,"min -2147483648,max +2147483647"):vflag=0
+	   Case 7,8
+		  If vald<0 Or vald>4294967395 Then setwindowtext(hwnd,"min 0,max 4294967395"):vflag=0
+	   Case 9
+		  If vald<-9223372036854775808 Or vald>9223372036854775807 Then setwindowtext(hwnd,"min -9223372036854775808,max 9223372036854775807"):vflag=0
+	   Case 10
+		  If vald<0 Or vald>18446744073709551615 Then setwindowtext(hwnd,"min 0,max 18446744073709551615"):vflag=0
+	End Select
+	
+	Select Case brkv.typ
+		Case 2
+			brkv.val.vbyte=ValInt(txt)
+			brkv.vst=Str(brkv.val.vbyte)
+		Case 3
+			brkv.val.vubyte=ValUInt(txt)
+			brkv.vst=Str(brkv.val.vubyte)
+		Case 5
+			brkv.val.vshort=ValInt(txt)
+			brkv.vst=Str(brkv.val.vshort)
+		Case 6
+			brkv.val.vushort=ValUInt(txt)
+			brkv.vst=Str(brkv.val.vushort)
+		Case 1
+			brkv.val.vinteger=ValInt(txt)
+			brkv.vst=Str(brkv.val.vinteger)
+		Case 7,8
+			brkv.val.vuinteger=ValUInt(txt)
+			brkv.vst=Str(brkv.val.vuinteger)
+		Case 9
+			 brkv.val.vlongint=ValLng(txt)
+			 brkv.vst=Str(brkv.val.vlongint)
+		Case 10
+			 brkv.val.vulongint=ValULng(txt)
+			 brkv.vst=Str(brkv.val.vulongint)
+		Case Else
+			brkv.vst=Left(txt,26)'str(brkv.val.vuinteger)
+	End Select
+	
+	Select Case brkv.tst
+		Case 1
+		brkv.txt+="="
+		Case 2
+		brkv.txt+="<>"
+		Case 3
+		brkv.txt+=">"
+		Case 4
+		brkv.txt+="<"
+		Case 5
+		brkv.txt+=">="
+		Case 6
+		brkv.txt+="<="
+	End Select
+	brkv=brkv
+	Modify_Menu(MNVARBRK,HMenuvar,brkv.txt+brkv.vst)
+	hidewindow(hbrkvbx ,KHIDE)
+
+end sub
+'========================================================================
+'' 
 '========================================================================
 private sub brkv_set(a As Integer) ''break on variable change
 	Dim As Integer t,p
@@ -2931,6 +2994,7 @@ private sub brkv_set(a As Integer) ''break on variable change
 		brkv.adr=0
 		SetGadgetText(GBRKVAR,"Break on var")
 		Modify_Menu(MNVARBRK,HMenuvar,"Break on var")
+		hidewindow(hbrkvbx ,KHIDE)
 		Exit Sub
 	ElseIf a=1 Then 'new
 		If var_find2(htviewvar)=-1 Then Exit Sub 'search index variable under cursor
@@ -2946,10 +3010,9 @@ private sub brkv_set(a As Integer) ''break on variable change
 		#EndIf
 
 		If t>10 AndAlso p=0 AndAlso t<>4 AndAlso t<>13 AndAlso t<>14 Then
-		messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint or z/f/string")
-		Exit Sub
-	End If
-
+			messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint or z/f/string")
+			Exit Sub
+		End If
 
 		brkv2.typ=t           'change in brkv_box if pointed value
 		brkv2.adr=varfind.ad   'idem
@@ -2977,7 +3040,20 @@ private sub brkv_set(a As Integer) ''break on variable change
 	End If
 	brkv2.txt=Left(ztxt,InStr(ztxt,"<"))+var_sh2(brkv2.typ,brkv2.adr,p)
 
-	'todo fb_MDialog(@brkv_box,"Test for break on value",windmain,283,25,350,50)
+	ResetAllComboBox(GBRKCOND)
+	AddComboBoxItem(GBRKCOND,"=",-1)
+	AddComboBoxItem(GBRKCOND,"<>",-1)
+	If brkv.typ<>4 AndAlso brkv.typ<>13 AndAlso brkv.typ<>14 Then
+		AddComboBoxItem(GBRKCOND,">",-1)
+		AddComboBoxItem(GBRKCOND,"<",-1)
+		AddComboBoxItem(GBRKCOND,">=",-1)
+		AddComboBoxItem(GBRKCOND,"<=",-1)
+	end if
+
+If brkv.vst="" Then
+  brkv.vst=Mid(brkv.txt,InStr(brkv.txt,"=")+1,25)
+End If
+setgadgettext(GBRKVVALUE,brkv.vst)
 
 End Sub
 '===================== break on var ===============================================================

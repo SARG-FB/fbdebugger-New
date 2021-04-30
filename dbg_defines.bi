@@ -20,6 +20,12 @@
 #include once "SciLexer.bi"
 #Include Once "file.bi"
 
+#ifdef __FB_WIN32 ''sometime need of double & otherwise underlined next character
+	KAMPERSAND="&&"
+#else
+	KAMPERSAND="&"
+#EndIf
+
 'define data 64bit/32bit
 #Ifdef __FB_64BIT__
    #Define regip rip
@@ -469,13 +475,6 @@ enum
 	GTEXTFTYPE
 	GTEXTFSIZE
 	GTEXTFCOLOR
-end enum
-
-''for inputval box
-enum
-	GINPUTVAL=920
-	GINPUTVALOK
-	GINPUTVALCANCEL
 end enum
 
 ''for dump memory
@@ -1201,9 +1200,6 @@ enumdef(MNWCHTTGL)="MNWCHTTGL"
 enumdef(MNWCHVAR)="MNWCHVAR"
 enumdef(MNWINMSG)="MNWINMSG"
 enumdef(TTRERUN)="TTRERUN"
-enumdef(GINPUTVAL)="GINPUTVAL"
-enumdef(GINPUTVALCANCEL)="GINPUTVALCANCEL"
-enumdef(GINPUTVALOK)="GINPUTVALOK"
 enumdef(GEDTVAR)="GEDTVAR"
 enumdef(GEDTVALUE)="GEDTVALUE"
 enumdef(GEDTOK)="GEDTOK"

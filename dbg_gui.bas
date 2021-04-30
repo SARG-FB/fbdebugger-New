@@ -802,16 +802,6 @@ private sub create_settingsbx()
 	textgadget(GTEXTFCOLOR,12,330,200,30,"color",0)
 
 end sub
-'=============================================
-'' inputval window
-'=============================================
-private sub create_inputbx()
-	hinputbx=OpenWindow("Enter a value",10,10,300,130,WS_POPUP or WS_CAPTION or WS_SYSMENU )
-	centerWindow(hinputbx)
-	StringGadget(GINPUTVAL,10,10,200,30,"")
-	ButtonGadget (GINPUTVALOK,10,50,60,30,"Ok")
-	ButtonGadget (GINPUTVALCANCEL,80,50,60,30,"Cancel")
-end sub
 '=========================================================================
 '' enables or disables buttons according the status and updates status
 '=========================================================================
@@ -1251,7 +1241,6 @@ private sub gui_init()
 
 	create_shwexpbx()
 	create_settingsbx()
-	create_inputbx()
 	create_dumpbx()
 	create_brkbx()
 	create_indexbx()

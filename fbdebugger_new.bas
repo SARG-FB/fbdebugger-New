@@ -119,10 +119,6 @@ dim shared as hwnd hdumpbx ''window for handling dump
 
 ''for autostepping
 dim shared as integer autostep=50
-' input_box
-Dim Shared inputval As ZString *25
-Dim Shared inputtyp As Byte
-dim shared as hwnd hinputbx ''window for handling inputval
 
 ''watched
 dim Shared wtch(WTCHMAX) As twtch  ''zero based
@@ -139,9 +135,8 @@ Dim Shared as String brkexe(9,BRKMAX) 'to save breakpoints by session
 dim shared as hwnd hbrkbx ''window for managing breakpoints
 
 ''breakpoint on variable/memory (when there is a change)
-Dim Shared brkv As tbrkv
-Dim Shared brkv2 As tbrkv 'copie for use inside brkv_box
-Dim Shared As HWND hbrkvbx  'handle
+Dim Shared As tbrkv brkv
+Dim Shared As HWND hbrkvbx ''handle
 
 ''call chain
 Dim Shared As HWND hcchainbx
@@ -351,8 +346,6 @@ do
 			HideWindow(EventHwnd,KHIDE)
 			if EventHwnd=hsettings then ''settings box
 				settings_update()
-			elseif EventHwnd=hinputbx then ''resets inputval and closes box
-				inputval=""
 			elseif EventHwnd=hshwexpbx then ''releases shwewp
 				shwexp.free=true
 			end if
