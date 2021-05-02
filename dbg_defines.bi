@@ -481,9 +481,14 @@ end enum
 enum
 	GDUMPAPPLY=930
 	GDUMPADR
+	GDUMPEDIT
 
 	GDUMPTSIZE
 	GDUMPSIZE
+
+	GDUMPBASEADR
+	GDUMPDECHEX
+	GDUMPSIGNED
 
 	GDUMPMOVEGRP
 	GDUMPCL
@@ -504,12 +509,6 @@ enum
 	GDUMPPTR1
 	GDUMPPTR2
 
-	GDUMPBASEGRP
-	GDUMPDEC
-	GDUMPHEX
-
-	GDUMPSIGNE
-	GDUMPBASEADR
 end enum
 
 ''shw/exp
@@ -942,6 +941,7 @@ declare sub index_update()
 declare function var_find() as INTEGER
 declare function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="") As String
 declare sub shwexp_init()
+declare sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer) ',src as integer=0)
 '===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)
@@ -992,12 +992,10 @@ enumdef(GCURLINETTIP)="GCURLINETTIP"
 enumdef(GCURRENTLINE)="GCURRENTLINE"
 enumdef(GDUMPADR)="GDUMPADR"
 enumdef(GDUMPAPPLY)="GDUMPAPPLY"
-enumdef(GDUMPBASEGRP)="GDUMPBASEGRP"
 enumdef(GDUMPBRK)="GDUMPBRK"
 enumdef(GDUMPCL)="GDUMPCL"
 enumdef(GDUMPCP)="GDUMPCP"
-enumdef(GDUMPDEC)="GDUMPDEC"
-enumdef(GDUMPHEX)="GDUMPHEX"
+enumdef(GDUMPDECHEX)="GDUMPDECHEX"
 enumdef(GDUMPLL)="GDUMPLL"
 enumdef(GDUMPLP)="GDUMPLP"
 enumdef(GDUMPMEM)="GDUMPMEM"
@@ -1012,7 +1010,8 @@ enumdef(GDUMPPTRNO)="GDUMPPTRNO"
 enumdef(GDUMPSHW)="GDUMPSHW"
 enumdef(GDUMPSIZE)="GDUMPSIZE"
 enumdef(GDUMPTSIZE)="GDUMPTSIZE"
-enumdef(GDUMPSIGNE)="GDUMPSIGNE"
+enumdef(GDUMPSIGNED)="GDUMPSIGNED"
+enumdef(GDUMPEDIT)="GDUMPEDI"
 enumdef(GDUMPBASEADR)="GDUMPBASEADR"
 enumdef(GDUMPWCH)="GDUMPWCH"
 enumdef(GDUMUSEGRP)="GDUMUSEGRP"

@@ -291,11 +291,11 @@ private sub dump_set()
 			Case 11 'single
 				dumpnbcol=4 :lg=120:combo=2
 				dumpbase=0
-				SetGadgetState(GDUMPDEC,1)
+				SetGadgettext(GDUMPDECHEX,">Hex")
 			Case 12 'double
 				dumpnbcol=2 :lg=180:combo=3
 				dumpbase=0
-				SetGadgetState(GDUMPDEC,1)
+				SetGadgettext(GDUMPDECHEX,">Hex")
 		End Select
 	EndIf
 	delta=16/dumpnbcol
@@ -516,7 +516,7 @@ private sub create_editbx()
 	centerWindow(heditbx)
 
 	textgadget(GEDTVAR,15,10,445,30,"Fb_myvar <Byval param / **Zstring>=37415896")
-	stringgadget(GEDTVALUE,450,10,160,30,"3741589637415896")
+	stringgadget(GEDTVALUE,450,10,185,30,"3741589637415896")
 	buttongadget(GEDTOK,420,70,75,30,"Apply")
 	buttongadget(GEDTCANCEL,500,70,75,30,"Cancel")
 
@@ -643,10 +643,12 @@ private sub create_dumpbx()
 	hdumpbx=OpenWindow("Handling dump parameters",10,10,370,450,WS_POPUP or WS_CAPTION or WS_SYSMENU )
 	centerWindow(hdumpbx)
 
-	load_button(IDBUTENLRMEM,@"memory.bmp",300,5,@"Reduce the window",,0)
+	'load_button(IDBUTENLRMEM,@"memory.bmp",300,5,@"Reduce the window",,0)
 
 	ButtonGadget(GDUMPAPPLY,12,5,110,30,"Apply address : ")
-	stringgadget(GDUMPADR,130,5,80,30,"12345678901")
+	stringgadget(GDUMPADR,130,5,95,30,"12345678901")
+
+	ButtonGadget(GDUMPEDIT,230,5,120,30,"Edit top/left cell")
 
 	textgadget(GDUMPTSIZE,12,40,105,30,"Size of column : ",0)
 	ListBoxGadget(GDUMPSIZE,130,40,75,70)
@@ -655,13 +657,9 @@ private sub create_dumpbx()
 	AddListBoxItem(GDUMPSIZE,"4 bytes")
 	AddListBoxItem(GDUMPSIZE,"8 bytes")
 
-	groupgadget(GDUMPBASEGRP,10,120,130,55,"Dec / Hex data")
-	optiongadget(GDUMPDEC,15,140,50,30,"Dec")
-	optiongadget(GDUMPHEX,70,140,50,30,"Hex")
-	SetGadgetState(GDUMPDEC,1)
-
-	ButtonGadget(GDUMPSIGNE,150,125,80,30,"U/Signed")
-	ButtonGadget(GDUMPBASEADR,235,125,95,30,"Dec/Hex adr")
+	ButtonGadget(GDUMPBASEADR,12,120,100,30,"Dec/Hex adr")
+	ButtonGadget(GDUMPDECHEX,130,120,100,30,">Hex data")
+	ButtonGadget(GDUMPSIGNED,248,120,100,30,"U/Signed")
 
 	groupgadget(GDUMPMOVEGRP,10,190,205,60,"Move by Cell / Line / Page")
 	ButtonGadget(GDUMPCL,12, 214, 30, 30,  "C-")

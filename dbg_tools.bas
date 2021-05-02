@@ -995,7 +995,7 @@ End Sub
 '======================================
 '' changes the sign for some datatypes
 '======================================
-private sub dump_sign()
+private sub dump_signed()
 	Select Case dumptyp
 		Case 2
 			dumptyp=3
@@ -1039,13 +1039,22 @@ end sub
 '' changes the first address
 '======================================
 private sub dump_change()
-	dumpadr+=16*GetItemListView()+(16\dumpnbcol)*(GetSubItemListView()-1)
-	dump_sh()
-	SetGadgetText(GDUMPADR,str(dumpadr))
+	if GetItemListView()>0 and GetSubItemListView()>0 then
+		dumpadr+=16*GetItemListView()+(16\dumpnbcol)*(GetSubItemListView()-1)
+		dump_sh()
+		SetGadgetText(GDUMPADR,str(dumpadr))
+	end if
 	hidewindow(hdumpbx,KSHOW)
 end sub
 '======================================
-''
+'' edits the top/left cell
+'======================================
+private sub dump_edit()
+	edit_fill("Editing a cell from dump memory "+str(dumpadr)+"="+str(GetTextItemListView(GDUMPMEM,0,1)),dumpadr,dumptyp,0)
+	dump_sh()  'todo or just update the cell ?
+end sub
+'======================================
+'' displays updated dumpmem
 '======================================
 private sub dump_sh()
 	Dim As String tmp
@@ -1098,10 +1107,10 @@ private sub dump_sh()
 			 Case 55,56 'short/hex
 				tmp=Right("000"+Hex(*ptrs.pshort),4)
 				ptrs.pshort+=1
-			 Case 51,58 'integer/hex
+			 Case 51,58,61 'integer/hex
 				tmp=Right("0000000"+Hex(*ptrs.pinteger),8)
 				ptrs.pinteger+=1
-			Case 59,60 'longinteger/hex
+			Case 59,60,62 'longinteger/hex
 				tmp=Right("000000000000000"+Hex(*ptrs.plongint),16)
 				ptrs.pulongint+=1
 		  End Select
@@ -1886,7 +1895,7 @@ end sub
 '============================================================
 '' manages editing of var (src=0) or mem (src=1)
 '============================================================
-private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer)
+private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer) ',src as integer=0)
 	dim as integer p2,aptr
 
 	If (typ=4 Or typ=13 Or typ=14 Or typ=15) And pt=0 Then
@@ -3960,7 +3969,6 @@ private sub sources_load(n As integer,exedate as double)
 					Send_sci(SCI_SetText, 0, @sourcebuf(0))
 					Send_sci(SCI_SETREADONLY,1,0)
 				end if
-
 			endif
 			If FileDateTime (source(isrc))>exedate Then
 				messbox("Loading source file","WARNING Date of "+source(isrc)+Chr(13)+" is > date of exe")

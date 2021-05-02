@@ -319,24 +319,24 @@ private sub gadget_action(igadget as LONG)
 		'case GDUMPPTR1
 		'case GDUMPPTR2
 
-		case GDUMPDEC
+		case GDUMPMEM
+			dump_change() ''click on a cell or header
+
+		case GDUMPDECHEX
 			if dumpbase=50 then
 				dumpbase=0
-				dump_sh()
+				setgadgettext(GDUMPDECHEX,">Hex")
+			else
+				dumpbase=50
+				setgadgettext(GDUMPDECHEX,">Dec")
 			end if
+			dump_sh()
 
-		case GDUMPHEX
-			if dumpbase=0 then
-				if dumptyp=11 or dumptyp=12 then
-					messbox("Error","Impossible to display single or double in hex")
-				else
-					dumpbase=50
-					dump_sh()
-				EndIf
-			end if
+		case GDUMPSIGNED
+			dump_signed()
 
-		case GDUMPSIGNE
-			dump_sign()
+		case GDUMPEDIT
+			dump_edit()
 
 		case GDUMPBASEADR
 			dump_baseadr()
@@ -354,7 +354,6 @@ private sub gadget_action(igadget as LONG)
 		case GFILESEL
         	if GetItemComboBox(GFILELIST)<>-1 then
         		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
-	        		'MessBox("Jumping to file ="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
 	        		PanelGadgetSetCursel(GSRCTAB,GetItemComboBox(GFILELIST))
         			source_change(GetItemComboBox(GFILELIST))
         		else
@@ -368,6 +367,7 @@ private sub gadget_action(igadget as LONG)
 			source_change(PanelGadgetGetCursel(GSRCTAB))
 
 		case GRIGHTTABS
+			hidewindow(hdumpbx,KHIDE) ''hidding by default
 			select case PanelGadgetGetCursel(GRIGHTTABS)
 				case TABIDXVAR
 					'hidewindow(htabvar,KSHOW)
@@ -659,9 +659,6 @@ private sub gadget_action(igadget as LONG)
 					line_display(rline(procr(procrsav(iline)).cl).nu-1,1)
 				end if
 			end if
-
-		case GDUMPMEM
-			dump_change()
 
 		case else
         	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))
