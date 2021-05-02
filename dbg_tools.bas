@@ -1019,9 +1019,9 @@ private sub dump_sign()
 	end select
 	dump_sh()
 End Sub
-'======================================
-'' changes the sign for some datatypes
-'======================================
+'===============================================================
+'' changes the used base (dec/hex) for the displayed addresses
+'===============================================================
 private sub dump_baseadr()
 	static as integer decbase=1
 	dim as integer ad=dumpadr
@@ -1034,7 +1034,15 @@ private sub dump_baseadr()
 		end if
 		ad+=16
 	Next
-
+end sub
+'======================================
+'' changes the first address
+'======================================
+private sub dump_change()
+	dumpadr+=16*GetItemListView()+(16\dumpnbcol)*(GetSubItemListView()-1)
+	dump_sh()
+	SetGadgetText(GDUMPADR,str(dumpadr))
+	hidewindow(hdumpbx,KSHOW)
 end sub
 '======================================
 ''
@@ -1726,7 +1734,7 @@ private sub proc_sh()
 			Else 'sorted by proc name
 				libel+=.nm+":"+proc_retval(j)+"   in : "+source_name(source(.sr))
 			EndIf
-			If flagverbose Then libel+=" ["+Str(.db)+"]"
+			If flagverbose Then libel+=" ["+Str(.db)+"/"+hex(.db)+"]"
 			.tv=AddTreeViewItem(GTVIEWPRC,libel,cast (hicon, 0),0,TVI_LAST,0)
 		End With
 	Next
@@ -2574,7 +2582,7 @@ private sub watch_trace(t As Integer=WTCHALL)
 	EndIf
 End Sub
 '=====================================================================
-private sub watch_addtr
+private sub watch_addtr()
 	wtchnew=-1
 	If var_find2(htviewvar)<>-1 Then
 		watch_set()
@@ -2680,7 +2688,7 @@ End Function
 Private sub brk_set(t As Integer)
 	Dim l As Integer,i As Integer,ln As Integer
 	dim as string inputval
-	
+
 	l=line_cursor() 'get line
 
 	For i=1 To linenb
@@ -2910,82 +2918,83 @@ End Sub
 '' updates break on var/mem
 '========================================
 private sub brkv_update()
-	var testcond=GetItemComboBox(GBRKCOND)+1
-	brkv.txt+=" Stop if it becomes "
-	brkv.ttb=32 Shr (brkv.tst-1)
 
-	txt=getgadgettext(GBRKVVALUE)
-	vflag=1
+	var txt=getgadgettext(GBRKVVALUE)
+	dim as integer vflag=1
+	dim as double vald
+
+	brkv.tst=GetItemComboBox(GBRKVCOND)
+	brkv.ttb=32 Shr (brkv.tst)
+
 	vald=Val(txt)
 	Select Case brkv.typ
 	   Case 2
-		  If vald<-128 Or vald>127 Then setwindowtext(hwnd,"min -128,max 127"):vflag=0
+		  If vald<-128 Or vald>127 Then setwindowtext(hbrkvbx,"min -128,max 127"):vflag=0
 	   Case 3
-		  If vald<0 Or vald>255 Then setwindowtext(hwnd,"min 0,max 255"):vflag=0
+		  If vald<0 Or vald>255 Then setwindowtext(hbrkvbx,"min 0,max 255"):vflag=0
 	   Case 5
-		  If vald<-32768 Or vald>32767 Then setwindowtext(hwnd,"min -32768,max 32767"):vflag=0
+		  If vald<-32768 Or vald>32767 Then setwindowtext(hbrkvbx,"min -32768,max 32767"):vflag=0
 	   Case 6
-		  If vald<0 Or vald>65535 Then setwindowtext(hwnd,"min 0,max 65535"):vflag=0
+		  If vald<0 Or vald>65535 Then setwindowtext(hbrkvbx,"min 0,max 65535"):vflag=0
 	   Case 1
-		  If vald<-2147483648 Or vald>2147483648 Then setwindowtext(hwnd,"min -2147483648,max +2147483647"):vflag=0
+		  If vald<-2147483648 Or vald>2147483648 Then setwindowtext(hbrkvbx,"min -2147483648,max +2147483647"):vflag=0
 	   Case 7,8
-		  If vald<0 Or vald>4294967395 Then setwindowtext(hwnd,"min 0,max 4294967395"):vflag=0
+		  If vald<0 Or vald>4294967395 Then setwindowtext(hbrkvbx,"min 0,max 4294967395"):vflag=0
 	   Case 9
-		  If vald<-9223372036854775808 Or vald>9223372036854775807 Then setwindowtext(hwnd,"min -9223372036854775808,max 9223372036854775807"):vflag=0
+		  If vald<-9223372036854775808 Or vald>9223372036854775807 Then setwindowtext(hbrkvbx,"min -9223372036854775808,max 9223372036854775807"):vflag=0
 	   Case 10
-		  If vald<0 Or vald>18446744073709551615 Then setwindowtext(hwnd,"min 0,max 18446744073709551615"):vflag=0
+		  If vald<0 Or vald>18446744073709551615 Then setwindowtext(hbrkvbx,"min 0,max 18446744073709551615"):vflag=0
 	End Select
-	
-	Select Case brkv.typ
-		Case 2
-			brkv.val.vbyte=ValInt(txt)
-			brkv.vst=Str(brkv.val.vbyte)
-		Case 3
-			brkv.val.vubyte=ValUInt(txt)
-			brkv.vst=Str(brkv.val.vubyte)
-		Case 5
-			brkv.val.vshort=ValInt(txt)
-			brkv.vst=Str(brkv.val.vshort)
-		Case 6
-			brkv.val.vushort=ValUInt(txt)
-			brkv.vst=Str(brkv.val.vushort)
-		Case 1
-			brkv.val.vinteger=ValInt(txt)
-			brkv.vst=Str(brkv.val.vinteger)
-		Case 7,8
-			brkv.val.vuinteger=ValUInt(txt)
-			brkv.vst=Str(brkv.val.vuinteger)
-		Case 9
-			 brkv.val.vlongint=ValLng(txt)
-			 brkv.vst=Str(brkv.val.vlongint)
-		Case 10
-			 brkv.val.vulongint=ValULng(txt)
-			 brkv.vst=Str(brkv.val.vulongint)
-		Case Else
-			brkv.vst=Left(txt,26)'str(brkv.val.vuinteger)
-	End Select
-	
-	Select Case brkv.tst
-		Case 1
-		brkv.txt+="="
-		Case 2
-		brkv.txt+="<>"
-		Case 3
-		brkv.txt+=">"
-		Case 4
-		brkv.txt+="<"
-		Case 5
-		brkv.txt+=">="
-		Case 6
-		brkv.txt+="<="
-	End Select
-	brkv=brkv
-	Modify_Menu(MNVARBRK,HMenuvar,brkv.txt+brkv.vst)
-	hidewindow(hbrkvbx ,KHIDE)
+	if vflag=1 then
+		Select Case brkv.typ
+			Case 2
+				brkv.val.vbyte=ValInt(txt)
+				brkv.vst=Str(brkv.val.vbyte)
+			Case 3
+				brkv.val.vubyte=ValUInt(txt)
+				brkv.vst=Str(brkv.val.vubyte)
+			Case 5
+				brkv.val.vshort=ValInt(txt)
+				brkv.vst=Str(brkv.val.vshort)
+			Case 6
+				brkv.val.vushort=ValUInt(txt)
+				brkv.vst=Str(brkv.val.vushort)
+			Case 1
+				brkv.val.vinteger=ValInt(txt)
+				brkv.vst=Str(brkv.val.vinteger)
+			Case 7,8
+				brkv.val.vuinteger=ValUInt(txt)
+				brkv.vst=Str(brkv.val.vuinteger)
+			Case 9
+				 brkv.val.vlongint=ValLng(txt)
+				 brkv.vst=Str(brkv.val.vlongint)
+			Case 10
+				 brkv.val.vulongint=ValULng(txt)
+				 brkv.vst=Str(brkv.val.vulongint)
+			Case Else
+				brkv.vst=Left(txt,26)'str(brkv.val.vuinteger)
+		End Select
 
+		Select Case brkv.tst+1
+			Case 1
+			brkv.txt+="="
+			Case 2
+			brkv.txt+="<>"
+			Case 3
+			brkv.txt+=">"
+			Case 4
+			brkv.txt+="<"
+			Case 5
+			brkv.txt+=">="
+			Case 6
+			brkv.txt+="<="
+		End Select
+		Modify_Menu(MNVARBRK,HMenuvar,brkv.txt+brkv.vst)
+		hidewindow(hbrkvbx ,KHIDE)
+	end if
 end sub
 '========================================================================
-'' 
+''
 '========================================================================
 private sub brkv_set(a As Integer) ''break on variable change
 	Dim As Integer t,p
@@ -3014,47 +3023,52 @@ private sub brkv_set(a As Integer) ''break on variable change
 			Exit Sub
 		End If
 
-		brkv2.typ=t           'change in brkv_box if pointed value
-		brkv2.adr=varfind.ad   'idem
-		brkv2.vst=""          'idem
-		brkv2.tst=1           'type of test
-		brkv2.ivr=varfind.iv
+		brkv.typ=t           'change in brkv_box if pointed value
+		brkv.adr=varfind.ad   'idem
+		brkv.vst=""          'idem
+		brkv.tst=1           'type of test
+		brkv.ivr=varfind.iv
 		' if dyn array store real adr
 		If Cast(Integer,vrb(varfind.pr).arr)=-1 Then
-			ReadProcessMemory(dbghand,Cast(LPCVOID,vrr(varfind.iv).ini),@brkv2.arr,4,0)
+			ReadProcessMemory(dbghand,Cast(LPCVOID,vrr(varfind.iv).ini),@brkv.arr,sizeof(integer),0)
 		Else
-			brkv2.arr=0
+			brkv.arr=0
 		End If
 
 		If vrb(varfind.pr).mem=3 Then
-			brkv2.psk=-2 'static
+			brkv.psk=-2 'static
 		Else
 			For j As UInteger = 1  To procrnb 'find proc to delete watching
-				If varfind.iv>=procr(j).vr And varfind.iv<procr(j+1).vr Then brkv2.psk=procr(j).sk:Exit For
+				If varfind.iv>=procr(j).vr And varfind.iv<procr(j+1).vr Then
+					brkv.psk=procr(j).sk
+					Exit For
+				EndIf
 			Next
 		End If
 		ztxt=GetTextTreeView(GTVIEWVAR,vrr(varfind.iv).tv)
 	Else 'update
-		brkv2=brkv
 		ztxt=GetTextTreeView(GTVIEWVAR,vrr(varfind.iv).tv)
 	End If
-	brkv2.txt=Left(ztxt,InStr(ztxt,"<"))+var_sh2(brkv2.typ,brkv2.adr,p)
+	brkv.txt=Left(ztxt,InStr(ztxt,"<"))+var_sh2(brkv.typ,brkv.adr,p)
 
-	ResetAllComboBox(GBRKCOND)
-	AddComboBoxItem(GBRKCOND,"=",-1)
-	AddComboBoxItem(GBRKCOND,"<>",-1)
+	ResetAllComboBox(GBRKVCOND)
+	AddComboBoxItem(GBRKVCOND,"=",-1)
+	AddComboBoxItem(GBRKVCOND,"<>",-1)
 	If brkv.typ<>4 AndAlso brkv.typ<>13 AndAlso brkv.typ<>14 Then
-		AddComboBoxItem(GBRKCOND,">",-1)
-		AddComboBoxItem(GBRKCOND,"<",-1)
-		AddComboBoxItem(GBRKCOND,">=",-1)
-		AddComboBoxItem(GBRKCOND,"<=",-1)
+		AddComboBoxItem(GBRKVCOND,">",-1)
+		AddComboBoxItem(GBRKVCOND,"<",-1)
+		AddComboBoxItem(GBRKVCOND,">=",-1)
+		AddComboBoxItem(GBRKVCOND,"<=",-1)
 	end if
 
-If brkv.vst="" Then
-  brkv.vst=Mid(brkv.txt,InStr(brkv.txt,"=")+1,25)
-End If
-setgadgettext(GBRKVVALUE,brkv.vst)
-
+	If brkv.vst="" Then
+	  brkv.vst=Mid(brkv.txt,InStr(brkv.txt,"=")+1,25)
+	End If
+	brkv.txt+=" Stop if it becomes "
+	ShowListComboBox(GBRKVCOND,1)
+	SetGadgetText(GBRKVAR,brkv.txt)
+	setgadgettext(GBRKVVALUE,brkv.vst)
+	hidewindow(hbrkvbx,KSHOW)
 End Sub
 '===================== break on var ===============================================================
 private function brkv_test() As Byte

@@ -176,11 +176,13 @@ private sub menu_action(poption as integer)
 
          	Case MNSETWTCH 'set watched first free slot
             	If var_find2(htviewvar)<>-1 Then watch_set()
+
             Case MNTRCKIDX0 To MNTRCKRST
             messbox("Feature not yet implemented","array_tracking(poption-MNTRCKIDX0)")
          		'array_tracking(poption-MNTRCKIDX0)
             Case MNSETWTTR 'set watched + trace
-         		watch_addtr
+				watch_addtr()
+
          	Case MNVARDMP  'var dump
               var_dump(htviewvar)
          	Case MNSHSTRG  'show z/w/string
@@ -340,11 +342,15 @@ private sub gadget_action(igadget as LONG)
 			dump_baseadr()
 
 		case GBRKVDEL
-			brrkv_set(0) ''cancel the break on var
-		
+			brkv_set(0) ''cancel the break on var
+
 		case GBRKVOK ''apply
-			brkv_update()		
-			
+			brkv_update()
+
+		case GBRKVCOND
+		case GBRKVVALUE
+
+
 		case GFILESEL
         	if GetItemComboBox(GFILELIST)<>-1 then
         		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
@@ -642,17 +648,20 @@ private sub gadget_action(igadget as LONG)
 				shwexp_update()
 			endif
 
-			case GCCHAIN
-				'messbox("ITEM="+str(GetItemListView()),"SUBITEM ="+str(GetSubItemListView())+" GetColumnListView="+str(GetColumnListView()))
-				var iline=GetItemListView()
-				if iline=0 then
-					thread_execline(1,cchainthid) 'show next executed line of thread
-				else
-					if GetTextItemListView(GCCHAIN,iline,0)<>"" then
-						source_change(proc(procr(procrsav(iline)).idx).sr)
-						line_display(rline(procr(procrsav(iline)).cl).nu-1,1)
-					end if
+		case GCCHAIN
+			'messbox("ITEM="+str(GetItemListView()),"SUBITEM ="+str(GetSubItemListView())+" GetColumnListView="+str(GetColumnListView()))
+			var iline=GetItemListView()
+			if iline=0 then
+				thread_execline(1,cchainthid) 'show next executed line of thread
+			else
+				if GetTextItemListView(GCCHAIN,iline,0)<>"" then
+					source_change(proc(procr(procrsav(iline)).idx).sr)
+					line_display(rline(procr(procrsav(iline)).cl).nu-1,1)
 				end if
+			end if
+
+		case GDUMPMEM
+			dump_change()
 
 		case else
         	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))

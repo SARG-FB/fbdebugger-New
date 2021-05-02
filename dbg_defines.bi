@@ -21,9 +21,9 @@
 #Include Once "file.bi"
 
 #ifdef __FB_WIN32 ''sometime need of double & otherwise underlined next character
-	KAMPERSAND="&&"
+	#define KAMPERSAND "&&"
 #else
-	KAMPERSAND="&"
+	#define KAMPERSAND "&"
 #EndIf
 
 'define data 64bit/32bit
@@ -535,7 +535,7 @@ enum
 	GBRKVVALUE
 	GBRKVOK
 	GBRKVDEL
-	GBRKCOND
+	GBRKVCOND
 end enum
 
 ''procedure tracking
@@ -949,7 +949,7 @@ enumdef(FONTGROUP)="FONTGROUP"
 enumdef(GAUTODELAY)="GAUTODELAY"
 enumdef(GBOTHLOG)="GBOTHLOG"
 enumdef(GBRKCLOSE)="GBRKCLOSE"
-enumdef(GBRKCOND)="GBRKCOND"
+enumdef(GBRKVCOND)="GBRKVCOND"
 enumdef(GBRKDEL01)="GBRKDEL01"
 enumdef(GBRKDEL02)="GBRKDEL02"
 enumdef(GBRKDEL03)="GBRKDEL03"

@@ -259,6 +259,7 @@ private sub statusbar_text(fieldn as long, text as string)
 	SetStatusBarField(GSTATUSBAR,fieldn,fieldpos,text)
 End Sub
 '=======================================================
+'=======================================================
 private sub dump_set()
     Dim tmp As String
 	dim as integer lg,delta,combo
@@ -591,9 +592,9 @@ private sub create_brkvbx()
 
 	textgadget(GBRKVAR,6,6,390,30,"Stop if b<byte>=-88")
 	stringgadget(GBRKVVALUE,459,3,90,30,"-90")
-	buttongadget(GBRKVOK,390,40,55,30,"Apply")
-	buttongadget(GBRKVDEL,450,40,55,30,"Delete")
-	comboboxgadget(GBRKCOND,402,3,54,35)
+	buttongadget(GBRKVOK,190,40,55,30,"Apply")
+	buttongadget(GBRKVDEL,250,40,55,30,"Delete")
+	comboboxgadget(GBRKVCOND,402,3,54,150)
 end sub
 '==============================================================================
 '' creates the window for Procedure call chain
