@@ -546,10 +546,11 @@ end enum
 
 #define KEDITVAR  0
 #define KEDITDMP  1
-#define KEDITCELL 2
+#define KEDITARR 2
 #define KEDITWCH  3
 #define KEDITPTD  4
 #define KEDITSHW  5
+#define KEDITTOP  6
 
 enum
 	GEDTVAR=990

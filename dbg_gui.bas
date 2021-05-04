@@ -1136,7 +1136,7 @@ End Sub
 private sub gui_init()
 
 	''main windows
-	hmain=OpenWindow("",10,10,1100,600)
+	hmain=OpenWindow("",10,10,1150,600)
 	settitle()
 	''scintilla gadget
 	create_scibx(GSCINTILLA,0,80,450,WindowClientHeight(hmain)-100,)
@@ -1209,24 +1209,24 @@ private sub gui_init()
 		sendmessage(hmain,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
 	#endif
 	''right panels
-	PanelGadget(GRIGHTTABS,500,30,599,400)
+	PanelGadget(GRIGHTTABS,500,30,599,385)
 	SetGadgetFont(GRIGHTTABS,CINT(LoadFont("Courier New",11)))
 
 	''treeview proc/var
 	var htabvar=AddPanelGadgetItem(GRIGHTTABS,TABIDXVAR,"Proc/var",,1)
-	htviewvar=treeviewgadget(GTVIEWVAR,0,0,499,299,KTRRESTYLE)
+	htviewvar=treeviewgadget(GTVIEWVAR,0,0,599,365,KTRRESTYLE)
 
 	''treeview procs
 	var htabprc=AddPanelGadgetItem(GRIGHTTABS,TABIDXPRC,"Procs",,1)
-	htviewprc=treeviewgadget(GTVIEWPRC,0,0,499,299,KTRRESTYLE)
+	htviewprc=treeviewgadget(GTVIEWPRC,0,0,599,365,KTRRESTYLE)
 
 	''treeview threads
 	var htabthd=AddPanelGadgetItem(GRIGHTTABS,TABIDXTHD,"Threads",,1)
-	htviewthd=treeviewgadget(GTVIEWTHD,0,0,499,299,KTRRESTYLE)
+	htviewthd=treeviewgadget(GTVIEWTHD,0,0,599,365,KTRRESTYLE)
 
 	''treeview watched
 	var htabwch=AddPanelGadgetItem(GRIGHTTABS,TABIDXWCH,"Watched",,1)
-	htviewwch=treeviewgadget(GTVIEWWCH,0,0,499,299,KTRRESTYLE)
+	htviewwch=treeviewgadget(GTVIEWWCH,0,0,599,365,KTRRESTYLE)
 
 	''dump memory
 	var htabmem=AddPanelGadgetItem(GRIGHTTABS,TABIDXDMP,"Memory",,1)

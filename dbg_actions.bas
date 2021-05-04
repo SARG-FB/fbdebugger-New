@@ -320,7 +320,7 @@ private sub gadget_action(igadget as LONG)
 		'case GDUMPPTR2
 
 		case GDUMPMEM
-			dump_change() ''click on a cell or header
+			dump_cell() ''click on a cell or header
 
 		case GDUMPDECHEX
 			if dumpbase=50 then

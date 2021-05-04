@@ -17,7 +17,7 @@ private sub index_cell()
 	else
 		''editing value
 		var adr=indexdata.adr+iline*indexdata.sizeline+indexdata.size*(icol-1)
-		edit_fill("Editing a cell from array "+str(iline)+"/"+str(icol)+"="+GetTextItemListView(GIDXTABLE,iline,icol),adr,indexdata.typ,0,KEDITCELL)
+		edit_fill("Editing a cell from array "+str(iline)+"/"+str(icol)+"="+GetTextItemListView(GIDXTABLE,iline,icol),adr,indexdata.typ,0,KEDITARR)
 	EndIf
 end sub
 '==============================================
@@ -570,16 +570,28 @@ private sub edit_update()
 		writeprocessmemory(dbghand,Cast(LPVOID,edit.adr),@edt,p2,0)
 		var_sh()
 
-		if edit.src=KEDITCELL then
+		if edit.src=KEDITARR then
 			var iline=GetItemListView()
 			var icol=GetSubItemListView()
 			ReplaceTextItemListView(GIDXTABLE,iline,icol,getgadgettext(GEDTVALUE))
 		endif
+
 		if edit.src=KEDITDMP then
+			var iline=GetItemListView()
+			var icol=GetSubItemListView()
+			ReplaceTextItemListView(GDUMPMEM,iline,icol,getgadgettext(GEDTVALUE))
+		else
+			dump_sh()
+		endif
+
+		if edit.src=KEDITTOP then
+			var iline=GetItemListView()
+			var icol=GetSubItemListView()
 			ReplaceTextItemListView(GDUMPMEM,0,1,getgadgettext(GEDTVALUE))
 		else
 			dump_sh()
 		endif
+
 		''todo update watched ?
 	end if
 end sub
@@ -1055,6 +1067,26 @@ private sub dump_baseadr()
 	Next
 end sub
 '======================================
+'' changes the first address or edit cell
+'======================================
+private sub dump_cell()
+	var iline=GetItemListView()
+	var icol=GetSubItemListView()
+	if iline>0 and icol>0 then
+		if FlagKeyListView=2 then ''CTRL
+			dumpadr+=16*GetItemListView()+(16\dumpnbcol)*(GetSubItemListView()-1)
+			dump_sh()
+			SetGadgetText(GDUMPADR,str(dumpadr))
+		else
+			''editing value
+			var adr=dumpadr+16*GetItemListView()+(16\dumpnbcol)*(GetSubItemListView()-1)
+			edit_fill("Editing a cell from dump memory "+str(adr)+"="+str(GetTextItemListView(GDUMPMEM,iline,icol)),adr,dumptyp,0,KEDITDMP)
+			exit sub
+		end if
+	end if
+	hidewindow(hdumpbx,KSHOW)
+End Sub
+'======================================
 '' changes the first address
 '======================================
 private sub dump_change()
@@ -1069,7 +1101,7 @@ end sub
 '' edits the top/left cell
 '======================================
 private sub dump_edit()
-	edit_fill("Editing a cell from dump memory "+str(dumpadr)+"="+str(GetTextItemListView(GDUMPMEM,0,1)),dumpadr,dumptyp,0,KEDITDMP)
+	edit_fill("Editing a cell from dump memory "+str(dumpadr)+"="+str(GetTextItemListView(GDUMPMEM,0,1)),dumpadr,dumptyp,0,KEDITTOP)
 end sub
 '======================================
 '' displays updated dumpmem

@@ -378,7 +378,7 @@ do
 	elseIf event=EventLBdown Then
 		If EventNumberListView=GIDXTABLE Then
 			index_cell()
-		  EndIf
+		EndIf
 	elseif event=eventgadget then
 		button_action(eventnumber())
 	endif
