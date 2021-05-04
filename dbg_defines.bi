@@ -542,7 +542,15 @@ enum
 	GCCHAIN=980
 end enum
 
-''editing variable
+''editing value variable/memory
+
+#define KEDITVAR  0
+#define KEDITDMP  1
+#define KEDITCELL 2
+#define KEDITWCH  3
+#define KEDITPTD  4
+#define KEDITSHW  5
+
 enum
 	GEDTVAR=990
 	GEDTVALUE
@@ -559,6 +567,7 @@ type tedit
 	pt  as INTEGER
 	ptdadr	as integer
 	ptdval as STRING
+	src as INTEGER
 End Type
 
 #Ifdef __fb_win32__
@@ -941,7 +950,7 @@ declare sub index_update()
 declare function var_find() as INTEGER
 declare function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="") As String
 declare sub shwexp_init()
-declare sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer) ',src as integer=0)
+declare sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer, src as integer)
 '===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)

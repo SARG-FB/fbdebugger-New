@@ -172,6 +172,7 @@ private sub menu_action(poption as integer)
          	Case MNWCHEDT'edit from watched
 				messbox("Feature not yet implemented","edit_box")
          		'If var_find2(GTVIEWWCH)<>-1 Then 'not local non-existent
+				edit.src=KEDITWCH
          		'edit_fill()
 
          	Case MNSETWTCH 'set watched first free slot
@@ -205,7 +206,7 @@ private sub menu_action(poption as integer)
 					typ=cudt(vrr(ivar).vr).typ
 					pt=cudt(vrr(ivar).vr).pt
 				EndIf
-				edit_fill(GetTextTreeView(GTVIEWVAR,GetItemTreeView(GTVIEWVAR)),vrr(ivar).ad,typ,pt)
+				edit_fill(GetTextTreeView(GTVIEWVAR,GetItemTreeView(GTVIEWVAR)),vrr(ivar).ad,typ,pt,KEDITVAR)
 
 			Case MNSHWEXP  'show and expand variables
 				shwexp_new(GTVIEWVAR)
@@ -285,7 +286,6 @@ private sub gadget_action(igadget as LONG)
 
 		''column size in bytes
 		case GDUMPSIZE
-			messbox("list box dump size",str(GetItemListBox(GDUMPSIZE))+" ="+GetListBoxText(GDUMPSIZE,GetItemListBox(GDUMPSIZE)))
 			''forcing type byte/short/long/longint
 			select case GetItemListBox(GDUMPSIZE)
 				Case 0
@@ -352,9 +352,13 @@ private sub gadget_action(igadget as LONG)
 
 
 		case GFILESEL
+			MessBox("Jumping to file step 00="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
         	if GetItemComboBox(GFILELIST)<>-1 then
+				MessBox("Jumping to file step 01="+str(GetItemComboBox(GFILELIST)),str(PanelGadgetGetCursel(GSRCTAB)))
         		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
+        			MessBox("Jumping to file before ="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
 	        		PanelGadgetSetCursel(GSRCTAB,GetItemComboBox(GFILELIST))
+	        		MessBox("Jumping to file afetr ="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
         			source_change(GetItemComboBox(GFILELIST))
         		else
         			MessBox("File already displayed",source(GetItemComboBox(GFILELIST)))
@@ -445,7 +449,7 @@ private sub gadget_action(igadget as LONG)
 		case GEDTCANCEL
 			hidewindow(heditbx,KHIDE)
 		case GEDTPTDEDT
-			edit_fill("Pointed value="+edit.ptdval,edit.ptdadr,edit.typ,0)
+			edit_fill("Pointed value="+edit.ptdval,edit.ptdadr,edit.typ,0,KEDITPTD)
 
 		case GEDTVALUE
 			''do nothing
@@ -469,6 +473,8 @@ private sub gadget_action(igadget as LONG)
 		case GAUTODELAY
 
 		case GCMDLPARAM ''data used when closing settings box
+
+		case GIDXTABLE
 
 		case GIDXAPPLY
 			index_apply()
@@ -598,7 +604,7 @@ private sub gadget_action(igadget as LONG)
 
 		case GSHWEDT
 			var ivar=var_find2(GadgetID(GTVIEWSHW))
-			edit_fill(GetTextTreeView(GTVIEWSHW,vrp(ivar).tl),vrp(ivar).ad,vrp(ivar).ty,vrp(ivar).pt)
+			edit_fill(GetTextTreeView(GTVIEWSHW,vrp(ivar).tl),vrp(ivar).ad,vrp(ivar).ty,vrp(ivar).pt,KEDITSHW)
 			shwexp_update() ''update after editing
 
 		'case GSHWSTR

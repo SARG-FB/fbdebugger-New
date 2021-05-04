@@ -2,26 +2,24 @@
 ''dbg_tools.bas
 
 '====================================
-'' click on a cell in listview
+'' click on a cell in an array
 '====================================
-	  	'lvp=Cast(NMLISTVIEW Ptr,lparam)
-	   'If lvp->hdr.hwndFrom=listview AndAlso lvp->hdr.code =NM_CLICK Then
-	 		'If lvp->iitem<>-1 Then  'click not on a line gives -1
-	 		   'If nbdim>1 Then decal=2 Else decal=1
-				'vrr(indexvar).ix(nbdim-decal)+=lvp->iitem
-				'If vrr(indexvar).ix(nbdim-decal)>vubound(indexcur,nbdim-decal) Then vrr(indexvar).ix(nbdim-decal)=vubound(indexcur,nbdim-decal)
-				'SendMessage(updown(indexcur,nbdim-decal),UDM_SETPOS32,0,vrr(indexvar).ix(nbdim-decal))
-				'
-				'If nbdim=2 Then
-				   'If lvp->isubitem>1 Then
-					  'vrr(indexvar).ix(nbdim-1)+=lvp->isubitem-1 'usefull only when at least second column
-	   			   'If vrr(indexvar).ix(nbdim-1)>vubound(indexcur,nbdim-1) Then vrr(indexvar).ix(nbdim-1)=vubound(indexcur,nbdim-1)
-					  'SendMessage(updown(indexcur,nbdim-1),UDM_SETPOS32,0,vrr(indexvar).ix(nbdim-1))
-				   'End If
-				'EndIf
-				'index_fullupdate()
-	 		'EndIf
-	   'End If
+private sub index_cell()
+	var iline=GetItemListView()
+	var icol=GetSubItemListView()
+
+	if FlagKeyListView=2 then ''CTRL
+		'messbox("MK_CONTROL","MK_CONTROL")
+		vrr(indexdata.indexvar).ix(0)+=iline
+		vrr(indexdata.indexvar).ix(1)+=icol-1
+		var_sh()
+		hidewindow(hindexbx,KHIDE)
+	else
+		''editing value
+		var adr=indexdata.adr+iline*indexdata.sizeline+indexdata.size*(icol-1)
+		edit_fill("Editing a cell from array "+str(iline)+"/"+str(icol)+"="+GetTextItemListView(GIDXTABLE,iline,icol),adr,indexdata.typ,0,KEDITCELL)
+	EndIf
+end sub
 '==============================================
 '' prepares a fully update of listview
 '==============================================
@@ -61,7 +59,6 @@ private sub index_apply()
 end sub
 '=============================================================================
 '' updates the select index box
-'' listview=GIDXTABLE but listview kept if in the future few index boxes
 '=============================================================================
 'index_update(listview,vrr(indexvar).ix(0),vubound(0),vrr(indexvar).ix(1),vubound(1),adr,typ,sizeline)
 'Private sub index_update(listview As integer,idx As Long,limit As Long,idx2 As Long,limit2 As Long,adr As Integer,typ As Long,size As Long)
@@ -572,7 +569,17 @@ private sub edit_update()
 		hidewindow(heditbx,KHIDE)
 		writeprocessmemory(dbghand,Cast(LPVOID,edit.adr),@edt,p2,0)
 		var_sh()
-		dump_sh()
+
+		if edit.src=KEDITCELL then
+			var iline=GetItemListView()
+			var icol=GetSubItemListView()
+			ReplaceTextItemListView(GIDXTABLE,iline,icol,getgadgettext(GEDTVALUE))
+		endif
+		if edit.src=KEDITDMP then
+			ReplaceTextItemListView(GDUMPMEM,0,1,getgadgettext(GEDTVALUE))
+		else
+			dump_sh()
+		endif
 		''todo update watched ?
 	end if
 end sub
@@ -992,6 +999,17 @@ private sub log_del()
 	Kill (ExePath+"\dbg_log_file.txt")   'delete it
 	flaglog=savflog 'restore the value to keep the use of file log
 End Sub
+'============================================
+'' splits a string in parts of 2 characters
+'============================================
+private function split_hex(strg as string)as string
+	dim as string temp=left(strg,2)
+	if len(strg)=2 then return temp
+	for i as integer=1 to len(strg)\2-1
+		temp+=" "+mid(strg,i*2+1,2)
+	Next
+	return temp
+End Function
 '======================================
 '' changes the sign for some datatypes
 '======================================
@@ -1017,6 +1035,7 @@ private sub dump_signed()
 			messbox("Changing sign","Not allowed for this datatype")
 			exit sub
 	end select
+	SetWindowText(hdumpbx,"Handling dump parameters current type="+udt(dumptyp).nm)
 	dump_sh()
 End Sub
 '===============================================================
@@ -1050,8 +1069,7 @@ end sub
 '' edits the top/left cell
 '======================================
 private sub dump_edit()
-	edit_fill("Editing a cell from dump memory "+str(dumpadr)+"="+str(GetTextItemListView(GDUMPMEM,0,1)),dumpadr,dumptyp,0)
-	dump_sh()  'todo or just update the cell ?
+	edit_fill("Editing a cell from dump memory "+str(dumpadr)+"="+str(GetTextItemListView(GDUMPMEM,0,1)),dumpadr,dumptyp,0,KEDITDMP)
 end sub
 '======================================
 '' displays updated dumpmem
@@ -1096,22 +1114,22 @@ private sub dump_sh()
 				tmp=Str(*ptrs.pulongint)
 				ptrs.pulongint+=1
 			 Case 11 'single
-				 tmp=Str(*ptrs.psingle)
+				tmp=Str(*ptrs.psingle)
 				ptrs.psingle+=1
 			 Case 12 'double
-				 tmp=Str(*ptrs.pdouble)
+				tmp=Str(*ptrs.pdouble)
 				ptrs.pdouble+=1
 			 Case 52,53 'byte/hex
-				tmp=Right("0"+Hex(*ptrs.pbyte),2)
+				tmp=split_hex(Right("0"+Hex(*ptrs.pbyte),2))
 				ptrs.pbyte+=1
 			 Case 55,56 'short/hex
-				tmp=Right("000"+Hex(*ptrs.pshort),4)
+				tmp=split_hex(Right("000"+Hex(*ptrs.pshort),4))
 				ptrs.pshort+=1
 			 Case 51,58,61 'integer/hex
-				tmp=Right("0000000"+Hex(*ptrs.pinteger),8)
+				tmp=split_hex(Right("0000000"+Hex(*ptrs.pinteger),8))
 				ptrs.pinteger+=1
 			Case 59,60,62 'longinteger/hex
-				tmp=Right("000000000000000"+Hex(*ptrs.plongint),16)
+				tmp=split_hex(Right("000000000000000"+Hex(*ptrs.plongint),16))
 				ptrs.pulongint+=1
 		  End Select
 		  AddListViewItem(GDUMPMEM,tmp,0,jline,icol)
@@ -1892,10 +1910,10 @@ private sub dump_string(adr as integer,typ as integer)
 	dump_sh()
 	PanelGadgetSetCursel(GRIGHTTABS,TABIDXDMP)
 end sub
-'============================================================
-'' manages editing of var (src=0) or mem (src=1)
-'============================================================
-private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer) ',src as integer=0)
+'=====================================================================
+'' manages editing of var/mem etc see KEDITVAR/CELL/DMP/SHW/PTD/WCH
+'=====================================================================
+private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer,src as integer=0)
 	dim as integer p2,aptr
 
 	If (typ=4 Or typ=13 Or typ=14 Or typ=15) And pt=0 Then
@@ -1911,7 +1929,7 @@ private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer
 	   Exit sub
 	End If
 
-
+	edit.src=src ''used later in edit_update
 	setgadgettext(GEDTVAR,txt)
 	txt=Mid(txt,InStr(txt,"=")+1,25)
 	If typ=16 Then 'boolean

@@ -305,6 +305,7 @@ private sub dump_set()
 	Next
 	SetItemListBox(GDUMPSIZE,combo)
 	SetGadgetText(GDUMPADR,str(dumpadr))
+	SetWindowText(hdumpbx,"Handling dump parameters current type="+udt(dumptyp).nm)
 End Sub
 '================================================================================
 '' Changes size gadgets when main window is resized
@@ -530,7 +531,7 @@ end sub
 '========================================================
 private sub create_indexbx()
 	dim as integer ypos
-	hindexbx=OpenWindow("Array index management",10,10,800,560,WS_POPUP or WS_CAPTION or WS_SYSMENU )
+	hindexbx=OpenWindow("Array management",10,10,800,560,WS_POPUP or WS_CAPTION or WS_SYSMENU )
 	centerWindow(hindexbx)
 	hidewindow(hindexbx,KHIDE)
 
@@ -557,7 +558,13 @@ private sub create_indexbx()
 	buttongadget(GIDXBLKP,651,420,70,30,"Block +")
 	buttongadget(GIDXBLKL,651,450,70,30,"Block -")
 	spingadget(GIDXWIDTH,648,480,80,30,80,-2147483648 ,21474836487)
-	listviewgadget(GIDXTABLE,18,210,624,290,LVS_EX_GRIDLINES)
+
+	#Ifdef __FB_WIN32__
+		Var Style=LVS_EX_GRIDLINES or LVS_EX_FULLROWSELECT
+	#Else
+		Var Style=LVS_EX_GRIDLINES
+	#EndIf
+	listviewgadget(GIDXTABLE,18,210,624,290,style)
 end sub
 '========================================================
 '' creates the window for managing the breakpoint data
@@ -1035,7 +1042,7 @@ private sub menu_set()
 	MenuItem(MNSETWTTR,HMenuvar2,"Set watched+trace")
 	MenuItem(MNVARBRK,HMenuvar, "Break on var value")
 	MenuBar(HMenuvar)
-	MenuItem(MNSELIDX,HMenuvar, "Select index")
+	MenuItem(MNSELIDX,HMenuvar, "Array management (Index selection)")
 	HMenuvar5=OpenSubMenu(HMenuvar,"Array tracking")
 	MenuItem(MNTRCKARR,HMenuvar5, "Assign vars to an array")
 	MenuItem(MNTRCKIDX0,HMenuvar5, "Set Variable for index 1")

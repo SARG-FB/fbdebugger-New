@@ -59,9 +59,6 @@ Dim Shared cudt(CTYPEMAX) As tcudt,cudtnb As Integer,cudtnbsav As Integer
 'in case of module or DLL the udt number is initialized each time
 Dim Shared As Integer udtcpt,udtmax 'current, max cpt
 
-'dwarf management todo remove
-'Dim Shared As Long udtbeg,cudtbeg,locbeg,vrbbeg,prcbeg
-
 ''excluded lines
 Dim Shared As integer excldnb
 Dim Shared As texcld excldlines(EXCLDMAX)
@@ -146,6 +143,7 @@ dim shared as integer cchainthid
 
 ''edit box
 Dim Shared As HWND heditbx
+dim shared as tedit edit ''data when editing var or mem
 
 ''dump memory
 Dim Shared dumplines As Integer =20 'nb lines(default 20)
@@ -208,8 +206,6 @@ dim shared as HMENU HMenuthd
 dim shared as HMENU HMenutools
 
 Dim Shared As double fasttimer
-
-dim shared as tedit edit ''data when editing var or mem
 
 '' index selection
 dim shared as hwnd hindexbx
@@ -379,6 +375,10 @@ do
 				hidewindow(hdumpbx,KSHOW)
 			endif
 		endif
+	elseIf event=EventLBdown Then
+		If EventNumberListView=GIDXTABLE Then
+			index_cell()
+		  EndIf
 	elseif event=eventgadget then
 		button_action(eventnumber())
 	endif
