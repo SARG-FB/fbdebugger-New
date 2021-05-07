@@ -162,11 +162,12 @@ private sub menu_action(poption as integer)
 
          	Case MNWCHDMP'dump for watched
          		var_dump(htviewwch)
+
          	Case MNWCHSTG'shw string from watched
-         	'messbox("Feature not yet implemented","string_sh(htviewwch)")
-         		'string_sh(htviewwch)
+         		string_sh(GTVIEWWCH)
+
          	Case MNWCHSHW'shw/exp from watched
-         	messbox("Feature not yet implemented","shwexp_new(htviewwch)")
+				messbox("Feature not yet implemented","shwexp_new(htviewwch)")
          		'shwexp_new(htviewwch)
 
          	Case MNWCHEDT'edit from watched
@@ -186,9 +187,10 @@ private sub menu_action(poption as integer)
 
          	Case MNVARDMP  'var dump
               var_dump(htviewvar)
+
          	Case MNSHSTRG  'show z/w/string
-         	messbox("Feature not yet implemented","string_sh(htviewvar)")
-				'string_sh(htviewvar)
+				string_sh(GTVIEWVAR)
+
          	Case MNSHCHAR
          	messbox("Feature not yet implemented","char_sh(htviewvar)")
          		'char_sh(htviewvar)
@@ -222,12 +224,10 @@ private sub menu_action(poption as integer)
 				CollapseTreeViewItemALL(GTVIEWVAR)
 			case MNVAREXPA
 				ExpandTreeViewItemALL(GTVIEWVAR)
-         	Case MNRSTPRC 'reset all proc
-				messbox("Feature not yet implemented","proc_flw(1)")
-         		'proc_flw(1)
-         	Case MNSETPRC 'set all proc
-				messbox("Feature not yet implemented","proc_flw(2)")
-           		'proc_flw(2)
+
+         	Case MNENBPRC
+				proc_enable()
+
          	Case MNSORTPRC
          		procsort=1-procsort
          		proc_sh() 'toggle type of sort and update display
@@ -390,6 +390,8 @@ private sub gadget_action(igadget as LONG)
 					'hidewindow(htabdmp,KSHOW)
 					'HideGadget(GDUMPMEM,0)
 			end select
+
+		case GTVIEWPRC
 
 		case GFILELIST ''nothing to execute with file combo
 
@@ -607,8 +609,8 @@ private sub gadget_action(igadget as LONG)
 			edit_fill(GetTextTreeView(GTVIEWSHW,vrp(ivar).tl),vrp(ivar).ad,vrp(ivar).ty,vrp(ivar).pt,KEDITSHW)
 			shwexp_update() ''update after editing
 
-		'case GSHWSTR
-			'string_sh(GTVIEWSHW)
+		case GSHWSTR
+			string_sh(GTVIEWSHW)
 
 		case GSHWNEW  ''replaces the current data
 			var_find2(GadgetID(GTVIEWSHW))
@@ -665,6 +667,8 @@ private sub gadget_action(igadget as LONG)
 					line_display(rline(procr(procrsav(iline)).cl).nu-1,1)
 				end if
 			end if
+
+		case GEDITOR ''nothing to do
 
 		case else
         	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))

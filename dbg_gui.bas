@@ -1,13 +1,16 @@
 ''gui for fbdebuuger_new
 ''dbg_gui.bas
 
-'' TIPS ===============================================
+/' TIPS ===============================================
 ''todo Sous Windows, il s'agit de InvalidateRect, sous Linux gtk_widget_queue_draw_area ou gdk_window_invalidate_rect ou gdk_window_invalidate_region
 'hwnd=OpenWindow("1",30,30,200,200 , WS_OVERLAPPEDWINDOW) ' style without ws_visible
 'UpdateInfoXServer ' only for Linux
 'CenterWindow(hwnd)
 'hidewindow(hwnd , 0)
-'=======================================================
+
+Var hwnd = OpenWindow ("", 10,10,100,100)
+gdk_window_set_functions (gtk_widget_get_window (hwnd), GDK_FUNC_CLOSE or GDK_FUNC_MOVE)
+'======================================================= '/
 
 '==================================================================================
 '' checks the current value in a spingadget (replace the control normally done)
@@ -417,7 +420,7 @@ private sub linecur_change(linenew as integer)
 	line_color(linecur,KSTYLECUR)
 
 	'' display in current line gadget
-	setgadgettext(GCURRENTLINE,"Current line : "+line_text(linecur-1))
+	setgadgettext(GCURRENTLINE,"Current line : "+left(trim(line_text(linecur-1)),50))
 end sub
 '===================================================
 '' set/unset breakpoint markers
@@ -510,11 +513,19 @@ end sub
 	End Sub
 #endif
 '==============================================================================
+'' creates/fixes size/centers a window
+'==============================================================================
+private function create_window(title as string,x as integer,y as integer,w as integer,h as integer) as hwnd
+	var hwnd=OpenWindow(title,x,y,w,h, WS_OVERLAPPEDWINDOW)
+	WindowBounds(hwnd,w,h,w,h)
+	centerWindow(hwnd)
+	return hwnd
+End function
+'==============================================================================
 '' creates the window for editing variable/memory
 '==============================================================================
 private sub create_editbx()
-	heditbx=OpenWindow("Edit variable",10,10,700,145,WS_POPUP or WS_CAPTION or WS_SYSMENU )
-	centerWindow(heditbx)
+	heditbx=create_window("Edit variable",10,10,700,145)
 
 	textgadget(GEDTVAR,15,10,445,30,"Fb_myvar <Byval param / **Zstring>=37415896")
 	stringgadget(GEDTVALUE,450,10,185,30,"3741589637415896")
@@ -526,14 +537,14 @@ private sub create_editbx()
 	textgadget(GEDTPTDVAL,105,35,200,30,"String pointed")
 	buttongadget(GEDTPTDEDT,150,70,90,30,"Edit pointed")
 end sub
+'==============================================================================
+'' creates the window for showing z/w/string
 '========================================================
 '' creates the window for managing the array indexes
 '========================================================
 private sub create_indexbx()
 	dim as integer ypos
-	hindexbx=OpenWindow("Array management",10,10,800,560,WS_POPUP or WS_CAPTION or WS_SYSMENU )
-	centerWindow(hindexbx)
-	hidewindow(hindexbx,KHIDE)
+	hindexbx=create_window("Array management",10,10,800,560)
 
 	textgadget(GIDXVAR,18,5,501,30,"Variable name + data")
 
@@ -571,8 +582,7 @@ end sub
 '========================================================
 private sub create_brkbx()
 	dim as integer ypos
-	hbrkbx=OpenWindow("Breakpoint management",10,10,650,420,WS_POPUP or WS_CAPTION or WS_SYSMENU )
-	centerWindow(hbrkbx)
+	hbrkbx=create_window("Breakpoint management",10,10,650,420)
 
 	For ibrk as integer =0 To 9
 		ypos=5+32*ibrk
@@ -594,7 +604,8 @@ end sub
 '' creates the window for managing the breakpoint on variable/memory change
 '==============================================================================
 private sub create_brkvbx()
-	hbrkvbx=OpenWindow("Breakpoint on value",10,10,600,115,WS_POPUP or WS_CAPTION or WS_SYSMENU )
+	hbrkvbx=create_window("Breakpoint on value",10,10,600,115)
+	'WindowBounds
 	centerWindow(hbrkvbx)
 
 	textgadget(GBRKVAR,6,6,390,30,"Stop if b<byte>=-88")
@@ -607,8 +618,8 @@ end sub
 '' creates the window for Procedure call chain
 '==============================================================================
 private sub create_cchainbx()
-	hcchainbx=OpenWindow("Procedure call chain",10,10,900,650,WS_POPUP or WS_CAPTION or WS_SYSMENU )
-	centerWindow(hcchainbx)
+	hcchainbx=create_window("Procedure call chain",10,10,900,650)
+
 	#Ifdef __FB_WIN32__
 		Var Style=LVS_EX_GRIDLINES or LVS_EX_FULLROWSELECT
 	#Else
@@ -624,9 +635,7 @@ end sub
 '' creates the window for show/expand  (shw/exp)
 '========================================================
 private sub create_shwexpbx()
-
-	hshwexpbx=OpenWindow("Shw/exp : variable",10,10,800,550,WS_POPUP or WS_CAPTION or WS_SYSMENU )
-	centerWindow(hshwexpbx)
+	hshwexpbx=create_window("Shw/exp : variable",10,10,800,550)
 
 	buttongadget(GSHWWCH,510,5,95,30,"Watched")
 	buttongadget(GSHWDMP,510,40,95,30,"Dump")
@@ -647,8 +656,7 @@ end sub
 '' creates the window for handling parameters of dump memory
 '=============================================================
 private sub create_dumpbx()
-	hdumpbx=OpenWindow("Handling dump parameters",10,10,370,450,WS_POPUP or WS_CAPTION or WS_SYSMENU )
-	centerWindow(hdumpbx)
+	hdumpbx=create_window("Handling dump parameters",10,10,370,450)
 
 	'load_button(IDBUTENLRMEM,@"memory.bmp",300,5,@"Reduce the window",,0)
 
@@ -785,8 +793,7 @@ end sub
 '' settings window
 '=============================================
 private sub create_settingsbx()
-	hsettings=OpenWindow("Settings",10,10,500,500,WS_POPUP or WS_CAPTION or WS_SYSMENU )
-	centerWindow(hsettings)
+	hsettings=create_window("Settings",10,10,500,500)
 
 	groupgadget(LOGGROUP,10,10,450,95,"Log  fbdebugger path"+slash+"dbg_log.txt")
 	optiongadget(GNOLOG,12,32,80,30,"No log")
@@ -978,9 +985,8 @@ private sub menu_enable()
 	SetStateMenu(HMenuwch,MNWCHTTGA,flag)
 
 	If procnb Then flag=0
-	SetStateMenu(HMenuprc,MNRSTPRC,flag)
+	SetStateMenu(HMenuprc,MNENBPRC,flag)
 	SetStateMenu(HMenuprc,MNASMPRC,flag)
-	SetStateMenu(HMenuprc,MNSETPRC,flag)
 	SetStateMenu(HMenuprc,MNLOCPRC,flag)
 	SetStateMenu(HMenuprc,MNSORTPRC,flag)
 
@@ -1095,8 +1101,8 @@ private sub menu_set()
 	MenuItem(MNASMPRC,HMenuprc, "Asm code of proc")
 	MenuItem(MNSORTPRC,HMenuprc,"Toggle sort by module or by proc")
 	MenuBar(HMenuprc)
-	MenuItem(MNRSTPRC,HMenuprc, "All procs followed")
-	MenuItem(MNSETPRC,HMenuprc, "No proc followed")
+	MenuItem(MNENBPRC,HMenuprc, "Enable/disable")
+
 
 ''menu thread
 	HMenuthd=CreatePopMenu()
@@ -1240,10 +1246,9 @@ private sub gui_init()
 	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
 
 	''for log display or other needs
-	hlogbx=OpenWindow("Log file",10,10,450,550,WS_POPUP or WS_CAPTION or WS_SYSMENU)
+	hlogbx=create_window("Log file",10,10,450,550)
 	EditorGadget(GEDITOR,10,10,400,500,"Your log file if any")
 	ReadOnlyEditor(GEDITOR,1)
-	hidewindow(hlogbx,KHIDE)
 
 	create_shwexpbx()
 	create_settingsbx()

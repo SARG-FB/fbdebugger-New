@@ -976,7 +976,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 			proc(procnb).db=adr'+exebase-baseimg 'only when <> exebase and baseimg (DLL)
 			''to be added
 			parse_retval(procnb,Mid(strg,InStr(strg,":")+2,99))'return value .rv + pointer .pt
-			proc(procnb).st=1 'state no checked
+			proc(procnb).enab=true
 			proc(procnb).nu=linenum
 			lastline=0
 			proc(procnb+1).vr=proc(procnb).vr 'in case there is not param nor local var

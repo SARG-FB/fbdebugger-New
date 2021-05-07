@@ -1,6 +1,71 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
+
+
+'===================================
+'' show the value of a z/w/string
+'===================================
+private sub string_sh(tv as integer)
+	static as byte buf(52004)
+	dim as integer f,stringadr,inc
+	dim as WString *52004 wstrg
+	#Ifdef __FB_WIN32__
+		dim As Short bufw
+		#define KCHARSIZE 2
+	#Else
+		dim As long bufw
+		#define KCHARSIZE 4
+	#EndIf
+
+	If var_find2(gadgetID(tv))=-1 Then Exit Sub 'search index variable under cursor
+
+	If varfind.ty<>4 And varfind.ty<>13 And varfind.ty<>14 And varfind.ty <>6 Then 'or ty<>15
+	   messbox("Show string error","Select only a string variable")
+	   Exit Sub
+	End If
+
+	stringadr=varfind.ad
+	If varfind.pt Then
+	   ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@stringadr,SizeOf(Integer),0) ''string ptr
+	   If varfind.pt=2 Then ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@stringadr,SizeOf(Integer),0) ''if two levels
+	EndIf
+
+	If varfind.ty <>6 Then
+		''string zstring
+		If varfind.ty=13 Then 'string
+		   ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@stringadr,SizeOf(Integer),0) ''string address
+		End If
+
+		inc=52000
+		f=stringadr
+		While inc<>0
+			If ReadProcessMemory(dbghand,Cast(LPCVOID,f+inc),@buf(0),4,0) Then
+				f+=inc
+				Exit While
+			Else
+				inc\=2
+			End If
+		Wend
+		ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@buf(0),f-stringadr,0)
+		buf(f-stringadr+1)=0 ''end of string if length >52000
+		setgadgettext(GEDITOR,*cast(zstring ptr, @buf(0)))
+	Else
+		''wstring
+      	inc=0:wstrg=""
+      	ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@bufw,KCHARSIZE,0)
+		While bufw
+			wstrg[inc]=bufw
+			inc+=1
+			If inc=52000 Then Exit While 'limit if wstring >52000
+			ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr+inc*2),@bufw,KCHARSIZE,0)
+		Wend
+		WStrg[inc]=0:WStrg[inc+1]=0:WStrg[inc+2]=0:WStrg[inc+3]=0 'end of wstring
+		setgadgettext(GEDITOR,wstrg)
+	EndIf
+	setwindowtext(hlogbx,varfind.nm)
+	hidewindow(hlogbx,KSHOW)
+End Sub
 '====================================
 '' click on a cell in an array
 '====================================
@@ -84,7 +149,7 @@ Private sub index_update()
 			AddListViewColumn(listview,txt,column,column,60)
 		Next
 	EndIf
-		''todo if number column inchanged use  : ReplaceTextColumnListView(GIDXTABLE,i,txt)
+		''todo if number column inchanged use  : SetTextColumnListView(GIDXTABLE,i,txt)
 
 	''data
 	for lineindex as integer = idx to iif(limit-idx>49,idx+49,limit) ''50 lines max
@@ -573,13 +638,13 @@ private sub edit_update()
 		if edit.src=KEDITARR then
 			var iline=GetItemListView()
 			var icol=GetSubItemListView()
-			ReplaceTextItemListView(GIDXTABLE,iline,icol,getgadgettext(GEDTVALUE))
+			SetTextItemListView(GIDXTABLE,iline,icol,getgadgettext(GEDTVALUE))
 		endif
 
 		if edit.src=KEDITDMP then
 			var iline=GetItemListView()
 			var icol=GetSubItemListView()
-			ReplaceTextItemListView(GDUMPMEM,iline,icol,getgadgettext(GEDTVALUE))
+			SetTextItemListView(GDUMPMEM,iline,icol,getgadgettext(GEDTVALUE))
 		else
 			dump_sh()
 		endif
@@ -587,7 +652,7 @@ private sub edit_update()
 		if edit.src=KEDITTOP then
 			var iline=GetItemListView()
 			var icol=GetSubItemListView()
-			ReplaceTextItemListView(GDUMPMEM,0,1,getgadgettext(GEDTVALUE))
+			SetTextItemListView(GDUMPMEM,0,1,getgadgettext(GEDTVALUE))
 		else
 			dump_sh()
 		endif
@@ -656,46 +721,6 @@ private sub procvar_list()
 	   hitem=temp
 	Wend
 End Sub
-'=================================================
-'' shows string zstring
-'=================================================
-private sub string_show(stringadr as integer)
-	dim as integer f,inc
-	dim as byte buf(32004)
-	dim as string text
-	inc=32000
-	f=stringadr
-	While inc<>0
-		If ReadProcessMemory(dbghand,Cast(LPCVOID,f+inc),@buf(0),4,0) Then
-			f+=inc
-			Exit While
-		Else
-			inc\=2
-		End If
-	Wend
-	ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@buf(0),f-stringadr,0)
-	buf(f-stringadr+1)=0 'end of string if length >32000
-	text=*cast(zstring ptr,@buf(0))
-	SetGadgetText(GEDITOR,text)
-end sub
-'=================================================
-'' shows wstring
-'=================================================
-private sub wstring_show(stringadr as integer)
-	dim wstrg As WString *32001,bufw As UShort
-	dim as integer inc
-	messbox("Something missing","Need to open a window  for wstring")
-	inc=0:wstrg=""
-	ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@bufw,2,0)
-	While bufw
-		wstrg[inc]=bufw
-		inc+=1
-		If inc=32000 Then Exit While 'limit if wstring >32000
-		ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr+inc*2),@bufw,2,0)
-	Wend
-	WStrg[inc]=0 'end of wstring
-	SetGadgetText(GEDITOR,wstrg)
-end sub
 '=================================================
 '' lists dll
 '=================================================
@@ -784,7 +809,7 @@ private sub call_chain(thid as integer)
 	dim as integer srcprev=srcdisplayed ''save now for restoring and the end of the table filling
 	DeleteListViewItemsAll(GCCHAIN)
 	txt="Calling line               [ThID="+ Str(thid)+"]"
-	ReplaceTextColumnListView(GCCHAIN,0,txt)
+	SetTextColumnListView(GCCHAIN,0,txt)
 	for iprocr as integer = procrnb to 1 step -1
 		If procr(iprocr).thid=thid Then
 			procrsav(iline)=iprocr ''to make easier the location
@@ -1059,9 +1084,9 @@ private sub dump_baseadr()
 	decbase=1-decbase
 	For jline as integer =0 To dumplines-1
 		if decbase=1 then
-			ReplaceTextItemListView(GDUMPMEM,jline,0,str(ad))
+			SetTextItemListView(GDUMPMEM,jline,0,str(ad))
 		else
-			ReplaceTextItemListView(GDUMPMEM,jline,0,hex(ad))
+			SetTextItemListView(GDUMPMEM,jline,0,hex(ad))
 		end if
 		ad+=16
 	Next
@@ -1737,14 +1762,19 @@ private sub thread_text(th As Integer=-1)
 	For i As Integer=lo To hi
 		thid=thread(i).id
 		p=proc_find(thid,KLAST)
-		libel="threadID="+fmt2(Str(thid),6)+" : "+proc(procr(p).idx).nm
+		if thread(i).exc=0 then
+			libel="D> "
+		else
+			libel=""
+		EndIf
+		libel+="threadID="+fmt2(Str(thid),6)+" : "+proc(procr(p).idx).nm
 		If flagverbose Then
 			libel+=" HD: "+Str(thread(i).hd)
 		EndIf
 		If threadhs=thread(i).hd Then
 			libel+=" (next execution)"
 		EndIf
-		RenameItemTreeView(GTVIEWTHD,thread(i).tv,libel)
+		SetTextItemTreeView(GTVIEWTHD,thread(i).tv,libel)
 	Next
 End Sub
 '=======================================================================================
@@ -1766,7 +1796,58 @@ private sub thread_change(th As Integer =-1)
 	threadsel=threadcur
 	dsp_change(thread(threadcur).sv)
 End Sub
+'================================================
+'' manages for auto execution or not 1=yes 0=no
+'================================================
+private sub thread_enable()
+	var th=thread_select()
+	thread(th).exc=1-thread(th).exc
+	thread_text(th)
+End Sub
+'=========================================
+'' returns true if proc running
+'=========================================
+private function proc_verif(p as integer) As Boolean
+	For i As UShort =1 To procrnb
+		If procr(i).idx = p Then Return TRUE
+	Next
+	Return FALSE
+End Function
+'=================================================================================================
+'' changes the status of the procedure enabled / disabled = doesn't be handled in running proc
+'=================================================================================================
+private sub proc_enable() ''enab=true-> enabled / false -> disabled
+	var item=GetItemTreeView(GTVIEWPRC)
+	dim as integer prc
+	dim as string text
+    Do
+        prc+=1
+    Loop While proc(prc).tv<>item
 
+    If proc(prc).enab=true Then
+    	If proc_verif(prc) Then
+			messbox("Proc "+proc(prc).nm+" is running","Can't be disabled")
+    	Else
+			proc(prc).enab=false
+			text=GetTextTreeView(GTVIEWPRC,proc(prc).tv)
+			SetTextItemTreeView(GTVIEWPRC,proc(prc).tv,"D "+mid(text,2))
+			For i As Integer =1 To linenb
+				If rline(i).px=prc Then  WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@rline(i).sv,1,0)
+			Next
+        End If
+    Else
+		If messbox("Enable Proc "+proc(prc).nm,"If running --> big problem",MB_YESNO)=IDYES Then
+			proc(prc).enab=true
+			For i As Integer =1 To linenb
+				If rline(i).px=prc Then
+					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
+				end if
+			Next
+			text=GetTextTreeView(GTVIEWPRC,proc(prc).tv)
+			SetTextItemTreeView(GTVIEWPRC,proc(prc).tv,"E "+mid(text,2))
+		End If
+    End If
+End Sub
 '===========================================================
 private sub proc_sh()
 	Dim libel As String
@@ -1783,10 +1864,10 @@ private sub proc_sh()
 
 	For j As Integer =1 To procnb
 		With proc(j)
-			if .st=1 then
-				libel="F> " '' for indicating if the proc is followed
+			if .enab=true then
+				libel="E> " '' for indicating if the proc is enabled : followed
 			else
-				libel=""
+				libel="D> " ''disabled
 			EndIf
 			If procsort=KMODULE Then 'sorted by module
 				'libel+=name_extract(source(.sr))+">> "+.nm+":"+proc_retval(j)
@@ -2463,7 +2544,7 @@ For i As Integer= vbeg To vend
 		'additionnal data
 		If wtch(i).tad Then libel+=" "+var_add(Mid(value,InStr(value,"=")+1),wtch(i).typ,wtch(i).tad)'additionnal info
 		'watched tab
-		RenameItemTreeView(GTVIEWWCH,wtch(i).tvl,libel)
+		SetTextItemTreeView(GTVIEWWCH,wtch(i).tvl,libel)
    End If
 Next
 End Sub
@@ -2937,7 +3018,7 @@ End Sub
 '========================================================
 private sub var_sh() 'show master var
 	For i As Integer =1 To vrrnb
-		RenameItemTreeView(GTVIEWVAR,vrr(i).tv,var_sh1(i))
+		SetTextItemTreeView(GTVIEWVAR,vrr(i).tv,var_sh1(i))
 	Next
    watch_array()
    watch_sh
@@ -3305,7 +3386,7 @@ private sub proc_newfast()
 				hard_closing("Max number of sub/func reached")
 				Exit Sub
 			EndIf
-			If proc(pridx(k)).st=2 Then Continue For 'proc state don't follow
+			If proc(pridx(k)).enab=false Then Continue For 'proc state don't follow
 			procrnb+=1
 			procr(procrnb).sk=regbpp(k)
 			procr(procrnb).thid=thread(i).id
@@ -3704,15 +3785,6 @@ Else
 	dsp_change(thread(0).sv)
 EndIf
 End Sub
-'===============================================
-'' returns true if proc running
-'===============================================
-private function proc_verif(p As UShort) As Byte
-	For i As UShort =1 To procrnb
-		If procr(i).idx = p Then Return TRUE
-	Next
-	Return FALSE
-End function
 '==============================
 '' Reinitialisation
 '==============================

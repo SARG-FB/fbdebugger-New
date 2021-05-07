@@ -289,8 +289,7 @@ end enum
 
 '' proc menu
 enum
-	MNRSTPRC=1150  ''reset procfollow
-	MNSETPRC  ''setprocfollow
+	MNENBPRC=1150  ''enable/disable
 	MNSORTPRC ''toggle sortby module name/  procname
 	MNASMPRC  ''listing of asm code of a  proc
 end enum
@@ -733,7 +732,7 @@ Type tproc
 	pt As Long     'counter pointer for return value (** -> 2)
 	rvadr As Integer 'offset for return value adr (for now only dwarf)
     tv As integer 'in tview2
-    st As Byte     'state followed = not checked
+    enab As boolean 'state enable/disable
 End Type
 
 Const PROCRMAX=50000 'Running proc
@@ -1156,13 +1155,12 @@ enumdef(MNPCHNING)="MNPCHNING"
 enumdef(MNPRCRADR)="MNPRCRADR"
 enumdef(MNPTDUMP)="MNPTDUMP"
 enumdef(MNRSTBRKC)="MNRSTBRKC"
-enumdef(MNRSTPRC)="MNRSTPRC"
+enumdef(MNENBPRC)="MNENBPRC"
 enumdef(MNRUN)="MNRUN"
 enumdef(MNSELIDX)="MNSELIDX"
 enumdef(MNSETBRK)="MNSETBRK"
 enumdef(MNSETBRKC)="MNSETBRKC"
 enumdef(MNSETBRT)="MNSETBRT"
-enumdef(MNSETPRC)="MNSETPRC"
 enumdef(MNSETWTCH)="MNSETWTCH"
 enumdef(MNSETWTTR)="MNSETWTTR"
 enumdef(MNSETWVAR)="MNSETWVAR"
