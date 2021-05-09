@@ -208,6 +208,9 @@ dim shared as HMENU HMenutools
 Dim Shared As double fasttimer
 
 '' index selection
+#define KCOLMAX 30
+#define KLINEMAX 50
+
 dim shared as hwnd hindexbx
 Dim Shared As tindexdata indexdata
 

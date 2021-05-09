@@ -7,7 +7,7 @@
 
 #Define fbdebuggerversion "V 3.00 BETA 32-64bit"
 
-'#define fulldbg_prt 'uncomment to get more information
+#define fulldbg_prt 'uncomment to get more information
 #Define dbg_prt2 Rem 'used temporary for debugging fbdebugger, change rem by dbg_prt
 
  'take l char form a string and complete with spaces if needed
@@ -445,6 +445,7 @@ type tindexdata
 		sizeline as INTEGER
 		size     as INTEGER
 		nbdim 	 as INTEGER
+		curidx(4)  as INTEGER
 		vlbound(4) as integer
 		vubound(4) as integer
 		adr as  INTEGER
@@ -760,7 +761,7 @@ End type
 ''====================== Variables gloables/common/locales/parameters ============================
 const VARMAX=20000 'CAUTION 3000 elements taken for globals
 Const VGBLMAX=3000 'max globals
-Const KBLOCKIDX=100 'max displayed lines inside index selection
+
 Type tvrb
 	nm As String    'name
 	typ As Integer  'type

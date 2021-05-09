@@ -27,7 +27,7 @@ End Sub
 '' prepares the window for filling data in index_fill
 '=======================================================
 private sub index_sel()
-	dim as integer typ,typ2,size,sizeline,adr,nbdim,temp,vlbound(KMAXDIM),vubound(KMAXDIM),delta2,indexvar
+	dim as integer typ,typ2,size,sizeline,adr,nbdim,temp,curidx(KMAXDIM),vlbound(KMAXDIM),vubound(KMAXDIM),delta2,indexvar
 	dim as STRING strg,txt
 	typ2=0
 	indexvar=var_find() 'search index variable under cursor
@@ -179,6 +179,7 @@ private sub index_sel()
 	indexdata.indexvar=indexvar
 	indexdata.nbdim=nbdim
 	for idx as integer =0 to 4
+		indexdata.curidx(idx)=vrr(indexvar).ix(idx)
 		indexdata.vlbound(idx)=vlbound(idx)
 		indexdata.vubound(idx)=vubound(idx)
 	next
@@ -562,12 +563,12 @@ private sub create_indexbx()
 	buttongadget(GIDXUPD,651,210,70,30,"Update")
 	buttongadget(GIDXROWP,651,240,70,30,"Row +")
 	buttongadget(GIDXROWL,651,270,70,30,"Row -")
-	buttongadget(GIDXPAGEP,651,300,70,30,"Page + >")
-	buttongadget(GIDXPAGEL,651,330,70,30,"< Page -")
+	buttongadget(GIDXPAGEP,651,300,70,30,"Page +")
+	buttongadget(GIDXPAGEL,651,330,70,30,"Page -")
 	buttongadget(GIDXCOLP,651,360,70,30,"Column +")
 	buttongadget(GIDXCOLL,651,390,70,30,"Column -")
-	buttongadget(GIDXBLKP,651,420,70,30,"Block +")
-	buttongadget(GIDXBLKL,651,450,70,30,"Block -")
+	buttongadget(GIDXBLKP,651,420,70,30,"Block + >")
+	buttongadget(GIDXBLKL,651,450,70,30,"< Block -")
 	spingadget(GIDXWIDTH,648,480,80,30,80,-2147483648 ,21474836487)
 
 	#Ifdef __FB_WIN32__

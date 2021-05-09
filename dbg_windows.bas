@@ -292,7 +292,7 @@ While 1
 
 							#Ifdef fulldbg_prt
 								dbg_prt (libel)
-								show_context
+								'show_context
 							#EndIf
 
 							'If runtype<>RTFRUN And runtype<>RTFREE Then
@@ -396,7 +396,7 @@ While 1
 					dbg_prt ("lpStartAddress "+Str(.lpStartAddress))
 					dbg_prt ("lpImageName "+Str(.lpImageName))
 					dbg_prt ("fUnicode "+Str(.fUnicode))
-					show_context
+					'show_context
 				#EndIf
 				debug_extract(Cast(UInteger,.lpBaseOfImage),exename)
 			End With

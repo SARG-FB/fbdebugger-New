@@ -514,68 +514,86 @@ private sub gadget_action(igadget as LONG)
 	     	index_apply()
 
 	    case GIDXCOLP
-			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)<indexdata.vubound(indexdata.nbdim-1) Then
-				vrr(indexdata.indexvar).ix(indexdata.nbdim-1)+=1
-				setGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
-				index_apply()
-			EndIf
-
-		Case GIDXCOLL
-			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)>indexdata.vlbound(indexdata.nbdim-1) Then
-				vrr(indexdata.indexvar).ix(indexdata.nbdim-1)-=1
-				SetGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
-				index_fullupdate()
-			EndIf
+			if indexdata.curidx(1)+KCOLMAX-1<indexdata.vubound(1) then
+				indexdata.curidx(1)+=1
+				indexdata.adr+=indexdata.size
+				index_update()
+			end if
 
 		Case GIDXBLKP
-			vrr(indexdata.indexvar).ix(indexdata.nbdim-1)+=KBLOCKIDX
-			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)>indexdata.vubound(indexdata.nbdim-1) Then
-				vrr(indexdata.indexvar).ix(indexdata.nbdim-1)=indexdata.vubound(indexdata.nbdim-1)
+			if indexdata.curidx(1)+KCOLMAX-1<indexdata.vubound(1) then
+				if indexdata.curidx(1)+KCOLMAX-1+KCOLMAX<=indexdata.vubound(1) then
+					indexdata.curidx(1)+=KCOLMAX
+					indexdata.adr+=indexdata.size*KCOLMAX
+				else
+					var temp=indexdata.curidx(1)
+					indexdata.curidx(1)=indexdata.vubound(1)-KCOLMAX+1
+					indexdata.adr+=indexdata.size*(indexdata.curidx(1)-temp)
+				EndIf
+				index_update()
+			end if
+
+		Case GIDXCOLL
+			if indexdata.curidx(1)>indexdata.vlbound(1) then
+				indexdata.curidx(1)-=1
+				indexdata.adr-=indexdata.size
+				index_update()
 			EndIf
-			SetGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
-			index_fullupdate()
 
 		Case GIDXBLKL
-			vrr(indexdata.indexvar).ix(indexdata.nbdim-1)-=KBLOCKIDX
-			If vrr(indexdata.indexvar).ix(indexdata.nbdim-1)<indexdata.vlbound(indexdata.nbdim-1) Then
-				vrr(indexdata.indexvar).ix(indexdata.nbdim-1)=indexdata.vlbound(indexdata.nbdim-1)
+			if indexdata.curidx(1)>indexdata.vlbound(1) then
+				if indexdata.curidx(1)-KCOLMAX-1>=indexdata.vlbound(1) then
+					indexdata.curidx(1)-=KCOLMAX
+					indexdata.adr-=indexdata.size*KCOLMAX
+				else
+					var temp=indexdata.curidx(1)
+					indexdata.curidx(1)=indexdata.vlbound(1)
+					indexdata.adr-=indexdata.size*(temp-indexdata.curidx(1))
+				EndIf
+				index_update()
 			EndIf
-			SetGadgetState(GIDXUP1+indexdata.nbdim-1,vrr(indexdata.indexvar).ix(indexdata.nbdim-1))
-			index_fullupdate()
 
 		Case GIDXROWP
-			If indexdata.nbdim>1 Then decal=2 Else decal=1
-			If vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)<indexdata.vubound(indexdata.nbdim-decal) Then
-				vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)+=1
-				SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
-				index_fullupdate()
-			EndIf
-
-		Case GIDXROWL
-			If indexdata.nbdim>1 Then decal=2 Else decal=1
-			If vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)>indexdata.vlbound(indexdata.nbdim-decal) Then
-				vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)-=1
-				SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
-				index_fullupdate()
-			EndIf
+			if indexdata.curidx(0)+KLINEMAX-1<indexdata.vubound(0) then
+				indexdata.curidx(0)+=1
+				indexdata.adr+=indexdata.sizeline
+				index_update()
+			end if
 
 		Case GIDXPAGEP
-			If indexdata.nbdim>1 Then decal=2 Else decal=1
-			vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)+=KBLOCKIDX
-			If vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)>indexdata.vubound(indexdata.nbdim-decal) Then
-				vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)=indexdata.vubound(indexdata.nbdim-decal)
+			if indexdata.curidx(0)+KLINEMAX-1<indexdata.vubound(0) then
+				if indexdata.curidx(0)+KLINEMAX-1+KLINEMAX<=indexdata.vubound(0) then
+					indexdata.curidx(0)+=KLINEMAX
+					indexdata.adr+=indexdata.sizeline*KLINEMAX
+				else
+					var temp=indexdata.curidx(0)
+					indexdata.curidx(0)=indexdata.vubound(0)-KLINEMAX+1
+					indexdata.adr+=indexdata.sizeline*(indexdata.curidx(0)-temp)
+				EndIf
+				index_update()
 			EndIf
-			SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
-			index_fullupdate()
+
+
+		Case GIDXROWL
+			if indexdata.curidx(0)>indexdata.vlbound(0) then
+				indexdata.curidx(0)-=1
+				indexdata.adr-=indexdata.sizeline
+				index_update()
+			end if
 
 		Case GIDXPAGEL
-			If indexdata.nbdim>1 Then decal=2 Else decal=1
-			vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)-=KBLOCKIDX
-			If vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)<indexdata.vlbound(indexdata.nbdim-decal) Then
-				vrr(indexdata.indexvar).ix(indexdata.nbdim-decal)=indexdata.vlbound(indexdata.nbdim-decal)
-			EndIf
-			SetGadgetState(GIDXUP1+indexdata.nbdim-decal,vrr(indexdata.indexvar).ix(indexdata.nbdim-decal))
-			index_fullupdate()
+			if indexdata.curidx(0)>indexdata.vlbound(0) then
+				if indexdata.curidx(0)-KLINEMAX-1>=indexdata.vlbound(0) then
+					indexdata.curidx(0)-=KLINEMAX
+					indexdata.adr-=indexdata.sizeline*KLINEMAX
+				else
+					var temp=indexdata.curidx(0)
+					indexdata.curidx(0)=indexdata.vlbound(0)
+					indexdata.adr-=indexdata.sizeline*(temp-indexdata.curidx(0))
+				end if
+				index_update()
+			end if
+
 
 		Case GIDXAUTO
 			if getgadgetstate(GIDXAUTO)=1 then

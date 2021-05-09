@@ -128,13 +128,13 @@ end sub
 'index_update(listview,vrr(indexvar).ix(0),vubound(0),vrr(indexvar).ix(1),vubound(1),adr,typ,sizeline)
 'Private sub index_update(listview As integer,idx As Long,limit As Long,idx2 As Long,limit2 As Long,adr As Integer,typ As Long,size As Long)
 Private sub index_update()
-	dim as INTEGER listview=GIDXTABLE,idx=vrr(indexdata.indexvar).ix(0),limit=indexdata.vubound(0)
-	dim as integer idx2=vrr(indexdata.indexvar).ix(1),limit2=indexdata.vubound(1)
-	dim as integer adr=indexdata.adr,typ=indexdata.typ,size=indexdata.sizeline
+	dim as INTEGER listview=GIDXTABLE,idx=indexdata.curidx(0),limit=indexdata.vubound(0)
+	dim as integer idx2=indexdata.curidx(1),limit2=indexdata.vubound(1)
+	dim as integer adr=indexdata.adr,typ=indexdata.typ,sizeline=indexdata.sizeline,size=indexdata.size
 	Dim As String  txt
 	Dim As Integer adrsav=adr,column,iline
 	DeleteListViewItemsAll(listview)
-	for icol as integer= 30 to 0 step -1
+	for icol as integer= KCOLMAX to 0 step -1
 		DeleteListViewColumn(listview,icol)
 	Next
 	''column header (first line)
@@ -143,7 +143,7 @@ Private sub index_update()
 		AddListViewColumn(listview,"value",1,1,495)
 		idx2=1:limit2=1
 	else
-		For colindex As Long =idx2 To IIf(limit2-idx2>29,idx2+29,limit2) ''30 columns max
+		For colindex As Long =idx2 To IIf(limit2-idx2>KCOLMAX-1,idx2+KCOLMAX-1,limit2) ''KCOLMAX columns max
 			txt=Str(colindex)
 			column=colindex-idx2+1
 			AddListViewColumn(listview,txt,column,column,60)
@@ -152,19 +152,19 @@ Private sub index_update()
 		''todo if number column inchanged use  : SetTextColumnListView(GIDXTABLE,i,txt)
 
 	''data
-	for lineindex as integer = idx to iif(limit-idx>49,idx+49,limit) ''50 lines max
+	for lineindex as integer = idx to iif(limit-idx>KLINEMAX-1,idx+KLINEMAX-1,limit) ''KLINEMAX lines max
 		iline=lineindex-idx
 		AddListViewItem(listview,str(lineindex),0,iline,0) ''displays first index
 
-		For colindex As Long =idx2 To IIf(limit2-idx2>29,idx2+29,limit2) ''30 columns max
-			adrsav=adr
+		adrsav=adr
+		For colindex As Long =idx2 To IIf(limit2-idx2>KCOLMAX-1,idx2+KCOLMAX-1,limit2) ''30 columns max
 			txt=var_sh2(typ,adr,0,"")
 			txt=Mid(txt,InStr(txt,"=")+1) ''only data after "="
 			column=colindex-idx2+1
 			AddListViewItem(listview,txt,0,iline,column)
-			adr+=udt(typ).lg
+			adr+=size
 		Next
-		adr=adrsav+size
+		adr=adrsav+sizeline
 	next
 
 End Sub
@@ -1638,9 +1638,11 @@ end sub
 Private sub thread_resume()
 	#ifdef __fb_win32__
 		''moved to dbg_windows.bas
-		messbox("addr restoing="+str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv))
+		messbox("addr restoring="+str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv))
+		print "resume begin"
 		writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution
 		resumethread(threadhs)
+		print "resume end"
 	#else
 		''LINUX, maybe moved in dbg_linux.bas
 		messbox("For Linux","thread_resume() needed to be added")
@@ -3456,8 +3458,10 @@ End Sub
 '======================================================
 private sub gest_brk(ad As UInteger)
    Dim As UInteger i,debut=1,fin=linenb+1,adr,iold
-
    Dim vcontext As CONTEXT
+   
+   
+   
    'egality added in case attach (example access violation) without -g option, ad=procfn=0....
 	If ad>=procfn Then
 		thread_resume()
