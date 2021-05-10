@@ -806,7 +806,7 @@ End Sub
 private sub call_chain(thid as integer)
 	Static As Integer procrsav(PROCRMAX),iline,first,prevpr,vproc
 	dim as string txt
-	dim as integer srcprev=srcdisplayed ''save now for restoring and the end of the table filling
+	dim as integer srcprev=srcdisplayed ''save now for restoring at the end of the table filling
 	DeleteListViewItemsAll(GCCHAIN)
 	txt="Calling line               [ThID="+ Str(thid)+"]"
 	SetTextColumnListView(GCCHAIN,0,txt)
@@ -1072,7 +1072,7 @@ private sub dump_signed()
 			messbox("Changing sign","Not allowed for this datatype")
 			exit sub
 	end select
-	SetWindowText(hdumpbx,"Handling dump parameters current type="+udt(dumptyp).nm)
+	setgadgettext(GDUMPTYPE,"Current type="+udt(dumptyp).nm)
 	dump_sh()
 End Sub
 '===============================================================
@@ -3460,7 +3460,7 @@ private sub gest_brk(ad As UInteger)
    Dim As UInteger i,debut=1,fin=linenb+1,adr,iold
    Dim vcontext As CONTEXT
    
-   
+   print __file__,__line__
    
    'egality added in case attach (example access violation) without -g option, ad=procfn=0....
 	If ad>=procfn Then

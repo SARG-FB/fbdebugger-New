@@ -8,7 +8,9 @@
 #Define fbdebuggerversion "V 3.00 BETA 32-64bit"
 
 #define fulldbg_prt 'uncomment to get more information
-#Define dbg_prt2 Rem 'used temporary for debugging fbdebugger, change rem by dbg_prt
+#Define dbg_prt2 dbg_prt 'Rem 'used temporary for debugging fbdebugger, change rem by dbg_prt
+
+#define log_write(text) vlog+=text+chr(10)
 
  'take l char form a string and complete with spaces if needed
 #Define fmt(t,l) Left(t,l)+Space(l-Len(t))+"  "
@@ -509,6 +511,7 @@ enum
 	GDUMPPTR1
 	GDUMPPTR2
 
+	GDUMPTYPE
 end enum
 
 ''shw/exp

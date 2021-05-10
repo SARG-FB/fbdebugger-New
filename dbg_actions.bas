@@ -94,161 +94,187 @@ private sub menu_action(poption as integer)
 
 		Case MNTHRDKLL 'kill a thread
 			thread_kill()
-	'==============================================
-		    Case MNLISTPROCESS
-               process_list()
-         	Case MNLISTDLL
-               dll_list()
-         	Case MNLISTENUM
-                enum_list()
 
-         	Case MNFRTIMER
-                messbox("Fast run timer","Elapsed Time : "+Str(fasttimer))
-         	Case MNSETBRK 'set breakpoint
-               brk_set(1)
-         	Case MNSETBRT 'set tempo brkp
-               brk_set(2)
-            Case MNSETBRKC 'set brkp with counter
-               brk_set(3)
-         	Case MNCHGBRKC 'change value brkp with counter
-         	   brk_set(7)
-         	Case MNRSTBRKC 'reset brkp with counter
-         	   brk_set(8)
-         	Case MNBRKENB 'enable/disable brkp
-               brk_set(4)
-           	Case MNMNGBRK
-				brk_manage()
-         	Case MNCURSOR 'run to cursor
-               brk_set(9)
-         	Case MNEXEMOD 'modify execution from cursor
-         		exe_mod()
-         	Case MNSHWVAR
-				messbox("Feature not yet implemented","var_tip(PROCVAR)")
-         		'var_tip(PROCVAR)
-         	Case MNSETWVAR
-				messbox("Feature not yet implemented","var_tip(WATCHED)")
-         		'var_tip(WATCHED)
-           	Case MNFNDTXT
-				messbox("Feature not yet implemented","findtext ")
-					'If hfindbx=0 Then 'findtext not active ?
-						'stext=wtext() 'selected text or ascii text near cursor
-						'fb_Dialog(@find_box,"Findtext (Circular)",windmain,283,25,100,25)
-					'End If
+		Case MNLISTPROCESS
+		   process_list()
 
-         	Case MNASMLINE 'dissassembly line in source
-         	messbox("Feature not yet implemented","dissassemble(KLINE)")
-				'dissassemble(KLINE)
-         	Case MNASMPRCL 'dissassembly proc from line in source
-         	messbox("Feature not yet implemented","dissassemble(KSPROC)")
-         		'dissassemble(KSPROC)
-            Case MNASMREGS 'show processor registers for current thread
-            messbox("Feature not yet implemented","show_regs()")
-				'show_regs()
-         	Case MNLSTVARS'list selected var in log
-         		procvar_list()
-         	Case MNPTDUMP 'dump pointed data
-         		var_dump(htviewvar,1)
+		Case MNLISTDLL
+		   dll_list()
 
-            Case MNFNDVAR 'find text proc or var in proc/var tree
-            messbox("Feature not yet implemented","procvar_find()")
-              	'If hfindbx=0 Then 'findtext not active ? also used in source
-					''procvar_find()
+		Case MNLISTENUM
+			enum_list()
+
+		Case MNFRTIMER
+			messbox("Fast run timer","Elapsed Time : "+Str(fasttimer))
+		Case MNSETBRK 'set breakpoint
+		   brk_set(1)
+
+		Case MNSETBRT 'set tempo brkp
+		   brk_set(2)
+
+		Case MNSETBRKC 'set brkp with counter
+		   brk_set(3)
+
+		Case MNCHGBRKC 'change value brkp with counter
+		   brk_set(7)
+
+		Case MNRSTBRKC 'reset brkp with counter
+		   brk_set(8)
+
+		Case MNBRKENB 'enable/disable brkp
+		   brk_set(4)
+
+		Case MNMNGBRK
+			brk_manage()
+
+		Case MNCURSOR 'run to cursor
+		   brk_set(9)
+
+		Case MNEXEMOD 'modify execution from cursor
+			exe_mod()
+
+		Case MNSHWVAR
+			messbox("Feature not yet implemented","var_tip(PROCVAR)")
+			'var_tip(PROCVAR)
+
+		Case MNSETWVAR
+			messbox("Feature not yet implemented","var_tip(WATCHED)")
+			'var_tip(WATCHED)
+
+		Case MNFNDTXT
+			messbox("Feature not yet implemented","findtext ")
+				'If hfindbx=0 Then 'findtext not active ?
+					'stext=wtext() 'selected text or ascii text near cursor
+					'fb_Dialog(@find_box,"Findtext (Circular)",windmain,283,25,100,25)
 				'End If
 
-            Case MNSELIDX 'select index in proc/var
-            'messbox("Feature not yet implemented","index_sel")
-				index_sel()
+		Case MNASMLINE 'dissassembly line in source
+			messbox("Feature not yet implemented","dissassemble(KLINE)")
+			'dissassemble(KLINE)
 
+		Case MNASMPRCL 'dissassembly proc from line in source
+			messbox("Feature not yet implemented","dissassemble(KSPROC)")
+			'dissassemble(KSPROC)
 
-         	Case MNWCHDMP'dump for watched
-         		var_dump(htviewwch)
+		Case MNASMREGS 'show processor registers for current thread
+			messbox("Feature not yet implemented","show_regs()")
+			'show_regs()
 
-         	Case MNWCHSTG'shw string from watched
-         		string_sh(GTVIEWWCH)
+		Case MNLSTVARS'list selected var in log
+			procvar_list()
 
-         	Case MNWCHSHW'shw/exp from watched
-				messbox("Feature not yet implemented","shwexp_new(htviewwch)")
-         		'shwexp_new(htviewwch)
+		Case MNPTDUMP 'dump pointed data
+			var_dump(htviewvar,1)
 
-         	Case MNWCHEDT'edit from watched
-				messbox("Feature not yet implemented","edit_box")
-         		'If var_find2(GTVIEWWCH)<>-1 Then 'not local non-existent
-				edit.src=KEDITWCH
-         		'edit_fill()
+		Case MNFNDVAR 'find text proc or var in proc/var tree
+			messbox("Feature not yet implemented","procvar_find()")
+			'If hfindbx=0 Then 'findtext not active ? also used in source
+				''procvar_find()
+			'End If
 
-         	Case MNSETWTCH 'set watched first free slot
-            	If var_find2(htviewvar)<>-1 Then watch_set()
+		Case MNSELIDX 'select index in proc/var
+			index_sel()
 
-            Case MNTRCKIDX0 To MNTRCKRST
-            messbox("Feature not yet implemented","array_tracking(poption-MNTRCKIDX0)")
-         		'array_tracking(poption-MNTRCKIDX0)
-            Case MNSETWTTR 'set watched + trace
-				watch_addtr()
+		Case MNWCHDMP'dump for watched
+			var_dump(htviewwch)
 
-         	Case MNVARDMP  'var dump
-              var_dump(htviewvar)
+		Case MNWCHSTG'shw string from watched
+			string_sh(GTVIEWWCH)
 
-         	Case MNSHSTRG  'show z/w/string
-				string_sh(GTVIEWVAR)
+		Case MNWCHSHW'shw/exp from watched
+			messbox("Feature not yet implemented","shwexp_new(htviewwch)")
+			'shwexp_new(htviewwch)
 
-         	Case MNSHCHAR
-         	messbox("Feature not yet implemented","char_sh(htviewvar)")
-         		'char_sh(htviewvar)
-         	Case MNCHGZSTR
-         	messbox("Feature not yet implemented","zstringbyte_exchange()")
-				'zstringbyte_exchange()
+		Case MNWCHEDT'edit from watched
+			messbox("Feature not yet implemented","edit_box")
+			'If var_find2(GTVIEWWCH)<>-1 Then 'not local non-existent
+			edit.src=KEDITWCH
+			'edit_fill()
 
-         	Case MNVAREDT  ''edit var value
-				ivar=var_find()
-				if ivar>0 then
-					typ=vrb(vrr(ivar).vr).typ
-					pt=vrb(vrr(ivar).vr).pt
-				else
-					ivar=abs(ivar)
-					typ=cudt(vrr(ivar).vr).typ
-					pt=cudt(vrr(ivar).vr).pt
-				EndIf
-				edit_fill(GetTextTreeView(GTVIEWVAR,GetItemTreeView(GTVIEWVAR)),vrr(ivar).ad,typ,pt,KEDITVAR)
+		Case MNSETWTCH 'set watched first free slot
+			If var_find2(htviewvar)<>-1 Then watch_set()
 
-			Case MNSHWEXP  'show and expand variables
-				shwexp_new(GTVIEWVAR)
+		Case MNTRCKIDX0 To MNTRCKRST
+			messbox("Feature not yet implemented","array_tracking(poption-MNTRCKIDX0)")
+			'array_tracking(poption-MNTRCKIDX0)
 
-            Case MNVARBRK  'break on var value
-				brkv_set(1)
+		Case MNSETWTTR 'set watched + trace
+			watch_addtr()
 
-			case MNVARCOLI
-				CollapseTreeViewItem(GTVIEWVAR,GetItemTreeView(GTVIEWVAR))
-			case MNVAREXPI
-				ExpandTreeViewItem(GTVIEWVAR,GetItemTreeView(GTVIEWVAR),1)
-			case MNVARCOLA
-				CollapseTreeViewItemALL(GTVIEWVAR)
-			case MNVAREXPA
-				ExpandTreeViewItemALL(GTVIEWVAR)
+		Case MNVARDMP  'var dump
+		  var_dump(htviewvar)
 
-         	Case MNENBPRC
-				proc_enable()
+		Case MNSHSTRG  'show z/w/string
+			string_sh(GTVIEWVAR)
 
-         	Case MNSORTPRC
-         		procsort=1-procsort
-         		proc_sh() 'toggle type of sort and update display
+		Case MNSHCHAR
+			messbox("Feature not yet implemented","char_sh(htviewvar)")
+			'char_sh(htviewvar)
 
-         	Case MNASMPRC
-				messbox("Feature not yet implemented","dissassemble(KSPROC)")
-				'dissassemble(KSPROC)
-         	Case MNEXCLINE 'show line
-         		thread_execline(1)
-         	Case MNCREATHR 'show line creating thread
-         		thread_execline(2)
-         	Case MNTHRDLST
-         		thread_list()
-         	Case MNFNDTXUP
-				messbox("feature not yet implemented","fb_find(0,sfind)")
-            	'fb_find(0,sfind)
-            Case MNFNDTXDW
-                messbox("feature not yet implemented","fb_find(1,sfind)")
-            	'fb_find(1,sfind)
-            Case MNVARBRK 'update break on var
-            	If brkv.adr<>0 Then brkv_set(2)
+		Case MNCHGZSTR
+			messbox("Feature not yet implemented","zstringbyte_exchange()")
+			'zstringbyte_exchange()
+
+		Case MNVAREDT  ''edit var value
+			ivar=var_find()
+			if ivar>0 then
+				typ=vrb(vrr(ivar).vr).typ
+				pt=vrb(vrr(ivar).vr).pt
+			else
+				ivar=abs(ivar)
+				typ=cudt(vrr(ivar).vr).typ
+				pt=cudt(vrr(ivar).vr).pt
+			EndIf
+			edit_fill(GetTextTreeView(GTVIEWVAR,GetItemTreeView(GTVIEWVAR)),vrr(ivar).ad,typ,pt,KEDITVAR)
+
+		Case MNSHWEXP  'show and expand variables
+			shwexp_new(GTVIEWVAR)
+
+		Case MNVARBRK  'break on var value
+			brkv_set(1)
+
+		case MNVARCOLI
+			CollapseTreeViewItem(GTVIEWVAR,GetItemTreeView(GTVIEWVAR))
+
+		case MNVAREXPI
+			ExpandTreeViewItem(GTVIEWVAR,GetItemTreeView(GTVIEWVAR),1)
+
+		case MNVARCOLA
+			CollapseTreeViewItemALL(GTVIEWVAR)
+
+		case MNVAREXPA
+			ExpandTreeViewItemALL(GTVIEWVAR)
+
+		Case MNENBPRC
+			proc_enable()
+
+		Case MNSORTPRC
+			procsort=1-procsort
+			proc_sh() 'toggle type of sort and update display
+
+		Case MNASMPRC
+			messbox("Feature not yet implemented","dissassemble(KSPROC)")
+			'dissassemble(KSPROC)
+
+		Case MNEXCLINE 'show line
+			thread_execline(1)
+
+		Case MNCREATHR 'show line creating thread
+			thread_execline(2)
+
+		Case MNTHRDLST
+			thread_list()
+
+		Case MNFNDTXUP
+			messbox("feature not yet implemented","fb_find(0,sfind)")
+			'fb_find(0,sfind)
+
+		Case MNFNDTXDW
+			messbox("feature not yet implemented","fb_find(1,sfind)")
+			'fb_find(1,sfind)
+
+		Case MNVARBRK 'update break on var
+			If brkv.adr<>0 Then brkv_set(2)
 
 	'=============================================================
         case else
@@ -301,12 +327,29 @@ private sub gadget_action(igadget as LONG)
             dump_sh()
 
 		'''moving -/+ the first address by cell/line/page
-		'case GDUMPCL ''
-		'case GDUMPCP
-		'case GDUMPLL
-		'case GDUMPLP
-		'case GDUMPPL
-		'case GDUMPPP
+		case GDUMPCL ''column -1
+			dumpadr-=udt(dumptyp).lg
+			dump_sh()
+
+		case GDUMPCP ''column +1
+			dumpadr+=udt(dumptyp).lg
+			dump_sh()
+
+		case GDUMPLL ''line -1
+			dumpadr-=16
+			dump_sh()
+
+		case GDUMPLP ''line +1
+			dumpadr+=16
+			dump_sh()
+
+		case GDUMPPL ''page -1
+			dumpadr-=320
+			dump_sh()
+
+		case GDUMPPP ''page +1
+			dumpadr+=320
+			dump_sh()
 		'
 		''adds to newadr,watched, break on mem, shw/exp based on first address
 		'case GDUMPNEW
@@ -340,6 +383,8 @@ private sub gadget_action(igadget as LONG)
 
 		case GDUMPBASEADR
 			dump_baseadr()
+
+		''case GDUMPTYPE ''nothing to do
 
 		case GBRKVDEL
 			brkv_set(0) ''cancel the break on var
@@ -444,17 +489,17 @@ private sub gadget_action(igadget as LONG)
 					SetGadgetText(GBRKDSB01+ibrk-1,"DSB")
 				EndIf
 			Next
-		'' edit var or mem
-		case GEDTOK
+
+		case GEDTOK '' edit var or mem
 			edit_update()
 
 		case GEDTCANCEL
 			hidewindow(heditbx,KHIDE)
+
 		case GEDTPTDEDT
 			edit_fill("Pointed value="+edit.ptdval,edit.ptdadr,edit.typ,0,KEDITPTD)
 
-		case GEDTVALUE
-			''do nothing
+		case GEDTVALUE ''do nothing
 
 		case GSCINTILLA
 
@@ -738,12 +783,14 @@ private sub button_action(button as integer)
 			stopcode=0
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
+
 		case IDBUTSTEPP 'STEP+ over
 			procin=procsk
 			runtype=RTRUN
 			but_enable()
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
+
 		Case IDBUTSTEPM 'STEP- out
 			If (threadcur<>0 andalso proc_find(thread(threadcur).id,KLAST)<>proc_find(thread(threadcur).id,KFIRST)) _
 			OrElse (threadcur=0 AndAlso proc(procr(proc_find(thread(0).id,KLAST)).idx).nm<>"main") Then 'impossible to go out first proc of thread, constructor for shared
@@ -753,17 +800,20 @@ private sub button_action(button as integer)
 			End If
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
+
         Case IDBUTAUTO 'simple thread auto
 			runtype=RTAUTO
 			but_enable()
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
+
 		case IDBUTRUN
 			runtype=RTRUN
 			but_enable()
 			hidewindow(hcchainbx,KHIDE)
 			fasttimer=Timer
 			thread_resume()
+
 		case IDBUTSTOP
 			If runtype=RTFREE Or runtype=RTFRUN Then
 				runtype=RTFRUN 'to treat free as fast
@@ -774,6 +824,7 @@ private sub button_action(button as integer)
 				runtype=RTSTEP:procad=0:procin=0:proctop=FALSE:procbot=0
 			EndIf
 			Stopcode=CSHALTBU
+
 		case IDBUTFREE
 		   If messbox("FREE","Release debugged prgm",MB_YESNO)=RETYES Then
 				For i As Integer = 1 To linenb 'restore old instructions
@@ -816,13 +867,16 @@ private sub button_action(button as integer)
 			Next
 			DisplayPopupMenu(HMenuexe, GlobalMouseX,GlobalMouseY)
 			Delete_Menu(HMenuexe)
+
 		case IDBUTFASTRUN
 			hidewindow(hcchainbx,KHIDE)
 			but_enable()
 			fastrun()
 			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
+
 		case IDBUTEXEMOD
 			messbox("feature not implemented","button = IDBUTEXEMOD")
+
         Case IDBUTSTEPB 'STEP at bottom of proc
 			If rline(thread(threadcur).sv).ad<>proc(procsv).fn Then 'if current line is end of proc simple step
 				procbot=procsv
@@ -831,6 +885,7 @@ private sub button_action(button as integer)
 			EndIf
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
+
         Case IDBUTSTEPT 'STEP at top of proc
 			If rline(thread(threadcur).sv).ad<>proc(procsv).fn Then 'if current line is end of proc simple step
 				proctop=TRUE
@@ -839,9 +894,11 @@ private sub button_action(button as integer)
 			EndIf
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
+
 		case IDBUTCURSOR
 			messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
 			brk_set(9)
+
 		case IDBUTUPDATE
 			if flagupdate=true then
 				flagupdate=false
@@ -853,12 +910,16 @@ private sub button_action(button as integer)
 				var_sh()
 				dump_sh()
 			end if
+
 		case IDBUTENLRSRC
 			messbox("feature not implemented","button = IDBUTENLRSRC" )
+
 		case IDBUTENLRVAR
 			messbox("feature not implemented","button = IDBUTENLRVAR" )
+
 		case IDBUTENLRMEM
 			messbox("feature not implemented","button = IDBUTENLRMEM" )
+
 		case else
 			'''todo for now used after gadget_action after remove gadget_action when tests are done for the range values
 			gadget_action(button)

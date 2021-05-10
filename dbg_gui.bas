@@ -309,7 +309,7 @@ private sub dump_set()
 	Next
 	SetItemListBox(GDUMPSIZE,combo)
 	SetGadgetText(GDUMPADR,str(dumpadr))
-	SetWindowText(hdumpbx,"Handling dump parameters current type="+udt(dumptyp).nm)
+	setgadgettext(GDUMPTYPE,"Current type="+udt(dumptyp).nm)
 End Sub
 '================================================================================
 '' Changes size gadgets when main window is resized
@@ -697,6 +697,7 @@ private sub create_dumpbx()
 	optiongadget(GDUMPPTR2,180,335,50,30,"x 2")
 	SetGadgetState(GDUMPPTRNO,1)
 
+	textgadget(GDUMPTYPE,12,380,200,30,"Type",0)
 end sub
 
 '============================
@@ -1216,7 +1217,7 @@ private sub gui_init()
 		sendmessage(hmain,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
 	#endif
 	''right panels
-	PanelGadget(GRIGHTTABS,500,30,599,385)
+	PanelGadget(GRIGHTTABS,500,30,599,410)
 	SetGadgetFont(GRIGHTTABS,CINT(LoadFont("Courier New",11)))
 
 	''treeview proc/var
@@ -1242,7 +1243,7 @@ private sub gui_init()
 	#Else
 		Var Style=LVS_EX_GRIDLINES
 	#EndIf
-	hlviewdmp=ListViewGadget(GDUMPMEM,0,0,599,365,style)
+	hlviewdmp=ListViewGadget(GDUMPMEM,0,0,599,380,style)
 	AddListViewColumn(GDUMPMEM, "Address",0,0,100)
 	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
 

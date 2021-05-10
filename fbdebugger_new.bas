@@ -112,7 +112,6 @@ Dim Shared as boolean flagattach      ' flag for attach
 
 ''handles
 dim shared as HWND hmain,hscint,hsettings
-dim shared as hwnd hdumpbx ''window for handling dump
 
 ''for autostepping
 dim shared as integer autostep=50
@@ -146,6 +145,7 @@ Dim Shared As HWND heditbx
 dim shared as tedit edit ''data when editing var or mem
 
 ''dump memory
+dim shared as hwnd hdumpbx ''window for handling dump
 Dim Shared dumplines As Integer =20 'nb lines(default 20)
 Dim Shared dumpadr   As Integer    'address for dump
 Dim Shared dumpbase  As Integer =0 'value dump dec=0 or hexa=50
