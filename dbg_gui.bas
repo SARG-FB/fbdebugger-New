@@ -797,12 +797,11 @@ end sub
 private sub create_settingsbx()
 	hsettings=create_window("Settings",10,10,500,500)
 
-	groupgadget(LOGGROUP,10,10,450,95,"Log  fbdebugger path"+slash+"dbg_log.txt")
-	optiongadget(GNOLOG,12,32,80,30,"No log")
-	SetGadgetState(GNOLOG,1)''set on overriden by read_ini
-	optiongadget(GSCREENLOG,102,32,80,30,"Screen")
-	optiongadget(GFILELOG,192,32,80,30,"File")
-	optiongadget(GBOTHLOG,282,32,80,30,"Both")
+	groupgadget(LOGGROUP,10,10,450,95,"Log  (shown on demand or continuous visible)")
+	optiongadget(GLOGOFF,12,32,80,30,"Off")
+	SetGadgetState(GLOGOFF,1) ''set on overriden by read_ini
+	optiongadget(GLOGON,102,32,80,30,"Screen")
+	optiongadget(GLOGCONT,192,32,80,30,"Continuous")
 	CheckBoxGadget(GTRACEPROC,12,70,220,30,"Trace on for proc")
 	CheckBoxGadget(GTRACELINE,232,70,220,30,"Trace on for line")
 	CheckBoxGadget(GVERBOSE,12,120,220,30,"Verbose Mode On for proc/var")
@@ -1127,8 +1126,8 @@ private sub menu_set()
 	MenuItem(MNSETTINGS,HMenutools,   "Settings")
 	MenuItem(MNCMPINF,HMenutools,  "Compile info")
 	MenuItem(MNDBGHELP,HMenutools, "Help / F1")
-	MenuItem(MNSHWLOG,HMenutools,  "Show log file")
-	MenuItem(MNDELLOG,HMenutools,  "Delete log file")
+	MenuItem(MNSHOWLOG,HMenutools,  "Show log file")
+	MenuItem(MNRESETLOG,HMenutools, "Delete log file")
 	MenuItem(MNLISTENUM,HMenutools,  "List enum")
 	MenuItem(MNLISTPROCESS,HMenutools,  "Process list")
 	MenuItem(MNLISTDLL,HMenutools, "Dlls list")
@@ -1247,10 +1246,12 @@ private sub gui_init()
 	AddListViewColumn(GDUMPMEM, "Address",0,0,100)
 	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
 
-	''for log display or other needs
+	''for log display
 	hlogbx=create_window("Log file",10,10,450,550)
-	EditorGadget(GEDITOR,10,10,400,500,"Your log file if any")
-	ReadOnlyEditor(GEDITOR,1)
+	EditorGadget(GLOG,10,10,400,500,"Your log file if any")
+	ReadOnlyEditor(GLOG,1)
+
+
 
 	create_shwexpbx()
 	create_settingsbx()

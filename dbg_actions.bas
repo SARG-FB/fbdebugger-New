@@ -33,11 +33,14 @@ private sub menu_action(poption as integer)
 		case MNEXEFILE0 to MNEXEFILE9
 			restart(poption-MNEXEFILE0)
 
-		case MNSHWLOG
-			log_show()
+		case MNSHOWLOG
+			'setgadgettext(GLOG,vlog)
+			hidewindow(hlogbx,KSHOW)
 
-		case MNDELLOG
-			log_del()
+		case MNRESETLOG
+			if messbox("Reset log","Are you sure ?",MB_YESNO)=IDYES then
+				vlog=""
+			EndIf
 
 		Case MNWINMSG
             winmsg()
@@ -503,14 +506,13 @@ private sub gadget_action(igadget as LONG)
 
 		case GSCINTILLA
 
-		case GNOLOG
-			''todo update log
-		case GSCREENLOG
-			''todo update log
-		case GFILELOG
-			''todo update log
-		case GBOTHLOG
-			''todo update log
+		case GLOGOFF
+			logtyp=KLOGOFF
+		case GLOGON
+			logtyp=KLOGON
+		case GLOGCONT
+			logtyp=KLOGCONT
+			hidewindow(hlogbx,KSHOW)
 
 		case GVERBOSE
 			flagverbose=1-flagverbose
@@ -731,6 +733,8 @@ private sub gadget_action(igadget as LONG)
 				end if
 			end if
 
+		case GLOG ''nothing to do
+
 		case GEDITOR ''nothing to do
 
 		case else
@@ -836,12 +840,14 @@ private sub button_action(button as integer)
 			End If
 
 		case IDBUTTOOL
-			If Dir(ExePath+"\dbg_log_file.txt")="" Then 'the file can be deleted by user outside
-				SetStateMenu(HMenutools,MNSHWLOG,1)
-				SetStateMenu(HMenutools,MNDELLOG,1)
+		messbox("idtools","idtools 00")
+			if GetLineCountEditor(GLOG)<>0 then
+				messbox("idtools","idtools 01")
+				SetStateMenu(HMenutools,MNSHOWLOG,0)
+				SetStateMenu(HMenutools,MNRESETLOG,0)
 			Else
-				SetStateMenu(HMenutools,MNSHWLOG,0)
-				SetStateMenu(HMenutools,MNDELLOG,0)
+				SetStateMenu(HMenutools,MNSHOWLOG,1)
+				SetStateMenu(HMenutools,MNRESETLOG,1)
 			End If
             DisplayPopupMenu(HMenutools, GlobalMouseX,GlobalMouseY)
 

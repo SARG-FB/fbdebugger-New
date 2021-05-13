@@ -998,44 +998,6 @@ private sub process_list()
 	End If
 	SetGadgetText(GEDITOR,text)
 end sub
-'=================================================
-'' shows log file
-'=================================================
-private sub log_show()
-		Dim f As Integer,buffer As string, l As Integer,flaguse As Integer
-	If (flaglog And 2) Then 'close if needed
-		flaglog And=1
-		dbg_prt(" $$$$___CLOSE ALL___$$$$ ") ''todo  sub close
-		flaguse=1
-	EndIf
-
-	If Dir(ExePath+"\dbg_log_file.txt")="" Then
-		messbox("Display dbg_log_file.txt","File doesn't exist")
-		Exit Sub
-	EndIf
-
-	f = FreeFile
-	Open ExePath+"\dbg_log_file.txt" For Binary As #f
-	l=Lof(f)
-	buffer = space(l)
-	Get #f,,buffer ''get file
-	Close #f
-
-	buffer=left(buffer,l)
-	SetGadgetText(GEDITOR,buffer)
-
-	If flaguse Then flaglog Or=2
-End Sub
-'=================================================
-'' deletes log file if it exists
-'=================================================
-private sub log_del()
-	Dim savflog As Integer=flaglog       'save see below
-	flaglog=flaglog And 1                'change the value but keeps screen output
-	dbg_prt(" $$$$___CLOSE ALL___$$$$ ") 'close the file if needed todo do a sub for closing by spliting the code
-	Kill (ExePath+"\dbg_log_file.txt")   'delete it
-	flaglog=savflog 'restore the value to keep the use of file log
-End Sub
 '============================================
 '' splits a string in parts of 2 characters
 '============================================
@@ -1638,11 +1600,13 @@ end sub
 Private sub thread_resume()
 	#ifdef __fb_win32__
 		''moved to dbg_windows.bas
-		messbox("addr restoring="+str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv))
+
 		print "resume begin"
 		writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution
 		resumethread(threadhs)
 		print "resume end"
+		'messbox("addr restoring="+str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv))
+		windowevent
 	#else
 		''LINUX, maybe moved in dbg_linux.bas
 		messbox("For Linux","thread_resume() needed to be added")
@@ -3029,7 +2993,9 @@ End Sub
 '' handles display at end of run or when running auto
 '======================================================
 private sub dsp_change(index As Integer)
+	print __file__,__line__
 	linecur_change(index)
+	print __file__,__line__
 	If flagtrace And 2 Then dbg_prt(LTrim(line_text(linecur-1),Any " "+Chr(9)))
 	If runtype=RTAUTO Then
 		watch_array() 'update adr watched dyn array
@@ -3467,7 +3433,7 @@ private sub gest_brk(ad As UInteger)
 		thread_resume()
 		Exit Sub
 	EndIf
-
+  print __file__,__line__
 	dbg_prt2("")
 	dbg_prt2("AD gest brk="+hex(ad)+" th="+Str(threadcur))
 	'show_context
@@ -3493,7 +3459,7 @@ private sub gest_brk(ad As UInteger)
 			End If
 		Wend
 	EndIf
-
+  print __file__,__line__
 	''restore CC previous line
 	If thread(threadcur).sv<>-1 Then WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0)
    ''thread changed by threadcreate or by mutexunlock
@@ -3507,7 +3473,7 @@ private sub gest_brk(ad As UInteger)
 		thread_text(threadcur) 'next executed
 		threadprv=threadcur
 	EndIf
-
+  print __file__,__line__
 	thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=i
 	procsv=rline(i).px
 	'dbg_prt2("proc ="+Str(procsv)+" "+proc(procsv).nm+" "+hex(proc(procsv).db)+" "+source(proc(procsv).sr)+" "+hex(proccurad))
@@ -3516,7 +3482,7 @@ private sub gest_brk(ad As UInteger)
 	'get and update registers
 	vcontext.contextflags=CONTEXT_CONTROL
 	GetThreadContext(threadcontext,@vcontext)
-
+  print __file__,__line__
 	If proccurad=proc(procsv).db Then 'is first proc instruction
 
 		If rline(i).sv=85 Then'check if the first instruction is push ebp opcode=85 / push rbp opcode=&h55=85dec
@@ -3541,7 +3507,7 @@ private sub gest_brk(ad As UInteger)
 		End If
 	EndIf
 	vcontext.regip=ad
-
+  print __file__,__line__
 	setThreadContext(threadcontext,@vcontext)
 	'dbg_prt2("PE"+Str(thread(threadcur).pe)+" "+Str(proccurad)+" "+Str(proc(procsv).fn))
 	If thread(threadcur).pe Then 'if previous instruction was the last of proc
@@ -3550,7 +3516,7 @@ private sub gest_brk(ad As UInteger)
 		EndIf
 		proc_end():thread(threadcur).pe=FALSE
 	EndIf
-
+  print __file__,__line__
 	If proccurad=proc(procsv).db Then 'is first instruction ?
 		If proctop Then
 			runtype=RTSTEP
@@ -3601,11 +3567,14 @@ private sub gest_brk(ad As UInteger)
    		dsp_change(i)
 		brk_del(0)
    Else 'RTSTEP or RTAUTO
+     print __file__,__line__
 		If flagattach Then proc_newfast:flagattach=FALSE
 		'NOTA If rline(i).nu=-1 Then
 			'fb_message("No line for this proc","Code added by compiler (constructor,...)")
 		'Else
+		print __file__,__line__
 		dsp_change(i)
+		print __file__,__line__
 		'EndIf
 		If runtype=RTAUTO Then
 			Sleep(autostep)
@@ -3625,7 +3594,7 @@ private sub gest_brk(ad As UInteger)
 			threadsel=threadcur
 		EndIf
    End If
-
+print __file__,__line__
 End Sub
 '====================================================================
 ''  load shared and common variables, default=no dll number (d=0)

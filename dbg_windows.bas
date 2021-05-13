@@ -201,6 +201,8 @@ Dim As String Accviolstr(1)={"TRYING TO READ","TRYING TO WRITE"}
 ' that the function does not return until a debugging event occurs.
 If hattach Then setevent(hattach):hattach=0
 While 1
+	print __file__,__line__
+
 	If WaitForDebugEvent(@DebugEv, infinite)=0 Then 'INFINITE ou null ou x
 		erreur=GetLastError
 		ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
@@ -253,8 +255,9 @@ While 1
 						Next
 						''dbg_prt("CODE 1"+hex(adr))
 						gest_brk(adr)
+						print __file__,__line__
 			      	ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-
+print __file__,__line__
 					case Else ' EXCEPTION
 					dbg_prt("Exception in thread="+str(DebugEv.dwThreadId))
 	               With DebugEv.u.Exception.ExceptionRecord
@@ -535,6 +538,7 @@ While 1
 			#EndIf
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 	End Select
+	print __file__,__line__
 Wend
 Return 0 'not really used
 End Function

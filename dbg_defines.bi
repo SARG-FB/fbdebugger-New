@@ -10,8 +10,6 @@
 #define fulldbg_prt 'uncomment to get more information
 #Define dbg_prt2 dbg_prt 'Rem 'used temporary for debugging fbdebugger, change rem by dbg_prt
 
-#define log_write(text) vlog+=text+chr(10)
-
  'take l char form a string and complete with spaces if needed
 #Define fmt(t,l) Left(t,l)+Space(l-Len(t))+"  "
 #Define fmt2(t,l) Left(t,l)+Space(l-Len(t))
@@ -179,10 +177,20 @@ end enum
 	#define hicon HBITMAP
 #endif
 
-''log and others uses
-#define GEDITOR 330
+''log
+#define KLOGOFF  0  ''no log
+#define KLOGON   1  ''log displayed only on demand
+#define KLOGCONT 2  ''log always updated and continously displayed
+#define log_write(text) vlog+=text+chr(10)
+#define GLOG 330
 
-#define GSTATUSBAR 331
+            'Setselecttexteditorgadget(1,-1,-1) ' cursor in the end position
+            'Pasteeditor(1,"paste")
+
+''EDITOR for displaying miscellanous thing
+#define GEDITOR 331
+
+#define GSTATUSBAR 332
 #define KSTBSTS 0
 #define KSTBTHD 1
 #define KSTBUID 2
@@ -318,8 +326,8 @@ enum
 	MNSETTINGS
 	MNCMPINF
 	MNDBGHELP
-	MNSHWLOG
-	MNDELLOG
+	MNSHOWLOG
+	MNRESETLOG
 	MNLISTENUM
 	MNLISTPROCESS
 	MNLISTDLL
@@ -461,10 +469,9 @@ End Type
 ''for settings
 enum
 	LOGGROUP=900
-	GNOLOG
-	GSCREENLOG
-	GFILELOG
-	GBOTHLOG
+	GLOGOFF
+	GLOGON
+	GLOGCONT
 	GTRACEPROC
 	GTRACELINE
 	GVERBOSE
@@ -960,7 +967,6 @@ declare sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer
 dim shared as string enumdef(10000)
 enumdef(FONTGROUP)="FONTGROUP"
 enumdef(GAUTODELAY)="GAUTODELAY"
-enumdef(GBOTHLOG)="GBOTHLOG"
 enumdef(GBRKCLOSE)="GBRKCLOSE"
 enumdef(GBRKVCOND)="GBRKVCOND"
 enumdef(GBRKDEL01)="GBRKDEL01"
@@ -1029,7 +1035,7 @@ enumdef(GDUMPBASEADR)="GDUMPBASEADR"
 enumdef(GDUMPWCH)="GDUMPWCH"
 enumdef(GDUMUSEGRP)="GDUMUSEGRP"
 enumdef(GFILELIST)="GFILELIST"
-enumdef(GFILELOG)="GFILELOG"
+enumdef(GLOGCONT)="GLOGCONT"
 enumdef(GFILESEL)="GFILESEL"
 enumdef(GIDXAPPLY)="GIDXAPPLY"
 enumdef(GIDXAUTO)="GIDXAUTO"
@@ -1053,10 +1059,10 @@ enumdef(GIDXUP5)="GIDXUP5"
 enumdef(GIDXUPD)="GIDXUPD"
 enumdef(GIDXVAR)="GIDXVAR"
 enumdef(GIDXWIDTH)="GIDXWIDTH"
-enumdef(GNOLOG)="GNOLOG"
+enumdef(GLOGOFF)="GLOGOFF"
 enumdef(GRIGHTTABS)="GRIGHTTABS"
 enumdef(GSCINTILLA)="GSCINTILLA"
-enumdef(GSCREENLOG)="GSCREENLOG"
+enumdef(GLOGON)="GLOGON"
 enumdef(GSHWCUR)="GSHWCUR"
 enumdef(GSHWDMP)="GSHWDMP"
 enumdef(GSHWEDT)="GSHWEDT"
@@ -1124,7 +1130,7 @@ enumdef(MNCMPINF)="MNCMPINF"
 enumdef(MNCREATHR)="MNCREATHR"
 enumdef(MNCURSOR)="MNCURSOR"
 enumdef(MNDBGHELP)="MNDBGHELP"
-enumdef(MNDELLOG)="MNDELLOG"
+enumdef(MNRESETLOG)="MNRESETLOG"
 enumdef(MNEXCLINE)="MNEXCLINE"
 enumdef(MNEXEFILE0)="MNEXEFILE0"
 enumdef(MNEXEFILE1)="MNEXEFILE1"
@@ -1173,7 +1179,7 @@ enumdef(MNSHPRSRC)="MNSHPRSRC"
 enumdef(MNSHSTRG)="MNSHSTRG"
 enumdef(MNSHWBDH)="MNSHWBDH"
 enumdef(MNSHWEXP)="MNSHWEXP"
-enumdef(MNSHWLOG)="MNSHWLOG"
+enumdef(MNSHOWLOG)="MNSHOWLOG"
 enumdef(MNSHWPROC)="MNSHWPROC"
 enumdef(MNSHWVAR)="MNSHWVAR"
 enumdef(MNSORTPRC)="MNSORTPRC"

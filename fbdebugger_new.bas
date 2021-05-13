@@ -65,6 +65,8 @@ Dim Shared As texcld excldlines(EXCLDMAX)
 
 ''log
 dim shared as hwnd hlogbx
+dim shared as string vlog
+dim SHARED as integer logtyp
 
 #ifdef __fb_win32__
 	''Threads
