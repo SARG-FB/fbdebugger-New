@@ -1009,6 +1009,41 @@ private function split_hex(strg as string)as string
 	Next
 	return temp
 End Function
+'==========================================
+'' extracts all dump and put in clipboard
+'==========================================
+private sub dump_extract()
+	Dim As String dumpall
+	dim as integer lgt
+
+	Select Case dumptyp+dumpbase
+		Case 2,3
+			lgt=4
+		Case 5,6 'short/dec/sng
+			lgt=6
+		Case 1,7,8 'integer/dec/usng
+			lgt=11
+		Case 9,10 'longinteger/dec/usng
+			lgt=21
+		Case 11 'single
+			lgt=13
+		Case 12 'double
+			lgt=22
+	End Select
+
+	For jline as integer =0 To dumplines-1
+		dumpall+=fmt3(GetTextItemListView(GDUMPMEM,jline,0),20)+"  "
+		For icol as integer =1 To dumpnbcol
+			if dumpbase=0 then
+				dumpall+=fmt3(GetTextItemListView(GDUMPMEM,jline,icol),lgt)+" "
+			else
+				dumpall+=GetTextItemListView(GDUMPMEM,jline,icol)+" "
+			end if
+		Next
+		dumpall+="  "+GetTextItemListView(GDUMPMEM,jline,dumpnbcol+1)+chr(10) ''ascii
+	Next
+	SetClipBoardText(dumpall)
+End Sub
 '======================================
 '' changes the sign for some datatypes
 '======================================
@@ -1067,7 +1102,7 @@ private sub dump_cell()
 		else
 			''editing value
 			var adr=dumpadr+16*GetItemListView()+(16\dumpnbcol)*(GetSubItemListView()-1)
-			edit_fill("Editing a cell from dump memory "+str(adr)+"="+str(GetTextItemListView(GDUMPMEM,iline,icol)),adr,dumptyp,0,KEDITDMP)
+			edit_fill("Editing a cell from dump memory "+str(adr)+"="+GetTextItemListView(GDUMPMEM,iline,icol),adr,dumptyp,0,KEDITDMP)
 			exit sub
 		end if
 	end if
@@ -1605,8 +1640,7 @@ Private sub thread_resume()
 		writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution
 		resumethread(threadhs)
 		print "resume end"
-		'messbox("addr restoring="+str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv))
-		windowevent
+		messbox("addr restoring="+str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv))
 	#else
 		''LINUX, maybe moved in dbg_linux.bas
 		messbox("For Linux","thread_resume() needed to be added")
@@ -3425,9 +3459,9 @@ End Sub
 private sub gest_brk(ad As UInteger)
    Dim As UInteger i,debut=1,fin=linenb+1,adr,iold
    Dim vcontext As CONTEXT
-   
+
    print __file__,__line__
-   
+
    'egality added in case attach (example access violation) without -g option, ad=procfn=0....
 	If ad>=procfn Then
 		thread_resume()

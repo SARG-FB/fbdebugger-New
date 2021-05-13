@@ -13,7 +13,7 @@
  'take l char form a string and complete with spaces if needed
 #Define fmt(t,l) Left(t,l)+Space(l-Len(t))+"  "
 #Define fmt2(t,l) Left(t,l)+Space(l-Len(t))
-
+#Define fmt3(t,l) Space(l-Len(t))+Left(t,l)
 
 #include once "Window9.bi"
 #include once "scintilla.bi"
@@ -494,7 +494,7 @@ enum
 
 	GDUMPTSIZE
 	GDUMPSIZE
-
+	GDUMPCLIP
 	GDUMPBASEADR
 	GDUMPDECHEX
 	GDUMPSIGNED

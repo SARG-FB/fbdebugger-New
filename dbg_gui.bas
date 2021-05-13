@@ -665,6 +665,7 @@ private sub create_dumpbx()
 	stringgadget(GDUMPADR,130,5,95,30,"12345678901")
 
 	ButtonGadget(GDUMPEDIT,230,5,120,30,"Edit top/left cell")
+	ButtonGadget(GDUMPCLIP,210,40,140,30,"Copy all to clipboard")
 
 	textgadget(GDUMPTSIZE,12,40,105,30,"Size of column : ",0)
 	ListBoxGadget(GDUMPSIZE,130,40,75,70)

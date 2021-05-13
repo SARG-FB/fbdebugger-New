@@ -353,7 +353,10 @@ private sub gadget_action(igadget as LONG)
 		case GDUMPPP ''page +1
 			dumpadr+=320
 			dump_sh()
-		'
+
+		case GDUMPCLIP
+			dump_extract()
+
 		''adds to newadr,watched, break on mem, shw/exp based on first address
 		'case GDUMPNEW
 		'case GDUMPWCH
@@ -840,9 +843,7 @@ private sub button_action(button as integer)
 			End If
 
 		case IDBUTTOOL
-		messbox("idtools","idtools 00")
 			if GetLineCountEditor(GLOG)<>0 then
-				messbox("idtools","idtools 01")
 				SetStateMenu(HMenutools,MNSHOWLOG,0)
 				SetStateMenu(HMenutools,MNRESETLOG,0)
 			Else
