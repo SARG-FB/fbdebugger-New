@@ -6,6 +6,13 @@ dim shared as string defarray(99999) ''remove me when all runs finely
 
 #include once "dbg_defines.bi"
 
+''mutex for blocking second thread before continue
+dim shared as any ptr blocker
+blocker=mutexcreate
+MutexLock blocker
+dim shared as integer debugevent
+dim shared as integer debugdata
+
 ''source files
 dim Shared as String  source(SRCMAX)        ''source names
 dim shared as any ptr sourceptr(SRCMAX)     ''pointer doc scintilla

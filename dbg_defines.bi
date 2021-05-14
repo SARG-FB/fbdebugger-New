@@ -547,16 +547,31 @@ enum
 	GBRKVCOND
 end enum
 
-''procedure tracking
+''miscellaneous
 enum
+''procedure tracking
 	GCCHAIN=980
+'' timer
+	GTIMER
+end enum
+
+'' debug events
+enum
+ KDBGNOTHING = 0
+ KDBGBPOINT
+ KDBGBCREATEPR
+ KDBGBCREATETH
+ KDBGBEXITPR
+ KDBGBEXITTH
+ KDBGBDLL
+ KDBGBEXCEPT
+ KDBGBSTRING
 end enum
 
 ''editing value variable/memory
-
 #define KEDITVAR  0
 #define KEDITDMP  1
-#define KEDITARR 2
+#define KEDITARR  2
 #define KEDITWCH  3
 #define KEDITPTD  4
 #define KEDITSHW  5
@@ -962,6 +977,7 @@ declare function var_find() as INTEGER
 declare function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="") As String
 declare sub shwexp_init()
 declare sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer, src as integer)
+declare sub debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL)
 '===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)

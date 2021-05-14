@@ -1636,11 +1636,10 @@ Private sub thread_resume()
 	#ifdef __fb_win32__
 		''moved to dbg_windows.bas
 
-		print "resume begin"
+		print "resume begin";str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv)
 		writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution
 		resumethread(threadhs)
 		print "resume end"
-		messbox("addr restoring="+str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv))
 	#else
 		''LINUX, maybe moved in dbg_linux.bas
 		messbox("For Linux","thread_resume() needed to be added")
@@ -3027,9 +3026,7 @@ End Sub
 '' handles display at end of run or when running auto
 '======================================================
 private sub dsp_change(index As Integer)
-	print __file__,__line__
 	linecur_change(index)
-	print __file__,__line__
 	If flagtrace And 2 Then dbg_prt(LTrim(line_text(linecur-1),Any " "+Chr(9)))
 	If runtype=RTAUTO Then
 		watch_array() 'update adr watched dyn array
@@ -3460,14 +3457,14 @@ private sub gest_brk(ad As UInteger)
    Dim As UInteger i,debut=1,fin=linenb+1,adr,iold
    Dim vcontext As CONTEXT
 
-   print __file__,__line__
+   print "gest brk adr=";ad
 
    'egality added in case attach (example access violation) without -g option, ad=procfn=0....
 	If ad>=procfn Then
 		thread_resume()
 		Exit Sub
 	EndIf
-  print __file__,__line__
+
 	dbg_prt2("")
 	dbg_prt2("AD gest brk="+hex(ad)+" th="+Str(threadcur))
 	'show_context
@@ -3493,7 +3490,7 @@ private sub gest_brk(ad As UInteger)
 			End If
 		Wend
 	EndIf
-  print __file__,__line__
+
 	''restore CC previous line
 	If thread(threadcur).sv<>-1 Then WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0)
    ''thread changed by threadcreate or by mutexunlock
@@ -3507,7 +3504,7 @@ private sub gest_brk(ad As UInteger)
 		thread_text(threadcur) 'next executed
 		threadprv=threadcur
 	EndIf
-  print __file__,__line__
+
 	thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=i
 	procsv=rline(i).px
 	'dbg_prt2("proc ="+Str(procsv)+" "+proc(procsv).nm+" "+hex(proc(procsv).db)+" "+source(proc(procsv).sr)+" "+hex(proccurad))
@@ -3516,7 +3513,7 @@ private sub gest_brk(ad As UInteger)
 	'get and update registers
 	vcontext.contextflags=CONTEXT_CONTROL
 	GetThreadContext(threadcontext,@vcontext)
-  print __file__,__line__
+
 	If proccurad=proc(procsv).db Then 'is first proc instruction
 
 		If rline(i).sv=85 Then'check if the first instruction is push ebp opcode=85 / push rbp opcode=&h55=85dec
@@ -3541,7 +3538,7 @@ private sub gest_brk(ad As UInteger)
 		End If
 	EndIf
 	vcontext.regip=ad
-  print __file__,__line__
+
 	setThreadContext(threadcontext,@vcontext)
 	'dbg_prt2("PE"+Str(thread(threadcur).pe)+" "+Str(proccurad)+" "+Str(proc(procsv).fn))
 	If thread(threadcur).pe Then 'if previous instruction was the last of proc
@@ -3550,7 +3547,7 @@ private sub gest_brk(ad As UInteger)
 		EndIf
 		proc_end():thread(threadcur).pe=FALSE
 	EndIf
-  print __file__,__line__
+
 	If proccurad=proc(procsv).db Then 'is first instruction ?
 		If proctop Then
 			runtype=RTSTEP
@@ -3601,14 +3598,11 @@ private sub gest_brk(ad As UInteger)
    		dsp_change(i)
 		brk_del(0)
    Else 'RTSTEP or RTAUTO
-     print __file__,__line__
 		If flagattach Then proc_newfast:flagattach=FALSE
 		'NOTA If rline(i).nu=-1 Then
 			'fb_message("No line for this proc","Code added by compiler (constructor,...)")
 		'Else
-		print __file__,__line__
 		dsp_change(i)
-		print __file__,__line__
 		'EndIf
 		If runtype=RTAUTO Then
 			Sleep(autostep)
@@ -3628,7 +3622,6 @@ private sub gest_brk(ad As UInteger)
 			threadsel=threadcur
 		EndIf
    End If
-print __file__,__line__
 End Sub
 '====================================================================
 ''  load shared and common variables, default=no dll number (d=0)
@@ -3955,34 +3948,35 @@ end function
 		Wend
 		workdir=Left(exename,st)
 		cmdl=""""+exename+""" "+cmdexe(0)
-	   #Ifdef fulldbg_prt
-		dbg_prt (Date+" "+Time+"Start Debug with "+cmdl)
-	   #EndIf
-	   sinfo.cb = Len(sinfo)
-	'Set the flags
-	   sinfo.dwFlags = STARTF_USESHOWWINDOW
-	'Set the window's startup position
-	   sinfo.wShowWindow = SW_NORMAL
-	'Set the priority class
-	   pclass = NORMAL_PRIORITY_CLASS Or CREATE_NEW_CONSOLE Or DEBUG_PROCESS Or DEBUG_ONLY_THIS_PROCESS
-	'Start the program
-	   If CreateProcess(exename,StrPtr(cmdl),ByVal NULL,ByVal NULL, FALSE, pclass, _
-	   NULL, WorkDir, @sinfo, @pinfo) Then
+		#Ifdef fulldbg_prt
+			dbg_prt (Date+" "+Time+"Start Debug with "+cmdl)
+		#EndIf
+		sinfo.cb = Len(sinfo)
+		'Set the flags
+		sinfo.dwFlags = STARTF_USESHOWWINDOW
+		'Set the window's startup position
+		sinfo.wShowWindow = SW_NORMAL
+		'Set the priority class
+		pclass = NORMAL_PRIORITY_CLASS Or CREATE_NEW_CONSOLE Or DEBUG_PROCESS Or DEBUG_ONLY_THIS_PROCESS
+		'Start the program
+		If CreateProcess(exename,StrPtr(cmdl),ByVal NULL,ByVal NULL, FALSE, pclass, _
+		NULL, WorkDir, @sinfo, @pinfo) Then
 			'Wait
 			WaitForSingleObject pinfo.hProcess, 10
 			dbgprocId=pinfo.dwProcessId
 			dbgthreadID=pinfo.dwThreadId
 			dbghand=pinfo.hProcess
 			dbghthread=pinfo.hThread
-		  #Ifdef fulldbg_prt
-			dbg_prt ("Create process")
-			dbg_prt ("pinfo.hThread "+Str(pinfo.hThread))
-			dbg_prt ("pinfo.dwThreadId "+Str(pinfo.dwThreadId))
-			dbg_prt ("hand "+Str(dbghand)+" Pid "+Str(dbgprocid))
-		  #EndIf
-		  prun=TRUE
-		  runtype=RTSTEP
-		  wait_debug()
+			#Ifdef fulldbg_prt
+				dbg_prt ("Create process")
+				dbg_prt ("pinfo.hThread "+Str(pinfo.hThread))
+				dbg_prt ("pinfo.dwThreadId "+Str(pinfo.dwThreadId))
+				dbg_prt ("hand "+Str(dbghand)+" Pid "+Str(dbgprocid))
+			#EndIf
+			prun=TRUE
+			print "prun=";prun
+			runtype=RTSTEP
+			wait_debug()
 	   Else
 		  messbox("PROBLEM","no debugged pgm -->"+exename+Chr(10)+"error :"+Str(GetLastError()),MB_SYSTEMMODAL)
 	   End If
@@ -4026,6 +4020,7 @@ private sub exe_sav(exename As String,cmdline As String="")
 	savexe(0)=exename
 	messbox("new save(0)","now="+savexe(0))
 	If cmdline<>"" Then cmdexe(0)=cmdline
+	DisableGadget(IDBUTRERUN,0)
 	SetToolTipText(IDBUTRERUN,TTRERUN,exename)
 	settitle()
 End sub
@@ -4292,6 +4287,7 @@ private sub ini_read()
 	Close #Filein
 	exename=savexe(0)
 	if exename<>"" then
+		DisableGadget(IDBUTRERUN,0)
 		SetToolTipText(IDBUTRERUN,TTRERUN,"Restart "+exename)
 	end if
 End sub
@@ -4305,6 +4301,7 @@ private sub closes_debugger()
 		text=>"CAUTION PROGRAM STILL RUNNING."+Chr(10)+Chr(10)
 	EndIf
 	if messbox("Quit Fbdebugger",text+"Are you sure ?",MB_YESNO)=RETYES then
+		mutexdestroy blocker
 		release_doc ''releases scintilla docs
 		''todo free all the objects menus, etc
 		If sourcenb<>-1 Then ''case exiting without stopping debuggee before
@@ -4321,6 +4318,35 @@ end sub
 private sub drag_n_drop
 	messbox("feature to be coded","drag_n_drop")
 end sub
+'===================================================
+'' handles the debug events  (trigered by timer)
+'===================================================
+private sub debug_event()
+	'print "debug_event 00";time
+	if debugevent = KDBGNOTHING then exit sub
+	print "debug_event=";str(debugevent)
+	select case as const debugevent
+		Case KDBGBPOINT
+			gest_brk(debugdata)
+		Case KDBGBCREATEPR
+			debug_extract(debugdata,exename)
+		Case KDBGBCREATETH
+		Case KDBGBEXITPR
+			KillTimer(hmain,GTIMER)
+		Case KDBGBEXITTH
+		Case KDBGBDLL
+		Case KDBGBEXCEPT
+		Case KDBGBSTRING
+		Case else
+			messbox("Handling debug event","Debug event unkown, not handled ="+str(debugevent))
+			exit sub
+	End Select
+	debugevent=KDBGNOTHING ''reset event code
+	mutexunlock blocker ''release second thread
+	mutexlock   blocker ''lock for next event
+end sub
+
+
 '===================================================
 ''launch by command line or file explorer
 '===================================================
@@ -4341,16 +4367,20 @@ private sub external_launch()
 
 	exename=debuggee
 	exe_sav(exename,cmdline)
-
+	SetTimer(hmain,GTIMER,500,Cast(Any Ptr,@debug_event))
 	#Ifdef __fb_win32__
 		If ThreadCreate(@start_pgm)=0 Then
+			KillTimer(hmain,GTIMER)
 			messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
 		endif
 	#else
 		messbox("feature to be coded linux","after selecting file")
 	#endif
-
 end sub
+
+private sub testtimer()
+	print time
+End Sub
 '==================================================================================
 '' Debuggee restarted, last debugged (using IDBUTRERUN) or one of the 9/10 others
 '==================================================================================
@@ -4371,14 +4401,16 @@ private sub restart(byval idx as integer=0)
 	if kill_process("Trying to launch but debuggee still running")=FALSE then exit sub
 	reinit ''reinit all except GUI parts
 	settitle()
+	SetTimer(hmain,GTIMER,500,Cast(Any Ptr,@debug_event))
+
 	#Ifdef __fb_win32__
 		If ThreadCreate(@start_pgm)=0 Then
+			KillTimer(hmain,GTIMER)
 			messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
 		endif
 	#else
 		messbox("feature to be coded linux","after selecting file")
 	#endif
-
 end sub
 '--------------------------------------------------------
 '' Debuggee provided by jitdebugger
