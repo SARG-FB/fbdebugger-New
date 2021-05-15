@@ -297,50 +297,6 @@ reinit
 
 statusbar_text(KSTBSTS,"No debuggee")
 
-goto removeme
-''for testing todo remove
-exename="D:\telechargements\win9\tmp\test_include_main"
-exe_sav(exename)
-srccur=0
-linecur=10
-rlinecur=14
-''
-settitle()
-statusbar_text(KSTBSTS,"Loading data")
-if elf_extract(exename) then
-	list_all
-	statusbar_text(KSTBSTS,"Waiting")
-	print "------------------ after extraction -----------------------"
-	print "Number of files=";sourcenb
-
-	'hidewindow(scint ,1)
-	for isrc as integer =0 to sourcenb
-		source(isrc)="D:\telechargements\win9\tmp\"+source_name(source(isrc))
-		print "index=";isrc;" file=";source(isrc)
-
-		AddPanelGadgetItem(GSRCTAB,isrc,source_name(source(isrc)))
-		''later sort the files to get them in alphabetic order
-		AddComboBoxItem(GFILELIST,source_name(source(isrc)),-1)
-	next
-	SetItemComboBox(GFILELIST,1)
-	'ShowListComboBox(GFILELIST,TRUE)
-	'SetGadgetFont(GSRCTAB,CINT(LoadFont("Courier New",10)))
-	sources_load(0,filedatetime(exename))
-
-	''for testing to be removed
-
-		'line_color(5,2)
-		'line_color(10,2)
-		'line_color(4,2)
-		for imark as Integer = 0 To 5
-			send_sci(SCI_MarkerAdd, imark, imark)       'line, marker#
-		next
-		linecur_change(rlinecur)
-	hidewindow(hscint ,0)
-	statusbar_text(KSTBSTS,"Waiting")
-end if
-removeme:
-
 '====================
 ''main loop
 '====================

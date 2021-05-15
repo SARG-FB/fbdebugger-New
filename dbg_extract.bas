@@ -1261,7 +1261,13 @@ end function
 	Next
 	If basestab=0 OrElse basestabs=0 Then
 		If flagdll=NODLL Then
-			messbox("NO information for Debugging","Compile again with option -g")
+			messbox("NO information for Debugging","Compile again with option -g"+chr(10)+"killing the debuggee")
+			#ifdef __fb_win32__
+				terminateprocess(dbghand,-1)
+			#else
+				''todo linux function from W9
+				messbox("Feature missing for Linux","Kill_process")
+			#endif
 		EndIf
 		Exit Sub
 	Else

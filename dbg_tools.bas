@@ -4018,7 +4018,7 @@ private sub exe_sav(exename As String,cmdline As String="")
 		End If
 	Next
 	savexe(0)=exename
-	messbox("new save(0)","now="+savexe(0))
+	'messbox("new save(0)","now="+savexe(0))
 	If cmdline<>"" Then cmdexe(0)=cmdline
 	DisableGadget(IDBUTRERUN,0)
 	SetToolTipText(IDBUTRERUN,TTRERUN,exename)
@@ -4322,10 +4322,12 @@ end sub
 '' handles the debug events  (trigered by timer)
 '===================================================
 private sub debug_event()
+	dim as integer dbgevent=debugevent
+	debugevent=KDBGNOTHING
 	'print "debug_event 00";time
-	if debugevent = KDBGNOTHING then exit sub
-	print "debug_event=";str(debugevent)
-	select case as const debugevent
+	if dbgevent = KDBGNOTHING then exit sub
+	print "debug_event=";str(dbgevent)
+	select case as const dbgevent
 		Case KDBGBPOINT
 			gest_brk(debugdata)
 		Case KDBGBCREATEPR
@@ -4341,19 +4343,18 @@ private sub debug_event()
 			messbox("Handling debug event","Debug event unkown, not handled ="+str(debugevent))
 			exit sub
 	End Select
-	debugevent=KDBGNOTHING ''reset event code
 	mutexunlock blocker ''release second thread
 	mutexlock   blocker ''lock for next event
 end sub
 
 
 '===================================================
-''launch by command line or file explorer
+''launch by command line
 '===================================================
 private sub external_launch()
 	if command(0)="" then exit sub ''not launched by command line
 	dim as string debuggee=command(1)
-	if debuggee="" then exit sub ''not debuggee
+	if debuggee="" then exit sub ''no debuggee
 
 	if instr(debuggee,slash)=0 then debuggee=exepath+slash+debuggee ''debugge without path so exepath added
 
@@ -4394,6 +4395,7 @@ private sub restart(byval idx as integer=0)
 		If wtchcpt Then flagwtch=1
 	else
 		exename=savexe(idx)
+		exe_sav(exename,cmdexe(idx))
 	end if
 
 	''todo make a sub and call also in sub external_launch, in select_file
@@ -4401,6 +4403,7 @@ private sub restart(byval idx as integer=0)
 	if kill_process("Trying to launch but debuggee still running")=FALSE then exit sub
 	reinit ''reinit all except GUI parts
 	settitle()
+
 	SetTimer(hmain,GTIMER,500,Cast(Any Ptr,@debug_event))
 
 	#Ifdef __fb_win32__

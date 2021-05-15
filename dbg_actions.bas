@@ -746,7 +746,7 @@ private sub gadget_action(igadget as LONG)
 	End Select
 end sub
 '==============================================
-''
+'' launch by file explorer
 '==============================================
 private sub select_file()
 	#Ifdef __fb_win32__
@@ -772,9 +772,10 @@ private sub select_file()
 	reinit ''reinit all except GUI parts
 
     exe_sav(exename,"")
-
+	SetTimer(hmain,GTIMER,500,Cast(Any Ptr,@debug_event))
 	#Ifdef __fb_win32__
 		If ThreadCreate(@start_pgm)=0 Then
+			KillTimer(hmain,GTIMER)
 			messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
 		endif
 	#else

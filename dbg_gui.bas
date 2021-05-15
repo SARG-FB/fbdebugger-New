@@ -438,7 +438,7 @@ sub brk_marker(brkidx as integer)
 			if brkidx=0 then
 				if brkol(brkidx).typ=2 then
 					typ=6 ''red circle
-					messbox("red cricle on line=",str(lline+1))
+					'messbox("red cricle on line=",str(lline+1))
 				end if
 			else
 				typ=brkol(brkidx).typ  ''permanent or tempo --> marker 1 or 2
