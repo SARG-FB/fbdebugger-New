@@ -4573,7 +4573,7 @@ private sub external_launch()
 
 	exename=debuggee
 	exe_sav(exename,cmdline)
-	SetTimer(hmain,GTIMER,500,Cast(Any Ptr,@debug_event))
+	SetTimer(hmain,GTIMER,100,Cast(Any Ptr,@debug_event))
 	#Ifdef __fb_win32__
 		If ThreadCreate(@start_pgm)=0 Then
 			KillTimer(hmain,GTIMER)
@@ -4609,7 +4609,7 @@ private sub restart(byval idx as integer=0)
 	reinit ''reinit all except GUI parts
 	settitle()
 
-	SetTimer(hmain,GTIMER,500,Cast(Any Ptr,@debug_event))
+	SetTimer(hmain,GTIMER,100,Cast(Any Ptr,@debug_event))
 
 	#Ifdef __fb_win32__
 		If ThreadCreate(@start_pgm)=0 Then

@@ -782,7 +782,7 @@ private sub select_file()
 	reinit ''reinit all except GUI parts
 
     exe_sav(exename,"")
-	SetTimer(hmain,GTIMER,500,Cast(Any Ptr,@debug_event))
+	SetTimer(hmain,GTIMER,100,Cast(Any Ptr,@debug_event))
 	#Ifdef __fb_win32__
 		If ThreadCreate(@start_pgm)=0 Then
 			KillTimer(hmain,GTIMER)
