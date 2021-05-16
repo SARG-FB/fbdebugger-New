@@ -1,8 +1,50 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
+'================================================================
+''lists procedures and variables then puts in clipboard or log
+'================================================================
+private sub var_list(tlc as integer)
+	dim as integer iparent,inext,temp,hitem,level
+	dim as string text,textcb
 
+	if tlc=1 Or tlc=3 Then
+		hitem=GetItemTreeView(GTVIEWVAR)
+		iparent=GetParentItemTreeView(GTVIEWVAR,hitem)
+		inext=GetNextItemTreeView(GTVIEWVAR,hitem)
+	else
+		hitem=getfirstitemtreeview(GTVIEWVAR)
+		iparent=0
+		inext=0
+	end if
 
+	While hitem<>0
+		text=GetTextTreeView(GTVIEWVAR,hitem)
+		textcb+=Space(level*4)+left(text,50)+Chr(13)+Chr(10)
+		temp=GetChildItemTreeView(GTVIEWVAR,hitem)
+		level+=1
+	    While temp=0
+			temp=GetNextItemTreeView(GTVIEWVAR,hitem)
+			If temp<>0 Then
+				If inext=temp Then Exit While,While
+				level-=1:Exit While
+			EndIf
+			hitem=GetParentItemTreeView(GTVIEWVAR,hitem)
+			level-=1
+			If hitem=iparent Then Exit While,While
+		Wend
+		hitem=temp
+	Wend
+
+	If tlc=2 OrElse tlc=3 Then
+		setclipboardtext(textcb)
+	else
+		vlog+=textcb
+		if logtyp=KLOGCONT then
+			pasteeditor(GLOG,textcb)
+		end if
+	end if
+End Sub
 '===================================
 '' show the value of a z/w/string
 '===================================
@@ -689,37 +731,6 @@ private sub enum_list()
 			Next
 		End If
 	Next
-End Sub
-'=======================================================
-'' lists selected var with the children to log
-'=======================================================
-private sub procvar_list()
-	Dim text As String, pr As Integer
-	Dim As Integer hitem,temp,level,iparent,inext
-	Dim As hwnd hedit
-
-	'get current hitem in tree
-	hitem=GetItemTreeView(GTVIEWVAR)
-
-	While hitem<>0
-		GetTextTreeView(GTVIEWVAR,hitem)
-		'#Ifdef fulldbg_prt
-			dbg_prt(Space(level*4)+text)
-		'#EndIf
-		temp=GetChildItemTreeView(GTVIEWVAR,hitem)
-		level+=1
-	   While temp=0
-			temp=GetNextItemTreeView(GTVIEWVAR,hitem)
-			If temp<>0 Then
-				If inext=temp Then Exit While,While
-				level-=1:Exit While
-			EndIf
-			hitem=GetParentItemTreeView(GTVIEWVAR,hitem)
-			level-=1
-			If hitem=iparent Then Exit While,While
-	   Wend
-	   hitem=temp
-	Wend
 End Sub
 '=================================================
 '' lists dll

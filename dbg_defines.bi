@@ -272,12 +272,12 @@ enum
 	MNSETWTTR
 	MNCHGZSTR
 	MNCALLINE
-	MNLSTVARA 'list  all proc/variables
-	MNLSTVARS 'list  onlyselectedand below
 	MNPCHNING 'chaining  from proc/var
-	MNSHCHAR  'show  character  in a  string at a  selectedposition'03/11/2014
-	MNCLBVARA 'copy  to clipboard  all procs/vars '28/11/2014
+	MNSHCHAR  'show  character  in a  string at a  selected position
+	MNCLBVARA 'copy  to clipboard  all procs/vars
 	MNCLBVARS 'copy  to clipboard  selectedvar
+	MNLSTVARA 'copy  to log  all procs/vars
+	MNLSTVARS 'copy  to log selectedvar
 	MNPTDUMP  'dump  deferenced data
 	MNFNDVAR  'find  proc or var in proc/var
 	MNVARCOLI 'collapse item

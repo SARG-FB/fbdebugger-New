@@ -34,12 +34,13 @@ private sub menu_action(poption as integer)
 			restart(poption-MNEXEFILE0)
 
 		case MNSHOWLOG
-			'setgadgettext(GLOG,vlog)
+			setgadgettext(GLOG,vlog)
 			hidewindow(hlogbx,KSHOW)
 
 		case MNRESETLOG
 			if messbox("Reset log","Are you sure ?",MB_YESNO)=IDYES then
 				vlog=""
+				setgadgettext(GLOG,vlog)
 			EndIf
 
 		Case MNWINMSG
@@ -163,8 +164,17 @@ private sub menu_action(poption as integer)
 			messbox("Feature not yet implemented","show_regs()")
 			'show_regs()
 
-		Case MNLSTVARS'list selected var in log
-			procvar_list()
+		case MNCLBVARA 'copy  to clipboard  all procs/vars
+			var_list(2)
+
+		case MNCLBVARS 'copy  to clipboard  selectedvar
+			var_list(3)
+
+		case MNLSTVARA 'copy  to log  all procs/vars
+			var_list(0)
+
+		case MNLSTVARS 'copy  to log selectedvar
+			var_list(1)
 
 		Case MNPTDUMP 'dump pointed data
 			var_dump(htviewvar,1)
