@@ -1634,12 +1634,10 @@ end sub
 '===========================================
 Private sub thread_resume()
 	#ifdef __fb_win32__
-		''moved to dbg_windows.bas
-
-		print "resume begin";str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv)
+		''todo move to dbg_windows.bas
+		'print "resume begin";str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv)
 		writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution
 		resumethread(threadhs)
-		print "resume end"
 	#else
 		''LINUX, maybe moved in dbg_linux.bas
 		messbox("For Linux","thread_resume() needed to be added")
@@ -3457,7 +3455,7 @@ private sub gest_brk(ad As UInteger)
    Dim As UInteger i,debut=1,fin=linenb+1,adr,iold
    Dim vcontext As CONTEXT
 
-   print "gest brk adr=";ad
+   'print "gest brk adr=";ad
 
    'egality added in case attach (example access violation) without -g option, ad=procfn=0....
 	If ad>=procfn Then
@@ -3974,7 +3972,6 @@ end function
 				dbg_prt ("hand "+Str(dbghand)+" Pid "+Str(dbgprocid))
 			#EndIf
 			prun=TRUE
-			print "prun=";prun
 			runtype=RTSTEP
 			wait_debug()
 	   Else
@@ -4315,30 +4312,229 @@ end sub
 '===================================================
 '' Drag and drop
 '===================================================
-private sub drag_n_drop
+private sub drag_n_drop()
 	messbox("feature to be coded","drag_n_drop")
 end sub
 '===================================================
-'' handles the debug events  (trigered by timer)
+'' list all extracted data
+'===================================================
+private sub list_all()
+	dim scopelabel(1 to ...) as const zstring ptr={@"local",@"global",@"static",@"byref param",@"byval param",@"common"}
+	print "sources ------------------------------------------------------- ";"total=";sourcenb+1
+	for isrc as integer =0 to sourcenb
+		print "isrc=";isrc;" ";source(isrc)
+	next
+	print "procedures ------------------------------------------------------- ";procnb
+	for iprc as integer =1 to procnb
+		print "iprc=";iprc;" ";source(proc(iprc).sr);" ";proc(iprc).nm;" ";proc(iprc).nu;" ";udt(proc(iprc).rv).nm
+		print "lower/upper/end ad=";proc(iprc).db;" ";proc(iprc).fn;" ";proc(iprc).ed
+	next
+	print "Lines ---------------------------------------------------------- ";linenb
+	for iline as integer = 1 to linenb
+		print "iline=";iline;" proc=";proc(rline(iline).px).nm;" ";rline(iline).nu;" ";hex(rline(iline).ad)
+	next
+	print
+	print "types ----------------------------------------------------------- ";udtmax
+	for iudt as integer=1 to udtmax
+		if udt(iudt).nm<>"" then
+			print "iudt=";iudt;" ";udt(iudt).nm;" ";udt(iudt).lg
+			if udt(iudt).ub<>0 then
+				for icudt as integer =udt(iudt).lb to udt(iudt).ub
+					print "icudt=";cudt(icudt).nm
+				next
+			end if
+		end if
+	next
+	print "global variables ---------------------------------------------------------- ";vrbgbl
+	for ivrb as integer=1 to vrbgbl
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+	next
+	print "local variables ----------------------------------------------------------- ";vrbloc-(VGBLMAX+1)
+	for ivrb as integer=VGBLMAX+1 to vrbloc
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+	next
+
+end sub
+'=======================================================================
+'' puts the intruction &hCC at the beginning of every executable line
+'=======================================================================
+private sub put_breakcpu(beginline as integer=1)
+	For iline As Integer=beginline to linenb
+		ReadProcessMemory(dbghand,Cast(LPCVOID,rline(iline).ad),@rLine(iline).sv,1,0) 'sav 1 byte before writing &CC
+		WriteProcessMemory(dbghand,Cast(LPVOID,rline(iline).ad),@breakcpu,1,0)
+	Next
+End Sub
+'===================================================
+'' initializes for the current debuggee
+'===================================================
+private sub init_debuggee(srcstart as integer)
+	''end of extraction ''todo add that for linux when the exe is running
+	globals_load()
+
+	If procrnb=0 Then
+	   If flagwtch=0 AndAlso wtchexe(0,0)<>"" Then watch_check(wtchexe())
+	   flagwtch=0
+	EndIf
+	list_all()
+	put_breakcpu()
+	''srcstart contains the index for starting the loading of source codes
+	sources_load(srcstart,filedatetime(exename))
+	'activate buttons/menu after real start
+	but_enable()
+	menu_enable()
+	'apply previous breakpoints
+	brk_apply()
+end sub
+'===================================================
+'' Loads dll elements
+'===================================================
+private sub dll_load()
+
+	Dim loaddll As LOAD_DLL_DEBUG_INFO=*cast(LOAD_DLL_DEBUG_INFO ptr,debugdata) '' copy of data from thread 2
+	Dim As String dllfn
+	Dim As Integer d,delta,srcstart
+
+	dllfn=dll_name(loaddll.hFile)
+	'check yet loaded
+	For i As Integer= 1 To dllnb
+		If dllfn=dlldata(i).fnm Then d=i:Exit For
+	Next
+
+	If d=0 Then 'not found
+		If dllnb>=DLLMAX Then 'limit reached
+			hard_closing("New dll, Number of dll ("+Str(DLLMAX)+") exceeded , change the DLLMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY")
+		EndIf
+		dllnb+=1
+		dlldata(dllnb).hdl=loaddll.hfile
+		dlldata(dllnb).bse=Cast(UInteger,loaddll.lpBaseOfDll)
+		srcstart=sourcenb+1
+		debug_extract(Cast(UInteger,loaddll.lpBaseOfDll),dllfn,DLL)
+		If (linenb-linenbprev)=0 Then 'not debugged so not taking in account
+			dllnb-=1
+		Else
+			init_debuggee(srcstart)
+
+			dlldata(dllnb).fnm=dllfn
+			dlldata(dllnb).gbln=vrbgbl-vrbgblprev
+			dlldata(dllnb).gblb=vrbgblprev+1
+			dlldata(dllnb).lnb=linenbprev+1
+			dlldata(dllnb).lnn=linenb
+		End If
+	Else
+		dlldata(d).hdl=loaddll.hfile
+		delta=Cast(Integer,loaddll.lpBaseOfDll-dlldata(d).bse)
+		If delta<>0 Then ''different address so need to change some thing
+			''lines
+			For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
+				rline(i).ad+=delta
+			Next
+			''globals
+			For i As Integer=dlldata(dllnb).gblb To dlldata(dllnb).gblb+dlldata(dllnb).gbln-1
+				vrb(i).adr+=delta
+			Next
+		End If
+		''normally done during debug_extract
+		For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
+			ReadProcessMemory(dbghand,Cast(LPCVOID,rline(i).ad),@rLine(i).sv,1,0) 'sav 1 byte before writing &CC
+			WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
+		Next
+		globals_load(d)
+		brk_apply
+	EndIf
+end sub
+'===================================================
+'' Unloads dll elements
+'===================================================
+private sub dll_unload(idll as integer)
+	Dim As Integer ibr=1
+	For ipr As Integer =2 To procrnb
+		If procr(ipr).tv=dlldata(idll).tv Then
+			proc_del(ipr,2) ' 'delete procr().tv
+			Exit For
+		EndIf
+	Next
+
+	''delete brkpoint but before trying to save it in brkexe
+	While ibr<=brknb
+		If brkol(ibr).index>=dlldata(idll).lnb AndAlso brkol(ibr).index<=dlldata(idll).lnn Then 'inside rline of dll
+			'create in brkexe for use in next dll loading
+			For n As Integer = BRKMAX To 1 Step-1 'search by the last slot, later if there are BRKMAX brkpt this one will be lost
+				If brkexe(0,n)="" Then 'find an empty slot if not data is lost
+					brkexe(0,n)=source_name(source(brkol(ibr).isrc))+","+Str(brkol(ibr).nline)+","+Str(brkol(ibr).typ)
+				EndIf
+				Exit For
+			Next
+			brk_del(ibr)
+		EndIf
+		ibr+=1
+	Wend
+End Sub
+'===========================================
+''handles other exceptions than breakpoint
+'===========================================
+private sub exception_handle(adr as INTEGER)
+	dim as string linetext
+	gest_brk(rline(thread(threadcur).sv).ad)
+	source_change(rline(thread(threadcur).sv).sx) 'display source
+	line_display(rline(thread(threadcur).sv).nu-1)
+	linetext=line_text(rline(thread(threadcur).sv).nu-1)
+	'case error inside proc initialisation (e.g. stack over flow)
+	If adr>rline(thread(threadcur).sv).ad And _
+		adr<rline(thread(threadcur).sv+1).ad And _
+		rline(thread(threadcur).sv+1).nu=rline(thread(threadcur).sv).nu Then
+		libelexception+="ERROR AT BEGINNING OF PROC NOT REALLY ON THIS LINE"+Chr(13)+ _
+		"CHECK DIM (e.g. width array to big), Preferably don't continue"+Chr(13)+Chr(13)
+	Else
+		libelexception+="Possible error on this line but not SURE"+Chr(13)+Chr(13)
+	End If
+
+	libelexception+="File  : "+source(rline(thread(threadcur).sv).sx)+Chr(13)+ _
+	"Proc  : "+proc(rline(thread(threadcur).sv).px).nm+Chr(13)+ _
+	"Line  : "+Str(rline(thread(threadcur).sv).nu)+" (selected and put in red)"+Chr(13)+ _
+	linetext+Chr(13)+Chr(13)+"Try To continue ? (if yes change values and/or use [M]odify execution)"
+	debugdata=messbox("EXCEPTION",libelexception,MB_YESNO)  ''used in thread2
+end sub
+'===================================================
+'' handles the debug events  (triggered by timer)
 '===================================================
 private sub debug_event()
-	dim as integer dbgevent=debugevent
+	dim as integer dbgevent=debugevent,srcstart
 	debugevent=KDBGNOTHING
 	'print "debug_event 00";time
 	if dbgevent = KDBGNOTHING then exit sub
-	print "debug_event=";str(dbgevent)
 	select case as const dbgevent
-		Case KDBGBPOINT
+		Case KDBGRKPOINT
 			gest_brk(debugdata)
-		Case KDBGBCREATEPR
+
+		Case KDBGCREATEPROC
+			srcstart=sourcenb+1
 			debug_extract(debugdata,exename)
-		Case KDBGBCREATETH
-		Case KDBGBEXITPR
+			init_debuggee(srcstart)
+
+		''Case KDBGCREATETHREAD not used
+
+		Case KDBGEXITPROC
 			KillTimer(hmain,GTIMER)
-		Case KDBGBEXITTH
-		Case KDBGBDLL
-		Case KDBGBEXCEPT
-		Case KDBGBSTRING
+			watch_sav()
+			brk_sav()
+			runtype=RTEND
+			but_enable()
+			menu_enable()
+			messbox("","END OF DEBUGGED PROCESS",MB_SYSTEMMODAL)
+		Case KDBGEXITTHREAD
+			thread_del(debugdata)
+
+		Case KDBGDLL
+			dll_load()
+
+		Case KDBGDLLUNLOAD
+			dll_unload(debugdata)
+
+		Case KDBGEXCEPT
+			exception_handle(debugdata)
+
+		''Case KDBGSTRING not used
+
 		Case else
 			messbox("Handling debug event","Debug event unkown, not handled ="+str(debugevent))
 			exit sub
@@ -4346,8 +4542,6 @@ private sub debug_event()
 	mutexunlock blocker ''release second thread
 	mutexlock   blocker ''lock for next event
 end sub
-
-
 '===================================================
 ''launch by command line
 '===================================================

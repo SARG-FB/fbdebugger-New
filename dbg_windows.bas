@@ -192,7 +192,6 @@ End Sub
 private function wait_debug() As Integer
 Dim DebugEv As DEBUG_EVENT    ' debugging event information
 Dim dwContinueStatus As Long =DBG_CONTINUE ' exception continuation
-Dim recup As String *300,libel As String
 Dim erreur As Long,cpt As Integer
 Dim As Integer firstchance,flagsecond
 Dim As UInteger adr
@@ -253,9 +252,8 @@ While 1
 							End If
 						Next
 						''''''''''''''''''''''''''''new way gest_brk(adr)
-						print "BREAKPOINT gest_brk adr=";adr
-						debugevent=KDBGBPOINT
 						debugdata=adr
+						debugevent=KDBGRKPOINT
 						mutexlock blocker ''waiting the Go from main thread
 						mutexunlock blocker
 						ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
@@ -285,17 +283,17 @@ While 1
 	        					End If
 							Next
 
-							libel=excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode)+Chr(13)+Chr(10) 'need chr(10) to dbg_prt otherwise bad print
+							libelexception=excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode)+Chr(13)+Chr(10) 'need chr(10) to dbg_prt otherwise bad print
 							If DebugEv.u.Exception.ExceptionRecord.ExceptionCode=EXCEPTION_ACCESS_VIOLATION Then
-								libel+=Accviolstr(.ExceptionInformation(0))+" AT ADR (dec/hex) : "+Str(.ExceptionInformation(1))+" / "+Hex(.ExceptionInformation(1))+Chr(13)+Chr(10)
+								libelexception+=Accviolstr(.ExceptionInformation(0))+" AT ADR (dec/hex) : "+Str(.ExceptionInformation(1))+" / "+Hex(.ExceptionInformation(1))+Chr(13)+Chr(10)
 							EndIf
 
 							If flagverbose Then
-								libel+=Chr(13)+Chr(10)+"Thread ID "+Str(DebugEv.dwThreadId)+" adr : "+Str(adr)+" / "+Hex(adr)+Chr(13)+Chr(10)
+								libelexception+=Chr(13)+Chr(10)+"Thread ID "+Str(DebugEv.dwThreadId)+" adr : "+Str(adr)+" / "+Hex(adr)+Chr(13)+Chr(10)
 							EndIf
 
 							#Ifdef fulldbg_prt
-								dbg_prt (libel)
+								dbg_prt (libelexception)
 								'show_context
 							#EndIf
 
@@ -311,43 +309,25 @@ While 1
 							Else
 								runtype=RTSTEP
 							End If
+
 							If DebugEv.dwDebugEventCode Then
 								stopcode=CSACCVIOL
 							Else
 								stopcode=CSEXCEP 'excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode)
 							EndIf
-    						gest_brk(rline(thread(threadcur).sv).ad)
 
-							source_change(rline(thread(threadcur).sv).sx) 'display source
-							line_display(rline(thread(threadcur).sv).nu-1)
-							recup=line_text(rline(thread(threadcur).sv).nu-1)
-							'case error inside proc initialisation (e.g. stack over flow)
-							If adr>rline(thread(threadcur).sv).ad And _
-								adr<rline(thread(threadcur).sv+1).ad And _
-								rline(thread(threadcur).sv+1).nu=rline(thread(threadcur).sv).nu Then
-								libel+="ERROR AT BEGINNING OF PROC NOT REALLY ON THIS LINE"+Chr(13)+ _
-								"CHECK DIM (e.g. width array to big), Preferably don't continue"+Chr(13)+Chr(13)
-							Else
-								libel+="Possible error on this line but not SURE"+Chr(13)+Chr(13)
-							End If
+							debugdata=adr
+							debugevent=KDBGEXCEPT
+							mutexlock blocker ''waiting the Go from main thread
+							mutexunlock blocker
 
-							libel+="File  : "+source(rline(thread(threadcur).sv).sx)+Chr(13)+ _
-							"Proc  : "+proc(rline(thread(threadcur).sv).px).nm+Chr(13)+ _
-							"Line  : "+Str(rline(thread(threadcur).sv).nu)+" (selected and put in red)"+Chr(13)+ _
-							recup+Chr(13)+Chr(13)+"Try To continue ? (if yes change values and/or use [M]odify execution)"
-							If messbox("EXCEPTION",libel,MB_YESNO or MB_SYSTEMMODAL) = RETYES Then
+							if debugdata=RETYES then
 								suspendthread(threadcontext)
 								ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 							Else
 								ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, DBG_EXCEPTION_NOT_HANDLED)
 							End If
 						End With
-					'case Else
-						'fb_message("EXCEPTION_DEBUG_EVENT ","Code :"+excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode),MB_SYSTEMMODAL Or MB_ICONSTOP)
-						'#Ifdef fulldbg_prt
-						'	dbg_prt("EXCEPTION_DEBUG_EVENT : "+excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode))
-						'#EndIf
-					   'ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, DBG_EXCEPTION_NOT_HANDLED)
 				End Select
 			Else'second chance
 				dbg_prt("second chance")
@@ -375,9 +355,6 @@ While 1
 				      	hard_closing("Number of threads ("+Str(THREADMAX+1)+") exceeded , change the THREADMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY" )
 					EndIf
 	        End With
-	        'mutexlock blocker ''waiting the Go from main thread
-			'mutexunlock blocker
-			print "---------------------------------------------------- end of create thread"
 	        ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 		'=========================
 		Case CREATE_PROCESS_DEBUG_EVENT
@@ -407,18 +384,13 @@ While 1
 					dbg_prt ("fUnicode "+Str(.fUnicode))
 					'show_context
 				#EndIf
-				print "create process","create process 00"
 				debugdata=Cast(Integer,.lpBaseOfImage)
-				print "create process","create process 01"
-				debugevent=KDBGBCREATEPR
-
-				print "---------------------------------------------------- create process","create process 02"
+				debugevent=KDBGCREATEPROC
 				mutexlock blocker ''waiting the Go from main thread
 				mutexunlock blocker
 				''''''''''''''''' new way debug_extract(Cast(UInteger,.lpBaseOfImage),exename)
 
 			End With
-			print "---------------------------------------------------- end of create process"
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 		'=========================
 		Case EXIT_THREAD_DEBUG_EVENT
@@ -426,86 +398,47 @@ While 1
 			#Ifdef fulldbg_prt
 					dbg_prt ("exit thread "+Str(DebugEv.dwProcessId)+" " +Str(DebugEv.dwThreadId)+" "+Str(debugev.u.exitthread.dwexitcode))
 			#EndIf
-			If flagkill=FALSE Then thread_del(DebugEv.dwThreadId)
+			If flagkill=FALSE Then ''otherwise there is deadlock between a loop waiting prun=0 and the timerproc never executed so the mutex never unlock
+				debugdata=DebugEv.dwThreadId
+				debugevent=KDBGEXITTHREAD
+				mutexlock blocker ''waiting the Go from main thread
+				mutexunlock blocker
+			end if
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 		'=========================
 		Case EXIT_PROCESS_DEBUG_EVENT
 		'=========================
-			messbox("","END OF DEBUGGED PROCESS",MB_SYSTEMMODAL)
 			#Ifdef fulldbg_prt
 				dbg_prt ("exit process"+Str(debugev.u.exitprocess.dwexitcode))
 			#EndIf
+			prun=FALSE
+
 			closehandle(dbghand)
 			closehandle(dbghfile)
 			closehandle(dbghthread)
 			For i As Integer=1 To dllnb
-				closehandle dlldata(i).hdl 'close all the dll handles
+				closehandle dlldata(i).hdl ''closes all the dll handles
 			Next
-			watch_sav()
-			brk_sav()
+			debugdata=debugev.u.exitprocess.dwexitcode
+			debugevent=KDBGEXITPROC
+			mutexlock blocker
+			mutexunlock blocker
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-			prun=FALSE
-			runtype=RTEND
-			but_enable()
-			menu_enable()
-			Exit While
+			Exit While ''goes out the loop so closes the thread 2
 		'=========================
 		Case LOAD_DLL_DEBUG_EVENT
 		'=========================
      		Dim loaddll As LOAD_DLL_DEBUG_INFO=DebugEv.u.loaddll
-     		Dim As String dllfn
-     		Dim As Integer d,delta
+
       		#ifdef fulldbg_prt
 	      	   	dbg_prt(""):dbg_prt("Load dll event Pid/Tid "+Str(DebugEv.dwProcessId)+" "+Str(DebugEv.dwThreadId))
 	      		dbg_prt ("hFile="+Str(loaddll.hFile)+" lpBaseOfDll="+Str(loaddll.lpBaseOfDll)+" "+dll_name(loaddll.hFile))
 			#EndIf
 
-
-			dllfn=dll_name(loaddll.hFile)
-			'check yet loaded
-			For i As Integer= 1 To dllnb
-				If dllfn=dlldata(i).fnm Then d=i:Exit For
-			Next
-
-			If d=0 Then 'not found
-				If dllnb>=DLLMAX Then 'limit reached
-	      			hard_closing("New dll, Number of dll ("+Str(DLLMAX)+") exceeded , change the DLLMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY")
-				EndIf
-				dllnb+=1
-		      	dlldata(dllnb).hdl=loaddll.hfile
-		      	dlldata(dllnb).bse=Cast(UInteger,loaddll.lpBaseOfDll)
-	      		debug_extract(Cast(UInteger,loaddll.lpBaseOfDll),dllfn,DLL)
-	      		If (linenb-linenbprev)=0 Then 'not debugged so not taking in account
-	      			dllnb-=1
-	      		Else
-					dlldata(dllnb).fnm=dllfn
-		      		dlldata(dllnb).gbln=vrbgbl-vrbgblprev
-		      		dlldata(dllnb).gblb=vrbgblprev+1
-		      		dlldata(dllnb).lnb=linenbprev+1
-		      		dlldata(dllnb).lnn=linenb
-	      		End If
-			Else
-				dlldata(d).hdl=loaddll.hfile
-				delta=Cast(Integer,loaddll.lpBaseOfDll-dlldata(d).bse)
-				If delta<>0 Then ''different address so need to change some thing
-					''lines
-					For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
-						rline(i).ad+=delta
-					Next
-					''globals
-					For i As Integer=dlldata(dllnb).gblb To dlldata(dllnb).gblb+dlldata(dllnb).gbln-1
-						vrb(i).adr+=delta
-					Next
-				End If
-				''normally done during debug_extract
-				For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
-					ReadProcessMemory(dbghand,Cast(LPCVOID,rline(i).ad),@rLine(i).sv,1,0) 'sav 1 byte before writing &CC
-					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
-				Next
-				globals_load(d)
-				brk_apply
-			EndIf
-
+			debugdata=Cast(Integer,@loaddll)
+			debugevent=KDBGDLL
+			mutexlock blocker ''waiting the Go from main thread
+			mutexunlock blocker
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 		'=========================
 		Case UNLOAD_DLL_DEBUG_EVENT
@@ -515,30 +448,14 @@ While 1
 				dbg_prt(""):dbg_prt("UnLoad dll event "+Str(DebugEv.dwProcessId)+" "+Str(DebugEv.dwThreadId))
 				dbg_prt ("lpBaseOfDll "+Str(unloaddll.lpBaseOfDll))
 			#EndIf
-			cpt=0
-			For i As Integer=1 To dllnb
-				If dlldata(i).bse=unloaddll.lpBaseOfDll Then
-					closehandle dlldata(i).hdl
-					dlldata(i).hdl=0
-					For m As Integer =2 To procrnb
-						If procr(m).tv=dlldata(i).tv Then proc_del(m,2):Exit For 'delete procr().tv
-					Next
-
-					'For m As Integer =1 To brknb 'delete brkpoint but before trying to save it in brkexe
-					Dim As Integer m=1
-					While m<=brknb
-						If brkol(m).index>=dlldata(i).lnb AndAlso brkol(m).index<=dlldata(i).lnn Then 'inside rline of dll
-							'create in brkexe for use in next dll loading
-							For n As Integer = BRKMAX To 1 Step-1 'search by the last slot, later if there are BRKMAX brkpt this one will be lost
-								If brkexe(0,n)="" Then 'find an empty slot if not data is lost
-									brkexe(0,n)=source_name(source(brkol(m).isrc))+","+Str(brkol(m).nline)+","+Str(brkol(m).typ)
-								EndIf
-								Exit For
-							Next
-							brk_del(m)
-						EndIf
-						m+=1
-					Wend
+			For idll As Integer=1 To dllnb
+				If dlldata(idll).bse=unloaddll.lpBaseOfDll Then
+					closehandle dlldata(idll).hdl
+					dlldata(idll).hdl=0
+					debugdata=idll
+					debugevent=KDBGDLLUNLOAD ''only for handled dll
+					mutexlock blocker ''waiting the Go from main thread
+					mutexunlock blocker
 					Exit For
 				EndIf
 			Next
@@ -549,7 +466,7 @@ While 1
 			#Ifdef fulldbg_prt
     			dbg_prt( "OUTPUT DEBUG")
     		#EndIf
-    		debugstring_read(debugev)
+			debugstring_read(debugev) ''nothing done in main thread
     		ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 		'=========================
 		Case RIP_EVENT
@@ -562,5 +479,3 @@ While 1
 Wend
 Return 0 'not really used
 End Function
-
-

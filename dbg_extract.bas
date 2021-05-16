@@ -30,15 +30,6 @@ union ustab
 		desc as short
 	end type
 end union
-'=======================================================================
-'' puts the intruction &hCC at the beginning of every executable line
-'=======================================================================
-private sub put_breakcpu(beginline as integer=1)
-	For iline As Integer=beginline to linenb
-		ReadProcessMemory(dbghand,Cast(LPCVOID,rline(iline).ad),@rLine(iline).sv,1,0) 'sav 1 byte before writing &CC
-		WriteProcessMemory(dbghand,Cast(LPVOID,rline(iline).ad),@breakcpu,1,0)
-	Next
-End Sub
 '--------------------------------------
 '' check if local var already stored
 '--------------------------------------
@@ -1078,47 +1069,6 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 	next
 	print
 end sub
-'-------------------------------------------------
-'' list all extracted data
-'-------------------------------------------------
-private sub list_all
-	dim scopelabel(1 to ...) as const zstring ptr={@"local",@"global",@"static",@"byref param",@"byval param",@"common"}
-	print "sources ------------------------------------------------------- ";"total=";sourcenb+1
-	for isrc as integer =0 to sourcenb
-		print "isrc=";isrc;" ";source(isrc)
-	next
-	print "procedures ------------------------------------------------------- ";procnb
-	for iprc as integer =1 to procnb
-		print "iprc=";iprc;" ";source(proc(iprc).sr);" ";proc(iprc).nm;" ";proc(iprc).nu;" ";udt(proc(iprc).rv).nm
-		print "lower/upper/end ad=";proc(iprc).db;" ";proc(iprc).fn;" ";proc(iprc).ed
-	next
-	print "Lines ---------------------------------------------------------- ";linenb
-	for iline as integer = 1 to linenb
-		print "iline=";iline;" proc=";proc(rline(iline).px).nm;" ";rline(iline).nu;" ";hex(rline(iline).ad)
-	next
-	print
-	print "types ----------------------------------------------------------- ";udtmax
-	for iudt as integer=1 to udtmax
-		if udt(iudt).nm<>"" then
-			print "iudt=";iudt;" ";udt(iudt).nm;" ";udt(iudt).lg
-			if udt(iudt).ub<>0 then
-				for icudt as integer =udt(iudt).lb to udt(iudt).ub
-					print "icudt=";cudt(icudt).nm
-				next
-			end if
-		end if
-	next
-	print "global variables ---------------------------------------------------------- ";vrbgbl
-	for ivrb as integer=1 to vrbgbl
-		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
-	next
-	print "local variables ----------------------------------------------------------- ";vrbloc-(VGBLMAX+1)
-	for ivrb as integer=VGBLMAX+1 to vrbloc
-		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
-	next
-
-end sub
-
 '' ------------------------------------------------------------------------------------
 '' Retrieving sections .dbgdat (offset and size) and .dbgdat (offset) in the elf file
 '' return 0 if an error (wrong bitness) otherwise -1
@@ -1202,17 +1152,16 @@ end function
 '============================================================================
 '' PE_extract inside memory from loaded sections (when debuggee is running)
 '============================================================================
-	private sub debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL)
+private sub debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL)
 	'
 	'lastline As UShort=0,firstline As Integer=0
 	'integer -->,proc1,proc2
 	'Dim sourceix As Integer,sourceixs As Integer
 	'Dim As Byte procfg,flag=0,procnodll=TRUE,flagstabd=TRUE 'flags  (flagstabd to skip stabd 68,0,1)
-	'Dim As Integer n=sourcenb+1,temp
 	'Dim procnmt As String
 
 	dim As Integer pe,flagdll
-	dim as integer secnb,n=sourcenb+1
+	dim as integer secnb
 	dim as string *8 secnm
 	Dim As Integer basestab=0,basestabs=0,baseimg,sizemax,sizestabs
 	Dim As udtstab recupstab
@@ -1220,6 +1169,7 @@ end function
 
 	flagdll=dllflag
 	vrbgblprev=vrbgbl
+	linenbprev=linenb ''used for dll
 
 	statusbar_text(KSTBSTS,"Loading debug data")
 
@@ -1326,23 +1276,6 @@ end function
 			basestab+=sizeof(udtstab)
 		Wend
 	EndIf
-
-	''end of extraction ''todo add that for linux when the exe is running
-	globals_load()
-
-	If procrnb=0 Then
-	   If flagwtch=0 AndAlso wtchexe(0,0)<>"" Then watch_check(wtchexe())
-	   flagwtch=0
-	EndIf
-	list_all()
-	put_breakcpu()
-	sources_load(n,filedatetime(exename))
-	'activate buttons/menu after real start
-	but_enable()
-	menu_enable()
-	'apply previous breakpoints
-	brk_apply()
-
 end sub
 
 

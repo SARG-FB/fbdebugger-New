@@ -12,6 +12,7 @@ blocker=mutexcreate
 MutexLock blocker
 dim shared as integer debugevent
 dim shared as integer debugdata
+dim shared as STRING  libelexception
 
 ''source files
 dim Shared as String  source(SRCMAX)        ''source names
