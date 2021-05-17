@@ -114,11 +114,15 @@ End Sub
 private sub index_cell()
 	var iline=GetItemListView()
 	var icol=GetSubItemListView()
+	''checking out of bounds
+	if icol<1 then exit sub
+	if icol+indexdata.curidx(1)-1>indexdata.vubound(1) then exit sub
+	if iline<0 then exit sub
+	if iline+indexdata.curidx(0)>indexdata.vubound(0) then exit sub
 
 	if FlagKeyListView=2 then ''CTRL
-		'messbox("MK_CONTROL","MK_CONTROL")
-		vrr(indexdata.indexvar).ix(0)+=iline
-		vrr(indexdata.indexvar).ix(1)+=icol-1
+		vrr(indexdata.indexvar).ix(0)=iline+indexdata.curidx(0)
+		vrr(indexdata.indexvar).ix(1)=icol+indexdata.curidx(1)-1
 		var_sh()
 		hidewindow(hindexbx,KHIDE)
 	else
