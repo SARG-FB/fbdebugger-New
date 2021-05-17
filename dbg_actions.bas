@@ -291,7 +291,9 @@ private sub menu_action(poption as integer)
 
 	'=============================================================
         case else
-        	messbox("Menu feature not implemented","sorry option="+str(poption)+" --> enum="+enumdef(poption))
+			'messbox("Menu feature not implemented","sorry option="+str(poption)+" --> enum="+enumdef(poption))
+			'trying to find the action in the other procedure
+			button_action(poption)
     end select
 end sub
 '============================================
@@ -751,8 +753,7 @@ private sub gadget_action(igadget as LONG)
 		case GEDITOR ''nothing to do
 
 		case else
-        	messbox("Gadget feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))
-	''others
+			messbox("Gadget/menu/button feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))
 	End Select
 end sub
 '==============================================

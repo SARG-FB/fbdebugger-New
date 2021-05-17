@@ -324,9 +324,9 @@ private sub size_changed()
 		#endif
 	end if
 end sub
-'=====================
-''Loading of buttons
-'=====================
+'================================
+''Loading of buttons from files
+'================================
 private sub load_button(id as integer,button_name as zstring ptr,xcoord as integer,ycoord as integer=0,tooltiptext as zstring ptr=0,idtooltip as integer=-1,disab as long=1)
 	Var himage=Load_image(exepath+slash+"buttons"+slash+*button_name)
 	ButtonImageGadget(id,xcoord,ycoord,30,26,himage,  BS_BITMAP)
@@ -339,6 +339,20 @@ private sub load_button(id as integer,button_name as zstring ptr,xcoord as integ
 	end if
 	disablegadget(id,disab)
 end sub
+'=================================
+''Loading of buttons from memory
+'=================================
+private sub load_button2(id as INTEGER,xcoord as INTEGEr,ycoord as INTEGER=0,himage as any ptr,tooltiptext as zstring ptr=0,idtooltip as integer=-1,disab as long=1)
+	ButtonImageGadget(id,xcoord,ycoord,30,26,Catch_Image(himage),  BS_BITMAP)
+	if tooltiptext then
+		if idtooltip<>-1 then
+			GadgetToolTip(id,*tooltiptext,idtooltip)
+		else
+			GadgetToolTip(id,*tooltiptext)
+		endif
+	end if
+	disablegadget(id,disab)
+End Sub
 '============================================
 ''changes the displayed source
 '============================================
@@ -1169,32 +1183,55 @@ private sub gui_init()
 	statusbar_text(KSTBFRT,"Fast time ?")
 
 	''current line
-	textGadget(GCURRENTLINE,2,28,400,30,"Next exec line : ",SS_NOTIFY )
+	textGadget(GCURRENTLINE,2,28,450,30,"Next exec line : ",SS_NOTIFY )
+	'textGadget(GCURRENTLINE,2,28,450,30,"1234567890123456789012345678901234567890123456789012345678901234567890",SS_NOTIFY )
 	GadgetToolTip(GCURRENTLINE,"next executed line"+chr(13)+"Click on me to reach the line",GCURLINETTIP)
 
 	''buttons
-	load_button(IDBUTSTEP,@"step.bmp",8,,@"[S]tep/line by line",)
-	load_button(IDBUTCURSOR,@"runto.bmp",40,,@"Run to [C]ursor",)
-	load_button(IDBUTSTEPP,@"step_over.bmp",72,,@"Step [O]ver sub/func",)
-	load_button(IDBUTSTEPT,@"step_start.bmp",104,,@"[T]op next called sub/func",)
-	load_button(IDBUTSTEPB,@"step_end.bmp",136,,@"[B}ottom current sub/func",)
-	load_button(IDBUTSTEPM,@"step_out.bmp",168,,@"[E]xit current sub/func",)
-	load_button(IDBUTAUTO,@"auto.bmp",200,,@"Step [A]utomatically, stopped by [H]alt",)
-	load_button(IDBUTRUN,@"run.bmp",232,,@"[R]un, stopped by [H]alt",)
-	load_button(IDBUTSTOP,@"stop.bmp",264,,@"[H]alt running pgm",)
-	load_button(IDBUTFASTRUN,@"fastrun.bmp",328,,@"[F]AST Run to cursor",)
-	load_button(IDBUTEXEMOD,@"exemod.bmp",360,,@"[M]odify execution, continue with line under cursor",)
-	load_button(IDBUTFREE,@"free.bmp",392,,@"Release debuged prgm",)
-	load_button(IDBUTKILL,@"kill.bmp",424,,@"CAUTION [K]ill process",)
-	load_button(IDBUTRERUN,@"restart.bmp",466,,@"Restart debugging (exe)",TTRERUN,1)
-	load_button(IDBUTLASTEXE,@"multiexe.bmp",498,,@"Last 10 exe(s)",,0)
-	load_button(IDBUTATTCH,@"attachexe.bmp",530,,@"Attach running program",,0)
-	load_button(IDBUTFILE,@"files.bmp",562,,@"Select EXE",,0)
-	load_button(IDBUTTOOL,@"tools.bmp",628,,@"Some usefull....Tools",,0)
-	load_button(IDBUTUPDATE,@"update.bmp",660,,@"Update On /Update off : variables, dump",,0)
-	load_button(IDBUTENLRSRC,@"source.bmp",692,,@"Enlarge/reduce source",)
-	load_button(IDBUTENLRVAR,@"varproc.bmp",724,,@"Enlarge/reduce proc/var",)
-	load_button(IDBUTENLRMEM,@"memory.bmp",756,,@ "Enlarge/reduce dump memory",)
+	load_button2(IDBUTSTEP,8,,butSTEP,@"[S]tep/line by line")
+	load_button2(IDBUTCURSOR,40,,butCURSOR,@"Run to [C]ursor")
+	load_button2(IDBUTSTEPP,72,,butSTEPP,@"Step [O]ver sub/func")
+	load_button2(IDBUTSTEPT,104,,butSTEPT,@"[T]op next called sub/func")
+	load_button2(IDBUTSTEPB,136,,butSTEPB,@"[B}ottom current sub/func")
+	load_button2(IDBUTSTEPM,168,,butSTEPM,@"[E]xit current sub/func")
+	load_button2(IDBUTAUTO,200,,butAUTO,@"Step [A]utomatically, stopped by [H]alt")
+	load_button2(IDBUTRUN,232,,butRUN,@"[R]un, stopped by [H]alt")
+	load_button2(IDBUTSTOP,264,,butSTOP,@"[H]alt running pgm")
+	load_button2(IDBUTFASTRUN,328,,butFASTRUN,@"[F]AST Run to cursor")
+	load_button2(IDBUTEXEMOD,360,,butEXEMOD,@"[M]odify execution, continue with line under cursor")
+	load_button2(IDBUTFREE,392,,butFREE,@"Release debuged prgm")
+	load_button2(IDBUTKILL,424,,butKILL,@"CAUTION [K]ill process")
+	load_button2(IDBUTRERUN,466,,butRERUN,@"Restart debugging (exe)",TTRERUN,1)
+	load_button2(IDBUTLASTEXE,498,,butLASTEXE,@"Last 10 exe(s)",,0)
+	load_button2(IDBUTATTCH,530,,butATTCH,@"Attach running program",,0)
+	load_button2(IDBUTFILE,562,,butFILE,@"Select EXE",,0)
+	load_button2(IDBUTTOOL,628,,butTOOL,@"Some usefull....Tools",,0)
+	load_button2(IDBUTUPDATE,660,,butUPDATE,@"Update On /Update off : variables, dump",,0)
+	load_button2(IDBUTENLRSRC,692,,butENLRSRC,@"Enlarge/reduce source")
+	load_button2(IDBUTENLRVAR,724,,butENLRVAR,@"Enlarge/reduce proc/var")
+	load_button2(IDBUTENLRMEM,756,,butENLRMEM,@ "Enlarge/reduce dump memory")
+	'load_button(IDBUTSTEP,@"step.bmp",8,,@"[S]tep/line by line",)
+	'load_button(IDBUTCURSOR,@"runto.bmp",40,,@"Run to [C]ursor",)
+	'load_button(IDBUTSTEPP,@"step_over.bmp",72,,@"Step [O]ver sub/func",)
+	'load_button(IDBUTSTEPT,@"step_start.bmp",104,,@"[T]op next called sub/func",)
+	'load_button(IDBUTSTEPB,@"step_end.bmp",136,,@"[B}ottom current sub/func",)
+	'load_button(IDBUTSTEPM,@"step_out.bmp",168,,@"[E]xit current sub/func",)
+	'load_button(IDBUTAUTO,@"auto.bmp",200,,@"Step [A]utomatically, stopped by [H]alt",)
+	'load_button(IDBUTRUN,@"run.bmp",232,,@"[R]un, stopped by [H]alt",)
+	'load_button(IDBUTSTOP,@"stop.bmp",264,,@"[H]alt running pgm",)
+	'load_button(IDBUTFASTRUN,@"fastrun.bmp",328,,@"[F]AST Run to cursor",)
+	'load_button(IDBUTEXEMOD,@"exemod.bmp",360,,@"[M]odify execution, continue with line under cursor",)
+	'load_button(IDBUTFREE,@"free.bmp",392,,@"Release debuged prgm",)
+	'load_button(IDBUTKILL,@"kill.bmp",424,,@"CAUTION [K]ill process",)
+	'load_button(IDBUTRERUN,@"restart.bmp",466,,@"Restart debugging (exe)",TTRERUN,1)
+	'load_button(IDBUTLASTEXE,@"multiexe.bmp",498,,@"Last 10 exe(s)",,0)
+	'load_button(IDBUTATTCH,@"attachexe.bmp",530,,@"Attach running program",,0)
+	'load_button(IDBUTFILE,@"files.bmp",562,,@"Select EXE",,0)
+	'load_button(IDBUTTOOL,@"tools.bmp",628,,@"Some usefull....Tools",,0)
+	'load_button(IDBUTUPDATE,@"update.bmp",660,,@"Update On /Update off : variables, dump",,0)
+	'load_button(IDBUTENLRSRC,@"source.bmp",692,,@"Enlarge/reduce source",)
+	'load_button(IDBUTENLRVAR,@"varproc.bmp",724,,@"Enlarge/reduce proc/var",)
+	'load_button(IDBUTENLRMEM,@"memory.bmp",756,,@ "Enlarge/reduce dump memory",)
 
 
 	''bmb(25)=Loadbitmap(fb_hinstance,Cast(LPSTR,MAKEINTRESOURCE(1025))) 'if toogle noupdate

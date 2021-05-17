@@ -282,6 +282,30 @@ dim shared as string exename
 Dim Shared exedate As Double 'serial date
 
 ''============================
+includebinary("buttons/step.bmp",butSTEP)
+includebinary("buttons/runto.bmp",butCURSOR)
+includebinary("buttons/step_over.bmp",butSTEPP)
+includebinary("buttons/step_start.bmp",butSTEPT)
+includebinary("buttons/step_end.bmp",butSTEPB)
+includebinary("buttons/step_out.bmp",butSTEPM)
+includebinary("buttons/auto.bmp",butAUTO)
+includebinary("buttons/run.bmp",butRUN)
+includebinary("buttons/stop.bmp",butSTOP)
+includebinary("buttons/fastrun.bmp",butFASTRUN)
+includebinary("buttons/exemod.bmp",butEXEMOD)
+includebinary("buttons/free.bmp",butFREE)
+includebinary("buttons/kill.bmp",butKILL)
+includebinary("buttons/restart.bmp",butRERUN)
+includebinary("buttons/multiexe.bmp",butLASTEXE)
+includebinary("buttons/attachexe.bmp",butATTCH)
+includebinary("buttons/files.bmp",butFILE)
+includebinary("buttons/tools.bmp",butTOOL)
+includebinary("buttons/update.bmp",butUPDATE)
+includebinary("buttons/source.bmp",butENLRSRC)
+includebinary("buttons/varproc.bmp",butENLRVAR)
+includebinary("buttons/memory.bmp",butENLRMEM)
+
+
 #include "dbg_gui.bas"
 #include "dbg_tools.bas"
 #include "dbg_extract.bas"
@@ -297,6 +321,27 @@ ini_read()
 reinit
 
 statusbar_text(KSTBSTS,"No debuggee")
+
+enum
+	KKEYSTEP = 3000
+End Enum
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_S,IDBUTSTEP)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_C,IDBUTCURSOR)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_O,IDBUTSTEPP)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_T,IDBUTSTEPT)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_B,IDBUTSTEPB)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_E,IDBUTSTEPM)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_A,IDBUTAUTO)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_R,IDBUTRUN)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_H,IDBUTSTOP)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_F,IDBUTFASTRUN)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_M,IDBUTEXEMOD)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_K,IDBUTKILL)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_D,MNTHRDAUT)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_F3,MNSETBRK)
+AddKeyboardShortcut(hmain,FCONTROL,VK_F3,MNSETBRKC)
+AddKeyboardShortcut(hmain,FSHIFT,VK_F3,MNSETBRT)
+AddKeyboardShortcut(hmain,FVIRTKEY,VK_P,MNBRKENB) ''enable/disable BP
 
 '====================
 ''main loop
