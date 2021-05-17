@@ -462,8 +462,8 @@ sub brk_marker(brkidx as integer)
 
 	src=srcdisplayed
 	source_change(brkol(brkidx).isrc)
-
 	if typ then
+		send_sci(SCI_MARKERDELETE, lline, -1)
 		send_sci(SCI_MARKERADD, lline, typ)
 	else
 		send_sci(SCI_MARKERDELETE, lline, -1)
@@ -1041,7 +1041,7 @@ private sub menu_set()
 	MenuItem(MNRSTBRKC,HMenusource,"ReSet initial value counter of a Breakpoint")
 	MenuItem(MNCHGBRKC,HMenusource,"Change value counter of a Breakpoint")
 	MenuItem(MNSETBRT,HMenusource,"Set/Clear tempo Breakpoint / Shift+F3")
-	MenuItem(MNBRKENB,HMenusource,"Enable/disable Breakpoint")
+	MenuItem(MNBRKENB,HMenusource,"Enable/disable Breakpoint / P")
 	MenuItem(MNMNGBRK,HMenusource, "Manage Breakpoints")
 	MenuBar(HMenusource)
 	MenuItem(MNSHWVAR,HMenusource,"Show var"+Chr(9)+"Ctrl+Left click")

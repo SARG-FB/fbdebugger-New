@@ -455,6 +455,7 @@ private sub gadget_action(igadget as LONG)
 			end select
 
 		case GTVIEWPRC
+		case GTVIEWTHD
 
 		case GFILELIST ''nothing to execute with file combo
 

@@ -374,7 +374,7 @@ do
 		menu_action(EventNumber)
 	'' contextual menu
 	ElseIf event=eventrbdown then
-		if GlobalMouseX<500 then
+		if MouseX<500 then
 			DisplayPopupMenu(HMenusource, GlobalMouseX,GlobalMouseY)
 		else
 			if PanelGadgetGetCursel(GRIGHTTABS)=TABIDXVAR then
