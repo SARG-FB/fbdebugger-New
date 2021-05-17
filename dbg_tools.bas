@@ -4423,7 +4423,10 @@ private sub dll_load()
 		dlldata(dllnb).hdl=loaddll.hfile
 		dlldata(dllnb).bse=Cast(UInteger,loaddll.lpBaseOfDll)
 		srcstart=sourcenb+1
-		debug_extract(Cast(UInteger,loaddll.lpBaseOfDll),dllfn,DLL)
+		if debug_extract(Cast(UInteger,loaddll.lpBaseOfDll),dllfn,DLL)=-1 then
+			dllnb-=1
+			exit sub
+		end if
 		If (linenb-linenbprev)=0 Then 'not debugged so not taking in account
 			dllnb-=1
 		Else
@@ -4523,8 +4526,9 @@ private sub debug_event()
 
 		Case KDBGCREATEPROC
 			srcstart=sourcenb+1
-			debug_extract(debugdata,exename)
-			init_debuggee(srcstart)
+			if debug_extract(debugdata,exename)=0 then ''otherwise there is a problem (no debug data or when reading debuggee memory)
+				init_debuggee(srcstart)
+			EndIf
 
 		''Case KDBGCREATETHREAD not used
 

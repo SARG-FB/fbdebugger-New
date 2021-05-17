@@ -1151,8 +1151,9 @@ private function elf_extract(filename as string) as integer
 end function
 '============================================================================
 '' PE_extract inside memory from loaded sections (when debuggee is running)
+'' return -1 if any problem
 '============================================================================
-private sub debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL)
+private function debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL) as integer
 	'
 	'lastline As UShort=0,firstline As Integer=0
 	'integer -->,proc1,proc2
@@ -1219,7 +1220,7 @@ private sub debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NO
 				messbox("Feature missing for Linux","Kill_process")
 			#endif
 		EndIf
-		Exit Sub
+		return -1
 	Else
 		basestab+=exebase+sizeof(udtstab) ''12 for 32bit / 16 for 64bit could be greater if udtstab is changed
 		basestabs+=exebase
@@ -1229,7 +1230,7 @@ private sub debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NO
 				#Ifdef fulldbg_prt
 					dbg_prt ("error reading memory "+Str(GetLastError))
 				#EndIf
-				messbox("Loading stabs","ERROR When reading memory"):Exit Sub
+				messbox("Loading stabs","ERROR When reading memory"):return -1
 			End If
 
 			#Ifdef fulldbg_prt
@@ -1245,7 +1246,7 @@ private sub debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NO
 			EndIf
 
 			If ReadProcessMemory(dbghand,Cast(LPCVOID,recupstab.stabs+basestabs),@recup,sizemax,0)=0 Then
-				messbox("Loading stabs","ERROR When reading memory : "+Str(GetLastError)+Chr(10)+"Exit loading"):Exit Sub
+				messbox("Loading stabs","ERROR When reading memory : "+Str(GetLastError)+Chr(10)+"Exit loading"):return -1
 			End If
 
 			#Ifdef fulldbg_prt
@@ -1276,7 +1277,7 @@ private sub debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NO
 			basestab+=sizeof(udtstab)
 		Wend
 	EndIf
-end sub
+end function
 
 
 

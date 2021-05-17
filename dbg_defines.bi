@@ -978,7 +978,7 @@ declare function var_find() as INTEGER
 declare function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="") As String
 declare sub shwexp_init()
 declare sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer, src as integer)
-declare sub debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL)
+declare function debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL) as integer
 declare sub button_action(button as integer)
 '===========================================================================================
 '' could be removed when every enum have been tested
