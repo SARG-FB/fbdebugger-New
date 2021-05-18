@@ -301,6 +301,7 @@ includebinary("buttons/attachexe.bmp",butATTCH)
 includebinary("buttons/files.bmp",butFILE)
 includebinary("buttons/tools.bmp",butTOOL)
 includebinary("buttons/update.bmp",butUPDATE)
+includebinary("buttons/noupdate.bmp",butNOUPDATE)
 includebinary("buttons/source.bmp",butENLRSRC)
 includebinary("buttons/varproc.bmp",butENLRVAR)
 includebinary("buttons/memory.bmp",butENLRMEM)
@@ -322,9 +323,7 @@ reinit
 
 statusbar_text(KSTBSTS,"No debuggee")
 
-enum
-	KKEYSTEP = 3000
-End Enum
+
 AddKeyboardShortcut(hmain,FVIRTKEY,VK_S,IDBUTSTEP)
 AddKeyboardShortcut(hmain,FVIRTKEY,VK_C,IDBUTCURSOR)
 AddKeyboardShortcut(hmain,FVIRTKEY,VK_O,IDBUTSTEPP)
@@ -342,6 +341,11 @@ AddKeyboardShortcut(hmain,FVIRTKEY,VK_F3,MNSETBRK)
 AddKeyboardShortcut(hmain,FCONTROL,VK_F3,MNSETBRKC)
 AddKeyboardShortcut(hmain,FSHIFT,VK_F3,MNSETBRT)
 AddKeyboardShortcut(hmain,FVIRTKEY,VK_P,MNBRKENB) ''enable/disable BP
+
+''fbdebugger launched by script or another application (ex editor) with debuggee and possibly params
+if command(0)<>"" then
+	external_launch()
+EndIf
 
 '====================
 ''main loop

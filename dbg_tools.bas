@@ -4565,19 +4565,18 @@ end sub
 ''launch by command line
 '===================================================
 private sub external_launch()
-	if command(0)="" then exit sub ''not launched by command line
+
 	dim as string debuggee=command(1)
+	dim as string cmdline=mid(command(),len(debuggee)+2)
+
 	if debuggee="" then exit sub ''no debuggee
 
 	if instr(debuggee,slash)=0 then debuggee=exepath+slash+debuggee ''debugge without path so exepath added
 
 	if check_bitness(debuggee)=0 then exit sub ''bitness of debuggee and fbdebugger not corresponding
 
-	if kill_process("Trying to launch but debuggee still running")=FALSE then exit sub
-
-	dim as string cmdline=mid(command(-1),len(debuggee)+2)
-
-	reinit ''reinit all except GUI parts
+	''if kill_process("Trying to launch but debuggee still running")=FALSE then exit sub
+	''reinit ''reinit all except GUI parts
 
 	exename=debuggee
 	exe_sav(exename,cmdline)
@@ -4591,10 +4590,6 @@ private sub external_launch()
 		messbox("feature to be coded linux","after selecting file")
 	#endif
 end sub
-
-private sub testtimer()
-	print time
-End Sub
 '==================================================================================
 '' Debuggee restarted, last debugged (using IDBUTRERUN) or one of the 9/10 others
 '==================================================================================

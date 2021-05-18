@@ -922,11 +922,10 @@ private sub button_action(button as integer)
 		case IDBUTUPDATE
 			if flagupdate=true then
 				flagupdate=false
-				load_button(IDBUTUPDATE,@"update.bmp",660,,@"Update On /Update off : variables, dump",,0)
-				SetImageGadget(IDBUTUPDATE,Load_image("."+slash+"buttons"+slash+"noupdate.bmp"))
+				SetImageGadget(IDBUTUPDATE,Catch_Image(butNOUPDATE))
 			else
 				flagupdate=true
-				SetImageGadget(IDBUTUPDATE,Load_image("."+slash+"buttons"+slash+"update.bmp"))
+				SetImageGadget(IDBUTUPDATE,Catch_Image(butUPDATE))
 				var_sh()
 				dump_sh()
 			end if
