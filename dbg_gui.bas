@@ -951,7 +951,7 @@ private sub shortcut_enable()
 		AddKeyboardShortcut(hmain,FCONTROL,0,MNSETBRKC)
 		AddKeyboardShortcut(hmain,FSHIFT,0,MNSETBRT)
 		AddKeyboardShortcut(hmain,FVIRTKEY,0,MNBRKENB) ''enable/disable BP
-	end if	
+	end if
 end sub
 '=============================================================
 '' enables or disables menu options according the status

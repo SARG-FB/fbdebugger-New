@@ -1107,6 +1107,7 @@ end sub
 '' changes the first address or edit cell
 '======================================
 private sub dump_cell()
+	if dumpnbcol=0 then exit sub
 	var iline=GetItemListView()
 	var icol=GetSubItemListView()
 	if iline>0 and icol>0 then
@@ -1148,7 +1149,7 @@ private sub dump_sh()
 	Dim buf(16) As UByte,r As Integer,ad As Integer
 	Dim ascii As String
 	Dim ptrs As pointeurs
-
+	if dumpnbcol=0 then exit sub
 	DeleteListViewItemsAll(GDUMPMEM) ''delete all items
 	ad=dumpadr
 	For jline as integer =0 To dumplines-1
@@ -3808,73 +3809,31 @@ private sub reinit()
 	flagmain=true
 	sourcenb=-1:dllnb=0
 	vrrnb=0:procnb=0:procrnb=0:linenb=0:cudtnb=0:arrnb=0:procr(1).vr=1
-	'procin=0:procfn=0:procbot=0:proctop=FALSE
+	procin=0:procfn=0:procbot=0:proctop=FALSE
 	proc(1).vr=VGBLMAX+1 'for the first stored proc
 	udtcpt=0:udtmax=0
+	procsort=KPROCNM
+	flagtrace=0
+	flagattach=FALSE
+	flagkill=FALSE
+	shwexp.free=true
+	threadprv=0
+	threadsel=0
+	dumpadr=0
+	brkv_set(0) ''no break on var
+	brknb=0 ''no break on line
+	brkol(0).ad=0   ''no break on cursor
 	DeleteTreeViewItemAll(GTVIEWVAR)
+	PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)
 	DeleteTreeViewItemAll(GTVIEWTHD)
 	'todo DeleteTreeViewItem(GTVIEWWCH,0) 'watched   needed ????
-
-	procsort=KPROCNM
-
-	shwexp.free=true
 	hidewindow(hshwexpbx,KHIDE)
-	'================================================================
-				'	'======== init =========================================
-				'private sub re_ini()
-				'
-
-				'brkv.adr=0 'no break on var
-				'brknb=0 'no break on line
-				'brkol(0).ad=0   'no break on cursor
-				'
-				'setwindowtext(hcurline,"")
-				'setwindowtext(brkvhnd,"Break on var")
-				'menu_chg(menuvar,idvarbrk,"Break on var value")
-				'setwindowtext(windmain,"DEBUG "+ver3264)
-				'
-				'SendMessage(listview1,LVM_DELETEALLITEMS,0,0) 'dump
-				'
-				PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)
-				'If dsptyp Then dsp_hide(dsptyp)
-				'dsp_sizecalc
-				'threadnb=-1
-				'If flagrestart=-1 Then 'add test for restart without loading again all the files
-				'	setwindowtext(richeditcur,"Your source")
-				'	sendmessage(htab1,TCM_DELETEALLITEMS ,0,0) 'zone tab
-				'	For i As Integer=0 To MAXSRC:setWindowText(richedit(i),""):ShowWindow(richedit(i),SW_HIDE):Next
-				'Else
-				'	sel_line(linecur-1,0,1,richedit(srccur),FALSE) 'default color
-				'EndIf
-				'linecur=0
-				':dllnb=0
-				'excldnb=0
-				'dumpadr=0:copybeg=-99:copyend=-99:copycol=-99 '23/11/2014
-				''flaglog=0:dbg_prt(" $$$$___CLOSE ALL___$$$$ "):flagtrace=0
-				':flagattach=FALSE:flagkill=FALSE
-				'
-				'For i As Integer = 0 To 4 :SendMessage(dbgstatus,SB_SETTEXT,i,Cast(LPARAM,@"")) : Next '08/04/2014 3-->4
-				'
-				'
-				'bx_closing
-				'array_tracking_remove
-				'
-				''reset bookmarks
-				'sendmessage(bmkh,CB_RESETCONTENT,0,0)
-				'bmkcpt=0:For i As Integer =1 To BMKMAX:bmk(i).ntab=-1:Next
-				'EnableMenuItem(menuedit,IDNXTBMK,MF_GRAYED)
-				'EnableMenuItem(menuedit,IDPRVBMK,MF_GRAYED)
-				'EnableMenuItem(menutools,IDHIDLOG,MF_GRAYED)
-				'compinfo="" 'information about compilation
-				'threadprv=0
-				'threadsel=0
-				'
-				'For i As Long =TYPESTD+1 To TYPEMAX 'reinit index to avoid message udt nok when executing an other debuggee, only gcc 16/08/2015 20/08/2015 boolean
-				'   udt(i).typ=0
-				'Next
-				'End sub
-	'================================================================
-
+	for icol as INTEGER= 1 to dumpnbcol
+		DeleteListViewColumn(GDUMPMEM,1)
+	next
+	dumpnbcol=0
+	DeleteListViewItemsAll(GDUMPMEM)
+	''todo 'array_tracking_remove
 end sub
 '================================================================
 '' check if exe bitness if not wrong 32bit<>64bit windows only
