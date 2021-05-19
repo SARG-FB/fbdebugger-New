@@ -323,25 +323,6 @@ reinit
 
 statusbar_text(KSTBSTS,"No debuggee")
 
-
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_S,IDBUTSTEP)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_C,IDBUTCURSOR)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_O,IDBUTSTEPP)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_T,IDBUTSTEPT)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_B,IDBUTSTEPB)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_E,IDBUTSTEPM)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_A,IDBUTAUTO)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_R,IDBUTRUN)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_H,IDBUTSTOP)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_F,IDBUTFASTRUN)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_M,IDBUTEXEMOD)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_K,IDBUTKILL)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_D,MNTHRDAUT)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_F3,MNSETBRK)
-AddKeyboardShortcut(hmain,FCONTROL,VK_F3,MNSETBRKC)
-AddKeyboardShortcut(hmain,FSHIFT,VK_F3,MNSETBRT)
-AddKeyboardShortcut(hmain,FVIRTKEY,VK_P,MNBRKENB) ''enable/disable BP
-
 ''fbdebugger launched by script or another application (ex editor) with debuggee and possibly params
 if command(0)<>"" then
 	external_launch()

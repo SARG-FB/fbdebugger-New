@@ -911,7 +911,48 @@ private sub but_enable()
     	  	If runtype=RTEND Then statusbar_text(KSTBSTS,"Terminated")
    	End Select
 End Sub
-
+'=============================================================
+'' enables or disables shortcuts according the status
+'=============================================================
+private sub shortcut_enable()
+	if prun then
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_S,IDBUTSTEP)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_C,IDBUTCURSOR)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_O,IDBUTSTEPP)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_T,IDBUTSTEPT)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_B,IDBUTSTEPB)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_E,IDBUTSTEPM)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_A,IDBUTAUTO)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_R,IDBUTRUN)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_H,IDBUTSTOP)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_F,IDBUTFASTRUN)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_M,IDBUTEXEMOD)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_K,IDBUTKILL)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_D,MNTHRDAUT)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_F3,MNSETBRK)
+		AddKeyboardShortcut(hmain,FCONTROL,VK_F3,MNSETBRKC)
+		AddKeyboardShortcut(hmain,FSHIFT,VK_F3,MNSETBRT)
+		AddKeyboardShortcut(hmain,FVIRTKEY,VK_P,MNBRKENB) ''enable/disable BP
+	else
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTSTEP)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTCURSOR)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTSTEPP)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTSTEPT)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTSTEPB)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTSTEPM)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTAUTO)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTRUN)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTSTOP)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTFASTRUN)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTEXEMOD)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,IDBUTKILL)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,MNTHRDAUT)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,MNSETBRK)
+		AddKeyboardShortcut(hmain,FCONTROL,0,MNSETBRKC)
+		AddKeyboardShortcut(hmain,FSHIFT,0,MNSETBRT)
+		AddKeyboardShortcut(hmain,FVIRTKEY,0,MNBRKENB) ''enable/disable BP
+	end if	
+end sub
 '=============================================================
 '' enables or disables menu options according the status
 '=============================================================
@@ -1309,6 +1350,7 @@ private sub reinit_gui()
 	dump_set()
 	but_enable()
 	menu_enable()
+	shortcut_enable()
 end sub
 '===============================================
 '' Freea all the gadgets

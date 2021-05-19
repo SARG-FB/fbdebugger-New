@@ -4397,6 +4397,7 @@ private sub init_debuggee(srcstart as integer)
 	'activate buttons/menu after real start
 	but_enable()
 	menu_enable()
+	shortcut_enable()
 	'apply previous breakpoints
 	brk_apply()
 end sub
@@ -4539,6 +4540,7 @@ private sub debug_event()
 			runtype=RTEND
 			but_enable()
 			menu_enable()
+			shortcut_enable()
 			messbox("","END OF DEBUGGED PROCESS",MB_SYSTEMMODAL)
 		Case KDBGEXITTHREAD
 			thread_del(debugdata)
