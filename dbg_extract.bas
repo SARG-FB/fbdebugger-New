@@ -444,9 +444,17 @@ private sub parse_var(gv As String,ad As UInteger, dlldelta As Integer=0)
 		ElseIf InStr(vname,"_ZTSN")<>0  orelse InStr(vname,"_ZTVN")<>0 then
 			Exit Sub 'don't keep _ZTSN or _ZTVN (extra data for class) or with double underscore  __Z
 		EndIf
-		If Left(vname,2)="_{" Then Exit Sub '_{fbdata}_<label name>  07/04/2014
-		If Left(vname,3)=".Lt" Then Exit Sub '.Ltxxxx used with data 07/04/2014
-		If Left(vname,3)="Lt_" Then Exit Sub 'Lt_xxxx used with extern and array 2018/07/27
+		print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ VNAME=";vname
+		If Left(vname,3)="LT_" Then 'LT_xxxx
+			Exit Sub
+		elseif Left(vname,2)="_{" Then '_{fbdata}_<label name>
+			Exit Sub
+		elseif Left(vname,3)=".Lt" Then '.Ltxxxx used with data
+			Exit Sub
+		elseIf Left(vname,3)="Lt_" Then 'Lt_xxxx used with extern and array
+			Exit Sub
+		EndIf
+
 	Else '$ in the string
 		If InStr(p+1,vname,"$") <>0 AndAlso InStr(vname,"$fb_Object")=0 then
 			Exit Sub 'don't keep TMP$xx$xx:
@@ -1257,7 +1265,7 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 				case 100 '' file name
 					dbg_file(recup,recupstab.ad)
 				case 255 ''not as standard stab freebasic version and maybe other information
-					print "compiled with=";recup
+					compilerversion=recup
 				Case 32,38,40,128,160 'init common/ var / uninit var / local / parameter
 					parse_var(recup,recupstab.ad)',exebase-baseimg) ''todo
 				case 132 '' file name

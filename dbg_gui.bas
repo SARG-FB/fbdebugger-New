@@ -241,9 +241,9 @@ private sub index_sel()
 
 end sub
 
-'========================================================
-'' changes the text of a field in statusbar
-'========================================================
+'==============================================================
+'' changes the text of a field in statusbar and tooltip
+'==============================================================
 private sub statusbar_text(fieldn as long, text as string)
 	dim as integer fieldpos
 	select case fieldn
@@ -261,6 +261,7 @@ private sub statusbar_text(fieldn as long, text as string)
 			fieldpos=-1
 	End Select
 	SetStatusBarField(GSTATUSBAR,fieldn,fieldpos,text)
+	ToolTipStatusBar(GSTATUSBAR,fieldn,text)
 End Sub
 '=======================================================
 '=======================================================
@@ -1215,7 +1216,7 @@ private sub gui_init()
 	ButtonGadget(GFILESEL,992,2,30,20,"Go")
 
 	''status bar
-	StatusBarGadget(GSTATUSBAR,"")
+	StatusBarGadget(GSTATUSBAR,"",SBT_TOOLTIPS)
 	statusbar_text(KSTBSTS,"No program")
 	statusbar_text(KSTBTHD,"Thread number")
 	statusbar_text(KSTBUID,"UID number Linux")
@@ -1342,15 +1343,6 @@ private sub gui_init()
 	create_editbx()
 	menu_set()
 
-end sub
-'===============================================
-'' Reinitialisation GUI
-'===============================================
-private sub reinit_gui()
-	dump_set()
-	but_enable()
-	menu_enable()
-	shortcut_enable()
 end sub
 '===============================================
 '' Freea all the gadgets

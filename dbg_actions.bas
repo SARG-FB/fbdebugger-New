@@ -12,6 +12,11 @@ private sub menu_action(poption as integer)
                	Shell "start http://www.freebasic.net/forum/viewtopic.php?f=8""&t""=13935"
             endif
 
+		case MNCMPINF
+			if compilerversion<>"" then
+				messbox("Compiler version","Debuggee compiled by "+compilerversion)
+			EndIf
+
         case MNSETTINGS
 			hidewindow(hsettings,KSHOW)
 

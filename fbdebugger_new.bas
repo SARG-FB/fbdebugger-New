@@ -280,6 +280,7 @@ Dim Shared savexe(9) As String 'last 10 exe, 0=more recent
 Dim Shared cmdexe(9) As String 'last 10 exe
 dim shared as string exename
 Dim Shared exedate As Double 'serial date
+dim shared as string compilerversion ''compiler version retrieved stabs code = 255
 
 ''============================
 includebinary("buttons/step.bmp",butSTEP)

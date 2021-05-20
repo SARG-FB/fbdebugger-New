@@ -3807,6 +3807,7 @@ private sub reinit()
 	prun=FALSE
 	runtype=RTOFF
 	flagmain=true
+	compilerversion=""
 	sourcenb=-1:dllnb=0
 	vrrnb=0:procnb=0:procrnb=0:linenb=0:cudtnb=0:arrnb=0:procr(1).vr=1
 	procin=0:procfn=0:procbot=0:proctop=FALSE
@@ -3841,7 +3842,7 @@ end sub
 private function check_bitness(fullname as string) as integer
 	#Ifdef __fb_win32__
 		dim as long bintype
-			getbinarytype(strptr(fullname),@bintype) ''a control to prevent 32bit<>64bit 2020/02/05
+			getbinarytype(strptr(fullname),@bintype) ''a control to prevent 32bit<>64bit
 		#Ifdef __FB_64BIT__
 			if bintype=SCS_32BIT_BINARY then
 			   messbox("FBdebugger 64bit","can not be used for debugging 32bit exe...")
@@ -4533,6 +4534,10 @@ private sub external_launch()
 	if debuggee="" then exit sub ''no debuggee
 
 	if instr(debuggee,slash)=0 then debuggee=exepath+slash+debuggee ''debugge without path so exepath added
+	if dir(debuggee)="" then
+		messbox("File as parameter","File ="+debuggee+" doesn't exist")
+		exit sub
+	EndIf
 
 	if check_bitness(debuggee)=0 then exit sub ''bitness of debuggee and fbdebugger not corresponding
 
