@@ -309,9 +309,7 @@ private sub gadget_action(igadget as LONG)
 
 	select case igadget
 		Case GCURRENTLINE
-			messbox("Click on Current line","Jumping to the file/line")
 			linecur_display()
-
 
 		case GTVIEWVAR
 		case GTVIEWWCH
@@ -422,14 +420,11 @@ private sub gadget_action(igadget as LONG)
 		case GFILESEL
 			MessBox("Jumping to file step 00="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
         	if GetItemComboBox(GFILELIST)<>-1 then
-				MessBox("Jumping to file step 01="+str(GetItemComboBox(GFILELIST)),str(PanelGadgetGetCursel(GSRCTAB)))
         		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
-        			MessBox("Jumping to file before ="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
 	        		PanelGadgetSetCursel(GSRCTAB,GetItemComboBox(GFILELIST))
-	        		MessBox("Jumping to file afetr ="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
         			source_change(GetItemComboBox(GFILELIST))
         		else
-        			MessBox("File already displayed",source(GetItemComboBox(GFILELIST)))
+					''MessBox("File already displayed",source(GetItemComboBox(GFILELIST)))
         		endif
         	else
         		messbox("Select a file", "before clicking on the button")

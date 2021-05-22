@@ -650,7 +650,7 @@ End Type
 #define KSTYLBREAKDISAB 4
 
 #define KSTYLENONE 0
-#define KSTYLECUR  2
+#define KSTYLECUR  150
 
 
 

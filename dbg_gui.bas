@@ -360,12 +360,17 @@ End Sub
 private sub source_change(numb as integer)
 	static as integer numbold=-1
 	dim as any ptr ptrdoc
+	if numb=-1 then
+		numbold=-1 ''reinit
+		exit sub
+	EndIf
 	if numb=numbold then exit sub
 	numbold=numb
 	ptrdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
 	Send_sci(SCI_ADDREFDOCUMENT,0,ptrdoc)
 	Send_sci(SCI_SETDOCPOINTER,0,sourceptr(numb))
 	srcdisplayed=numb
+	PanelGadgetSetCursel(GSRCTAB,numb)
 	SetItemComboBox(GFILELIST,srcdisplayed)
 end sub
 '=======================================================================================
@@ -380,10 +385,21 @@ end function
 private sub line_color(byval pline as integer,byval style as ulong)
 	var begpos=Send_sci(SCI_POSITIONFROMLINE,pline-1,0)
 	var endpos=Send_sci(SCI_GETLINEENDPOSITION,pline-1,0)
+
+	''old way
 	'begin styling at pos
-	Send_sci(SCI_StartStyling, begpos, 0)
+	'send_sci(SCI_StartStyling, begpos, 0)
 	'style next chars with style #x
-	Send_sci(SCI_SetStyling, endpos-begpos,style)
+	'Send_sci(SCI_SetStyling, endpos-begpos,style)
+
+	''new way
+	if style=0 then
+		send_sci(SCI_INDICATORCLEARRANGE,begpos,endpos-begpos+1)
+	else
+		send_sci(SCI_INDICATORFILLRANGE,begpos,endpos-begpos+1)
+	EndIf
+
+
 end sub
 '==========================================================
 '' displays line
@@ -435,8 +451,8 @@ private sub linecur_change(linenew as integer)
 	linecur_display()
 	line_color(linecur,KSTYLECUR)
 
-	'' display in current line gadget
-	setgadgettext(GCURRENTLINE,"Current line : "+left(trim(line_text(linecur-1)),50))
+	'' display in current line gadget removing all left spaces/tabs
+	setgadgettext(GCURRENTLINE,"Current line : "+left(trim(line_text(linecur-1),any " "+chr(9)),50))
 end sub
 '===================================================
 '' set/unset breakpoint markers
@@ -478,7 +494,7 @@ end sub
 private sub brk_manage()
 	dim as string text
 	dim as integer srcprev=srcdisplayed
-
+	hidewindow(hbrkbx,KSHOW)
 	For ibrk as integer =1 To brknb
 		source_change(brkol(ibrk).isrc)
 		text=line_text(brkol(ibrk).nline-1)
@@ -499,8 +515,6 @@ private sub brk_manage()
 		hidegadget(GBRKDSB01+ibrk-1,1)
 		hidegadget(GBRKDEL01+ibrk-1,1)
 	next
-	source_change(srcprev)
-	hidewindow(hbrkbx,KHIDE)
 end sub
 '======================================
 '' notification from scintilla gadget
@@ -787,17 +801,40 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 	send_sci(SCI_MARKERSETFORE,6,KRED)
 	send_sci(SCI_MARKERSETBACK,6,KRED)
 
-	send_sci(SCI_StyleSetFore, 2, KRED)    ''style #2 FG set to red
-	send_sci(SCI_StyleSetBack, 2, KYELLOW) ''style #2 BB set to green
+	send_sci(SCI_StyleSetFore, KSTYLECUR, KRED)    ''style #50 FG set to red
+	send_sci(SCI_StyleSetBack, KSTYLECUR, KYELLOW) ''style #50 BB set to green
 
 	for imark as Integer = 0 To 5
 	    send_sci(SCI_SetMarginMaskN, 1,-1)  ''all symbols allowed
 	next
 	'SendMessage(sciHWND, SCI_SETCODEPAGE, SC_CP_UTF8 ,0)
-	'send_sci(SCI_SETLEXER, SCLEX_FREEBASIC, 0 )
-	'send_sci(SCI_SETKEYWORDS,0, @"sub function operator constructor destructor")
-	'send_sci(SCI_STYLESETFORE, SCE_B_CONSTANT, 0)
+	'send_sci(SCI_SETLEXER, SCLEX_VB, 0 )
+	'send_sci(SCI_SETKEYWORDS,0, @"sub function operator constructor destructor dim")
+	'send_sci(SCI_STYLESETFORE, SCE_B_CONSTANT, &hFFFFFFFF)
+	'send_sci(SCI_STYLESETFORE, SCE_B_NUMBER, &hFFFFFFFF)
 	'send_sci(SCI_STYLESETFORE, SCE_B_KEYWORD, &hff00ff)
+'===========
+    send_sci(SCI_SETLEXER, SCLEX_FREEBASIC, 0 )
+    'send_sci(SCI_STYLESETFONT, STYLE_DEFAULT , cast(lparam,@"Courier New"))
+    'send_sci( SCI_STYLESETSIZE,STYLE_DEFAULT,11)
+    send_sci(SCI_STYLECLEARALL, 0, 0)
+    'send_sci( SCI_SETCODEPAGE, SC_CP_UTF8 ,0)
+    send_sci(SCI_SETKEYWORDS,0, Cast(LPARAM,@"sub function operator constructor destructor"))
+    'send_sci(SCI_STYLESETFORE, SCE_B_COMMENT, &hff)
+    send_sci(SCI_STYLESETFORE, SCE_B_KEYWORD, &h000000ff)
+    'send_sci(SCI_STYLESETFORE, SCE_B_NUMBER, &h0)
+    'send_sci(SCI_StyleSetBack, 2,&hFFFFFF)
+
+    send_sci(SCI_SETCARETLINEVISIBLE, TRUE, 0)
+    send_sci(SCI_SETCARETLINEBACK, &hf0f0f0 , 0)
+
+    ''indicator style and color
+    send_sci(SCI_INDICSETSTYLE,0,INDIC_FULLBOX)
+    send_sci(SCI_INDICSETFORE,0,KYELLOW)
+    send_sci(SCI_INDICSETUNDER,0,TRUE)
+    send_sci(SCI_INDICSETALPHA,0,255)
+    send_sci(SCI_SETINDICATORVALUE,0,0)
+'===========
 	'send_sci(SCI_USEPOPUP,SC_POPUP_NEVER,0)
 End sub
 '===========================================================

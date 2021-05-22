@@ -3557,7 +3557,7 @@ private sub gest_brk(ad As UInteger)
 	'dbg_prt2("PE"+Str(thread(threadcur).pe)+" "+Str(proccurad)+" "+Str(proc(procsv).fn))
 	If thread(threadcur).pe Then 'if previous instruction was the last of proc
 		If proccurad<>proc(procsv).db Then
-		procsk=vcontext.regbp 'reload procsk with rbp/ebp 04/02/2014 test added for case constructor on shared
+			procsk=vcontext.regbp 'reload procsk with rbp/ebp 04/02/2014 test added for case constructor on shared
 		EndIf
 		proc_end():thread(threadcur).pe=FALSE
 	EndIf
@@ -3835,6 +3835,7 @@ private sub reinit()
 	dumpnbcol=0
 	DeleteListViewItemsAll(GDUMPMEM)
 	''todo 'array_tracking_remove
+	source_change(-1) ''reinit to avoid a potential problem
 end sub
 '================================================================
 '' check if exe bitness if not wrong 32bit<>64bit windows only
