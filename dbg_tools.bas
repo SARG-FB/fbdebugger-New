@@ -4354,7 +4354,7 @@ private sub init_debuggee(srcstart as integer)
 	   If flagwtch=0 AndAlso wtchexe(0,0)<>"" Then watch_check(wtchexe())
 	   flagwtch=0
 	EndIf
-	list_all()
+	'list_all()
 	put_breakcpu()
 	''srcstart contains the index for starting the loading of source codes
 	sources_load(srcstart,filedatetime(exename))
