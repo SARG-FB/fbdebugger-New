@@ -2990,6 +2990,7 @@ Private sub proc_end()
 Dim As Long limit=-1
 Var thid=thread(threadcur).id
 'find the limit for deleting proc (see below different cases)
+
 For j As Long =procrnb To 1 Step -1
 	If procr(j).thid =thid  Then
 	   If limit=-1 Then limit=j
@@ -3572,6 +3573,7 @@ private sub gest_brk(ad As UInteger)
 	ElseIf proccurad=proc(procsv).fn Then
 		thread(threadcur).pe=TRUE        'is last instruction ?
 	EndIf
+
 	If runtype=RTRUN Then
 		' test breakpoint on line
 		If brk_test(proccurad) Then
@@ -3697,6 +3699,7 @@ private sub proc_del(j As Integer,t As Integer=1)
 	Dim  As Integer tempo,th
 	Dim parent As integer
 	Dim As String text
+
 	' delete procr in treeview
 	DeleteTreeViewItem(GTVIEWVAR,procr(j).tv)
 	'delete watch
@@ -4303,7 +4306,7 @@ private sub list_all()
 	print "procedures ------------------------------------------------------- ";procnb
 	for iprc as integer =1 to procnb
 		print "iprc=";iprc;" ";source(proc(iprc).sr);" ";proc(iprc).nm;" ";proc(iprc).nu;" ";udt(proc(iprc).rv).nm
-		print "lower/upper/end ad=";proc(iprc).db;" ";proc(iprc).fn;" ";proc(iprc).ed
+		print "lower/upper/end ad=";hex(proc(iprc).db);" ";hex(proc(iprc).fn);" ";hex(proc(iprc).ed)
 	next
 	print "Lines ---------------------------------------------------------- ";linenb
 	for iline as integer = 1 to linenb

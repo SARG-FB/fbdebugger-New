@@ -1042,7 +1042,12 @@ end sub
 '' ------------------------------------
 private sub dbg_epilog(ofset as integer)
 	proc(procnb).fn=proc(procnb).db+ofset
-	print "epilog of proc=";proc(procnb).fn
+	if proc(procnb).fn<>rline(linenb).ad then
+		'' this test is useless as for sub it is ok  .fn = .ad  --> mov rsp, rbp
+		'' for function the last line ('end function' is not given by 224)
+		'' so forcing it
+		rline(linenb).ad=proc(procnb).fn ''KEEP this line even if test is removed
+	End If
 end sub
 '' -------------------------------
 '' Extracting debug data for elf
