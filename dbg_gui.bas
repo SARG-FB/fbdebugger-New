@@ -394,9 +394,9 @@ private sub line_color(byval pline as integer,byval style as ulong)
 
 	''new way
 	if style=0 then
-		send_sci(SCI_INDICATORCLEARRANGE,begpos,endpos-begpos+1)
+		send_sci(SCI_INDICATORCLEARRANGE,begpos,endpos-begpos)
 	else
-		send_sci(SCI_INDICATORFILLRANGE,begpos,endpos-begpos+1)
+		send_sci(SCI_INDICATORFILLRANGE,begpos,endpos-begpos)
 	EndIf
 
 
@@ -819,7 +819,7 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
     'send_sci( SCI_STYLESETSIZE,STYLE_DEFAULT,11)
     send_sci(SCI_STYLECLEARALL, 0, 0)
     'send_sci( SCI_SETCODEPAGE, SC_CP_UTF8 ,0)
-    send_sci(SCI_SETKEYWORDS,0, Cast(LPARAM,@"sub function operator constructor destructor"))
+    send_sci(SCI_SETKEYWORDS,0, Cast(LPARAM,@"sub function operator constructor destructor property"))
     'send_sci(SCI_STYLESETFORE, SCE_B_COMMENT, &hff)
     send_sci(SCI_STYLESETFORE, SCE_B_KEYWORD, &h000000ff)
     'send_sci(SCI_STYLESETFORE, SCE_B_NUMBER, &h0)

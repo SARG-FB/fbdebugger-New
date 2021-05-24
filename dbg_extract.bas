@@ -269,7 +269,7 @@ Else
 
 	''todo remove
 	''If c=udt(15).index Then c=15
-	print "in var2=>";gv;" ";gv2;" ";c
+	'print "in var2=>";gv;" ";gv2;" ";c
 		If c>TYPESTD Then c+=udtcpt 'udt type so adding the decal 20/08/2015
 		If f=TYUDT Then
 			cudt(cudtnb).pt=pp
@@ -444,7 +444,7 @@ private sub parse_var(gv As String,ad As UInteger, dlldelta As Integer=0)
 		ElseIf InStr(vname,"_ZTSN")<>0  orelse InStr(vname,"_ZTVN")<>0 then
 			Exit Sub 'don't keep _ZTSN or _ZTVN (extra data for class) or with double underscore  __Z
 		EndIf
-		print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ VNAME=";vname
+		'print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ VNAME=";vname
 		If Left(vname,3)="LT_" Then 'LT_xxxx
 			Exit Sub
 		elseif Left(vname,2)="_{" Then '_{fbdata}_<label name>
@@ -544,7 +544,6 @@ End sub
 private function parse_typeope(vchar As long) As String
 	'RPiR8vector2D or R8vector2DS0_ or R8FBSTRINGR8VECTOR2D
 	Dim As Long typ
-
 	If vchar=Asc("P") Then
 		Return "*" 'pointer
 	Else
@@ -727,9 +726,9 @@ private function parse_proc(fullname As String) As String
 	Dim As Long p=3,lg,namecpt,ps
 	Dim As String strg,strg2,names(20),mainname,strg3
 	lg=InStr(fullname,"@")
-   If lg=0 Then lg=InStr(fullname,":")
-   strg=Left(fullname,lg-1)
-print "fullname=";fullname
+    If lg=0 Then lg=InStr(fullname,":")
+    strg=Left(fullname,lg-1)
+
 	If InStr(strg,"_Z")=0 Then Return strg
 
 	If strg[2]=Asc("Z") Then p+=1 'add 1 case _ _ Z
@@ -742,23 +741,23 @@ print "fullname=";fullname
 				If lg>9 Then p+=1 '>9 --> 2 characters
 				strg3=Mid(strg,p+1,lg) 'extract name and keep it for later
 				ps=InStr(strg3,"__get__")
-            If ps Then
-               strg3=Left(strg3,ps-1)+" (Get property)"
-            Else
-               ps=InStr(strg3,"__set__")
-               If ps then
-					strg3=Left(strg3,ps-1)+" (Set property)"
-               EndIf
-            EndIf
-			if mainname="" Then
+				If ps Then
+				   strg3=Left(strg3,ps-1)+" (Get property)"
+				Else
+				   ps=InStr(strg3,"__set__")
+				   If ps then
+						strg3=Left(strg3,ps-1)+" (Set property)"
+				   EndIf
+				EndIf
+				if mainname="" Then
 					mainname=strg3
 					strg2+=strg3
-			else
+				else
 					mainname+="."+strg3
 					strg2+="."+strg3
-         	EndIf
-      		namecpt+=1
-      		names(namecpt)=mainname
+				EndIf
+				namecpt+=1
+				names(namecpt)=mainname
 				p+=1+lg'next name
 			Else 'operator
 				strg2+=" "+parse_op(Mid(strg,p,2))+" " 'extract name of operator
@@ -789,7 +788,7 @@ print "fullname=";fullname
 			EndIf
 		Wend
 	Else
-	   lg=ValInt(Mid(strg,p,2)) 'overloaded proc eg. for sub testme overload (as string) --> __ZN6TESTMER8FBSTRING@4 07/11/2015
+	   lg=ValInt(Mid(strg,p,2)) 'overloaded proc eg. for sub testme overload (as string) --> __ZN6TESTMER8FBSTRING@4
 	   If lg Then
 			If lg>9 Then p+=1
 			strg2=Mid(strg,p+1,lg) 'extract name
@@ -852,6 +851,23 @@ print "fullname=";fullname
 	        else
        			strg2+="."+strg3
 	        endif
+
+	    elseif strg[p-1]=Asc("u") then  ''extended type ex : u7INTEGER
+			p+=1
+	        lg=ValInt(Mid(strg,p,2))
+			If lg>9 Then p+=1 ''lenght>9
+			strg3=Mid(strg,p+1,lg) 'extract name and keep it for later
+			strg3=ucase(left(strg3,1))+lcase(mid(strg3,2)) ''first char upper/ others lower case
+			if mainname="" Then
+				mainname=strg3
+				strg2+=strg3
+			Else
+				mainname+="."+strg3
+				strg2+="."+strg3
+			EndIf
+			namecpt+=1
+            names(namecpt)=strg3'mainname
+			p+=1+lg
 		else
 			If Right(strg2,1)="(" Then
 				strg2+=parse_typeope(Asc(Mid(strg,p,1)))
@@ -943,7 +959,7 @@ private sub dbg_line(linenum as integer,ofset as integer)
 			''to be checked if still usefull
 			If ofset<>0 Then lastline=linenum ''first proc line always coded 1 but ad=0
 
-			print "linenum=";linenum;" adress=";rline(linenb).ad
+			'print "linenum=";linenum;" adress=";rline(linenb).ad
 		'else
 			'print "linenum=";linenum;" not>lastline=";lastline
 		'endif
@@ -959,7 +975,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 	if linenum then
 		procnodll=false
 		procname=parse_proc(strg)
-		procname=left(strg,instr(strg,":")-1)
+		'procname=left(strg,instr(strg,":")-1)
 		if procname<>"" and (flagmain=true or procname<>"main") then
 			'If InStr(procname,".LT")=0 then  ''to be checked if useful
 		 	If flagmain=TRUE And procname="main" Then
