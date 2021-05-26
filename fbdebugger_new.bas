@@ -121,7 +121,11 @@ dim shared as boolean flagupdate = true ''if true proc/var, dump and watched dis
 Dim Shared as boolean flagattach      ' flag for attach
 
 ''handles
-dim shared as HWND hmain,hscint,hsettings
+dim shared as HWND hmain,hscint
+
+''settings
+dim shared as HWND hsettings
+dim shared as integer setbuttons =-1 ''all buttons are set
 
 ''for autostepping
 dim shared as integer autostep=50
@@ -284,25 +288,32 @@ dim shared as string compilerversion ''compiler version retrieved stabs code = 2
 
 ''============================
 includebinary("buttons/step.bmp",butSTEP)
-includebinary("buttons/runto.bmp",butCURSOR)
-includebinary("buttons/step_over.bmp",butSTEPP)
-includebinary("buttons/step_start.bmp",butSTEPT)
-includebinary("buttons/step_end.bmp",butSTEPB)
-includebinary("buttons/step_out.bmp",butSTEPM)
+includebinary("buttons/stepover.bmp",butSTEPOVER)
 includebinary("buttons/auto.bmp",butAUTO)
-includebinary("buttons/run.bmp",butRUN)
 includebinary("buttons/stop.bmp",butSTOP)
-includebinary("buttons/fastrun.bmp",butFASTRUN)
-includebinary("buttons/exemod.bmp",butEXEMOD)
-includebinary("buttons/free.bmp",butFREE)
+includebinary("buttons/runto.bmp",butCURSOR)
+includebinary("buttons/runtoend.bmp",butRUNEND)
+includebinary("buttons/runtoexit.bmp",butRUNEXIT)
 includebinary("buttons/kill.bmp",butKILL)
+includebinary("buttons/free.bmp",butFREE)
+includebinary("buttons/exemod.bmp",butEXEMOD)
+includebinary("buttons/runtocrash.bmp",butRUNCRASH)
+
+includebinary("buttons/BP_perm.bmp",butBRKP)
+includebinary("buttons/BP_cond.bmp",butBRKC)
+includebinary("buttons/BP_temp.bmp",butBRKT)
+includebinary("buttons/BP_count.bmp",butBRKN)
+includebinary("buttons/BP_disab.bmp",butBRKD)
+
 includebinary("buttons/restart.bmp",butRERUN)
 includebinary("buttons/multiexe.bmp",butLASTEXE)
 includebinary("buttons/attachexe.bmp",butATTCH)
 includebinary("buttons/files.bmp",butFILE)
 includebinary("buttons/tools.bmp",butTOOL)
+
 includebinary("buttons/update.bmp",butUPDATE)
 includebinary("buttons/noupdate.bmp",butNOUPDATE)
+
 includebinary("buttons/source.bmp",butENLRSRC)
 includebinary("buttons/varproc.bmp",butENLRVAR)
 includebinary("buttons/memory.bmp",butENLRMEM)

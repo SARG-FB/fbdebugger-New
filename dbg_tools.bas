@@ -2796,7 +2796,9 @@ End Sub
 Private sub brk_sav
 	For i As Integer =1 To BRKMAX
 		If i<=brknb Then
-			brkexe(0,i)=source_name(source(brkol(i).isrc))+","+Str(brkol(i).nline)+","+Str(brkol(i).cntrsav)+","+Str(brkol(i).typ) '03/09/2015
+			if brkol(i).typ=1 then ''only permanent
+				brkexe(0,i)=source_name(source(brkol(i).isrc))+","+Str(brkol(i).nline)+","+Str(brkol(i).cntrsav)+","+Str(brkol(i).typ)
+			EndIf
 		EndIf
 	Next
 End Sub
@@ -2835,50 +2837,51 @@ Private function brk_test(ad As UInteger) As Byte 'check on breakpoint ?
  Return FALSE
 End Function
 '=======================================================================
-'' t 1=permanent breakpoint / 2=tempo breakpoint / 3=breakpoint with counter by changed in type 1 /
-''   4=disable / 7=change value counter / 8 reset to initial value / 9=same line
+'' t 1=permanent breakpoint / 2=conditionnal (on a line + condition) / 3=tempo breakpoint / 4=breakpoint with counter changed in type 1 /
+''   5=disable / 7=change value counter / 8 reset to initial value / 9=same line / 10=end of proc / 11=end of prog
 '=======================================================================
 Private sub brk_set(t As Integer)
-	Dim l As Integer,i As Integer,ln As Integer
+	Dim cln As Integer,i As Integer,rln As Integer
 	dim as string inputval
 
-	l=line_cursor() 'get line
+	cln=line_cursor() 'get line
 
 	For i=1 To linenb
-		If rline(i).nu=l And rline(i).sx=srcdisplayed Then Exit For 'check nline
+		If rline(i).nu=cln And rline(i).sx=srcdisplayed Then Exit For 'check nline
 	Next
 	If i>linenb Then messbox("Break point Not possible","Inaccessible line (not executable)") :Exit Sub
 	For j As Integer =1 To procnb
 		If rline(i).ad=proc(j).db Then messbox("Break point Not possible","Inaccessible line (not executable)") :Exit Sub
 	Next
-	ln=i
+	rln=i
 	If t=9 Then 'run to cursor
 		'l N°line/by 0
-		If linecur=l And srcdisplayed=srccur Then
+		If linecur=cln And srcdisplayed=srccur Then
 			If messbox("Run to cursor","Same line, continue ?",MB_YESNO)=RETNO Then Exit Sub
 		End If
-		brkol(0).ad=rline(ln).ad
-		brkol(0).typ=2 ''tempo so cleared when reached
+		brkol(0).ad=rline(rln).ad
+		brkol(0).typ=3 ''tempo so cleared when reached
 		runtype=RTRUN
 		but_enable()
-		brkol(brknb).nline=l
+		brkol(brknb).nline=cln
 		brk_marker(0)
 		thread_resume()
 	Else
 		For i=1 To brknb 'search if still put on this line
-			If brkol(i).nline=l And brkol(i).isrc=srcdisplayed Then Exit For
+			If brkol(i).nline=cln And brkol(i).isrc=srcdisplayed Then Exit For
 		Next
 		If i>brknb Then 'not put
 			If brknb=BRKMAX Then messbox("Max of brk reached ("+Str(BRKMAX)+")","Delete one and retry"):Exit Sub
+			if t=5 then exit sub
 			brknb+=1
-			brkol(brknb).nline=l
+			brkol(brknb).nline=cln
 			brkol(brknb).typ=t
-			brkol(brknb).index=ln
+			brkol(brknb).index=rln
 			brkol(brknb).isrc=srcdisplayed
-			brkol(brknb).ad=rline(ln).ad
+			brkol(brknb).ad=rline(rln).ad
 			brkol(brknb).cntrsav=0
 			brkol(brknb).counter=0
-			If t=3 Then 'change value counter
+			If t=4 Then 'change value counter
 				inputval=input_bx("breakpoint with a counter","Set value counter for a breakpoint","0",7)
 				brkol(brknb).counter=ValUInt(inputval)
 				brkol(brknb).cntrsav=brkol(i).counter
@@ -2886,26 +2889,31 @@ Private sub brk_set(t As Integer)
 			EndIf
 		Else 'still put
 			If t=7 Then 'change value counter
-				inputval=input_bx("Change value counter, remaining= "+Str(brkol(i).counter)," initial below"+Str(brkol(i).cntrsav),,7)
-				brkol(i).counter=ValUInt(inputval)
-				brkol(i).cntrsav=brkol(i).counter
+				if  brkol(i).cntrsav Then
+					inputval=input_bx("Change value counter, remaining= "+Str(brkol(i).counter)," initial below"+Str(brkol(i).cntrsav),,7)
+					brkol(i).counter=ValUInt(inputval)
+					brkol(i).cntrsav=brkol(i).counter
+				else
+					messbox("Change counter","No counter for this breakpoint")
+				end if
 			ElseIf t=8 Then 'reset to initial value
 				If brkol(i).cntrsav Then
 					brkol(i).counter=brkol(i).cntrsav
 				Else
 					messbox("Reset counter","No counter for this breakpoint")
 				EndIf
-			ElseIf t=4 Then 'toggle enabled/disabled
-				If brkol(i).typ>2 Then
-					brkol(i).typ-=2
+			ElseIf t=5 Then 'toggle enabled/disabled
+				If brkol(i).typ>10 Then
+					brkol(i).typ-=10
 				Else
-					brkol(i).typ+=2
+					brkol(i).typ+=10
 				EndIf
-		ElseIf t=brkol(i).typ OrElse brkol(i).typ>2 Then 'cancel breakpoint
+		ElseIf t=brkol(i).typ OrElse (t<>1 and t<>3) then 'brkol(i).typ>1 Then 'cancel breakpoint
 			brk_del(i)
 			Exit Sub
-		Else 'change type of breakpoint
+		Else 'change type of breakpoint to only permanent/temporary
 			brkol(i).typ=t
+			brkol(i).cntrsav=0
 			End If
 		End If
 
@@ -3839,6 +3847,7 @@ private sub reinit()
 	DeleteListViewItemsAll(GDUMPMEM)
 	''todo 'array_tracking_remove
 	source_change(-1) ''reinit to avoid a potential problem
+	menu_enable()
 end sub
 '================================================================
 '' check if exe bitness if not wrong 32bit<>64bit windows only
@@ -4162,7 +4171,7 @@ private sub ini_write()
 	Print #fileout,"[WDY]="+Str(WindowY(hmain))
 	Print #fileout,"[WDW]="+str(WindowWidth(hmain))
 	Print #fileout,"[WDH]="+str(WindowHeight(hmain))
-
+	Print #fileout,"[BUT]="+str(setbuttons)
 	'Print #fileout,"[CHK]="+Str(clrkeyword) 'color highlighted keywords
 	'Print #fileout,"[CCL]="+Str(clrcurline) 'color current line
 	'Print #fileout,"[CTB]="+Str(clrtmpbrk) 'color tempo breakpoint
@@ -4244,6 +4253,8 @@ private sub ini_read()
 		   'dsp_size
 		   'SetWindowPos(windmain,HWND_NOTOPMOST,lft,top,rgt-lft,bot-top,SWP_NOACTIVATE Or SWP_FRAMECHANGED)
 
+		ElseIf Left(lineread,6)="[BUT]=" Then ''buttons set/unset
+				setbuttons=ValInt(RTrim(Mid(lineread,7)))
 
 		'elseif Left(lineread,6)="[CRK]=" Then	'color highlighted keywords
 		'		clrkeyword=ValInt(RTrim(Mid(lineread,7)))
@@ -4265,6 +4276,14 @@ private sub ini_read()
 	if exename<>"" then
 		DisableGadget(IDBUTRERUN,0)
 		SetToolTipText(IDBUTRERUN,TTRERUN,"Restart "+exename)
+	end if
+
+	if setbuttons<>-1 then
+		for ibut as integer=IDBUTSTEP to IDBUTFREE
+			if bit(setbuttons,ibut-IDBUTSTEP)=0 then ''button is unset
+				hidegadget(ibut, KHIDE)
+			End if
+		next
 	end if
 End sub
 ''==============================================================================
@@ -4506,6 +4525,7 @@ private sub debug_event()
 			menu_enable()
 			shortcut_enable()
 			messbox("","END OF DEBUGGED PROCESS",MB_SYSTEMMODAL)
+
 		Case KDBGEXITTHREAD
 			thread_del(debugdata)
 

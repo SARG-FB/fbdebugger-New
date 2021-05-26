@@ -115,32 +115,31 @@ private sub menu_action(poption as integer)
 
 		Case MNFRTIMER
 			messbox("Fast run timer","Elapsed Time : "+Str(fasttimer))
-		Case MNSETBRK 'set breakpoint
-		   brk_set(1)
 
-		Case MNSETBRT 'set tempo brkp
-		   brk_set(2)
+		Case MNSETBRKP 'set breakpoint
+			brk_set(1)
 
-		Case MNSETBRKC 'set brkp with counter
-		   brk_set(3)
+		Case MNSETBRKC 'set breakpoint conditionnal
+			messbox("Set BP conditionnal","Need to code the condition input")
+			brk_set(2)
 
-		Case MNCHGBRKC 'change value brkp with counter
-		   brk_set(7)
+		Case MNSETBRKT 'set tempo brkp
+			brk_set(3)
 
-		Case MNRSTBRKC 'reset brkp with counter
-		   brk_set(8)
+		Case MNSETBRKN 'set brkp with counter
+			brk_set(4)
 
-		Case MNBRKENB 'enable/disable brkp
-		   brk_set(4)
+		Case MNCHGBRKN 'change value brkp with counter
+			brk_set(7)
+
+		Case MNRSTBRKN 'reset brkp with counter
+			brk_set(8)
+
+		Case MNSETBRKD 'enable/disable brkp
+			brk_set(5)
 
 		Case MNMNGBRK
 			brk_manage()
-
-		Case MNCURSOR 'run to cursor
-		   brk_set(9)
-
-		Case MNEXEMOD 'modify execution from cursor
-			exe_mod()
 
 		Case MNSHWVAR
 			messbox("Feature not yet implemented","var_tip(PROCVAR)")
@@ -539,6 +538,15 @@ private sub gadget_action(igadget as LONG)
 
 		case GCMDLPARAM ''data used when closing settings box
 
+		case SETBUTSTEP to SETBUTFREE
+			if bit(setbuttons,igadget-SETBUTSTEP) then ''button is set
+				setbuttons=bitreset(setbuttons,igadget-SETBUTSTEP)
+			    hidegadget(IDBUTSTEP+igadget-SETBUTSTEP, KHIDE)
+			else ''button is unset
+				setbuttons=bitset(setbuttons,igadget-SETBUTSTEP)
+				hidegadget(IDBUTSTEP+igadget-SETBUTSTEP, KSHOW)
+			EndIf
+
 		case GIDXTABLE
 
 		case GIDXAPPLY
@@ -804,20 +812,10 @@ private sub button_action(button as integer)
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
 
-		case IDBUTSTEPP 'STEP+ over
+		case IDBUTSTEPOVER 'STEP+ over
 			procin=procsk
 			runtype=RTRUN
 			but_enable()
-			hidewindow(hcchainbx,KHIDE)
-			thread_resume()
-
-		Case IDBUTSTEPM 'STEP- out
-			If (threadcur<>0 andalso proc_find(thread(threadcur).id,KLAST)<>proc_find(thread(threadcur).id,KFIRST)) _
-			OrElse (threadcur=0 AndAlso proc(procr(proc_find(thread(0).id,KLAST)).idx).nm<>"main") Then 'impossible to go out first proc of thread, constructor for shared
-				procad=procsv
-				runtype=RTRUN
-				but_enable()
-			End If
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
 
@@ -827,7 +825,7 @@ private sub button_action(button as integer)
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
 
-		case IDBUTRUN
+		case IDBUTRUNEXIT
 			runtype=RTRUN
 			but_enable()
 			hidewindow(hcchainbx,KHIDE)
@@ -888,16 +886,22 @@ private sub button_action(button as integer)
 			DisplayPopupMenu(HMenuexe, GlobalMouseX,GlobalMouseY)
 			Delete_Menu(HMenuexe)
 
-		case IDBUTFASTRUN
+		case IDBUTCURSOR
 			hidewindow(hcchainbx,KHIDE)
 			but_enable()
 			fastrun()
 			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
 
-		case IDBUTEXEMOD
-			messbox("feature not implemented","button = IDBUTEXEMOD")
+						''''case IDBUTCURSOR
+							''''messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
+							''''brk_set(9)
+			''''
 
-        Case IDBUTSTEPB 'STEP at bottom of proc
+
+		case IDBUTEXECMOD
+			messbox("feature not implemented","button = IDBUTEXECMOD")
+
+        Case IDBUTRUNEND 'STEP at end of proc
 			If rline(thread(threadcur).sv).ad<>proc(procsv).fn Then 'if current line is end of proc simple step
 				procbot=procsv
 				runtype=RTRUN
@@ -905,19 +909,6 @@ private sub button_action(button as integer)
 			EndIf
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
-
-        Case IDBUTSTEPT 'STEP at top of proc
-			If rline(thread(threadcur).sv).ad<>proc(procsv).fn Then 'if current line is end of proc simple step
-				proctop=TRUE
-				runtype=RTRUN
-				but_enable()
-			EndIf
-			hidewindow(hcchainbx,KHIDE)
-			thread_resume()
-
-		case IDBUTCURSOR
-			messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
-			brk_set(9)
 
 		case IDBUTUPDATE
 			if flagupdate=true then
