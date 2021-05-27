@@ -259,7 +259,6 @@ enum
 	MNSETWTTR
 	MNCHGZSTR
 	MNCALLINE
-	MNPCHNING 'chaining  from proc/var
 	MNSHCHAR  'show  character  in a  string at a  selected position
 	MNCLBVARA 'copy  to clipboard  all procs/vars
 	MNCLBVARS 'copy  to clipboard  selectedvar
@@ -405,6 +404,16 @@ enum
 	GBRKLINE08
 	GBRKLINE09
 	GBRKLINE10
+	GBRKIMG01
+	GBRKIMG02
+	GBRKIMG03
+	GBRKIMG04
+	GBRKIMG05
+	GBRKIMG06
+	GBRKIMG07
+	GBRKIMG08
+	GBRKIMG09
+	GBRKIMG10
 	GBRKCLOSE
 	GBRKDELALL
 	GBRKDISABLE
@@ -981,6 +990,7 @@ declare sub shwexp_init()
 declare sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer, src as integer)
 declare function debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL) as integer
 declare sub button_action(button as integer)
+declare sub ini_write()
 '===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)
@@ -1172,7 +1182,6 @@ enumdef(MNLOCPRC)="MNLOCPRC"
 enumdef(MNLSTVARA)="MNLSTVARA"
 enumdef(MNLSTVARS)="MNLSTVARS"
 enumdef(MNMNGBRK)="MNMNGBRK"
-enumdef(MNPCHNING)="MNPCHNING"
 enumdef(MNPRCRADR)="MNPRCRADR"
 enumdef(MNPTDUMP)="MNPTDUMP"
 enumdef(MNRSTBRKN)="MNRSTBRKN"

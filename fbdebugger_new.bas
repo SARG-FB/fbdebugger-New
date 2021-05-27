@@ -383,7 +383,7 @@ do
 			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXWCH then
 				DisplayPopupMenu(HMenuwch, GlobalMouseX,GlobalMouseY)
 			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXDMP then
-				hidewindow(hdumpbx,KSHOW)
+				if dumpadr<>0 then hidewindow(hdumpbx,KSHOW)
 			endif
 		endif
 	elseIf event=EventLBdown Then

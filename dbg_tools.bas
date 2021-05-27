@@ -2796,7 +2796,7 @@ End Sub
 Private sub brk_sav
 	For i As Integer =1 To BRKMAX
 		If i<=brknb Then
-			if brkol(i).typ=1 then ''only permanent
+			if brkol(i).typ<>2 and brkol(i).typ<>12 then ''only permanent/tempo/counter
 				brkexe(0,i)=source_name(source(brkol(i).isrc))+","+Str(brkol(i).nline)+","+Str(brkol(i).cntrsav)+","+Str(brkol(i).typ)
 			EndIf
 		EndIf
@@ -2821,15 +2821,15 @@ End Sub
 '==============================================
 Private function brk_test(ad As UInteger) As Byte 'check on breakpoint ?
  For i As Integer=0 To brknb
- 	If brkol(i).typ>2 Then Continue For 'disabled
+ 	If brkol(i).typ>10 Then Continue For 'disabled
  	If ad=brkol(i).ad Then 'reached line = breakpoint
- 		If brkol(i).counter>0 Then brkol(i).counter-=1:Return FALSE 'decrement counter 02/09/2015
+ 		If brkol(i).counter>0 Then brkol(i).counter-=1:Return FALSE 'decrement counter
  		stopcode=CSBRK
  		If i=0 Then
  			brkol(0).ad=0 'delete continue to cursor
  			stopcode=CSCURSOR
  		Else
- 			If brkol(i).typ=2 Then brk_del(i):stopcode=CSBRKTEMPO 'tempo breakpoint
+ 			If brkol(i).typ=3 Then brk_del(i):stopcode=CSBRKTEMPO 'tempo breakpoint
  		End If
  		Return TRUE
  	End If
@@ -2885,7 +2885,6 @@ Private sub brk_set(t As Integer)
 				inputval=input_bx("breakpoint with a counter","Set value counter for a breakpoint","0",7)
 				brkol(brknb).counter=ValUInt(inputval)
 				brkol(brknb).cntrsav=brkol(i).counter
-				brkol(brknb).typ=1 'forced permanent
 			EndIf
 		Else 'still put
 			If t=7 Then 'change value counter
@@ -4008,6 +4007,7 @@ private sub exe_sav(exename As String,cmdline As String="")
 	DisableGadget(IDBUTRERUN,0)
 	SetToolTipText(IDBUTRERUN,TTRERUN,exename)
 	settitle()
+	ini_write() ''done also when fbdebugger closing but also here in case of crash of fbdebugger 
 End sub
 '======================================================================
 ''loads the source code files, by slice : n contains the first to be loaded until sourcenb

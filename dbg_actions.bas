@@ -83,9 +83,6 @@ private sub menu_action(poption as integer)
 		Case MNCALLINE 'locate calling line
 		   proc_loccall(1)
 
-		Case MNPCHNING'chaining from proc/var
-			call_chain(threadcur)
-
 		Case MNSHWPROC 'locate proc in proc/var treeview
 			thread_procloc(1)
 
@@ -475,14 +472,14 @@ private sub gadget_action(igadget as LONG)
 	        line_display(brkol(igadget-GBRKLINE01+1).nline-1)
 
 		Case GBRKDSB01 to GBRKDSB10 ''enable/disable
-	      	If brkol(igadget-GBRKDSB01+1).typ>2 Then
-	      		brkol(igadget-GBRKDSB01+1).typ-=2
-	      		SetGadgetText(igadget,"DSB")
-	      	Else
-	      		brkol(igadget-GBRKDSB01+1).typ+=2
-	      		SetGadgetText(igadget,"ENB")
-	      	EndIf
-	      	brk_marker(igadget-GBRKDSB01+1)
+			If brkol(igadget-GBRKDSB01+1).typ>10 Then
+				brkol(igadget-GBRKDSB01+1).typ-=10
+				SetGadgetText(igadget,"DSB")
+			Else
+				brkol(igadget-GBRKDSB01+1).typ+=10
+				SetGadgetText(igadget,"ENB")
+			EndIf
+			brk_marker(igadget-GBRKDSB01+1)
 
 	   	Case GBRKDELALL    ''Delete all
 	        	For ibrk As Byte=1 To brknb

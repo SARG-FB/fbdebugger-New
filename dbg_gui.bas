@@ -463,18 +463,14 @@ sub brk_marker(brkidx as integer)
 	if brkol(brkidx).typ>10 then
 		typ=5 ''disabled --> grey marker
 	else
-		if brkol(brkidx).cntrsav then
-			typ=4 ''if counter<>0 --> marker 3
-		else
-			if brkidx=0 then
-				if brkol(brkidx).typ=2 then
-					typ=6 ''red circle
-					'messbox("red cricle on line=",str(lline+1))
-				end if
-			else
-				typ=brkol(brkidx).typ  ''permanent cond tempo --> marker 1 or 2 or 3
+		if brkidx=0 then
+			if brkol(brkidx).typ=2 then
+				typ=6 ''red circle
+				'messbox("red cricle on line=",str(lline+1))
 			end if
-		End If
+		else
+			typ=brkol(brkidx).typ  ''permanent cond tempo --> marker 1 or 2 or 3
+		end if
 	End If
 
 	src=srcdisplayed
@@ -493,28 +489,47 @@ end sub
 '========================================================
 private sub brk_manage()
 	dim as string text
-	dim as integer srcprev=srcdisplayed
-	hidewindow(hbrkbx,KSHOW)
+	dim as integer srcprev=srcdisplayed,typ
+
 	For ibrk as integer =1 To brknb
 		source_change(brkol(ibrk).isrc)
 		text=line_text(brkol(ibrk).nline-1)
 
-		text=" "+source_name(source(brkol(ibrk).isrc))+" ["+Str(brkol(ibrk).nline)+"] cntr="+Str(brkol(ibrk).counter)+" >> "+Left(Trim(text,Any Chr(9)+" "),50)
+		text=" "+source_name(source(brkol(ibrk).isrc))+" ["+Str(brkol(ibrk).nline)+"] cntr="+Str(brkol(ibrk).counter)+" >> "+Left(Trim(text,Any Chr(9)+" "),65)
 		SetGadgetText(GBRKLINE01+ibrk-1,text)
-		hidegadget(GBRKLINE01+ibrk-1,0)
+		hidegadget(GBRKLINE01+ibrk-1,KSHOW)
 
-		hidegadget(GBRKDEL01+ibrk-1,0)
+		hidegadget(GBRKDEL01+ibrk-1,KSHOW)
 
-		If brkol(GBRKDSB01+ibrk-1).typ>2 Then text="ENB" Else text="DSB"
+		typ=brkol(ibrk).typ
+		If typ>10 Then
+			text="ENB"
+			typ-=10
+		Else
+			text="DSB"
+		EndIf
 		SetGadgetText(GBRKDSB01+ibrk-1,text)
-		hidegadget(GBRKDSB01+ibrk-1,0)
+		hidegadget(GBRKDSB01+ibrk-1,KSHOW)
+		select case typ
+			Case 1
+				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKP))
+			Case 2
+				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKC))
+			Case 3
+				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKT))
+			Case 4
+				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKN))
+		End Select
+		hidegadget(GBRKIMG01+ibrk-1,KSHOW)
 	next
 	''hides the last lines
 	For ibrk as integer =brknb+1 to 10
-		hidegadget(GBRKLINE01+ibrk-1,1)
-		hidegadget(GBRKDSB01+ibrk-1,1)
-		hidegadget(GBRKDEL01+ibrk-1,1)
+		hidegadget(GBRKIMG01+ibrk-1,KHIDE)
+		hidegadget(GBRKLINE01+ibrk-1,KHIDE)
+		hidegadget(GBRKDSB01+ibrk-1,KHIDE)
+		hidegadget(GBRKDEL01+ibrk-1,KHIDE)
 	next
+	hidewindow(hbrkbx,KSHOW)
 end sub
 '======================================
 '' notification from scintilla gadget
@@ -612,15 +627,16 @@ end sub
 '========================================================
 private sub create_brkbx()
 	dim as integer ypos
-	hbrkbx=create_window("Breakpoint management",10,10,650,420)
+	hbrkbx=create_window("Breakpoint management",10,10,850,420)
 
 	For ibrk as integer =0 To 9
 		ypos=5+32*ibrk
-		buttongadget(GBRKDEL01+ibrk,10,ypos,40,30,"DEL")
+		buttongadget(GBRKDEL01+ibrk,30,ypos,40,30,"DEL")
+		imagegadget(GBRKIMG01+ibrk,4,ypos+5,23,19,0)
 		'hidegadget(GBRKDEL01+ibrk,1)
-		buttongadget(GBRKDSB01+ibrk,55,ypos,40,30,"DSB")
+		buttongadget(GBRKDSB01+ibrk,75,ypos,40,30,"DSB")
 		'hidegadget(GBRKDSB01+ibrk,1)
-		textgadget(GBRKLINE01+ibrk,100,ypos+5,540,30,"Test lenght of line could be greater",SS_NOTIFY or SS_LEFT)
+		textgadget(GBRKLINE01+ibrk,120,ypos+5,740,30,"Test lenght of line could be greater",SS_NOTIFY or SS_LEFT)
 		'hidegadget(GBRKLINE01+ibrk,1)
 	next
 
@@ -972,6 +988,8 @@ private sub shortcut_enable()
 		AddKeyboardShortcut(hmain,FVIRTKEY,VK_P,MNSETBRKP)
 		AddKeyboardShortcut(hmain,FVIRTKEY,VK_C,MNSETBRKC)
 		AddKeyboardShortcut(hmain,FVIRTKEY,VK_N,MNSETBRKN)
+		AddKeyboardShortcut(hmain,FSHIFT  ,VK_N,MNRSTBRKN)
+		AddKeyboardShortcut(hmain,FCONTROL,VK_N,MNCHGBRKN)
 		AddKeyboardShortcut(hmain,FVIRTKEY,VK_T,MNSETBRKT)
 		AddKeyboardShortcut(hmain,FVIRTKEY,VK_D,MNSETBRKD)
 		AddKeyboardShortcut(hmain,FVIRTKEY,VK_B,MNMNGBRK)
@@ -990,6 +1008,8 @@ private sub shortcut_enable()
 		AddKeyboardShortcut(hmain,FVIRTKEY,0,MNSETBRKP)
 		AddKeyboardShortcut(hmain,FVIRTKEY,0,MNSETBRKC)
 		AddKeyboardShortcut(hmain,FVIRTKEY,0,MNSETBRKN)
+		AddKeyboardShortcut(hmain,FSHIFT  ,0,MNRSTBRKN)
+		AddKeyboardShortcut(hmain,FCONTROL,0,MNCHGBRKN)
 		AddKeyboardShortcut(hmain,FVIRTKEY,0,MNSETBRKT)
 		AddKeyboardShortcut(hmain,FVIRTKEY,0,MNSETBRKD)
 		AddKeyboardShortcut(hmain,FVIRTKEY,0,MNMNGBRK)
@@ -1078,10 +1098,8 @@ private sub menu_enable()
 	SetStateMenu(HMenuprc,MNLOCPRC,flag)
 	SetStateMenu(HMenuprc,MNSORTPRC,flag)
 
-	SetStateMenu(HMenuvar,MNPCHNING,flag)
 	SetStateMenu(HMenuvar,MNLOCPRC,flag)
 	SetStateMenu(HMenuvar,MNCALLINE,flag)
-	SetStateMenu(HMenuvar,MNASMPRC,flag)
 
 	If brknb then flag=0
 	SetStateMenu(HMenusource,MNMNGBRK,flag)
@@ -1104,9 +1122,10 @@ private sub menu_set()
 	CreateIconItemMenu(HMenusource,MNSETBRKN,catch_image(butBRKN))
 	MenuItem(MNSETBRKD ,HMenusource,"[D]isable/enable Breakpoint")
 	CreateIconItemMenu(HMenusource,MNSETBRKD,catch_image(butBRKD))
-	MenuItem(MNRSTBRKN,HMenusource,"ReSet initial value counter of a Breakpoint")
-	MenuItem(MNCHGBRKN,HMenusource,"Change value counter of a Breakpoint")
-	MenuItem(MNMNGBRK ,HMenusource, "Manage [B]reakpoints")
+	var HMenusource1=OpenSubMenu(HMenusource,"Manage breakpoints")
+	MenuItem(MNRSTBRKN,HMenusource1,"ReSet initial counter value")
+	MenuItem(MNCHGBRKN,HMenusource1,"Change counter value")
+	MenuItem(MNMNGBRK ,HMenusource1,"Manage [B]reakpoints")
 	MenuBar(HMenusource)
 	MenuItem(MNACCLINE,HMenusource,"Mark not executable lines")
 	MenuItem(MNTHRDAUT,HMenusource,"Step auto multi threads")
@@ -1149,19 +1168,17 @@ private sub menu_set()
 	MenuBar(HMenuvar)
 	MenuItem(MNLOCPRC,HMenuvar, "Locate proc (source)")
 	MenuItem(MNCALLINE,HMenuvar,"Locate calling line")
-	MenuItem(MNPCHNING,HMenuvar,"Proc call Chaining")
-	MenuItem(MNASMPRC,HMenuvar, "Asm code of proc")
 	MenuItem(MNFNDVAR,HMenuvar, "Find any text")
-	HMenuvar3=OpenSubMenu(HMenuvar,"List to log")
+	HMenuvar3=OpenSubMenu(HMenuvar,"List to log / Copy to clipboard")
 	MenuItem(MNLSTVARA,HMenuvar3, "List all items")
 	MenuItem(MNLSTVARS,HMenuvar3, "List selected item+childs")
-	HMenuvar4=OpenSubMenu(HMenuvar,"Copy to clipboard")
-	MenuItem(MNCLBVARA,HMenuvar4, "Copy all items")
-	MenuItem(MNCLBVARS,HMenuvar4, "Copy selected item+childs")
-	MenuItem(MNVARCOLI,HMenuvar,  "Collapse Item")
-	MenuItem(MNVAREXPI,HMenuvar,  "Expand item")
-	MenuItem(MNVARCOLA,HMenuvar,  "Collapse All")
-	MenuItem(MNVAREXPA,HMenuvar,  "Expand All")
+	MenuItem(MNCLBVARA,HMenuvar3, "Copy all items")
+	MenuItem(MNCLBVARS,HMenuvar3, "Copy selected item+childs")
+	HMenuvar4=OpenSubMenu(HMenuvar,"Collapse / Expand")
+	MenuItem(MNVARCOLI,HMenuvar4,  "Collapse Item+childs")
+	MenuItem(MNVAREXPI,HMenuvar4,  "Expand item+childs")
+	MenuItem(MNVARCOLA,HMenuvar4,  "Collapse All")
+	MenuItem(MNVAREXPA,HMenuvar4,  "Expand All")
 
 ''menu watched
 	HMenuwch=CreatePopMenu()
