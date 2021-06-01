@@ -2941,25 +2941,13 @@ select case t
 		but_enable()
 		brkol(0).nline=rln
 		brk_marker(0)
-		''remove ABP + keep UBP or disable them ?
+		brk_unset(true) ''remove ABP + keep UBP
 		thread_resume()
 
 	case else
 		rln=line_exec(cln,"Break point Not possible")
 		if rln=-1 then exit sub
-'==========================
-	'If t=9 Then 'run to cursor
-		'If linecur=cln And srcdisplayed=srccur Then
-			'If messbox("Run to cursor","Same line, continue ?",MB_YESNO)=IDNO Then Exit Sub
-		'End If
-		'brkol(0).ad=rline(rln).ad
-		'brkol(0).typ=3 ''tempo so cleared when reached
-		'runtype=RTRUN
-		'but_enable()
-		'brkol(brknb).nline=cln
-		'brk_marker(0)
-		'thread_resume()
-	'Else
+
 		For i=1 To brknb 'search if still put on this line
 			If brkol(i).nline=cln And brkol(i).isrc=srcdisplayed Then Exit For
 		Next
