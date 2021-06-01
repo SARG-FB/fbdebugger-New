@@ -321,7 +321,7 @@ While 1
 							mutexlock blocker ''waiting the Go from main thread
 							mutexunlock blocker
 
-							if debugdata=RETYES then
+							if debugdata=IDYES then
 								suspendthread(threadcontext)
 								ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 							Else

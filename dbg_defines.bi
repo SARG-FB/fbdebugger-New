@@ -251,7 +251,12 @@ end enum
 enum
 	MNVARDMP=1050 '' memory variable dump
 	MNVAREDT
-	MNVARBRK
+	MNBRKVC
+	MNBRKV1
+	MNBRKV2
+	MNBRCVC
+	MNBRCV1
+	MNBRCV2
 	MNSELIDX
 	MNSHSTRG
 	MNSHWEXP
@@ -365,9 +370,6 @@ end enum
 #define KPURPLE &hEB80EB
 #define KGREY   &hC3C3C3
 #define KWHITE  &hFFFFFF
-
-#define RETYES 6
-#define RETNO  7
 
 #define KSHOW 0
 #define KHIDE 1
@@ -906,7 +908,7 @@ Type tbrkv
 	vst As String    'value as string
 	tst As Byte=1    'type of comparison (1 to 6)
 	ttb As Byte      'type of comparison (16 to 0)
-	txt As String	  'name and value just for brkv_box
+	txt As String	  'name and value for menu
 End type
 
 ''======================== Threads ====================================
@@ -1217,7 +1219,12 @@ enumdef(MNTRCKIDX2)="MNTRCKIDX2"
 enumdef(MNTRCKIDX3)="MNTRCKIDX3"
 enumdef(MNTRCKIDX4)="MNTRCKIDX4"
 enumdef(MNTRCKRST)="MNTRCKRST"
-enumdef(MNVARBRK)="MNVARBRK"
+enumdef(MNBRKVC)="MNBRKVC"
+enumdef(MNBRKV1)="MNBRKV1"
+enumdef(MNBRKV2)="MNBRKV2"
+enumdef(MNBRCVC)="MNBRCVC"
+enumdef(MNBRCV1)="MNBRCV1"
+enumdef(MNBRCV2)="MNBRCV2"
 enumdef(MNVARDMP)="MNVARDMP"
 enumdef(MNVAREDT)="MNVAREDT"
 enumdef(MNWCHDALL)="MNWCHDALL"

@@ -64,7 +64,7 @@ private sub menu_action(poption as integer)
          		watch_del(watch_find())
 
         Case MNWCHDALL'delete all watches
-   			if messbox("Delete watched vars","Delete all",MB_YESNO)=RETYES Then
+			if messbox("Delete watched vars","Delete all",MB_YESNO)=IDYES Then
    				watch_del()
    			EndIf
 
@@ -244,8 +244,12 @@ private sub menu_action(poption as integer)
 		Case MNSHWEXP  'show and expand variables
 			shwexp_new(GTVIEWVAR)
 
-		Case MNVARBRK  'break on var value
-			brkv_set(1)
+		Case MNBRKVC
+			If brkv.adr<>0 Then
+				brkv_set(2) ''update break on var
+			else
+				brkv_set(1) ''break on var value
+			EndIf
 
 		case MNVARCOLI
 			CollapseTreeViewItem(GTVIEWVAR,GetItemTreeView(GTVIEWVAR))
@@ -286,9 +290,6 @@ private sub menu_action(poption as integer)
 		Case MNFNDTXDW
 			messbox("feature not yet implemented","fb_find(1,sfind)")
 			'fb_find(1,sfind)
-
-		Case MNVARBRK 'update break on var
-			If brkv.adr<>0 Then brkv_set(2)
 
 	'=============================================================
         case else
@@ -472,11 +473,11 @@ private sub gadget_action(igadget as LONG)
 	        line_display(brkol(igadget-GBRKLINE01+1).nline-1)
 
 		Case GBRKDSB01 to GBRKDSB10 ''enable/disable
-			If brkol(igadget-GBRKDSB01+1).typ>10 Then
-				brkol(igadget-GBRKDSB01+1).typ-=10
+			If brkol(igadget-GBRKDSB01+1).typ>50 Then
+				brkol(igadget-GBRKDSB01+1).typ-=50
 				SetGadgetText(igadget,"DSB")
 			Else
-				brkol(igadget-GBRKDSB01+1).typ+=10
+				brkol(igadget-GBRKDSB01+1).typ+=50
 				SetGadgetText(igadget,"ENB")
 			EndIf
 			brk_marker(igadget-GBRKDSB01+1)
@@ -841,7 +842,7 @@ private sub button_action(button as integer)
 			Stopcode=CSHALTBU
 
 		case IDBUTFREE
-		   If messbox("FREE","Release debugged prgm",MB_YESNO)=RETYES Then
+		   If messbox("FREE","Release debugged prgm",MB_YESNO)=IDYES Then
 				For i As Integer = 1 To linenb 'restore old instructions
 					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@rLine(i).sv,1,0)
 				Next
@@ -884,16 +885,9 @@ private sub button_action(button as integer)
 			Delete_Menu(HMenuexe)
 
 		case IDBUTCURSOR
+		''''messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
+			brk_set(9)
 			hidewindow(hcchainbx,KHIDE)
-			but_enable()
-			fastrun()
-			send_sci(SCI_MarkerAdd, line_cursor-1, 4)
-
-						''''case IDBUTCURSOR
-							''''messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
-							''''brk_set(9)
-			''''
-
 
 		case IDBUTEXECMOD
 			messbox("feature not implemented","button = IDBUTEXECMOD")

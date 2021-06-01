@@ -995,7 +995,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 			proc(procnb).nu=linenum
 			lastline=0
 			proc(procnb+1).vr=proc(procnb).vr 'in case there is not param nor local var
-			proc(procnb).rvadr=0 'for now only used in gcc case 19/08/2015
+			proc(procnb).rvadr=0 'for now only used in gcc case
 
 			print "proc =";proc(procnb).nm;" in source=";source(proc(procnb).sr)
 		end if

@@ -805,7 +805,7 @@ private sub thread_kill()
 		messbox("Killing thread","This is the first thread --> process"+Chr(10)+"Use kill process button")
 		Exit Sub
 	EndIf
-	If messbox("Killing thread : "+Str(thread(t).id),"Are you sure ?"+Chr(10)+"It could cause Memory leak, etc.",MB_YESNO)=RETYES Then
+	If messbox("Killing thread : "+Str(thread(t).id),"Are you sure ?"+Chr(10)+"It could cause Memory leak, etc.",MB_YESNO)=IDYES Then
 		#ifdef __fb_win32__
 			If terminatethread(thread(t).hd,999)=0 Then
 				messbox("Thread killing","Something goes wrong, error: "+Str(GetLastError))
@@ -903,12 +903,19 @@ End Sub
 '===================================================================================
 '' check if the line is executable return -1 if false otherwise the rline index
 '===================================================================================
-private function line_exec(pline as integer)as integer
+private function line_exec(pline as integer,msg as string)as integer
 	For iline as integer =1 To linenb
 		If rline(iline).nu=pline AndAlso rline(iline).sx=srcdisplayed Then
+			For jproc As Integer =1 To procnb
+				If rline(iline).ad=proc(jproc).db Then
+					messbox(msg,"Line not executable")
+					return -1
+				EndIf
+			Next
 			return iline
 		end if
 	next
+	messbox(msg,"Line not executable")
 	return -1
 end function
 '=======================================================
@@ -918,10 +925,9 @@ private sub line_adr()
 Dim As Integer l, rl
 
 l=line_cursor()
-rl=line_exec(l)
+rl=line_exec(l,"No address line")
 
 if rl=-1 Then
-	messbox("Line memory address","Not executable so no address")
 	Exit Sub
 EndIf
 
@@ -2714,7 +2720,7 @@ private sub watch_trace(t As Integer=WTCHALL)
 				Exit Sub
 			Else
 				If flaglog=0 Then
-					If MESSBOX("Tracing var/mem","No log output defined"+Chr(13)+"Open settings ?",MB_YESNO)=RETYES Then
+					If MESSBOX("Tracing var/mem","No log output defined"+Chr(13)+"Open settings ?",MB_YESNO)=IDYES Then
 						hidewindow(hsettings,KSHOW) ''can be changed here
 					EndIf
 					If flaglog=0 Then
@@ -2820,25 +2826,44 @@ private sub brk_del(n As Integer)
 End Sub
 '==============================================
 Private function brk_test(ad As UInteger) As Byte 'check on breakpoint ?
- For i As Integer=0 To brknb
- 	If brkol(i).typ>10 Then Continue For 'disabled
- 	If ad=brkol(i).ad Then 'reached line = breakpoint
- 		If brkol(i).counter>0 Then brkol(i).counter-=1:Return FALSE 'decrement counter
- 		stopcode=CSBRK
- 		If i=0 Then
- 			brkol(0).ad=0 'delete continue to cursor
- 			stopcode=CSCURSOR
- 		Else
- 			If brkol(i).typ=3 Then brk_del(i):stopcode=CSBRKTEMPO 'tempo breakpoint
- 		End If
- 		Return TRUE
- 	End If
- Next
- Return FALSE
+	For i As Integer=0 To brknb
+		If brkol(i).typ>50 Then Continue For 'disabled
+		If ad=brkol(i).ad Then 'reached line = breakpoint
+			If brkol(i).counter>0 Then brkol(i).counter-=1:Return FALSE 'decrement counter
+			stopcode=CSBRK
+			If i=0 Then
+				brkol(0).ad=0 'delete continue to cursor
+				stopcode=CSCURSOR
+			Else
+				If brkol(i).typ=3 Then brk_del(i):stopcode=CSBRKTEMPO 'tempo breakpoint
+			End If
+			Return TRUE
+		End If
+	Next
+	Return FALSE
 End Function
 '=======================================================================
+'' removes all ABP / disables all UBP if necessary
+'=======================================================================
+private sub brk_unset(ubpon as integer=false)
+	For j As Integer = 1 To linenb 'restore all instructions
+	  WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@rLine(j).sv,1,0)
+	Next
+
+	For jbrk As Integer = 0 To brknb ''restore if needed the UBP
+		If brkol(jbrk).typ<50 Then
+			if ubpon=true then
+				WriteProcessMemory(dbghand,Cast(LPVOID,brkol(jbrk).ad),@breakcpu,1,0) ''only BP enabled
+			else
+				brkol(jbrk).typ+=50 ''disable all UBP
+				brk_marker(jbrk)
+			end if
+		end if
+	Next
+End Sub
+'=======================================================================
 '' t 1=permanent breakpoint / 2=conditionnal (on a line + condition) / 3=tempo breakpoint / 4=breakpoint with counter changed in type 1 /
-''   5=disable / 7=change value counter / 8 reset to initial value / 9=same line / 10=end of proc / 11=end of prog
+''   5=disable / 7=change value counter / 8 reset to initial value / 9=cursor line / over =10 / 11=end of proc / 12=end of prog
 '=======================================================================
 Private sub brk_set(t As Integer)
 	Dim cln As Integer,i As Integer,rln As Integer
@@ -2846,18 +2871,14 @@ Private sub brk_set(t As Integer)
 
 	cln=line_cursor() 'get line
 
-	For i=1 To linenb
-		If rline(i).nu=cln And rline(i).sx=srcdisplayed Then Exit For 'check nline
-	Next
-	If i>linenb Then messbox("Break point Not possible","Inaccessible line (not executable)") :Exit Sub
-	For j As Integer =1 To procnb
-		If rline(i).ad=proc(j).db Then messbox("Break point Not possible","Inaccessible line (not executable)") :Exit Sub
-	Next
-	rln=i
-	If t=9 Then 'run to cursor
-		'l N°line/by 0
+select case t
+
+	case 9 ''to cursor
+		rln=line_exec(cln,"Run to cursor not possible, select an executable line")
+		if rln=-1 then exit sub
+
 		If linecur=cln And srcdisplayed=srccur Then
-			If messbox("Run to cursor","Same line, continue ?",MB_YESNO)=RETNO Then Exit Sub
+			If messbox("Run to cursor","Same line, continue ?",MB_YESNO)=IDNO Then Exit Sub
 		End If
 		brkol(0).ad=rline(rln).ad
 		brkol(0).typ=3 ''tempo so cleared when reached
@@ -2865,8 +2886,80 @@ Private sub brk_set(t As Integer)
 		but_enable()
 		brkol(brknb).nline=cln
 		brk_marker(0)
+		brk_unset() ''remove ABP + keep UBP or disable them ?
 		thread_resume()
-	Else
+
+	case 10 ''Skip line / step over
+		rln=line_exec(cln,"Skip line not possible, select an executable line")
+		if rln=-1 then exit sub
+
+		For j As Integer =1 To procnb
+			If rline(i).ad=proc(j).fn Then
+				messbox("Skip line ot possible","Last line of proc")
+				Exit Sub
+			end if
+		Next
+
+		rln=i+1
+		brkol(0).ad=rline(rln).ad ''address of next line
+		brkol(0).typ=10
+		runtype=RTRUN
+		but_enable()
+		brkol(0).nline=rln
+		brk_marker(0)
+		brk_unset() ''remove ABP + keep UBP or disable them ?
+		thread_resume()
+
+	case 11 '' run until end of proc  = EOP
+		rln=line_exec(cln,"Run end of proc not possible, select an executable line")
+		if rln=-1 then exit sub
+
+		''todo add test if proc is disabled then messbox("End of proc","procedure disabled":exit sub
+
+		brkol(0).ad=proc(rline(i).px).fn ''last executable line of proc
+		For rln=1 To linenb
+			If rline(rln).ad=brkol(0).ad Then Exit For ''find nline
+		Next
+
+		brkol(0).typ=11
+		runtype=RTRUN
+		but_enable()
+		brkol(0).nline=rln
+		brk_marker(0)
+		brk_unset() ''remove ABP + keep UBP or disable them ?
+		thread_resume()
+
+	case 12 '' run until exit of prog  = XOP
+		brkol(0).ad=proc(0).fn ''last executable line of prog (?????? to be checked)
+
+		For rln=1 To linenb
+			If rline(rln).ad=brkol(0).ad Then Exit For ''find nline
+		Next
+
+		brkol(0).typ=12
+		runtype=RTRUN
+		but_enable()
+		brkol(0).nline=rln
+		brk_marker(0)
+		''remove ABP + keep UBP or disable them ?
+		thread_resume()
+
+	case else
+		rln=line_exec(cln,"Break point Not possible")
+		if rln=-1 then exit sub
+'==========================
+	'If t=9 Then 'run to cursor
+		'If linecur=cln And srcdisplayed=srccur Then
+			'If messbox("Run to cursor","Same line, continue ?",MB_YESNO)=IDNO Then Exit Sub
+		'End If
+		'brkol(0).ad=rline(rln).ad
+		'brkol(0).typ=3 ''tempo so cleared when reached
+		'runtype=RTRUN
+		'but_enable()
+		'brkol(brknb).nline=cln
+		'brk_marker(0)
+		'thread_resume()
+	'Else
 		For i=1 To brknb 'search if still put on this line
 			If brkol(i).nline=cln And brkol(i).isrc=srcdisplayed Then Exit For
 		Next
@@ -2902,10 +2995,10 @@ Private sub brk_set(t As Integer)
 					messbox("Reset counter","No counter for this breakpoint")
 				EndIf
 			ElseIf t=5 Then 'toggle enabled/disabled
-				If brkol(i).typ>10 Then
-					brkol(i).typ-=10
+				If brkol(i).typ>50 Then
+					brkol(i).typ-=50
 				Else
-					brkol(i).typ+=10
+					brkol(i).typ+=50
 				EndIf
 		ElseIf t=brkol(i).typ OrElse (t<>1 and t<>3) then 'brkol(i).typ>1 Then 'cancel breakpoint
 			brk_del(i)
@@ -2919,7 +3012,8 @@ Private sub brk_set(t As Integer)
 		brk_marker(i)
 
 	   If brknb=1 Then SetStateMenu(HMenusource,MNMNGBRK,0)
-	End If
+	'End If
+	end select
 End Sub
 '=============================================================
 private sub proc_watch(procridx As Integer) 'called with running proc index
@@ -3150,7 +3244,7 @@ private sub brkv_update()
 			Case 6
 			brkv.txt+="<="
 		End Select
-		Modify_Menu(MNVARBRK,HMenuvar,brkv.txt+brkv.vst)
+		Modify_Menu(MNBRKVC,HMenuvar,brkv.txt+brkv.vst)
 		hidewindow(hbrkvbx ,KHIDE)
 	end if
 end sub
@@ -3163,7 +3257,7 @@ private sub brkv_set(a As Integer) ''break on variable change
 	If a=0 Then 'cancel break
 		brkv.adr=0
 		SetGadgetText(GBRKVAR,"Break on var")
-		Modify_Menu(MNVARBRK,HMenuvar,"Break on var")
+		Modify_Menu(MNBRKVC,HMenuvar,"Var / const")
 		hidewindow(hbrkvbx ,KHIDE)
 		Exit Sub
 	ElseIf a=1 Then 'new
@@ -3351,20 +3445,20 @@ private function brkv_test() As Byte
 		strg3+=Mid(strg1,InStr(strg1," Stop if"),99) ''end of string
 
 		If messbox("Break on var","Current value"+Mid(strg2,InStr(strg2,">")+1,25)+Chr(13)+"NB : Not yet updated in Proc/Var panel"+Chr(13)+Chr(13)+"Remove break condition ?"_
-			,MB_YESNO)=RETYES Then
+			,MB_YESNO)=IDYES Then
 			brkv_set(0)
 		else
 			SetGadgetText(GBRKVAR,strg3)
-			Modify_Menu(MNVARBRK,HMenuvar,strg3)
+			Modify_Menu(MNBRKVC,HMenuvar,strg3)
 		end if
 		Return TRUE
 	End If
 	Return FALSE
 End Function
 '=======================================================
-'' after stopping fastrun  retrieves all procedures
+'' after stopping run  retrieves all procedures
 '=======================================================
-private sub proc_newfast()
+private sub proc_runnew()
    Dim vcontext As CONTEXT
    Dim libel As String
    Dim As UInteger regbp,regip,regbpnb,regbpp(PROCRMAX)
@@ -3444,35 +3538,6 @@ private sub proc_newfast()
 			proc_watch(procrnb) 'reactivate watched var
 		Next
    Next
-End Sub
-'============================================================================
-'' fast run to cursor or breakpoint !!! Be carefull
-'============================================================================
-private sub fastrun()
-	Dim l As Integer,i As Integer
-
-	l=line_cursor() 'get line
-	For i=1 To linenb
-		If rline(i).nu=l And rline(i).sx=srcdisplayed Then Exit For 'check nline
-	Next
-	If i>linenb Then messbox("Fast run Not possible","Inaccessible line (not executable)") :Exit Sub
-	For j As Integer =1 To procnb 'first line of proc
-		If rline(i).ad=proc(j).db Then messbox("Fast run Not possible","Inaccessible line (not executable)") :Exit Sub
-	Next
-	If linecur=l+1 And srcdisplayed=srccur Then messbox("Fast run Not possible","Same line"): Exit Sub
-	For j As Integer = 1 To linenb 'restore all instructions
-	  WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@rLine(j).sv,1,0)
-	Next
-	'create run to cursor
-	brkol(0).ad=rline(i).ad
-	brkol(0).typ=2 'to clear when reached
-	For j As Integer = 0 To brknb 'breakpoint
-		If brkol(j).typ<3 Then WriteProcessMemory(dbghand,Cast(LPVOID,brkol(j).ad),@breakcpu,1,0) 'only enabled
-	Next
-	runtype=RTFRUN
-	but_enable()
-	fasttimer=Timer
-	thread_resume()
 End Sub
 '======================================================
 private sub gest_brk(ad As UInteger)
@@ -3615,13 +3680,13 @@ private sub gest_brk(ad As UInteger)
 	  	Next
 	  	'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(i).ad),@rLine(i).sv,1,0) 'restore old value for execution
    		brk_test(proccurad) ' cancel breakpoint on line, if command halt not really used
-   		proc_newfast   'creating running proc tree
+   		proc_runnew   'creating running proc tree
    		var_sh			'updating information about variables
    		runtype=RTSTEP
    		dsp_change(i)
 		brk_del(0)
    Else 'RTSTEP or RTAUTO
-		If flagattach Then proc_newfast:flagattach=FALSE
+		If flagattach Then proc_runnew:flagattach=FALSE
 		'NOTA If rline(i).nu=-1 Then
 			'fb_message("No line for this proc","Code added by compiler (constructor,...)")
 		'Else
@@ -3639,7 +3704,7 @@ private sub gest_brk(ad As UInteger)
 			thread_resume
 		EndIf
 		If threadsel<>threadcur AndAlso messbox("New Thread","Previous thread "+Str(thread(threadsel).id)+" changed by "+Str(thread(threadcur).id) _
-				+Chr(10)+Chr(13)+" Keep new one ?",MB_YESNO)=RETNO Then
+				+Chr(10)+Chr(13)+" Keep new one ?",MB_YESNO)=IDNO Then
 				thread_change(threadsel)
 		Else
 			threadsel=threadcur
@@ -3895,7 +3960,7 @@ private function kill_process(text As String) As Integer
 	if prun then
 		If messbox("Kill current running Program ?",text+Chr(10)+Chr(10) _
 			       +"USE CARREFULLY SYSTEM CAN BECOME UNSTABLE, LOSS OF DATA, MEMORY LEAK"+Chr(10) _
-				   +"Try to close your program first",MB_YESNO) = RETYES then
+				   +"Try to close your program first",MB_YESNO) = IDYES then
 			flagkill=true
 			#ifdef __fb_win32__
 				retcode=terminateprocess(dbghand,999)
@@ -4007,7 +4072,7 @@ private sub exe_sav(exename As String,cmdline As String="")
 	DisableGadget(IDBUTRERUN,0)
 	SetToolTipText(IDBUTRERUN,TTRERUN,exename)
 	settitle()
-	ini_write() ''done also when fbdebugger closing but also here in case of crash of fbdebugger 
+	ini_write() ''done also when fbdebugger closing but also here in case of crash of fbdebugger
 End sub
 '======================================================================
 ''loads the source code files, by slice : n contains the first to be loaded until sourcenb
@@ -4295,7 +4360,7 @@ private sub closes_debugger()
 	If prun Then
 		text=>"CAUTION PROGRAM STILL RUNNING."+Chr(10)+Chr(10)
 	EndIf
-	if messbox("Quit Fbdebugger",text+"Are you sure ?",MB_YESNO)=RETYES then
+	if messbox("Quit Fbdebugger",text+"Are you sure ?",MB_YESNO)=IDYES then
 		mutexdestroy blocker
 		release_doc ''releases scintilla docs
 		''todo free all the objects menus, etc
@@ -4633,45 +4698,36 @@ end sub
 '' changes address of execution (forward or backward) only in the same procedure
 '==================================================================================
 private sub exe_mod() 'execution from cursor
-	Dim l As Integer,i As Integer',b As Integer
+	Dim l As Integer,rln As Integer',b As Integer
 	Dim vcontext As CONTEXT
 
 	l=line_cursor
 
-	For i=1 To linenb  'check nline
-		If rline(i).nu=l And rline(i).sx=srcdisplayed Then
-			If rline(i+1).nu=l+1 And rline(i+1).sx=srcdisplayed Then i+=1 'weird case : first line main proc
-			Exit For
-		End If
-	Next
-
-	If i>linenb Then
-		messbox("Execution on cursor","Inaccessible line (not executable)")
-		Exit Sub
-	EndIf
+	rln=line_exec(l,"Execution on cursor")
+	If rline(rln+1).nu=l+1 And rline(rln+1).sx=srcdisplayed Then rln+=1 ''weird case : first line main proc
 
 	If linecur=l+1 And srcdisplayed=srccur Then
-		If messbox("Execution on cursor","Same line, continue ?",MB_YESNO)=RETNO Then
+		If messbox("Execution on cursor","Same line, continue ?",MB_YESNO)=IDNO Then
 			Exit Sub
 		EndIf
 	End If
 
 	'check inside same proc if not msg
-	If rLine(i).ad>proc(procsv).fn Or rLine(i).ad<=proc(procsv).db Then
+	If rLine(rln).ad>proc(procsv).fn Or rLine(rln).ad<=proc(procsv).db Then
 		messbox("Execution on cursor","Only inside current proc !!!")
 		Exit Sub
 	End If
-	If rLine(i).ad=proc(procsv).fn Then
+	If rLine(rln).ad=proc(procsv).fn Then
 		thread(threadcur).pe=TRUE        'is last instruction
 	EndIf
 	'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0) 'restore CC previous line
 	'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(i).ad),@rLine(i).sv,1,0) 'restore old value for execution
-	thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=i
+	thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=rln
 	'get and update registers
 	vcontext.contextflags=CONTEXT_CONTROL
 	GetThreadContext(threadhs,@vcontext)
-	vcontext.regip=rline(i).ad
+	vcontext.regip=rline(rln).ad
 	SetThreadContext(threadhs,@vcontext)
 
-	dsp_change(i)
+	dsp_change(rln)
 End Sub
