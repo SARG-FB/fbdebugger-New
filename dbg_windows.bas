@@ -188,20 +188,34 @@ private sub debugstring_read(debugev As debug_event)
 	endif
 
 End Sub
+'====================================================================
+private sub thread_search(tid as integer,bptype as integer,ddata as integer)
+	For i As Integer =0 To threadnb
+		If tid=thread(i).id Then
+			threadcontext=thread(i).hd
+			threadhs=threadcontext
+			suspendthread(threadcontext)
+			threadcur=i
+			debugbptype=bptype
+			debugdata=ddata
+			debugevent=KDBGRKPOINT
+			mutexlock blocker ''waiting the Go from main thread
+			mutexunlock blocker
+			exit sub
+		End If
+	Next
+end sub
 '========================================================
 private function wait_debug() As Integer
 Dim DebugEv As DEBUG_EVENT    ' debugging event information
 Dim dwContinueStatus As Long =DBG_CONTINUE ' exception continuation
-Dim erreur As Long,cpt As Integer
-Dim As Integer firstchance,flagsecond
-Dim As UInteger adr
+Dim As Integer firstchance,flagsecond,bptyp,cpt,adr
 Dim As String Accviolstr(1)={"TRYING TO READ","TRYING TO WRITE"}
 ' Wait for a debugging event to occur. The second parameter indicates
 ' that the function does not return until a debugging event occurs.
 If hattach Then setevent(hattach):hattach=0
 While 1
 	If WaitForDebugEvent(@DebugEv, infinite)=0 Then 'INFINITE ou null ou x
-		erreur=GetLastError
 		ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 		Exit Function
 	End If
@@ -213,7 +227,7 @@ While 1
 		'=========================
 			'dbg_prt("exception code "+Hex(DebugEv.u.Exception.ExceptionRecord.ExceptionCode))'+DebugEv.u.Exception.dwfirstchance+" adr : "+DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
 			firstchance=DebugEv.u.Exception.dwfirstchance
-			adr=Cast(UInteger,DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
+			adr=cast(integer,DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
 			'dbg_prt("firstchance="+Str(firstchance))'25/01/2015
 			If firstchance=0 Then 'second try
 				If flagsecond=0 Then
@@ -241,21 +255,84 @@ While 1
 				'dbg_prt("before select case with breakpoint")
 				Select Case (DebugEv.u.Exception.ExceptionRecord.ExceptionCode)
 					'=========================
+					'Case EXCEPTION_BREAKPOINT
+					'=========================
+						'For i As Integer =0 To threadnb 'if msg from thread then flag off
+							'If DebugEv.dwThreadId=thread(i).id Then
+								'threadcontext=thread(i).hd:threadhs=threadcontext
+								'suspendthread(threadcontext)
+			               		'threadcur=i
+								'Exit For
+							'End If
+						'Next
+						'''''''''''''''''''''''''''''new way gest_brk(adr)
+						'debugdata=adr
+						'debugevent=KDBGRKPOINT
+						'mutexlock blocker ''waiting the Go from main thread
+						'mutexunlock blocker
+						'ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
+
+					'=========================
 					Case EXCEPTION_BREAKPOINT
 					'=========================
-						For i As Integer =0 To threadnb 'if msg from thread then flag off
-							If DebugEv.dwThreadId=thread(i).id Then
-								threadcontext=thread(i).hd:threadhs=threadcontext
-								suspendthread(threadcontext)
-			               		threadcur=i
-								Exit For
-							End If
-						Next
-						''''''''''''''''''''''''''''new way gest_brk(adr)
-						debugdata=adr
-						debugevent=KDBGRKPOINT
-						mutexlock blocker ''waiting the Go from main thread
-						mutexunlock blocker
+					print "EXCEPTION_BREAKPOINT=";runtype,RTSTEP,RTOFF,adr
+						while 1
+							dim as integer bpidx
+							if runtype=RTCRASH then
+								''don't stop as running until a crash
+								breakadr=adr
+								exit while
+							end if
+
+							if runtype=RTRUN then
+								if brkv.adr1<>0 then
+									if brk_test(brkv.adr1,brkv.adr2,brkv.typ,brkv.val,brkv.ttb) then
+										thread_search(DebugEv.dwThreadId,KBPMEM,adr)
+										exit while
+									end if
+								end if
+
+								''retrieves BP corresponding at address (loop) -->bpidx
+								For bpidx =0 To brknb
+									if brkol(bpidx).ad=adr then
+										exit for
+									EndIf
+								Next
+
+								if bpidx=0 then ''BPLINE (line, cursor, over,eop,xop)
+									thread_search(DebugEv.dwThreadId,KBPLINE,bpidx)
+									exit while
+								end if
+
+								bptyp=brkol(bpidx).typ
+								if bptyp=2 then  ''BP conditional mem/const
+									if brk_test(brkol(bpidx).adrvar1,,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
+										thread_search(DebugEv.dwThreadId,KBPCOND,bpidx)
+										exit while
+									end if
+								elseif bptyp=3 then  ''BP conditional mem/mem
+									if brk_test(brkol(bpidx).adrvar1,brkol(bpidx).adrvar2,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
+										thread_search(DebugEv.dwThreadId,KBPCOND,bpidx)
+										exit while
+									end if
+								elseif bptyp=4 then ''BP counter
+									If brkol(bpidx).counter>0 Then
+										brkol(bpidx).counter-=1'decrement counter
+									else
+										thread_search(DebugEv.dwThreadId,KBPCOUNT,bpidx)
+									end if
+									exit while
+								else ''simple BP (perm/tempo)
+									thread_search(DebugEv.dwThreadId,KBPLINE,bpidx)
+									exit while
+								end if
+							else ''RTSTEP/RTAUTO
+							print "in step/auto",adr
+								thread_search(DebugEv.dwThreadId,KBPSTEP,adr)
+								exit while
+							end if
+						wend
+
 						ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 					'=========================
 					case Else ' EXCEPTION
@@ -297,8 +374,8 @@ While 1
 								'show_context
 							#EndIf
 
-							If runtype=RTFRUN OrElse runtype=RTFREE Then
-								runtype=RTFRUN
+							If runtype=RTRUN OrElse runtype=RTFREE Then
+								runtype=RTRUN
 								For i As Integer =1 To linenb
 									'WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)'restore CC
 									If rline(i).ad<=adr AndAlso rline(i+1).ad>adr Then

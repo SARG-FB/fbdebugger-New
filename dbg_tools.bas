@@ -2802,7 +2802,7 @@ End Sub
 Private sub brk_sav
 	For i As Integer =1 To BRKMAX
 		If i<=brknb Then
-			if brkol(i).typ<>2 and brkol(i).typ<>12 then ''only permanent/tempo/counter
+			if brkol(i).typ=1 or brkol(i).typ=6 or brkol(i).typ=4 then ''only permanent/tempo/counter
 				brkexe(0,i)=source_name(source(brkol(i).isrc))+","+Str(brkol(i).nline)+","+Str(brkol(i).cntrsav)+","+Str(brkol(i).typ)
 			EndIf
 		EndIf
@@ -2825,7 +2825,7 @@ private sub brk_del(n As Integer)
    If brknb=0 Then SetStateMenu(HMenusource,MNMNGBRK,1)
 End Sub
 '==============================================
-Private function brk_test(ad As UInteger) As Byte 'check on breakpoint ?
+Private function brk_test2(ad As UInteger) As Byte 'check on breakpoint ?
 	For i As Integer=0 To brknb
 		If brkol(i).typ>50 Then Continue For 'disabled
 		If ad=brkol(i).ad Then 'reached line = breakpoint
@@ -2842,6 +2842,226 @@ Private function brk_test(ad As UInteger) As Byte 'check on breakpoint ?
 	Next
 	Return FALSE
 End Function
+'================================================================================
+'' tests the values for breakpoint on var/mem or conditionnal
+'================================================================================
+private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,data2 as valeurs, comptype as byte) As integer
+
+	'Dim As Integer adr,temp2,temp3
+	'Dim As String strg1,strg2,strg3
+	'dim ptrs As pointeurs
+	'ptrs.pxxx=@recup(0)
+	Dim As Integer flag=0
+	'dim as integer recup(20)
+	dim as valeurs recup1,recup2
+
+
+		'If brkv.arr Then 'watching dyn array element ?
+			'adr=vrr(brkv.ivr).ini
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,4,0)
+			'If adr<>brkv.arr Then brkv.adr+=brkv.arr-adr:brkv.arr=adr 'compute delta then add it if needed
+			'temp2=vrr(brkv.ivr).ini+2*SizeOf(Integer) 'adr global size
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,temp2),@temp3,SizeOf(Integer),0)
+			'If brkv.adr>adr+temp3 Then 'out of limit ?
+				'brkv_set(0) 'erase
+				'Return FALSE
+			'End If
+		'End If
+
+	''26 --> <> or > or >=
+	''21 --> <> or < or <=
+	''35 --> = or >= or <=
+	''16 --> <>
+	Select Case datatype
+		Case 2 'byte
+			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,1,0)
+			if adr2 then
+				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,1,0)
+			else
+				recup2=data2
+			EndIf
+			if recup2.vbyte>recup1.vbyte then
+				If 26 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vbyte<recup1.vbyte Then
+				If 21 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vbyte<recup1.vbyte Then
+				If 35 And comptype Then
+					flag=1
+				EndIf
+			End If
+
+		Case 3 'ubyte
+			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,1,0)
+			if adr2 then
+				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,1,0)
+			else
+				recup2=data2
+			EndIf
+			if recup2.vubyte>recup1.vubyte then
+				If 26 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vubyte<recup1.vubyte Then
+				If 21 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vubyte<recup1.vubyte Then
+				If 35 And comptype Then
+					flag=1
+				EndIf
+			End If
+
+		Case 5 'short
+			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,2,0)
+			if adr2 then
+				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,2,0)
+			else
+				recup2=data2
+			EndIf
+			if recup2.vshort>recup1.vshort then
+				If 26 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vshort<recup1.vshort Then
+				If 21 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vshort<recup1.vshort Then
+				If 35 And comptype Then
+					flag=1
+				EndIf
+			End If
+
+		Case 6 'ushort
+			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,2,0)
+			if adr2 then
+				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,2,0)
+			else
+				recup2=data2
+			EndIf
+			if recup2.vushort>recup1.vushort then
+				If 26 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vushort<recup1.vushort Then
+				If 21 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vushort<recup1.vushort Then
+				If 35 And comptype Then
+					flag=1
+				EndIf
+			End If
+
+		Case 1 'integer32/long
+			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,4,0)
+			if adr2 then
+				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,4,0)
+			else
+				recup2=data2
+			EndIf
+			if recup2.vinteger>recup1.vinteger then
+				If 26 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vinteger<recup1.vinteger Then
+				If 21 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vinteger<recup1.vinteger Then
+				If 35 And comptype Then
+					flag=1
+				EndIf
+			End If
+
+		Case 8 'uinteger32/ulong
+			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,4,0)
+			if adr2 then
+				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,4,0)
+			else
+				recup2=data2
+			EndIf
+			if recup2.vuinteger>recup1.vuinteger then
+				If 26 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vuinteger<recup1.vuinteger Then
+				If 21 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vuinteger<recup1.vuinteger Then
+				If 35 And comptype Then
+					flag=1
+				EndIf
+			End If
+
+		Case 9 'integer64/longint
+			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
+			if adr2 then
+				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,8,0)
+			else
+				recup2=data2
+			EndIf
+			if recup2.vlongint>recup1.vlongint then
+				If 26 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vlongint<recup1.vlongint Then
+				If 21 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vlongint<recup1.vlongint Then
+				If 35 And comptype Then
+					flag=1
+				EndIf
+			End If
+
+		Case 10 'uinteger64/ulonginit
+			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
+			if adr2 then
+				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,8,0)
+			else
+				recup2=data2
+			EndIf
+			if recup2.vulongint>recup1.vulongint then
+				If 26 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vulongint<recup1.vulongint Then
+				If 21 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vulongint<recup1.vulongint Then
+				If 35 And comptype Then
+					flag=1
+				EndIf
+			End If
+
+		''strings not yet handled
+		'Case 4,13,14
+			'If brkv.typ=13 Then  ' normal string
+				'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@adr,SizeOf(Integer),0) 'address ptr 25/07/2015 64bit
+			'Else
+				'adr=brkv.adr
+			'End If
+			'Clear recup(0),0,26 'max 25 char
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@recup(0),25,0) 'value
+			'strg1=*ptrs.pzstring
+			'If brkv.ttb=16 Then
+				'If brkv.vst<>strg1 Then
+					'flag=1
+				'EndIf
+			'Else
+				'If brkv.vst=strg1
+				'Then flag=1
+			'EndIf
+		return flag ''0 test false / 1 test true
+	End Select
+end function
 '=======================================================================
 '' removes all ABP / disables all UBP if necessary
 '=======================================================================
@@ -2862,8 +3082,8 @@ private sub brk_unset(ubpon as integer=false)
 	Next
 End Sub
 '=======================================================================
-'' t 1=permanent breakpoint / 2=conditionnal (on a line + condition) / 3=tempo breakpoint / 4=breakpoint with counter changed in type 1 /
-''   5=disable / 7=change value counter / 8 reset to initial value / 9=cursor line / over =10 / 11=end of proc / 12=end of prog
+'' t 1=permanent breakpoint / 2(var/const)-3(var-var)=conditionnal (on a line + condition) / 4=breakpoint with counter /
+''   5=disable-enable / 6=tempo / 7=change value counter / 8 reset to initial value / 9=cursor line / over =10 / 11=end of proc / 12=end of prog
 '=======================================================================
 Private sub brk_set(t As Integer)
 	Dim cln As Integer,i As Integer,rln As Integer
@@ -2962,11 +3182,28 @@ select case t
 			brkol(brknb).ad=rline(rln).ad
 			brkol(brknb).cntrsav=0
 			brkol(brknb).counter=0
-			If t=4 Then 'change value counter
-				inputval=input_bx("breakpoint with a counter","Set value counter for a breakpoint","0",7)
-				brkol(brknb).counter=ValUInt(inputval)
-				brkol(brknb).cntrsav=brkol(i).counter
-			EndIf
+
+			select case t
+				Case 2
+					brkol(brknb).adrvar1=brkadr1
+					brkol(brknb).ivar1=brkidx1
+					brkol(brknb).val.vlongint=brkdata2.vlongint
+					brkol(brknb).ttb=brkttb
+					brktyp=0
+					modify_menu(MNSETBRKC,HMenusource,"Set/Clear [C]onditionnal Breakpoint")
+				case 3
+					brkol(brknb).adrvar1=brkadr1
+					brkol(brknb).ivar1=brkidx1
+					brkol(brknb).adrvar2=brkadr2
+					brkol(brknb).ivar2=brkidx2
+					brkol(brknb).ttb=brkttb
+					brktyp=0
+					modify_menu(MNSETBRKC,HMenusource,"Set/Clear [C]onditionnal Breakpoint")
+				case 4 'change value counter
+					inputval=input_bx("breakpoint with a counter","Set value counter for a breakpoint","0",7)
+					brkol(brknb).counter=ValUInt(inputval)
+					brkol(brknb).cntrsav=brkol(i).counter
+			End select
 		Else 'still put
 			If t=7 Then 'change value counter
 				if  brkol(i).cntrsav Then
@@ -3158,6 +3395,26 @@ private sub dsp_change(index As Integer)
 	End If
 End Sub
 '========================================
+''
+'========================================
+private function brk_comp(tst as INTEGER) as  zstring ptr
+	Select Case tst
+		Case 32
+		return @"="
+		Case 16
+		return @"<>"
+		Case 8
+		return @">"
+		Case 4
+		return @"<"
+		Case 2
+		return @">="
+		Case 0
+		return @"<="
+	End Select
+end function
+
+'========================================
 '' updates break on var/mem
 '========================================
 private sub brkv_update()
@@ -3166,8 +3423,7 @@ private sub brkv_update()
 	dim as integer vflag=1
 	dim as double vald
 
-	brkv.tst=GetItemComboBox(GBRKVCOND)
-	brkv.ttb=32 Shr (brkv.tst)
+	brkv.ttb=32 Shr GetItemComboBox(GBRKVCOND)
 
 	vald=Val(txt)
 	Select Case brkv.typ
@@ -3218,7 +3474,7 @@ private sub brkv_update()
 				brkv.vst=Left(txt,26)'str(brkv.val.vuinteger)
 		End Select
 
-		Select Case brkv.tst+1
+		Select Case brkv.ttb
 			Case 1
 			brkv.txt+="="
 			Case 2
@@ -3243,204 +3499,196 @@ private sub brkv_set(a As Integer) ''break on variable change
 	Dim As Integer t,p
 	Dim Title As String, j As UInteger,ztxt As string,tvi As integer
 	If a=0 Then 'cancel break
-		brkv.adr=0
-		SetGadgetText(GBRKVAR,"Break on var")
+		brkv.adr1=0
+		brkv.adr2=0
+		SetGadgetText(GBRKVAR1,"Break on var")
 		Modify_Menu(MNBRKVC,HMenuvar,"Var / const")
 		hidewindow(hbrkvbx ,KHIDE)
 		Exit Sub
-	ElseIf a=1 Then 'new
-		If var_find2(htviewvar)=-1 Then Exit Sub 'search index variable under cursor
-		'search master variable
-
-		t=varfind.Ty
-		p=varfind.pt
-
-		#Ifdef __FB_64BIT__
-		If p Then t=9 ''pointer integer64 (ulongint)
-		#Else
-		If p Then t=1 ''pointer integer32 (long)
-		#EndIf
-
-		If t>10 AndAlso p=0 AndAlso t<>4 AndAlso t<>13 AndAlso t<>14 Then
-			messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint or z/f/string")
-			Exit Sub
-		End If
-
-		brkv.typ=t           'change in brkv_box if pointed value
-		brkv.adr=varfind.ad   'idem
-		brkv.vst=""          'idem
-		brkv.tst=1           'type of test
-		brkv.ivr=varfind.iv
-		' if dyn array store real adr
-		If Cast(Integer,vrb(varfind.pr).arr)=-1 Then
-			ReadProcessMemory(dbghand,Cast(LPCVOID,vrr(varfind.iv).ini),@brkv.arr,sizeof(integer),0)
-		Else
-			brkv.arr=0
-		End If
-
-		If vrb(varfind.pr).mem=3 Then
-			brkv.psk=-2 'static
-		Else
-			For j As UInteger = 1  To procrnb 'find proc to delete watching
-				If varfind.iv>=procr(j).vr And varfind.iv<procr(j+1).vr Then
-					brkv.psk=procr(j).sk
-					Exit For
-				EndIf
-			Next
-		End If
-		ztxt=GetTextTreeView(GTVIEWVAR,vrr(varfind.iv).tv)
-	Else 'update
-		ztxt=GetTextTreeView(GTVIEWVAR,vrr(varfind.iv).tv)
-	End If
-	brkv.txt=Left(ztxt,InStr(ztxt,"<"))+var_sh2(brkv.typ,brkv.adr,p)
-
-	ResetAllComboBox(GBRKVCOND)
-	AddComboBoxItem(GBRKVCOND,"=",-1)
-	AddComboBoxItem(GBRKVCOND,"<>",-1)
-	If brkv.typ<>4 AndAlso brkv.typ<>13 AndAlso brkv.typ<>14 Then
-		AddComboBoxItem(GBRKVCOND,">",-1)
-		AddComboBoxItem(GBRKVCOND,"<",-1)
-		AddComboBoxItem(GBRKVCOND,">=",-1)
-		AddComboBoxItem(GBRKVCOND,"<=",-1)
+	ElseIf a=1 Then ''mem/const
+		var_fill(brkidx1)
+		brkv.typ=brkdatatype
+		brkv.adr1=varfind.ad
+		brkv.vst=""
+		brkv.ttb=32 shr GetItemComboBox(GBRKVCOND)
+		brkv.ivr1=brkidx1
+		brkv.val.vlongint=vallng(getgadgettext(GBRKVVALUE))
+		''todo new option for displaying the BP -->	modify_menu(MNSETBRKC,HMenusource,"BP cond with "+varfind.nm+" "+tst+" "+str(brkdata2.vlongint))
+	ElseIf a=2 Then ''mem/mem
+		var_fill(brkidx1)
+		brkv.typ=brkdatatype
+		brkv.adr1=varfind.ad
+		var tempo=varfind.nm
+		var_fill(brkidx2)
+		brkv.adr2=varfind.ad
+		brkv.ttb=32 shr GetItemComboBox(GBRKVCOND)
+		brkv.ivr1=brkidx1
+		brkv.ivr2=brkidx2
+		''todo new option for displaying the BP -->	modify_menu(MNSETBRKC,HMenusource,"BP cond with "+tempo+" "+tst+" "+varfind.nm)
 	end if
 
-	If brkv.vst="" Then
-	  brkv.vst=Mid(brkv.txt,InStr(brkv.txt,"=")+1,25)
-	End If
-	brkv.txt+=" Stop if it becomes "
-	ShowListComboBox(GBRKVCOND,1)
-	SetGadgetText(GBRKVAR,brkv.txt)
-	setgadgettext(GBRKVVALUE,brkv.vst)
-	hidewindow(hbrkvbx,KSHOW)
+		'' if dyn array store real adr
+		'If Cast(Integer,vrb(varfind.pr).arr)=-1 Then
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,vrr(varfind.iv).ini),@brkv.arr,sizeof(integer),0)
+		'Else
+			'brkv.arr=0
+		'End If
+
+		'If vrb(varfind.pr).mem=3 Then
+			'brkv.psk=-2 'static
+		'Else
+			'For j As UInteger = 1  To procrnb 'find proc to delete watching
+				'If varfind.iv>=procr(j).vr And varfind.iv<procr(j+1).vr Then
+					'brkv.psk=procr(j).sk
+					'Exit For
+				'EndIf
+			'Next
+		'End If
+		'ztxt=GetTextTreeView(GTVIEWVAR,vrr(varfind.iv).tv)
+	'Else 'update
+		'ztxt=GetTextTreeView(GTVIEWVAR,vrr(varfind.iv).tv)
+	'End If
+	'brkv.txt=Left(ztxt,InStr(ztxt,"<"))+var_sh2(brkv.typ,brkv.adr,p)
+
+
+
+	'If brkv.vst="" Then
+	  'brkv.vst=Mid(brkv.txt,InStr(brkv.txt,"=")+1,25)
+	'End If
+	'brkv.txt+=" Stop if it becomes "
+	'ShowListComboBox(GBRKVCOND,1)
+	'SetGadgetText(GBRKVAR1,brkv.txt)
+	'setgadgettext(GBRKVVALUE,brkv.vst)
+	'hidewindow(hbrkvbx,KSHOW)
 End Sub
 '===================== break on var ===============================================================
 private function brkv_test() As Byte
-	Dim recup(20) As Integer,ptrs As pointeurs,flag As Integer=0
-	Dim As Integer adr,temp2,temp3
-	Dim As String strg1,strg2,strg3
-		ptrs.pxxx=@recup(0)
-
-		If brkv.arr Then 'watching dyn array element ?
-			adr=vrr(brkv.ivr).ini
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,4,0)
-			If adr<>brkv.arr Then brkv.adr+=brkv.arr-adr:brkv.arr=adr 'compute delta then add it if needed
-			temp2=vrr(brkv.ivr).ini+2*SizeOf(Integer) 'adr global size 25/07/2015 64bit
-			ReadProcessMemory(dbghand,Cast(LPCVOID,temp2),@temp3,SizeOf(Integer),0)
-			If brkv.adr>adr+temp3 Then 'out of limit ?
-				brkv_set(0) 'erase
-				Return FALSE
-			End If
-		End If
-		''26 --> <> or > or >=
-		''21 --> <> or < or <=
-		''35 --> = or >= or <=
-		''16 --> <>
-		Select Case brkv.typ
-		Case 2 'byte
-			ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),1,0)
-			If brkv.val.vbyte>*ptrs.pbyte Then
-				If 26 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vbyte<*ptrs.pbyte Then
-				If 21 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vbyte=*ptrs.pbyte Then
-				If 35 And brkv.ttb Then flag=1
-			End If
-		Case 3 'ubyte
-			ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),1,0)
-			If brkv.val.vubyte<*ptrs.pubyte Then
-				If 26 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vubyte>*ptrs.pubyte Then
-				If 21 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vubyte=*ptrs.pubyte Then
-				If 35 And brkv.ttb Then flag=1
-			End If
-		Case 5 'short
-			ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),2,0)
-			If brkv.val.vshort<*ptrs.pshort Then
-				If 26 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vshort>*ptrs.pshort Then
-				If 21 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vshort=*ptrs.pshort Then
-				If 35 And brkv.ttb Then flag=1
-			End If
-		Case 6 'ushort
-			ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),2,0)
-			If brkv.val.vushort<*ptrs.pushort Then
-				If 26 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vushort>*ptrs.pushort Then
-				If 21 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vushort=*ptrs.pushort Then
-				If 35 And brkv.ttb Then flag=1
-			End If
-		Case 1 'integer32/long
-			ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),4,0)
-			If brkv.val.vinteger<*ptrs.pinteger Then
-				If 26 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vinteger>*ptrs.pinteger Then
-				If 21 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vinteger=*ptrs.pinteger Then
-				If 35 And brkv.ttb Then flag=1
-			End If
-		Case 8 'uinteger32/ulong       pointer
-			ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),4,0)
-			If brkv.val.vuinteger<*ptrs.puinteger Then
-				If 26 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vuinteger>*ptrs.puinteger Then
-				If 21 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vuinteger=*ptrs.puinteger Then
-				If 35 And brkv.ttb Then flag=1
-			End If
-		Case 9 'integer64/longint
-			ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),8,0)
-			If brkv.val.vlongint<*ptrs.plongint Then
-				If 26 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vlongint>*ptrs.plongint Then
-				If 21 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vlongint=*ptrs.plongint Then
-				If 35 And brkv.ttb Then flag=1
-			End If
-		Case 10 'uinteger64/ulonginit       pointer
-			ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),8,0)
-			If brkv.val.vulongint<*ptrs.pulongint Then
-				If 26 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vulongint>*ptrs.pulongint Then
-				If 21 And brkv.ttb Then flag=1
-			ElseIf brkv.val.vulongint=*ptrs.pulongint Then
-				If 35 And brkv.ttb Then flag=1
-			End If
-		Case 4,13,14
-			If brkv.typ=13 Then  ' normal string
-				ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@adr,SizeOf(Integer),0) 'address ptr 25/07/2015 64bit
-			Else
-				adr=brkv.adr
-			End If
-			Clear recup(0),0,26 'max 25 char
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@recup(0),25,0) 'value
-			strg1=*ptrs.pzstring
-			If brkv.ttb=16 Then
-				If brkv.vst<>strg1 Then flag=1
-			Else
-				If brkv.vst=strg1 Then flag=1
-			EndIf
-		End Select
-	If flag Then
-		If brkv.ivr=0 Then stopcode=CSBRKM Else stopcode=CSBRKV  ''memory or variable
-		strg1=getGadgetText(GBRKVAR) ''current string for break on var
-		strg2=var_sh2(brkv.typ,brkv.adr,0) ''last parameter in var_sh2 can be zero because type has been changed and even its a pointer no need *
-
-		strg3=Left(strg1,InStr(strg1,">"))          ''beginning of string
-		strg3+=Mid(strg2,InStr(strg2,">")+1,25)       ''max 25 characters in case of string, with others datatype no problem of lenght
-		strg3+=Mid(strg1,InStr(strg1," Stop if"),99) ''end of string
-
-		If messbox("Break on var","Current value"+Mid(strg2,InStr(strg2,">")+1,25)+Chr(13)+"NB : Not yet updated in Proc/Var panel"+Chr(13)+Chr(13)+"Remove break condition ?"_
-			,MB_YESNO)=IDYES Then
-			brkv_set(0)
-		else
-			SetGadgetText(GBRKVAR,strg3)
-			Modify_Menu(MNBRKVC,HMenuvar,strg3)
-		end if
-		Return TRUE
-	End If
+	'Dim recup(20) As Integer,ptrs As pointeurs,flag As Integer=0
+	'Dim As Integer adr,temp2,temp3
+	'Dim As String strg1,strg2,strg3
+		'ptrs.pxxx=@recup(0)
+'
+		'If brkv.arr Then 'watching dyn array element ?
+			'adr=vrr(brkv.ivr1).ini
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,4,0)
+			'If adr<>brkv.arr Then brkv.adr+=brkv.arr-adr:brkv.arr=adr 'compute delta then add it if needed
+			'temp2=vrr(brkv.ivr).ini+2*SizeOf(Integer) 'adr global size
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,temp2),@temp3,SizeOf(Integer),0)
+			'If brkv.adr>adr+temp3 Then 'out of limit ?
+				'brkv_set(0) 'erase
+				'Return FALSE
+			'End If
+		'End If
+		'''26 --> <> or > or >=
+		'''21 --> <> or < or <=
+		'''35 --> = or >= or <=
+		'''16 --> <>
+		'Select Case brkv.typ
+		'Case 2 'byte
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),1,0)
+			'If brkv.val.vbyte>*ptrs.pbyte Then
+				'If 26 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vbyte<*ptrs.pbyte Then
+				'If 21 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vbyte=*ptrs.pbyte Then
+				'If 35 And brkv.ttb Then flag=1
+			'End If
+		'Case 3 'ubyte
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),1,0)
+			'If brkv.val.vubyte<*ptrs.pubyte Then
+				'If 26 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vubyte>*ptrs.pubyte Then
+				'If 21 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vubyte=*ptrs.pubyte Then
+				'If 35 And brkv.ttb Then flag=1
+			'End If
+		'Case 5 'short
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),2,0)
+			'If brkv.val.vshort<*ptrs.pshort Then
+				'If 26 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vshort>*ptrs.pshort Then
+				'If 21 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vshort=*ptrs.pshort Then
+				'If 35 And brkv.ttb Then flag=1
+			'End If
+		'Case 6 'ushort
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),2,0)
+			'If brkv.val.vushort<*ptrs.pushort Then
+				'If 26 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vushort>*ptrs.pushort Then
+				'If 21 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vushort=*ptrs.pushort Then
+				'If 35 And brkv.ttb Then flag=1
+			'End If
+		'Case 1 'integer32/long
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),4,0)
+			'If brkv.val.vinteger<*ptrs.pinteger Then
+				'If 26 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vinteger>*ptrs.pinteger Then
+				'If 21 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vinteger=*ptrs.pinteger Then
+				'If 35 And brkv.ttb Then flag=1
+			'End If
+		'Case 8 'uinteger32/ulong       pointer
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),4,0)
+			'If brkv.val.vuinteger<*ptrs.puinteger Then
+				'If 26 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vuinteger>*ptrs.puinteger Then
+				'If 21 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vuinteger=*ptrs.puinteger Then
+				'If 35 And brkv.ttb Then flag=1
+			'End If
+		'Case 9 'integer64/longint
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),8,0)
+			'If brkv.val.vlongint<*ptrs.plongint Then
+				'If 26 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vlongint>*ptrs.plongint Then
+				'If 21 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vlongint=*ptrs.plongint Then
+				'If 35 And brkv.ttb Then flag=1
+			'End If
+		'Case 10 'uinteger64/ulonginit       pointer
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),8,0)
+			'If brkv.val.vulongint<*ptrs.pulongint Then
+				'If 26 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vulongint>*ptrs.pulongint Then
+				'If 21 And brkv.ttb Then flag=1
+			'ElseIf brkv.val.vulongint=*ptrs.pulongint Then
+				'If 35 And brkv.ttb Then flag=1
+			'End If
+		'Case 4,13,14
+			'If brkv.typ=13 Then  ' normal string
+				'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@adr,SizeOf(Integer),0) 'address ptr 25/07/2015 64bit
+			'Else
+				'adr=brkv.adr
+			'End If
+			'Clear recup(0),0,26 'max 25 char
+			'ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@recup(0),25,0) 'value
+			'strg1=*ptrs.pzstring
+			'If brkv.ttb=16 Then
+				'If brkv.vst<>strg1 Then flag=1
+			'Else
+				'If brkv.vst=strg1 Then flag=1
+			'EndIf
+		'End Select
+	'If flag Then
+		'If brkv.ivr=0 Then stopcode=CSBRKM Else stopcode=CSBRKV  ''memory or variable
+		'strg1=getGadgetText(GBRKVAR1) ''current string for break on var
+		'strg2=var_sh2(brkv.typ,brkv.adr,0) ''last parameter in var_sh2 can be zero because type has been changed and even its a pointer no need *
+'
+		'strg3=Left(strg1,InStr(strg1,">"))          ''beginning of string
+		'strg3+=Mid(strg2,InStr(strg2,">")+1,25)       ''max 25 characters in case of string, with others datatype no problem of lenght
+		'strg3+=Mid(strg1,InStr(strg1," Stop if"),99) ''end of string
+'
+		'If messbox("Break on var","Current value"+Mid(strg2,InStr(strg2,">")+1,25)+Chr(13)+"NB : Not yet updated in Proc/Var panel"+Chr(13)+Chr(13)+"Remove break condition ?"_
+			',MB_YESNO)=IDYES Then
+			'brkv_set(0)
+		'else
+			'SetGadgetText(GBRKVAR1,strg3)
+			'Modify_Menu(MNBRKVC,HMenuvar,strg3)
+		'end if
+		'Return TRUE
+	'End If
 	Return FALSE
 End Function
 '=======================================================
@@ -3528,7 +3776,7 @@ private sub proc_runnew()
    Next
 End Sub
 '======================================================
-private sub gest_brk(ad As UInteger)
+private sub gest_brk(ad As Integer)
    Dim As UInteger i,debut=1,fin=linenb+1,adr,iold
    Dim vcontext As CONTEXT
 
@@ -3636,7 +3884,7 @@ private sub gest_brk(ad As UInteger)
 
 	If runtype=RTRUN Then
 		' test breakpoint on line
-		If brk_test(proccurad) Then
+		If brk_test2(proccurad) Then
 			fasttimer=Timer-fasttimer
 			runtype=RTSTEP
 			procad=0:procin=0:proctop=FALSE:procbot=0
@@ -3645,7 +3893,7 @@ private sub gest_brk(ad As UInteger)
 			Exit Sub
 		EndIf
 		'test beakpoint on var
-		If brkv.adr<>0 Then
+		If brkv.adr1<>0 Then
 			If brkv_test() Then
 				runtype=RTSTEP
 				procad=0:procin=0:proctop=FALSE:procbot=0
@@ -3661,13 +3909,13 @@ private sub gest_brk(ad As UInteger)
 			 If proc(procbot).fn=proccurad Then procad=0:procin=0:proctop=FALSE:procbot=0:runtype=RTSTEP:dsp_change(i):Exit Sub 'stop on end of proc STEPRETURN
 		End If
 		thread_resume()
-	ElseIf runtype=RTFRUN Then
+	ElseIf runtype=RTRUN Then
    		fasttimer=Timer-fasttimer
 	  	For i As Integer = 1 To linenb 'restore CC
    			WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
 	  	Next
 	  	'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(i).ad),@rLine(i).sv,1,0) 'restore old value for execution
-   		brk_test(proccurad) ' cancel breakpoint on line, if command halt not really used
+   		brk_test2(proccurad) ' cancel breakpoint on line, if command halt not really used
    		proc_runnew   'creating running proc tree
    		var_sh			'updating information about variables
    		runtype=RTSTEP
@@ -4555,8 +4803,9 @@ end sub
 private sub debug_event()
 	dim as integer dbgevent=debugevent,srcstart
 	debugevent=KDBGNOTHING
-	'print "debug_event 00";time
+
 	if dbgevent = KDBGNOTHING then exit sub
+	print "debug_event 00";time,dbgevent,debugdata,KDBGRKPOINT
 	select case as const dbgevent
 		Case KDBGRKPOINT
 			gest_brk(debugdata)

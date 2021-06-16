@@ -550,9 +550,15 @@ enum
 	GTVIEWSHW
 end enum
 
-''break on var/mem
+''break on var/mem or cond
+#define KBRCMEMCONST 1 ''cond  var/const
+#define KBRCMEMMEM   2 ''cond  var/var
+#define KBRKMEMCONST 3 ''mem   var-mem/const
+#define KBRKMEMMEM   4 ''mem   var-mem/mem
+
 enum
-	GBRKVAR=975
+	GBRKVAR1=973
+	GBRKVAR2
 	GBRKVVALUE
 	GBRKVOK
 	GBRKVDEL
@@ -703,10 +709,18 @@ Enum ''type of running
 	RTSTEP
 	RTAUTO
 	RTOFF
-	RTFRUN
 	RTFREE
 	RTEND
+	RTCRASH
 End enum
+
+enum ''type of breakpoint
+	KBPSTEP
+	KBPMEM
+	KBPLINE
+	KBPCOND
+	KBPCOUNT
+End Enum
 
 Enum ''code stop
 	CSSTEP=0
@@ -888,27 +902,39 @@ End type
 ''========================= Breakpoint on line ===================================
 Const BRKMAX=10 'breakpoint index zero for "run to cursor"
 Type breakol
-	isrc    As UShort   'source index
-	nline   As UInteger 'num line for display
-	index   As Integer  'index for rline
-	ad      As UInteger 'address
-	typ     As Byte	  'type normal=1 /temporary=0, 3 or 4 =disabled
-	counter As UInteger 'counter to control the number of times the line should be executed before stopping 02/09/2015
-	cntrsav As UInteger 'to reset if needed the initial value of the counter '03/09/2015
+	isrc    As UShort  'source index
+	nline   As Integer 'num line for display
+	index   As Integer 'index for rline
+	ad      As Integer 'address
+	typ     As Byte	   'type
+	ivar1   as integer
+	union
+		adrvar1 as INTEGER
+		counter As UInteger 'counter to control the number of times the line should be executed before stopping
+	end union
+	ivar2   as integer
+	union
+		adrvar2 as INTEGER
+		cntrsav As UInteger 'to reset if needed the initial value of the counter
+	end union
+	datatype as byte
+	Val As valeurs   ''constant value for BP cond
+	ttb as byte
 End type
 
 ''========================= Breakpoint on variable ===================================
 Type tbrkv
 	typ As Integer   'type of variable
-	adr As UInteger  'address
-	arr As UInteger  'adr if dyn array
-	ivr As Integer   'variable index
+	adr1 As Integer  'address
+	adr2 As Integer  'address
+	arr As Integer  'adr if dyn array
+	ivr1 As Integer   'variable index
+	ivr2 As Integer   'variable index
 	psk As Integer   'stack proc
 	Val As valeurs   'value
 	vst As String    'value as string
-	tst As Byte=1    'type of comparison (1 to 6)
-	ttb As Byte      'type of comparison (16 to 0)
-	txt As String	  'name and value for menu
+	ttb As Byte      'type of comparison (32 shr tst)
+	txt As String	 'name and value for menu
 End type
 
 ''======================== Threads ====================================
@@ -1032,7 +1058,8 @@ enumdef(GBRKLINE07)="GBRKLINE07"
 enumdef(GBRKLINE08)="GBRKLINE08"
 enumdef(GBRKLINE09)="GBRKLINE09"
 enumdef(GBRKLINE10)="GBRKLINE10"
-enumdef(GBRKVAR)="GBRKVAR"
+enumdef(GBRKVAR1)="GBRKVAR1"
+enumdef(GBRKVAR2)="GBRKVAR2"
 enumdef(GBRKVDEL)="GBRKVDEL"
 enumdef(GBRKVOK)="GBRKVOK"
 enumdef(GBRKVVALUE)="GBRKVVALUE"

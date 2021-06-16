@@ -11,7 +11,8 @@ dim shared as any ptr blocker
 blocker=mutexcreate
 MutexLock blocker
 dim shared as integer debugevent
-dim shared as integer debugdata
+dim shared as integer debugdata ''index of bp or address of BP (case BP on mem)
+dim shared as integer debugbptype ''step, mem, lone, cond , count
 dim shared as STRING  libelexception
 
 ''source files
@@ -106,6 +107,7 @@ dim SHARED as integer logtyp
 dim shared as boolean prun=false    ''debuggee running
 dim shared as integer runtype=RTOFF ''running type
 Dim Shared As integer breakcpu=&hCC ''asm code for breakpoint
+Dim Shared As integer breakadr ''address of last ABP kept in case of exception (RTCRASH)
 Dim Shared As Integer dsptyp=0      ''type of display : 0 normal/ 1 source/ 2 var/ 3 memory
 
 ''put in a ctx with type ??
@@ -141,8 +143,18 @@ Dim Shared wtchnew As Integer 'to keep index after creating new watched
 ''breakpoint on line
 dim Shared as breakol brkol(BRKMAX)
 dim shared as integer brknb
-Dim Shared as String brkexe(9,BRKMAX) 'to save breakpoints by session
+dim Shared as String brkexe(9,BRKMAX) 'to save breakpoints by session
 dim shared as hwnd hbrkbx ''window for managing breakpoints
+dim shared as integer brkidx1 ''index for BP mem or cond
+dim shared as integer brkidx2
+dim shared as integer brkadr1 ''address for BP mem or cond
+dim shared as integer brkadr2
+dim shared as integer brkdatatype
+dim shared as integer brkttb
+dim shared as valeurs brkdata2
+dim shared as integer brktyp  ''type of BP mem/const or mem/mem
+
+
 
 ''breakpoint on variable/memory (when there is a change)
 Dim Shared As tbrkv brkv

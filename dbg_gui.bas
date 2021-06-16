@@ -465,7 +465,7 @@ sub brk_marker(brkidx as integer)
 	else
 		if brkidx=0 then
 			if brkol(brkidx).typ<>0 then
-				typ=6 ''red circle
+				typ=7 ''red circle
 				'messbox("red cricle on line=",str(lline+1))
 			end if
 		else
@@ -513,12 +513,12 @@ private sub brk_manage()
 		select case typ
 			Case 1
 				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKP))
-			Case 2
+			Case 2,3
 				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKC))
-			Case 3
-				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKT))
 			Case 4
 				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKN))
+			Case 6
+				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKT))
 		End Select
 		hidegadget(GBRKIMG01+ibrk-1,KSHOW)
 	next
@@ -650,14 +650,16 @@ end sub
 '' creates the window for managing the breakpoint on variable/memory change
 '==============================================================================
 private sub create_brkvbx()
-	hbrkvbx=create_window("Breakpoint on value",10,10,600,115)
+	hbrkvbx=create_window("Breakpoint on value",10,10,600,150)
 	'WindowBounds
 	centerWindow(hbrkvbx)
 
-	textgadget(GBRKVAR,6,6,390,30,"Stop if b<byte>=-88")
-	stringgadget(GBRKVVALUE,459,3,90,30,"-90")
-	buttongadget(GBRKVOK,190,40,55,30,"Apply")
-	buttongadget(GBRKVDEL,250,40,55,30,"Delete")
+	textgadget(GBRKVAR1,6,6,390,30,"Stop if b<byte>=-88")
+	textgadget(GBRKVAR2,6,35,390,30,"var2")
+
+	stringgadget(GBRKVVALUE,6,35,120,30,"")
+	buttongadget(GBRKVOK,190,75,55,30,"Apply")
+	buttongadget(GBRKVDEL,250,75,55,30,"Delete")
 	comboboxgadget(GBRKVCOND,402,3,54,150)
 end sub
 '==============================================================================
@@ -800,7 +802,8 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 	send_sci(SCI_MarkerDefine, 3,SC_MARK_FULLRECT)
 	send_sci(SCI_MarkerDefine, 4,SC_MARK_FULLRECT)
 	send_sci(SCI_MarkerDefine, 5,SC_MARK_FULLRECT)
-	send_sci(SCI_MarkerDefine, 6,SC_MARK_CIRCLE)
+	send_sci(SCI_MarkerDefine, 6,SC_MARK_FULLRECT)
+	send_sci(SCI_MarkerDefine, 7,SC_MARK_CIRCLE)
 	''color markers
 	send_sci(SCI_MARKERSETFORE,0,KRED)
 	send_sci(SCI_MARKERSETBACK,0,KWHITE)
@@ -808,14 +811,16 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 	send_sci(SCI_MARKERSETBACK,1,KRED)
 	send_sci(SCI_MARKERSETFORE,2,KPURPLE)
 	send_sci(SCI_MARKERSETBACK,2,KPURPLE)
-	send_sci(SCI_MARKERSETFORE,3,KORANGE)
-	send_sci(SCI_MARKERSETBACK,3,KORANGE)
+	send_sci(SCI_MARKERSETFORE,3,KPURPLE)
+	send_sci(SCI_MARKERSETBACK,3,KPURPLE)
 	send_sci(SCI_MARKERSETFORE,4,KBLUE)
 	send_sci(SCI_MARKERSETBACK,4,KBLUE)
 	send_sci(SCI_MARKERSETFORE,5,KGREY)
 	send_sci(SCI_MARKERSETBACK,5,KGREY)
-	send_sci(SCI_MARKERSETFORE,6,KRED)
-	send_sci(SCI_MARKERSETBACK,6,KRED)
+	send_sci(SCI_MARKERSETFORE,6,KORANGE)
+	send_sci(SCI_MARKERSETBACK,6,KORANGE)
+	send_sci(SCI_MARKERSETFORE,7,KRED)
+	send_sci(SCI_MARKERSETBACK,7,KRED)
 
 	send_sci(SCI_StyleSetFore, KSTYLECUR, KRED)    ''style #50 FG set to red
 	send_sci(SCI_StyleSetBack, KSTYLECUR, KYELLOW) ''style #50 BB set to green
@@ -923,7 +928,7 @@ private sub but_enable()
 			statusbar_text(KSTBPRC,proc(procsv).nm)
 			statusbar_text(KSTBFRT,left(Str(fasttimer),10))
 
-   		case RTRUN,RTFREE,RTFRUN 'step over / out / free / run / fast run
+   		case RTRUN,RTFREE 'step over / out / free / run / fast run
 			DisableGadget(IDBUTSTEP,1)
 			DisableGadget(IDBUTSTEPOVER,1)
 			DisableGadget(IDBUTRUNEND,1)
@@ -937,8 +942,8 @@ private sub but_enable()
 			Select Case runtype
 				Case RTRUN
 					statusbar_text(KSTBSTS,"Running")
-				Case RTFRUN
-					statusbar_text(KSTBSTS,"FAST Running")
+				Case RTCRASH
+					statusbar_text(KSTBSTS,"Run to crash")
 				Case else
 					statusbar_text(KSTBSTS,"Released")
 			End Select

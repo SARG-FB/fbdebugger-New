@@ -117,11 +117,22 @@ private sub menu_action(poption as integer)
 			brk_set(1)
 
 		Case MNSETBRKC 'set breakpoint conditionnal
-			messbox("Set BP conditionnal","Need to code the condition input")
-			brk_set(2)
+			if brktyp=KBRCMEMMEM then
+				if brkidx1=0 or brkidx2=0 then
+					messbox("Set BP conditionnal","Need variables for the condition")
+				else
+					brk_set(3)
+				EndIf
+			else
+				if brkidx1=0 then
+					messbox("Set BP conditionnal","Need variables for the condition")
+				else
+					brk_set(2)
+				EndIf
+			EndIf
 
 		Case MNSETBRKT 'set tempo brkp
-			brk_set(3)
+			brk_set(6)
 
 		Case MNSETBRKN 'set brkp with counter
 			brk_set(4)
@@ -244,13 +255,6 @@ private sub menu_action(poption as integer)
 		Case MNSHWEXP  'show and expand variables
 			shwexp_new(GTVIEWVAR)
 
-		Case MNBRKVC
-			If brkv.adr<>0 Then
-				brkv_set(2) ''update break on var
-			else
-				brkv_set(1) ''break on var value
-			EndIf
-
 		case MNVARCOLI
 			CollapseTreeViewItem(GTVIEWVAR,GetItemTreeView(GTVIEWVAR))
 
@@ -291,6 +295,94 @@ private sub menu_action(poption as integer)
 			messbox("feature not yet implemented","fb_find(1,sfind)")
 			'fb_find(1,sfind)
 
+		case MNBRKVC,MNBRKV1,MNBRCVC,MNBRCV1,MNBRKV2,MNBRCV2
+			ivar=var_find()
+			if ivar=0 then exit sub
+			'ivar=abs(ivar) ''useful only if field
+
+			select case poption
+				case MNBRKVC,MNBRKV1,MNBRCVC,MNBRCV1
+					''BP var/mem variable/constant or variable/variable
+					''BP cond variable/constant or variable/variable
+					brkidx1=ivar
+					brkidx2=0
+					var_fill(brkidx1)
+
+					#Ifdef __FB_64BIT__
+					If varfind.pt Then varfind.ty=9 ''pointer integer64 (longint)
+					#Else
+					If varfind.pt Then varfind.ty=1 ''pointer integer32 (long)
+					#EndIf
+
+					If varfind.ty>10 then
+						messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint")
+						brkidx1=0
+						brkidx2=0
+						Exit Sub
+					End If
+					brkdatatype=varfind.ty
+					if poption=MNBRKVC or MNBRCVC then ''select the constant and the test
+						SetGadgetText(GBRKVAR1,varfind.nm)
+						hidegadget(GBRKVAR2,KHIDE)
+						hidegadget(GBRKVVALUE,KSHOW)
+						ResetAllComboBox(GBRKVCOND)
+						AddComboBoxItem(GBRKVCOND,"=",-1)
+						AddComboBoxItem(GBRKVCOND,"<>",-1)
+						'If brkv.typ<>4 AndAlso brkv.typ<>13 AndAlso brkv.typ<>14 Then
+							AddComboBoxItem(GBRKVCOND,">",-1)
+							AddComboBoxItem(GBRKVCOND,"<",-1)
+							AddComboBoxItem(GBRKVCOND,">=",-1)
+							AddComboBoxItem(GBRKVCOND,"<=",-1)
+						'end if
+						SetItemComboBox(GBRKVCOND,0)
+						hidewindow(hbrkvbx,KSHOW)
+
+						if poption=MNBRKVC then
+							brktyp=KBRKMEMCONST
+						else
+							brktyp=KBRCMEMCONST
+						end if
+					end if
+
+				Case MNBRKV2,MNBRCV2
+					if brkidx1=0 then
+						messbox("BPoint","Select the first var")
+						exit sub
+					end if
+					brkidx2=ivar
+					var_fill(brkidx2)
+					#Ifdef __FB_64BIT__
+					If varfind.pt Then varfind.ty=9 ''pointer integer64 (longint)
+					#Else
+					If varfind.pt Then varfind.ty=1 ''pointer integer32 (long)
+					#EndIf
+
+					If varfind.ty>10 then
+						messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint")
+						brkidx1=0
+						brkidx2=0
+						Exit Sub
+					End If
+
+					if brkdatatype<>varfind.ty then
+						messbox("BP conditional","Use 2 variables with same datatype")
+						brkidx2=0
+						exit sub
+					end if
+
+					SetGadgetText(GBRKVAR2,varfind.nm)
+					var_fill(brkidx1)
+					SetGadgetText(GBRKVAR1,varfind.nm)
+					hidegadget(GBRKVAR2,KSHOW)
+					hidegadget(GBRKVVALUE,KHIDE)
+					hidewindow(hbrkvbx,KSHOW)
+
+					if poption=MNBRKV2 then
+						brktyp=KBRKMEMMEM
+					else
+						brktyp=KBRCMEMMEM
+					end if
+			end select
 	'=============================================================
         case else
 			'messbox("Menu feature not implemented","sorry option="+str(poption)+" --> enum="+enumdef(poption))
@@ -403,12 +495,6 @@ private sub gadget_action(igadget as LONG)
 			dump_baseadr()
 
 		''case GDUMPTYPE ''nothing to do
-
-		case GBRKVDEL
-			brkv_set(0) ''cancel the break on var
-
-		case GBRKVOK ''apply
-			brkv_update()
 
 		case GBRKVCOND
 		case GBRKVVALUE
@@ -755,8 +841,62 @@ private sub gadget_action(igadget as LONG)
 				end if
 			end if
 
-		case GLOG ''nothing to do
+		case GBRKVOK ''apply
+			select case brktyp
+				Case KBRKMEMCONST
+					brkv_set(1)
+				Case KBRKMEMMEM
+					brkv_set(2)
 
+				Case KBRCMEMCONST
+					var_fill(brkidx1)
+					brkadr1=varfind.ad
+					brkttb=32 shr GetItemComboBox(GBRKVCOND)
+					var tst=brk_comp(brkttb)
+					brkdata2.vlongint=vallng(getgadgettext(GBRKVVALUE))
+					modify_menu(MNSETBRKC,HMenusource,"BP cond with "+varfind.nm+" "+*tst+" "+str(brkdata2.vlongint))
+
+				Case KBRCMEMMEM
+					var_fill(brkidx1)
+					brkadr1=varfind.ad
+					var tempo=varfind.nm
+					var_fill(brkidx2)
+					brkadr2=varfind.ad
+					brkttb=32 shr GetItemComboBox(GBRKVCOND)
+					var tst=brk_comp(brkttb)
+					modify_menu(MNSETBRKC,HMenusource,"BP cond with "+tempo+" "+*tst+" "+varfind.nm)
+			End Select
+			hidewindow(hbrkvbx,KHIDE)
+
+		case GBRKVDEL
+			select case brktyp
+				Case KBRKMEMCONST
+				messbox("case KBRKMEMCONST","not yet finished")
+					brkv_set(0)
+				Case KBRKMEMMEM
+				messbox("case KBRKMEMMEM","not yet finished")
+					brkv_set(0)
+				case else
+			end select
+				brkidx1=0
+				brkidx2=0
+				hidewindow(hbrkvbx,KHIDE)
+
+		case GBRKIMG01 to GBRKIMG01+9
+			var brkidx=igadget-GBRKIMG01+1
+			if brkol(brkidx).typ=2 or brkol(brkidx).typ=3 then
+				var_fill(brkol(brkidx).ivar1)
+				var tempo=varfind.nm
+				var tst= brk_comp(brkol(brkidx).ttb)
+				if brkol(brkidx).typ=2 then
+					messbox("BP cond with ",tempo+" "+*tst+" "+str(brkol(brkidx).val.vlongint))
+				else
+					var_fill(brkol(brkidx).ivar2)
+					messbox("BP cond with ",tempo+" "+*tst+" "+varfind.nm)
+				end if
+			EndIf
+
+		case GLOG ''nothing to do
 		case GEDITOR ''nothing to do
 
 		case else
@@ -831,8 +971,8 @@ private sub button_action(button as integer)
 			thread_resume()
 
 		case IDBUTSTOP
-			If runtype=RTFREE Or runtype=RTFRUN Then
-				runtype=RTFRUN 'to treat free as fast
+			If runtype=RTFREE Or runtype=RTRUN Then
+				runtype=RTRUN 'to treat free as run
 				For i As Integer = 1 To linenb 'restore every breakpoint
 					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
 				Next
