@@ -383,6 +383,8 @@ private sub menu_action(poption as integer)
 						brktyp=KBRCMEMMEM
 					end if
 			end select
+		Case MNBRKVS
+			brkv_set(0)
 	'=============================================================
         case else
 			'messbox("Menu feature not implemented","sorry option="+str(poption)+" --> enum="+enumdef(poption))
@@ -951,9 +953,7 @@ private sub button_action(button as integer)
 			thread_resume()
 
 		case IDBUTSTEPOVER 'STEP+ over
-			procin=procsk
-			runtype=RTRUN
-			but_enable()
+			brk_set(10)
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()
 
@@ -964,10 +964,8 @@ private sub button_action(button as integer)
 			thread_resume()
 
 		case IDBUTRUNEXIT
-			runtype=RTRUN
-			but_enable()
+			brk_set(12)
 			hidewindow(hcchainbx,KHIDE)
-			fasttimer=Timer
 			thread_resume()
 
 		case IDBUTSTOP
@@ -979,7 +977,7 @@ private sub button_action(button as integer)
 			Else
 				runtype=RTSTEP:procad=0:procin=0:proctop=FALSE:procbot=0
 			EndIf
-			Stopcode=CSHALTBU
+			Stopcode=CSUSER
 
 		case IDBUTFREE
 		   If messbox("FREE","Release debugged prgm",MB_YESNO)=IDYES Then
@@ -1034,9 +1032,7 @@ private sub button_action(button as integer)
 
         Case IDBUTRUNEND 'STEP at end of proc
 			If rline(thread(threadcur).sv).ad<>proc(procsv).fn Then 'if current line is end of proc simple step
-				procbot=procsv
-				runtype=RTRUN
-				but_enable()
+				brk_set(11)
 			EndIf
 			hidewindow(hcchainbx,KHIDE)
 			thread_resume()

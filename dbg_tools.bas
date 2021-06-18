@@ -2824,24 +2824,6 @@ private sub brk_del(n As Integer)
 	Next
    If brknb=0 Then SetStateMenu(HMenusource,MNMNGBRK,1)
 End Sub
-'==============================================
-Private function brk_test2(ad As UInteger) As Byte 'check on breakpoint ?
-	For i As Integer=0 To brknb
-		If brkol(i).typ>50 Then Continue For 'disabled
-		If ad=brkol(i).ad Then 'reached line = breakpoint
-			If brkol(i).counter>0 Then brkol(i).counter-=1:Return FALSE 'decrement counter
-			stopcode=CSBRK
-			If i=0 Then
-				brkol(0).ad=0 'delete continue to cursor
-				stopcode=CSCURSOR
-			Else
-				If brkol(i).typ=3 Then brk_del(i):stopcode=CSBRKTEMPO 'tempo breakpoint
-			End If
-			Return TRUE
-		End If
-	Next
-	Return FALSE
-End Function
 '================================================================================
 '' tests the values for breakpoint on var/mem or conditionnal
 '================================================================================
@@ -3070,7 +3052,7 @@ private sub brk_unset(ubpon as integer=false)
 	  WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@rLine(j).sv,1,0)
 	Next
 
-	For jbrk As Integer = 0 To brknb ''restore if needed the UBP
+	For jbrk As Integer = 1 To brknb ''restore if needed the UBP
 		If brkol(jbrk).typ<50 Then
 			if ubpon=true then
 				WriteProcessMemory(dbghand,Cast(LPVOID,brkol(jbrk).ad),@breakcpu,1,0) ''only BP enabled
@@ -3080,13 +3062,16 @@ private sub brk_unset(ubpon as integer=false)
 			end if
 		end if
 	Next
+	if brkol(0).typ<>0 then
+		WriteProcessMemory(dbghand,Cast(LPVOID,brkol(0).ad),@breakcpu,1,0)
+	EndIf
 End Sub
 '=======================================================================
 '' t 1=permanent breakpoint / 2(var/const)-3(var-var)=conditionnal (on a line + condition) / 4=breakpoint with counter /
 ''   5=disable-enable / 6=tempo / 7=change value counter / 8 reset to initial value / 9=cursor line / over =10 / 11=end of proc / 12=end of prog
 '=======================================================================
 Private sub brk_set(t As Integer)
-	Dim cln As Integer,i As Integer,rln As Integer
+	Dim As Integer cln,rln,ibrk
 	dim as string inputval
 
 	cln=line_cursor() 'get line
@@ -3096,12 +3081,13 @@ select case t
 	case 9 ''to cursor
 		rln=line_exec(cln,"Run to cursor not possible, select an executable line")
 		if rln=-1 then exit sub
-
+		''messbox("Run to cursor",str(cln)+" "+str(rln)+" "+str(rline(rln).ad)+" "+hex(rline(rln).ad))
 		If linecur=cln And srcdisplayed=srccur Then
 			If messbox("Run to cursor","Same line, continue ?",MB_YESNO)=IDNO Then Exit Sub
 		End If
 		brkol(0).ad=rline(rln).ad
-		brkol(0).typ=3 ''tempo so cleared when reached
+		brkol(0).typ=9
+		brkol(0).index=rln
 		runtype=RTRUN
 		but_enable()
 		brkol(brknb).nline=cln
@@ -3109,25 +3095,27 @@ select case t
 		brk_unset() ''remove ABP + keep UBP or disable them ?
 		thread_resume()
 
-	case 10 ''Skip line / step over
-		rln=line_exec(cln,"Skip line not possible, select an executable line")
-		if rln=-1 then exit sub
-
+	case 10 ''Skip current line / step over
+		'rln=line_exec(cln,"Run to cursor not possible, select an executable line")
+		messbox("skip","rlinecur="+str(rlinecur)+" "+str(rline(rlinecur).ad))
+		rln=rlinecur
 		For j As Integer =1 To procnb
-			If rline(i).ad=proc(j).fn Then
+			If rline(rln).ad=proc(j).fn Then
 				messbox("Skip line ot possible","Last line of proc")
 				Exit Sub
 			end if
 		Next
 
-		rln=i+1
+		rln+=1
 		brkol(0).ad=rline(rln).ad ''address of next line
+		brkol(0).index=rln
 		brkol(0).typ=10
 		runtype=RTRUN
 		but_enable()
-		brkol(0).nline=rln
+		brkol(0).nline=rline(rln).nu
 		brk_marker(0)
 		brk_unset() ''remove ABP + keep UBP or disable them ?
+		messbox("skip current line",str(cln)+" "+str(rln)+" "+str(rline(rln).ad)+" "+hex(rline(rln).ad))
 		thread_resume()
 
 	case 11 '' run until end of proc  = EOP
@@ -3136,15 +3124,15 @@ select case t
 
 		''todo add test if proc is disabled then messbox("End of proc","procedure disabled":exit sub
 
-		brkol(0).ad=proc(rline(i).px).fn ''last executable line of proc
+		brkol(0).ad=proc(rline(rln).px).fn ''last executable line of proc
 		For rln=1 To linenb
 			If rline(rln).ad=brkol(0).ad Then Exit For ''find nline
 		Next
-
+		brkol(0).index=rln
 		brkol(0).typ=11
 		runtype=RTRUN
 		but_enable()
-		brkol(0).nline=rln
+		brkol(0).nline=rline(rln).nu
 		brk_marker(0)
 		brk_unset() ''remove ABP + keep UBP or disable them ?
 		thread_resume()
@@ -3155,11 +3143,11 @@ select case t
 		For rln=1 To linenb
 			If rline(rln).ad=brkol(0).ad Then Exit For ''find nline
 		Next
-
+		brkol(0).index=rln
 		brkol(0).typ=12
 		runtype=RTRUN
 		but_enable()
-		brkol(0).nline=rln
+		brkol(0).nline=rline(rln).nu
 		brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP
 		thread_resume()
@@ -3168,10 +3156,10 @@ select case t
 		rln=line_exec(cln,"Break point Not possible")
 		if rln=-1 then exit sub
 
-		For i=1 To brknb 'search if still put on this line
-			If brkol(i).nline=cln And brkol(i).isrc=srcdisplayed Then Exit For
+		For ibrk=1 To brknb 'search if still put on this line
+			If brkol(ibrk).nline=cln And brkol(ibrk).isrc=srcdisplayed Then Exit For
 		Next
-		If i>brknb Then 'not put
+		If ibrk>brknb Then 'not put
 			If brknb=BRKMAX Then messbox("Max of brk reached ("+Str(BRKMAX)+")","Delete one and retry"):Exit Sub
 			if t=5 then exit sub
 			brknb+=1
@@ -3202,39 +3190,39 @@ select case t
 				case 4 'change value counter
 					inputval=input_bx("breakpoint with a counter","Set value counter for a breakpoint","0",7)
 					brkol(brknb).counter=ValUInt(inputval)
-					brkol(brknb).cntrsav=brkol(i).counter
+					brkol(brknb).cntrsav=brkol(brknb).counter
 			End select
 		Else 'still put
 			If t=7 Then 'change value counter
-				if  brkol(i).cntrsav Then
-					inputval=input_bx("Change value counter, remaining= "+Str(brkol(i).counter)," initial below"+Str(brkol(i).cntrsav),,7)
-					brkol(i).counter=ValUInt(inputval)
-					brkol(i).cntrsav=brkol(i).counter
+				if  brkol(ibrk).cntrsav Then
+					inputval=input_bx("Change value counter, remaining= "+Str(brkol(ibrk).counter)," initial below"+Str(brkol(ibrk).cntrsav),,7)
+					brkol(ibrk).counter=ValUInt(inputval)
+					brkol(ibrk).cntrsav=brkol(ibrk).counter
 				else
 					messbox("Change counter","No counter for this breakpoint")
 				end if
 			ElseIf t=8 Then 'reset to initial value
-				If brkol(i).cntrsav Then
-					brkol(i).counter=brkol(i).cntrsav
+				If brkol(ibrk).cntrsav Then
+					brkol(ibrk).counter=brkol(ibrk).cntrsav
 				Else
 					messbox("Reset counter","No counter for this breakpoint")
 				EndIf
 			ElseIf t=5 Then 'toggle enabled/disabled
-				If brkol(i).typ>50 Then
-					brkol(i).typ-=50
+				If brkol(ibrk).typ>50 Then
+					brkol(ibrk).typ-=50
 				Else
-					brkol(i).typ+=50
+					brkol(ibrk).typ+=50
 				EndIf
-		ElseIf t=brkol(i).typ OrElse (t<>1 and t<>3) then 'brkol(i).typ>1 Then 'cancel breakpoint
-			brk_del(i)
+		ElseIf t=brkol(ibrk).typ OrElse (t<>1 and t<>6) then 'brkol(i).typ>1 Then 'cancel breakpoint
+			brk_del(ibrk)
 			Exit Sub
 		Else 'change type of breakpoint to only permanent/temporary
-			brkol(i).typ=t
-			brkol(i).cntrsav=0
+			brkol(ibrk).typ=t
+			brkol(ibrk).cntrsav=0
 			End If
 		End If
 
-		brk_marker(i)
+		brk_marker(ibrk)
 
 	   If brknb=1 Then SetStateMenu(HMenusource,MNMNGBRK,0)
 	'End If
@@ -3496,13 +3484,14 @@ end sub
 ''
 '========================================================================
 private sub brkv_set(a As Integer) ''break on variable change
-	Dim As Integer t,p
-	Dim Title As String, j As UInteger,ztxt As string,tvi As integer
+	Dim As zString ptr tst
 	If a=0 Then 'cancel break
 		brkv.adr1=0
 		brkv.adr2=0
-		SetGadgetText(GBRKVAR1,"Break on var")
-		Modify_Menu(MNBRKVC,HMenuvar,"Var / const")
+		brkv.ivr1=0
+		brkv.ivr2=0
+		Modify_Menu(MNBRKVS,HMenuvar2,"Show BP if any")
+		SetStateMenu(HMenuvar2,MNBRKVS,1)
 		hidewindow(hbrkvbx ,KHIDE)
 		Exit Sub
 	ElseIf a=1 Then ''mem/const
@@ -3513,7 +3502,9 @@ private sub brkv_set(a As Integer) ''break on variable change
 		brkv.ttb=32 shr GetItemComboBox(GBRKVCOND)
 		brkv.ivr1=brkidx1
 		brkv.val.vlongint=vallng(getgadgettext(GBRKVVALUE))
-		''todo new option for displaying the BP -->	modify_menu(MNSETBRKC,HMenusource,"BP cond with "+varfind.nm+" "+tst+" "+str(brkdata2.vlongint))
+		tst=brk_comp(brkv.ttb)
+		modify_menu(MNBRKVS,HMenuvar2,varfind.nm+" "+*tst+" "+str(brkdata2.vlongint))
+		SetStateMenu(HMenuvar2,MNBRKVS,0)
 	ElseIf a=2 Then ''mem/mem
 		var_fill(brkidx1)
 		brkv.typ=brkdatatype
@@ -3524,7 +3515,9 @@ private sub brkv_set(a As Integer) ''break on variable change
 		brkv.ttb=32 shr GetItemComboBox(GBRKVCOND)
 		brkv.ivr1=brkidx1
 		brkv.ivr2=brkidx2
-		''todo new option for displaying the BP -->	modify_menu(MNSETBRKC,HMenusource,"BP cond with "+tempo+" "+tst+" "+varfind.nm)
+		tst=brk_comp(brkv.ttb)
+		modify_menu(MNBRKVS,HMenuvar2,tempo+" "+*tst+" "+varfind.nm)
+		SetStateMenu(HMenuvar2,MNBRKVS,0)
 	end if
 
 		'' if dyn array store real adr
@@ -3691,46 +3684,72 @@ private function brkv_test() As Byte
 	'End If
 	Return FALSE
 End Function
+''WORKAROUND
+function get_context(thread as handle)as integer
+	Dim vcontext As CONTEXT
+	dim as integer  contextadr=@vcontext
+print "get adr vcontext=";contextadr,contextadr mod 16
+	vcontext.contextflags=CONTEXT_CONTROL
+	GetThreadContext(thread,@vcontext)
+	print "get=";vcontext.regip
+	messbox("get regip","valeur de ="+str(vcontext.regip))
+	return vcontext.regip
+end function
 '=======================================================
 '' after stopping run  retrieves all procedures
 '=======================================================
 private sub proc_runnew()
-   Dim vcontext As CONTEXT
-   Dim libel As String
-   Dim As UInteger regbp,regip,regbpnb,regbpp(PROCRMAX)
-   Dim As ULong j,k,pridx(PROCRMAX),calin(PROCRMAX)
-   Dim tv As integer
-   vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER
-   'loading with rbp/ebp and proc index
-   For i As Integer =0 To threadnb
-   	regbpnb=0
+	dim as integer dummy
+	Dim vcontext As CONTEXT
+	Dim libel As String
+	Dim As UInteger regbp,regip,regbpnb,regbpp(PROCRMAX)
+	Dim As ULong j,k,pridx(PROCRMAX),calin(PROCRMAX)
+	Dim tv As integer
+	vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER
+	'dim as INTEGER contextadr=@vcontext
+	if cast(integer,@vcontext) mod 16 <>0 then
+		messbox("PRBM","Context not 16byte aligned")
+	EndIf
+print "nb thread=";threadnb
+	''loading with rbp/ebp and proc index
+	For i As Integer =0 To threadnb
+		regbpnb=0
 		GetThreadContext(thread(i).hd,@vcontext)
-		regbp=vcontext.regbp:regip=vcontext.regip 'current proc
+		regbp=vcontext.regbp
+		regip=vcontext.regip 'current proc
+
 		While 1
 			For j =1 To procnb
+print "proc_runnew j=";j,proc(j).nm,proc(j).db,proc(j).fn,regip
+			
 			   If regip>=proc(j).db And regip<=proc(j).fn Then
 			   	regbpnb+=1:regbpp(regbpnb)=regbp:pridx(regbpnb)=j
+			   	
+print "proc_runnew j=";j,regbpnb,proc(j).nm
 			   	Exit For
 			   EndIf
 			Next
 			If j>procnb Then Exit While
-			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp+SizeOf(integer)),@regip,SizeOf(Integer),0) 'return EIP/RIP    12/07/2015 4 replaced by sizeof(integer)
+			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp+SizeOf(integer)),@regip,SizeOf(Integer),0) 'return EIP/RIP
 			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp)                ,@regbp,SizeOf(integer),0) 'previous RBP/EBP
-
 			calin(regbpnb)=line_call(regip)
+
 		Wend
 		'delete only if needed
 		j=regbpnb:k=0
+print "proc_runnew j=regbpnb nbprocs j=";j,procrnb
 		While k<procrnb
 			k+=1
 			If procr(k).thid <> thread(i).id Then Continue While
 			If procr(k).idx=pridx(j) Then
 				j-=1 'running proc still existing so kept
 			Else
+print "proc_runnew del k =";k
 				proc_del(k) 'delete procr
 				k-=1 'to take in account that a procr has been deleted
 			EndIf
 		Wend
+print "proc_runnew nb new procs j=";j
 		'create new procrs
 		For k As Integer =j To 1 Step -1
 			If procrnb=PROCRMAX Then
@@ -3762,7 +3781,7 @@ private sub proc_runnew()
 			libel+=proc(pridx(k)).nm+":"+proc_retval(pridx(k))
 			If flagverbose Then libel+=" ["+Str(proc(pridx(k)).db)+"]"
 
-				vrr(vrrnb).tv=AddTreeViewItem(GTVIEWVAR,"Not yet filled",cast (hicon, 0),0,TVI_LAST,tv)
+			vrr(vrrnb).tv=AddTreeViewItem(GTVIEWVAR,"Not yet filled",cast (hicon, 0),0,TVI_LAST,tv)
 			procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,libel,cast (hicon, 0),0,tv,0)
 
 			thread(i).plt=procr(procrnb).tv 'keep handle last item
@@ -3770,17 +3789,19 @@ private sub proc_runnew()
 
 			var_ini(procrnb,proc(procr(procrnb).idx).vr,proc(procr(procrnb).idx+1).vr-1)
 			procr(procrnb+1).vr=vrrnb+1
-			If proc(procsv).nm="main" Then procr(procrnb).vr=1 'constructors for shared they are executed before main so reset index for first variable of main 04/02/2014
+			If proc(procsv).nm="main" Then procr(procrnb).vr=1 'constructors for shared they are executed before main so reset index for first variable of main
 			proc_watch(procrnb) 'reactivate watched var
 		Next
    Next
 End Sub
-'======================================================
-private sub gest_brk(ad As Integer)
-   Dim As UInteger i,debut=1,fin=linenb+1,adr,iold
+'========================================================
+''  handles breakpoints
+'========================================================
+private sub gest_brk(ad As Integer,byval rln as integer =-1)
+   Dim As Integer i,debut=1,fin=linenb+1,adr,iold
    Dim vcontext As CONTEXT
 
-   'print "gest brk adr=";ad
+   print "gest brk adr=";ad,rln
 
    'egality added in case attach (example access violation) without -g option, ad=procfn=0....
 	If ad>=procfn Then
@@ -3792,28 +3813,32 @@ private sub gest_brk(ad As Integer)
 	dbg_prt2("AD gest brk="+hex(ad)+" th="+Str(threadcur))
 	'show_context
 
-	i=thread(threadcur).sv+1
+
 	proccurad=ad
-
-	If rline(i).ad<>ad Then 'hope next source line is next executed line (optimization)
-		While 1
-			iold=i
-			i=(debut+fin)\2 'first consider that the addresses are sorted increasing order
-			If i=iold Then 'loop
-				For j As Integer =1 To linenb
-					If rline(j).ad=ad Then i=j:Exit While
-				Next
-			End If
-			If ad>rLine(i).ad Then
-				debut=i
-			ElseIf ad<rLine(i).ad Then
-				fin=i
-			Else
-				Exit While
-			End If
-		Wend
-	EndIf
-
+		
+	if rln=-1 then ''search the line using address
+		i=thread(threadcur).sv+1
+		If rline(i).ad<>ad Then 'hope next source line is next executed line (optimization)
+			While 1
+				iold=i
+				i=(debut+fin)\2 'first consider that the addresses are sorted increasing order
+				If i=iold Then 'loop
+					For j As Integer =1 To linenb
+						If rline(j).ad=ad Then i=j:Exit While
+					Next
+				End If
+				If ad>rLine(i).ad Then
+					debut=i
+				ElseIf ad<rLine(i).ad Then
+					fin=i
+				Else
+					Exit While
+				End If
+			Wend
+		EndIf
+		rln=i
+	end if
+'' ========================= move in step/stepauto ???
 	''restore CC previous line
 	If thread(threadcur).sv<>-1 Then WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0)
    ''thread changed by threadcreate or by mutexunlock
@@ -3829,7 +3854,7 @@ private sub gest_brk(ad As Integer)
 	EndIf
 
 	thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=i
-	procsv=rline(i).px
+	procsv=rline(rln).px
 	'dbg_prt2("proc ="+Str(procsv)+" "+proc(procsv).nm+" "+hex(proc(procsv).db)+" "+source(proc(procsv).sr)+" "+hex(proccurad))
 	'dbg_prt2("line="+Str(rline(i).nu))
 
@@ -3837,9 +3862,10 @@ private sub gest_brk(ad As Integer)
 	vcontext.contextflags=CONTEXT_CONTROL
 	GetThreadContext(threadcontext,@vcontext)
 
+
 	If proccurad=proc(procsv).db Then 'is first proc instruction
 
-		If rline(i).sv=85 Then'check if the first instruction is push ebp opcode=85 / push rbp opcode=&h55=85dec
+		If rline(rln).sv=85 Then'check if the first instruction is push ebp opcode=85 / push rbp opcode=&h55=85dec
 			'in this case there is a prologue
 			 'at the beginning of proc EBP not updated so use ESP
 			procsk=vcontext.regsp-SizeOf(Integer) 'ESP-4 for respecting prologue : push EBP then mov ebp,esp / 64bit push rbp then mov rbp,rsp
@@ -3863,70 +3889,43 @@ private sub gest_brk(ad As Integer)
 	vcontext.regip=ad
 
 	setThreadContext(threadcontext,@vcontext)
+
 	'dbg_prt2("PE"+Str(thread(threadcur).pe)+" "+Str(proccurad)+" "+Str(proc(procsv).fn))
 	If thread(threadcur).pe Then 'if previous instruction was the last of proc
 		If proccurad<>proc(procsv).db Then
-			procsk=vcontext.regbp 'reload procsk with rbp/ebp 04/02/2014 test added for case constructor on shared
+			procsk=vcontext.regbp 'reload procsk with rbp/ebp test added for case constructor on shared
 		EndIf
 		proc_end():thread(threadcur).pe=FALSE
 	EndIf
 
 	If proccurad=proc(procsv).db Then 'is first instruction ?
-		If proctop Then
-			runtype=RTSTEP
-			procad=0:procin=0:proctop=FALSE:procbot=0' step call execute one step to reach first line
-		EndIf
 		proc_new
 		thread_resume():Exit Sub
 	ElseIf proccurad=proc(procsv).fn Then
 		thread(threadcur).pe=TRUE        'is last instruction ?
 	EndIf
-
+''=========== end of code to move ========================================================
 	If runtype=RTRUN Then
-		' test breakpoint on line
-		If brk_test2(proccurad) Then
-			fasttimer=Timer-fasttimer
-			runtype=RTSTEP
-			procad=0:procin=0:proctop=FALSE:procbot=0
-			dsp_change(i)
-			brk_del(0)
-			Exit Sub
-		EndIf
-		'test beakpoint on var
-		If brkv.adr1<>0 Then
-			If brkv_test() Then
-				runtype=RTSTEP
-				procad=0:procin=0:proctop=FALSE:procbot=0
-				dsp_change(i)
-				Exit Sub
-			EndIf
-		End If
-		If procad Then 	'test out
-			If proc(procad).fn=proccurad Then procad=0:procin=0:proctop=FALSE:procbot=0:runtype=RTSTEP 'still running ONE step before stopping
-		ElseIf procin Then 'test over
-			If procsk>=procin Then procad=0:procin=0:proctop=FALSE:procbot=0:runtype=RTSTEP:dsp_change(i):Exit Sub
-		ElseIf procbot Then 'test end of proc
-			 If proc(procbot).fn=proccurad Then procad=0:procin=0:proctop=FALSE:procbot=0:runtype=RTSTEP:dsp_change(i):Exit Sub 'stop on end of proc STEPRETURN
-		End If
-		thread_resume()
-	ElseIf runtype=RTRUN Then
    		fasttimer=Timer-fasttimer
+		''==== useful ?? ===============
 	  	For i As Integer = 1 To linenb 'restore CC
    			WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
 	  	Next
-	  	'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(i).ad),@rLine(i).sv,1,0) 'restore old value for execution
-   		brk_test2(proccurad) ' cancel breakpoint on line, if command halt not really used
+		''==== end of code ===============
+	  	WriteProcessMemory(dbghand,Cast(LPVOID,rLine(brkol(0).index).ad),@rLine(brkol(0).index).sv,1,0) 'restore old value for execution
+   	''?????	brk_test(proccurad) ' cancel breakpoint on line, if command halt not really used
+   	
    		proc_runnew   'creating running proc tree
    		var_sh			'updating information about variables
    		runtype=RTSTEP
-   		dsp_change(i)
+   		dsp_change(rln)
 		brk_del(0)
    Else 'RTSTEP or RTAUTO
 		If flagattach Then proc_runnew:flagattach=FALSE
 		'NOTA If rline(i).nu=-1 Then
 			'fb_message("No line for this proc","Code added by compiler (constructor,...)")
 		'Else
-		dsp_change(i)
+		dsp_change(rln)
 		'EndIf
 		If runtype=RTAUTO Then
 			Sleep(autostep)
@@ -3947,6 +3946,180 @@ private sub gest_brk(ad As Integer)
 		EndIf
    End If
 End Sub
+
+
+''======================================================
+'private sub gest_brk2(ad As Integer)
+   'Dim As UInteger i,debut=1,fin=linenb+1,adr,iold
+   'Dim vcontext As CONTEXT
+'
+   ''print "gest brk adr=";ad
+'
+   ''egality added in case attach (example access violation) without -g option, ad=procfn=0....
+	'If ad>=procfn Then
+		'thread_resume()
+		'Exit Sub
+	'EndIf
+'
+	'dbg_prt2("")
+	'dbg_prt2("AD gest brk="+hex(ad)+" th="+Str(threadcur))
+	''show_context
+'
+	'i=thread(threadcur).sv+1
+	'proccurad=ad
+'
+	'If rline(i).ad<>ad Then 'hope next source line is next executed line (optimization)
+		'While 1
+			'iold=i
+			'i=(debut+fin)\2 'first consider that the addresses are sorted increasing order
+			'If i=iold Then 'loop
+				'For j As Integer =1 To linenb
+					'If rline(j).ad=ad Then i=j:Exit While
+				'Next
+			'End If
+			'If ad>rLine(i).ad Then
+				'debut=i
+			'ElseIf ad<rLine(i).ad Then
+				'fin=i
+			'Else
+				'Exit While
+			'End If
+		'Wend
+	'EndIf
+'
+	'''restore CC previous line
+	'If thread(threadcur).sv<>-1 Then WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0)
+   '''thread changed by threadcreate or by mutexunlock
+	'If threadcur<>threadprv Then
+		'If thread(threadprv).sv<>i Then 'don't do it if same line otherwise all is blocked.....not sure it's usefull
+			'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadprv).sv).ad),@breakcpu,1,0) 'restore CC
+		'EndIf
+		'stopcode=CSNEWTHRD  'status HALT NEW THREAD
+		'runtype=RTSTEP
+		'thread_text(threadprv) 'not next executed
+		'thread_text(threadcur) 'next executed
+		'threadprv=threadcur
+	'EndIf
+'
+	'thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=i
+	'procsv=rline(i).px
+	''dbg_prt2("proc ="+Str(procsv)+" "+proc(procsv).nm+" "+hex(proc(procsv).db)+" "+source(proc(procsv).sr)+" "+hex(proccurad))
+	''dbg_prt2("line="+Str(rline(i).nu))
+'
+	''get and update registers
+	'vcontext.contextflags=CONTEXT_CONTROL
+	'GetThreadContext(threadcontext,@vcontext)
+'
+	'If proccurad=proc(procsv).db Then 'is first proc instruction
+'
+		'If rline(i).sv=85 Then'check if the first instruction is push ebp opcode=85 / push rbp opcode=&h55=85dec
+			''in this case there is a prologue
+			 ''at the beginning of proc EBP not updated so use ESP
+			'procsk=vcontext.regsp-SizeOf(Integer) 'ESP-4 for respecting prologue : push EBP then mov ebp,esp / 64bit push rbp then mov rbp,rsp
+		'Else
+			'If procrnb<>0 Then  'no main and no prologue so naked proc, procrnb not yet updated
+			   'procsk=vcontext.regsp
+			   'thread(threadcur).nk=procsk
+			'Else
+				'procsk=vcontext.regsp-20 'if gcc>3 for main prologue is different
+			'EndIf
+		'End If
+	'else
+		''only for naked, check if return by comparing top of stack because no epilog
+		'If thread(threadcur).nk Then
+			'If vcontext.regsp>thread(threadcur).nk Then
+				'thread(threadcur).pe=TRUE
+				'thread(threadcur).nk=0
+			'EndIf
+		'End If
+	'EndIf
+	'vcontext.regip=ad
+'
+	'setThreadContext(threadcontext,@vcontext)
+	''dbg_prt2("PE"+Str(thread(threadcur).pe)+" "+Str(proccurad)+" "+Str(proc(procsv).fn))
+	'If thread(threadcur).pe Then 'if previous instruction was the last of proc
+		'If proccurad<>proc(procsv).db Then
+			'procsk=vcontext.regbp 'reload procsk with rbp/ebp 04/02/2014 test added for case constructor on shared
+		'EndIf
+		'proc_end():thread(threadcur).pe=FALSE
+	'EndIf
+'
+	'If proccurad=proc(procsv).db Then 'is first instruction ?
+		'If proctop Then
+			'runtype=RTSTEP
+			'procad=0:procin=0:proctop=FALSE:procbot=0' step call execute one step to reach first line
+		'EndIf
+		'proc_new
+		'thread_resume():Exit Sub
+	'ElseIf proccurad=proc(procsv).fn Then
+		'thread(threadcur).pe=TRUE        'is last instruction ?
+	'EndIf
+'
+	'If runtype=RTRUN Then
+		'' test breakpoint on line
+		'If brk_test2(proccurad) Then
+			'fasttimer=Timer-fasttimer
+			'runtype=RTSTEP
+			'procad=0:procin=0:proctop=FALSE:procbot=0
+			'dsp_change(i)
+			'brk_del(0)
+			'Exit Sub
+		'EndIf
+		''test beakpoint on var
+		'If brkv.adr1<>0 Then
+			'If brkv_test() Then
+				'runtype=RTSTEP
+				'procad=0:procin=0:proctop=FALSE:procbot=0
+				'dsp_change(i)
+				'Exit Sub
+			'EndIf
+		'End If
+		'If procad Then 	'test out
+			'If proc(procad).fn=proccurad Then procad=0:procin=0:proctop=FALSE:procbot=0:runtype=RTSTEP 'still running ONE step before stopping
+		'ElseIf procin Then 'test over
+			'If procsk>=procin Then procad=0:procin=0:proctop=FALSE:procbot=0:runtype=RTSTEP:dsp_change(i):Exit Sub
+		'ElseIf procbot Then 'test end of proc
+			 'If proc(procbot).fn=proccurad Then procad=0:procin=0:proctop=FALSE:procbot=0:runtype=RTSTEP:dsp_change(i):Exit Sub 'stop on end of proc STEPRETURN
+		'End If
+		'thread_resume()
+	'ElseIf runtype=RTRUN Then
+   		'fasttimer=Timer-fasttimer
+	  	'For i As Integer = 1 To linenb 'restore CC
+   			'WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
+	  	'Next
+	  	''WriteProcessMemory(dbghand,Cast(LPVOID,rLine(i).ad),@rLine(i).sv,1,0) 'restore old value for execution
+   		'brk_test2(proccurad) ' cancel breakpoint on line, if command halt not really used
+   		'proc_runnew   'creating running proc tree
+   		'var_sh			'updating information about variables
+   		'runtype=RTSTEP
+   		'dsp_change(i)
+		'brk_del(0)
+   'Else 'RTSTEP or RTAUTO
+		'If flagattach Then proc_runnew:flagattach=FALSE
+		''NOTA If rline(i).nu=-1 Then
+			''fb_message("No line for this proc","Code added by compiler (constructor,...)")
+		''Else
+		'dsp_change(i)
+		''EndIf
+		'If runtype=RTAUTO Then
+			'Sleep(autostep)
+			'If threadaut>1 Then 'at least 2 threads
+				'Dim As Integer c=threadcur
+				'Do
+					'c+=1:If c>threadnb Then c=0
+				'Loop Until thread(c).exc
+				'thread_change(c)
+			'EndIf
+			'thread_resume
+		'EndIf
+		'If threadsel<>threadcur AndAlso messbox("New Thread","Previous thread "+Str(thread(threadsel).id)+" changed by "+Str(thread(threadcur).id) _
+				'+Chr(10)+Chr(13)+" Keep new one ?",MB_YESNO)=IDNO Then
+				'thread_change(threadsel)
+		'Else
+			'threadsel=threadcur
+		'EndIf
+   'End If
+'End Sub
 '====================================================================
 ''  load shared and common variables, default=no dll number (d=0)
 '====================================================================
@@ -4134,7 +4307,7 @@ private sub reinit()
 	dumpadr=0
 	brkv_set(0) ''no break on var
 	brknb=0 ''no break on line
-	brkol(0).ad=0   ''no break on cursor
+	brk_del(0) ''no break on cursor
 	DeleteTreeViewItemAll(GTVIEWVAR)
 	PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)
 	DeleteTreeViewItemAll(GTVIEWTHD)
@@ -4808,8 +4981,13 @@ private sub debug_event()
 	print "debug_event 00";time,dbgevent,debugdata,KDBGRKPOINT
 	select case as const dbgevent
 		Case KDBGRKPOINT
-			gest_brk(debugdata)
-
+			if stopcode=CSSTEP orelse stopcode=CSMEM orelse stopcode=CSVAR orelse stopcode=CSUSER then
+				gest_brk(debugdata)
+			else
+			print "KDBGRKPOINT",debugdata,brkol(debugdata).ad,brkol(debugdata).index
+				gest_brk(brkol(debugdata).ad,brkol(debugdata).index) ''address and line index
+			end if
+			
 		Case KDBGCREATEPROC
 			srcstart=sourcenb+1
 			if debug_extract(debugdata,exename)=0 then ''otherwise there is a problem (no debug data or when reading debuggee memory)

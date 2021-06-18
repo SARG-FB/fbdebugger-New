@@ -466,7 +466,7 @@ sub brk_marker(brkidx as integer)
 		if brkidx=0 then
 			if brkol(brkidx).typ<>0 then
 				typ=7 ''red circle
-				'messbox("red cricle on line=",str(lline+1))
+				'messbox("red circle on line=",str(lline+1))
 			end if
 		else
 			typ=brkol(brkidx).typ  ''permanent cond tempo --> marker 1 or 2 or 3
@@ -1162,6 +1162,7 @@ private sub menu_set()
 	MenuItem(MNBRKVC,HMenuvar2, "Var / const")
 	MenuItem(MNBRKV1,HMenuvar2, "Var1  (+ var2)")
 	MenuItem(MNBRKV2,HMenuvar2, "Var2")
+	MenuItem(MNBRKVS,HMenuvar2, "Show BP if any")
 	HMenuvar6=OpenSubMenu(HMenuvar,"Breakpoint conditional")
 	MenuItem(MNBRCVC,HMenuvar6, "Var / const")
 	MenuItem(MNBRCV1,HMenuvar6, "Var1  (+ var2 then select line)")

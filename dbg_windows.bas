@@ -196,7 +196,7 @@ private sub thread_search(tid as integer,bptype as integer,ddata as integer)
 			threadhs=threadcontext
 			suspendthread(threadcontext)
 			threadcur=i
-			debugbptype=bptype
+			stopcode=bptype
 			debugdata=ddata
 			debugevent=KDBGRKPOINT
 			mutexlock blocker ''waiting the Go from main thread
@@ -287,48 +287,54 @@ While 1
 							if runtype=RTRUN then
 								if brkv.adr1<>0 then
 									if brk_test(brkv.adr1,brkv.adr2,brkv.typ,brkv.val,brkv.ttb) then
-										thread_search(DebugEv.dwThreadId,KBPMEM,adr)
+										if brkv.ivr1=0 then
+											thread_search(DebugEv.dwThreadId,CSMEM,adr)
+										else
+											thread_search(DebugEv.dwThreadId,CSVAR,adr)
+										end if
 										exit while
 									end if
 								end if
 
 								''retrieves BP corresponding at address (loop) -->bpidx
 								For bpidx =0 To brknb
+									If brkol(bpidx).typ>50 Then Continue For 'disabled
 									if brkol(bpidx).ad=adr then
+										print "BP found=";bpidx
 										exit for
 									EndIf
 								Next
 
-								if bpidx=0 then ''BPLINE (line, cursor, over,eop,xop)
-									thread_search(DebugEv.dwThreadId,KBPLINE,bpidx)
+								if bpidx=0 then ''BP on LINE (line, cursor, over,eop,xop)
+									print "CSLINE"
+									thread_search(DebugEv.dwThreadId,CSLINE,bpidx)
 									exit while
 								end if
 
 								bptyp=brkol(bpidx).typ
-								if bptyp=2 then  ''BP conditional mem/const
-									if brk_test(brkol(bpidx).adrvar1,,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
-										thread_search(DebugEv.dwThreadId,KBPCOND,bpidx)
-										exit while
-									end if
-								elseif bptyp=3 then  ''BP conditional mem/mem
+								if bptyp=2 or bptyp=3 then  ''BP conditional
 									if brk_test(brkol(bpidx).adrvar1,brkol(bpidx).adrvar2,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
-										thread_search(DebugEv.dwThreadId,KBPCOND,bpidx)
+										thread_search(DebugEv.dwThreadId,CSCOND,bpidx)
 										exit while
 									end if
 								elseif bptyp=4 then ''BP counter
 									If brkol(bpidx).counter>0 Then
 										brkol(bpidx).counter-=1'decrement counter
 									else
-										thread_search(DebugEv.dwThreadId,KBPCOUNT,bpidx)
+										thread_search(DebugEv.dwThreadId,CSCOUNT,bpidx)
 									end if
 									exit while
 								else ''simple BP (perm/tempo)
-									thread_search(DebugEv.dwThreadId,KBPLINE,bpidx)
+									thread_search(DebugEv.dwThreadId,CSBRKPT,bpidx)
 									exit while
 								end if
 							else ''RTSTEP/RTAUTO
 							print "in step/auto",adr
-								thread_search(DebugEv.dwThreadId,KBPSTEP,adr)
+								if stopcode<>0 then ''CSUSER
+									thread_search(DebugEv.dwThreadId,stopcode,adr)
+								else
+									thread_search(DebugEv.dwThreadId,CSSTEP,adr)
+								end if
 								exit while
 							end if
 						wend

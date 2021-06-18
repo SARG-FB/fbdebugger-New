@@ -254,6 +254,7 @@ enum
 	MNBRKVC
 	MNBRKV1
 	MNBRKV2
+	MNBRKVS
 	MNBRCVC
 	MNBRCV1
 	MNBRCV2
@@ -714,25 +715,18 @@ Enum ''type of running
 	RTCRASH
 End enum
 
-enum ''type of breakpoint
-	KBPSTEP
-	KBPMEM
-	KBPLINE
-	KBPCOND
-	KBPCOUNT
-End Enum
-
-Enum ''code stop
+enum ''stop code
 	CSSTEP=0
-	CSCURSOR
-	CSBRKTEMPO
-	CSBRK
-	CSBRKV
-	CSBRKM
-	CSHALTBU
-    CSACCVIOL
-    CSNEWTHRD
-    CSEXCEP
+	CSLINE
+	CSBRKPT
+	CSCOND
+	CSVAR
+	CSMEM
+	CSCOUNT
+	CSUSER
+	CSACCVIOL
+	CSNEWTHRD
+	CSEXCEP
 End Enum
 
 ''for dissassembly
@@ -901,7 +895,7 @@ End type
 
 ''========================= Breakpoint on line ===================================
 Const BRKMAX=10 'breakpoint index zero for "run to cursor"
-Type breakol
+Type tbrkol
 	isrc    As UShort  'source index
 	nline   As Integer 'num line for display
 	index   As Integer 'index for rline
@@ -1249,6 +1243,7 @@ enumdef(MNTRCKRST)="MNTRCKRST"
 enumdef(MNBRKVC)="MNBRKVC"
 enumdef(MNBRKV1)="MNBRKV1"
 enumdef(MNBRKV2)="MNBRKV2"
+enumdef(MNBRKVS)="MNBRKVS"
 enumdef(MNBRCVC)="MNBRCVC"
 enumdef(MNBRCV1)="MNBRCV1"
 enumdef(MNBRCV2)="MNBRCV2"

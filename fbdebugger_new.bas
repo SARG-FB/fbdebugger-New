@@ -12,8 +12,12 @@ blocker=mutexcreate
 MutexLock blocker
 dim shared as integer debugevent
 dim shared as integer debugdata ''index of bp or address of BP (case BP on mem)
-dim shared as integer debugbptype ''step, mem, lone, cond , count
 dim shared as STRING  libelexception
+
+''codes when debuggee stopped and corresponding texts
+Dim Shared stopcode As Integer
+Dim Shared stoplibel(20) As String*17 =>{"","BP On line","BP perm/tempo","BP cond","BP var","BP mem"_
+,"BP count","Halt by user","Access violation","New thread","Exception"}
 
 ''source files
 dim Shared as String  source(SRCMAX)        ''source names
@@ -141,7 +145,7 @@ Dim Shared wtchexe(9,WTCHMAX) As String 'watched var (no memory for next executi
 Dim Shared wtchnew As Integer 'to keep index after creating new watched
 
 ''breakpoint on line
-dim Shared as breakol brkol(BRKMAX)
+dim Shared as tbrkol brkol(BRKMAX)
 dim shared as integer brknb
 dim Shared as String brkexe(9,BRKMAX) 'to save breakpoints by session
 dim shared as hwnd hbrkbx ''window for managing breakpoints
@@ -198,12 +202,6 @@ Dim Shared htviewprc As HWND 'all proc
 Dim Shared htviewthd As HWND 'all threads
 Dim Shared htviewwch As HWND 'watched variables
 Dim Shared hlviewdmp as hwnd 'dump
-
-''codes when debuggee stopped and corresponding texts
-Dim Shared stopcode As Integer
-Dim Shared stoplibel(20) As String*17 =>{"","cursor","tempo break","break","Break var","Break mem"_
-,"Halt by user","Access violation","New thread","Exception"}
-
 
 ''variable find
 Dim Shared As tvarfind varfind
