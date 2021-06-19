@@ -44,7 +44,7 @@ dim Shared As Integer rlinecur ''line to be executed
 dim Shared as tproc proc(PROCMAX) ''list of procs in code
 dim shared As integer procnb
 
-dim Shared As integer procsv,procad,procin,procsk,proccurad,procregsp,procfn,procbot,proctop,procsort
+dim Shared As integer procsv,procsk,proccurad,procfn,procsort
 dim Shared As tprocr procr(PROCRMAX) ''list of running proc
 dim shared As Integer procrnb
 

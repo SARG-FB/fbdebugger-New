@@ -889,13 +889,15 @@ private sub gadget_action(igadget as LONG)
 			if brkol(brkidx).typ=2 or brkol(brkidx).typ=3 then
 				var_fill(brkol(brkidx).ivar1)
 				var tempo=varfind.nm
-				var tst= brk_comp(brkol(brkidx).ttb)
+				var tst=brk_comp(brkol(brkidx).ttb)
 				if brkol(brkidx).typ=2 then
 					messbox("BP cond with ",tempo+" "+*tst+" "+str(brkol(brkidx).val.vlongint))
 				else
 					var_fill(brkol(brkidx).ivar2)
 					messbox("BP cond with ",tempo+" "+*tst+" "+varfind.nm)
 				end if
+			elseif brkol(brkidx).typ=4 then
+				messbox("BP counter ","Current="+str(brkol(brknb).counter)+chr(10)+"Initial="+str(brkol(brknb).cntrsav))
 			EndIf
 
 		case GLOG ''nothing to do
@@ -975,7 +977,7 @@ private sub button_action(button as integer)
 					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
 				Next
 			Else
-				runtype=RTSTEP:procad=0:procin=0:proctop=FALSE:procbot=0
+				runtype=RTSTEP
 			EndIf
 			Stopcode=CSUSER
 

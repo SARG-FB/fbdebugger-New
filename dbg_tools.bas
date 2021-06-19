@@ -2827,7 +2827,7 @@ End Sub
 '================================================================================
 '' tests the values for breakpoint on var/mem or conditionnal
 '================================================================================
-private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,data2 as valeurs, comptype as byte) As integer
+private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,data2 as valeurs,comptype as byte) As integer
 
 	'Dim As Integer adr,temp2,temp3
 	'Dim As String strg1,strg2,strg3
@@ -2836,7 +2836,6 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 	Dim As Integer flag=0
 	'dim as integer recup(20)
 	dim as valeurs recup1,recup2
-
 
 		'If brkv.arr Then 'watching dyn array element ?
 			'adr=vrr(brkv.ivr).ini
@@ -2870,7 +2869,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 				If 21 And comptype Then
 					flag=1
 				EndIf
-			ElseIf recup2.vbyte<recup1.vbyte Then
+			ElseIf recup2.vbyte=recup1.vbyte Then
 				If 35 And comptype Then
 					flag=1
 				EndIf
@@ -2891,7 +2890,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 				If 21 And comptype Then
 					flag=1
 				EndIf
-			ElseIf recup2.vubyte<recup1.vubyte Then
+			ElseIf recup2.vubyte=recup1.vubyte Then
 				If 35 And comptype Then
 					flag=1
 				EndIf
@@ -2912,7 +2911,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 				If 21 And comptype Then
 					flag=1
 				EndIf
-			ElseIf recup2.vshort<recup1.vshort Then
+			ElseIf recup2.vshort=recup1.vshort Then
 				If 35 And comptype Then
 					flag=1
 				EndIf
@@ -2933,7 +2932,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 				If 21 And comptype Then
 					flag=1
 				EndIf
-			ElseIf recup2.vushort<recup1.vushort Then
+			ElseIf recup2.vushort=recup1.vushort Then
 				If 35 And comptype Then
 					flag=1
 				EndIf
@@ -2954,7 +2953,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 				If 21 And comptype Then
 					flag=1
 				EndIf
-			ElseIf recup2.vinteger<recup1.vinteger Then
+			ElseIf recup2.vinteger=recup1.vinteger Then
 				If 35 And comptype Then
 					flag=1
 				EndIf
@@ -2975,7 +2974,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 				If 21 And comptype Then
 					flag=1
 				EndIf
-			ElseIf recup2.vuinteger<recup1.vuinteger Then
+			ElseIf recup2.vuinteger=recup1.vuinteger Then
 				If 35 And comptype Then
 					flag=1
 				EndIf
@@ -2988,6 +2987,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 			else
 				recup2=data2
 			EndIf
+
 			if recup2.vlongint>recup1.vlongint then
 				If 26 And comptype Then
 					flag=1
@@ -2996,12 +2996,12 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 				If 21 And comptype Then
 					flag=1
 				EndIf
-			ElseIf recup2.vlongint<recup1.vlongint Then
+			ElseIf recup2.vlongint=recup1.vlongint Then
 				If 35 And comptype Then
 					flag=1
 				EndIf
 			End If
-
+			print "recup 1 et 2 =";recup1.vlongint,recup2.vlongint,flag
 		Case 10 'uinteger64/ulonginit
 			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
 			if adr2 then
@@ -3017,7 +3017,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 				If 21 And comptype Then
 					flag=1
 				EndIf
-			ElseIf recup2.vulongint<recup1.vulongint Then
+			ElseIf recup2.vulongint=recup1.vulongint Then
 				If 35 And comptype Then
 					flag=1
 				EndIf
@@ -3041,8 +3041,9 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 				'If brkv.vst=strg1
 				'Then flag=1
 			'EndIf
-		return flag ''0 test false / 1 test true
+
 	End Select
+	return flag ''0 test false / 1 test true
 end function
 '=======================================================================
 '' removes all ABP / disables all UBP if necessary
@@ -3177,6 +3178,7 @@ select case t
 					brkol(brknb).ivar1=brkidx1
 					brkol(brknb).val.vlongint=brkdata2.vlongint
 					brkol(brknb).ttb=brkttb
+					brkol(brknb).datatype=brkdatatype
 					brktyp=0
 					modify_menu(MNSETBRKC,HMenusource,"Set/Clear [C]onditionnal Breakpoint")
 				case 3
@@ -3185,6 +3187,7 @@ select case t
 					brkol(brknb).adrvar2=brkadr2
 					brkol(brknb).ivar2=brkidx2
 					brkol(brknb).ttb=brkttb
+					brkol(brknb).datatype=brkdatatype
 					brktyp=0
 					modify_menu(MNSETBRKC,HMenusource,"Set/Clear [C]onditionnal Breakpoint")
 				case 4 'change value counter
@@ -3684,17 +3687,6 @@ private function brkv_test() As Byte
 	'End If
 	Return FALSE
 End Function
-''WORKAROUND
-function get_context(thread as handle)as integer
-	Dim vcontext As CONTEXT
-	dim as integer  contextadr=@vcontext
-print "get adr vcontext=";contextadr,contextadr mod 16
-	vcontext.contextflags=CONTEXT_CONTROL
-	GetThreadContext(thread,@vcontext)
-	print "get=";vcontext.regip
-	messbox("get regip","valeur de ="+str(vcontext.regip))
-	return vcontext.regip
-end function
 '=======================================================
 '' after stopping run  retrieves all procedures
 '=======================================================
@@ -3838,6 +3830,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		EndIf
 		rln=i
 	end if
+	rlinecur=rln
 '' ========================= move in step/stepauto ???
 	''restore CC previous line
 	If thread(threadcur).sv<>-1 Then WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0)
@@ -3912,7 +3905,10 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
    			WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
 	  	Next
 		''==== end of code ===============
-	  	WriteProcessMemory(dbghand,Cast(LPVOID,rLine(brkol(0).index).ad),@rLine(brkol(0).index).sv,1,0) 'restore old value for execution
+		WriteProcessMemory(dbghand,Cast(LPVOID,rLine(rln).ad),@rLine(rln).sv,1,0) 'restore old value for execution
+		'if rln<>rLine(brkol(0).index then ''case BP cond/etc and run to cursor/EOP/XOP
+			'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(brkol(0).index).ad),@rLine(brkol(0).index).sv,1,0) 'restore old value for execution
+		'end if
    	''?????	brk_test(proccurad) ' cancel breakpoint on line, if command halt not really used
    	
    		proc_runnew   'creating running proc tree
@@ -4290,11 +4286,12 @@ private sub reinit()
 	vrbgbl=0:vrbloc=VGBLMAX:vrbgblprev=0
 	prun=FALSE
 	runtype=RTOFF
+	stopcode=0
 	flagmain=true
 	compilerversion=""
 	sourcenb=-1:dllnb=0
 	vrrnb=0:procnb=0:procrnb=0:linenb=0:cudtnb=0:arrnb=0:procr(1).vr=1
-	procin=0:procfn=0:procbot=0:proctop=FALSE
+	procfn=0
 	proc(1).vr=VGBLMAX+1 'for the first stored proc
 	udtcpt=0:udtmax=0
 	procsort=KPROCNM
@@ -4978,7 +4975,7 @@ private sub debug_event()
 	debugevent=KDBGNOTHING
 
 	if dbgevent = KDBGNOTHING then exit sub
-	print "debug_event 00";time,dbgevent,debugdata,KDBGRKPOINT
+	print "debug_event 00";time,dbgevent,debugdata,KDBGRKPOINT,"stopcode=";stopcode
 	select case as const dbgevent
 		Case KDBGRKPOINT
 			if stopcode=CSSTEP orelse stopcode=CSMEM orelse stopcode=CSVAR orelse stopcode=CSUSER then

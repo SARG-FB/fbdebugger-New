@@ -304,8 +304,8 @@ enum
 	MNEXCLINE ''show  next executed line
 	MNCREATHR ''show  line creating thread
 	MNTHRDLST ''list  threads
-	MNSHWPROC ''show  procin proc/var
-	MNSHPRSRC ''show  procin source
+	MNSHWPROC ''show  proc in proc/var
+	MNSHPRSRC ''show  proc in source
 	MNTCHNING ''call chain
 	MNTHRDEXP ''expand one thread
 	MNTHRDCOL ''collapse  all threads
