@@ -3098,7 +3098,6 @@ select case t
 
 	case 10 ''Skip current line / step over
 		'rln=line_exec(cln,"Run to cursor not possible, select an executable line")
-		messbox("skip","rlinecur="+str(rlinecur)+" "+str(rline(rlinecur).ad))
 		rln=rlinecur
 		For j As Integer =1 To procnb
 			If rline(rln).ad=proc(j).fn Then
@@ -3116,7 +3115,6 @@ select case t
 		brkol(0).nline=rline(rln).nu
 		brk_marker(0)
 		brk_unset() ''remove ABP + keep UBP or disable them ?
-		messbox("skip current line",str(cln)+" "+str(rln)+" "+str(rline(rln).ad)+" "+hex(rline(rln).ad))
 		thread_resume()
 
 	case 11 '' run until end of proc  = EOP
@@ -3557,136 +3555,6 @@ private sub brkv_set(a As Integer) ''break on variable change
 	'setgadgettext(GBRKVVALUE,brkv.vst)
 	'hidewindow(hbrkvbx,KSHOW)
 End Sub
-'===================== break on var ===============================================================
-private function brkv_test() As Byte
-	'Dim recup(20) As Integer,ptrs As pointeurs,flag As Integer=0
-	'Dim As Integer adr,temp2,temp3
-	'Dim As String strg1,strg2,strg3
-		'ptrs.pxxx=@recup(0)
-'
-		'If brkv.arr Then 'watching dyn array element ?
-			'adr=vrr(brkv.ivr1).ini
-			'ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,4,0)
-			'If adr<>brkv.arr Then brkv.adr+=brkv.arr-adr:brkv.arr=adr 'compute delta then add it if needed
-			'temp2=vrr(brkv.ivr).ini+2*SizeOf(Integer) 'adr global size
-			'ReadProcessMemory(dbghand,Cast(LPCVOID,temp2),@temp3,SizeOf(Integer),0)
-			'If brkv.adr>adr+temp3 Then 'out of limit ?
-				'brkv_set(0) 'erase
-				'Return FALSE
-			'End If
-		'End If
-		'''26 --> <> or > or >=
-		'''21 --> <> or < or <=
-		'''35 --> = or >= or <=
-		'''16 --> <>
-		'Select Case brkv.typ
-		'Case 2 'byte
-			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),1,0)
-			'If brkv.val.vbyte>*ptrs.pbyte Then
-				'If 26 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vbyte<*ptrs.pbyte Then
-				'If 21 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vbyte=*ptrs.pbyte Then
-				'If 35 And brkv.ttb Then flag=1
-			'End If
-		'Case 3 'ubyte
-			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),1,0)
-			'If brkv.val.vubyte<*ptrs.pubyte Then
-				'If 26 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vubyte>*ptrs.pubyte Then
-				'If 21 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vubyte=*ptrs.pubyte Then
-				'If 35 And brkv.ttb Then flag=1
-			'End If
-		'Case 5 'short
-			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),2,0)
-			'If brkv.val.vshort<*ptrs.pshort Then
-				'If 26 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vshort>*ptrs.pshort Then
-				'If 21 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vshort=*ptrs.pshort Then
-				'If 35 And brkv.ttb Then flag=1
-			'End If
-		'Case 6 'ushort
-			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),2,0)
-			'If brkv.val.vushort<*ptrs.pushort Then
-				'If 26 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vushort>*ptrs.pushort Then
-				'If 21 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vushort=*ptrs.pushort Then
-				'If 35 And brkv.ttb Then flag=1
-			'End If
-		'Case 1 'integer32/long
-			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),4,0)
-			'If brkv.val.vinteger<*ptrs.pinteger Then
-				'If 26 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vinteger>*ptrs.pinteger Then
-				'If 21 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vinteger=*ptrs.pinteger Then
-				'If 35 And brkv.ttb Then flag=1
-			'End If
-		'Case 8 'uinteger32/ulong       pointer
-			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),4,0)
-			'If brkv.val.vuinteger<*ptrs.puinteger Then
-				'If 26 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vuinteger>*ptrs.puinteger Then
-				'If 21 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vuinteger=*ptrs.puinteger Then
-				'If 35 And brkv.ttb Then flag=1
-			'End If
-		'Case 9 'integer64/longint
-			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),8,0)
-			'If brkv.val.vlongint<*ptrs.plongint Then
-				'If 26 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vlongint>*ptrs.plongint Then
-				'If 21 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vlongint=*ptrs.plongint Then
-				'If 35 And brkv.ttb Then flag=1
-			'End If
-		'Case 10 'uinteger64/ulonginit       pointer
-			'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@recup(0),8,0)
-			'If brkv.val.vulongint<*ptrs.pulongint Then
-				'If 26 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vulongint>*ptrs.pulongint Then
-				'If 21 And brkv.ttb Then flag=1
-			'ElseIf brkv.val.vulongint=*ptrs.pulongint Then
-				'If 35 And brkv.ttb Then flag=1
-			'End If
-		'Case 4,13,14
-			'If brkv.typ=13 Then  ' normal string
-				'ReadProcessMemory(dbghand,Cast(LPCVOID,brkv.adr),@adr,SizeOf(Integer),0) 'address ptr 25/07/2015 64bit
-			'Else
-				'adr=brkv.adr
-			'End If
-			'Clear recup(0),0,26 'max 25 char
-			'ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@recup(0),25,0) 'value
-			'strg1=*ptrs.pzstring
-			'If brkv.ttb=16 Then
-				'If brkv.vst<>strg1 Then flag=1
-			'Else
-				'If brkv.vst=strg1 Then flag=1
-			'EndIf
-		'End Select
-	'If flag Then
-		'If brkv.ivr=0 Then stopcode=CSBRKM Else stopcode=CSBRKV  ''memory or variable
-		'strg1=getGadgetText(GBRKVAR1) ''current string for break on var
-		'strg2=var_sh2(brkv.typ,brkv.adr,0) ''last parameter in var_sh2 can be zero because type has been changed and even its a pointer no need *
-'
-		'strg3=Left(strg1,InStr(strg1,">"))          ''beginning of string
-		'strg3+=Mid(strg2,InStr(strg2,">")+1,25)       ''max 25 characters in case of string, with others datatype no problem of lenght
-		'strg3+=Mid(strg1,InStr(strg1," Stop if"),99) ''end of string
-'
-		'If messbox("Break on var","Current value"+Mid(strg2,InStr(strg2,">")+1,25)+Chr(13)+"NB : Not yet updated in Proc/Var panel"+Chr(13)+Chr(13)+"Remove break condition ?"_
-			',MB_YESNO)=IDYES Then
-			'brkv_set(0)
-		'else
-			'SetGadgetText(GBRKVAR1,strg3)
-			'Modify_Menu(MNBRKVC,HMenuvar,strg3)
-		'end if
-		'Return TRUE
-	'End If
-	Return FALSE
-End Function
 '=======================================================
 '' after stopping run  retrieves all procedures
 '=======================================================
@@ -3698,14 +3566,13 @@ private sub proc_runnew()
 	Dim As ULong j,k,pridx(PROCRMAX),calin(PROCRMAX)
 	Dim tv As integer
 	vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER
-	'dim as INTEGER contextadr=@vcontext
 	if cast(integer,@vcontext) mod 16 <>0 then
 		messbox("PRBM","Context not 16byte aligned")
 	EndIf
-print "nb thread=";threadnb
+
 	''loading with rbp/ebp and proc index
 	For ithd As Integer =0 To threadnb
-		if thread(ithd).sv=-1 then print "thread skipped=";ithd:continue for
+		if thread(ithd).sv=-1 then continue for
 		regbpnb=0
 		GetThreadContext(thread(ithd).hd,@vcontext)
 		regbp=vcontext.regbp
@@ -3713,12 +3580,8 @@ print "nb thread=";threadnb
 
 		While 1
 			For j =1 To procnb
-print "proc_runnew j=";j,proc(j).nm,proc(j).db,proc(j).fn,regip
-			
 			   If regip>=proc(j).db And regip<=proc(j).fn Then
 			   	regbpnb+=1:regbpp(regbpnb)=regbp:pridx(regbpnb)=j
-			   	
-print "proc_runnew j=";j,regbpnb,proc(j).nm
 			   	Exit For
 			   EndIf
 			Next
@@ -3726,23 +3589,19 @@ print "proc_runnew j=";j,regbpnb,proc(j).nm
 			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp+SizeOf(integer)),@regip,SizeOf(Integer),0) 'return EIP/RIP
 			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp)                ,@regbp,SizeOf(integer),0) 'previous RBP/EBP
 			calin(regbpnb)=line_call(regip)
-
 		Wend
 		'delete only if needed
 		j=regbpnb:k=0
-print "proc_runnew j=regbpnb nbprocs j=";j,procrnb
 		While k<procrnb
 			k+=1
 			If procr(k).thid <> thread(ithd).id Then Continue While
 			If procr(k).idx=pridx(j) Then
 				j-=1 'running proc still existing so kept
 			Else
-print "proc_runnew del k =";k
 				proc_del(k) 'delete procr
 				k-=1 'to take in account that a procr has been deleted
 			EndIf
 		Wend
-print "proc_runnew nb new procs j=";j
 		'create new procrs
 		For k As Integer =j To 1 Step -1
 			If procrnb=PROCRMAX Then
@@ -3945,180 +3804,6 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		EndIf
    End If
 End Sub
-
-
-''======================================================
-'private sub gest_brk2(ad As Integer)
-   'Dim As UInteger i,debut=1,fin=linenb+1,adr,iold
-   'Dim vcontext As CONTEXT
-'
-   ''print "gest brk adr=";ad
-'
-   ''egality added in case attach (example access violation) without -g option, ad=procfn=0....
-	'If ad>=procfn Then
-		'thread_resume()
-		'Exit Sub
-	'EndIf
-'
-	'dbg_prt2("")
-	'dbg_prt2("AD gest brk="+hex(ad)+" th="+Str(threadcur))
-	''show_context
-'
-	'i=thread(threadcur).sv+1
-	'proccurad=ad
-'
-	'If rline(i).ad<>ad Then 'hope next source line is next executed line (optimization)
-		'While 1
-			'iold=i
-			'i=(debut+fin)\2 'first consider that the addresses are sorted increasing order
-			'If i=iold Then 'loop
-				'For j As Integer =1 To linenb
-					'If rline(j).ad=ad Then i=j:Exit While
-				'Next
-			'End If
-			'If ad>rLine(i).ad Then
-				'debut=i
-			'ElseIf ad<rLine(i).ad Then
-				'fin=i
-			'Else
-				'Exit While
-			'End If
-		'Wend
-	'EndIf
-'
-	'''restore CC previous line
-	'If thread(threadcur).sv<>-1 Then WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0)
-   '''thread changed by threadcreate or by mutexunlock
-	'If threadcur<>threadprv Then
-		'If thread(threadprv).sv<>i Then 'don't do it if same line otherwise all is blocked.....not sure it's usefull
-			'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadprv).sv).ad),@breakcpu,1,0) 'restore CC
-		'EndIf
-		'stopcode=CSNEWTHRD  'status HALT NEW THREAD
-		'runtype=RTSTEP
-		'thread_text(threadprv) 'not next executed
-		'thread_text(threadcur) 'next executed
-		'threadprv=threadcur
-	'EndIf
-'
-	'thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=i
-	'procsv=rline(i).px
-	''dbg_prt2("proc ="+Str(procsv)+" "+proc(procsv).nm+" "+hex(proc(procsv).db)+" "+source(proc(procsv).sr)+" "+hex(proccurad))
-	''dbg_prt2("line="+Str(rline(i).nu))
-'
-	''get and update registers
-	'vcontext.contextflags=CONTEXT_CONTROL
-	'GetThreadContext(threadcontext,@vcontext)
-'
-	'If proccurad=proc(procsv).db Then 'is first proc instruction
-'
-		'If rline(i).sv=85 Then'check if the first instruction is push ebp opcode=85 / push rbp opcode=&h55=85dec
-			''in this case there is a prologue
-			 ''at the beginning of proc EBP not updated so use ESP
-			'procsk=vcontext.regsp-SizeOf(Integer) 'ESP-4 for respecting prologue : push EBP then mov ebp,esp / 64bit push rbp then mov rbp,rsp
-		'Else
-			'If procrnb<>0 Then  'no main and no prologue so naked proc, procrnb not yet updated
-			   'procsk=vcontext.regsp
-			   'thread(threadcur).nk=procsk
-			'Else
-				'procsk=vcontext.regsp-20 'if gcc>3 for main prologue is different
-			'EndIf
-		'End If
-	'else
-		''only for naked, check if return by comparing top of stack because no epilog
-		'If thread(threadcur).nk Then
-			'If vcontext.regsp>thread(threadcur).nk Then
-				'thread(threadcur).pe=TRUE
-				'thread(threadcur).nk=0
-			'EndIf
-		'End If
-	'EndIf
-	'vcontext.regip=ad
-'
-	'setThreadContext(threadcontext,@vcontext)
-	''dbg_prt2("PE"+Str(thread(threadcur).pe)+" "+Str(proccurad)+" "+Str(proc(procsv).fn))
-	'If thread(threadcur).pe Then 'if previous instruction was the last of proc
-		'If proccurad<>proc(procsv).db Then
-			'procsk=vcontext.regbp 'reload procsk with rbp/ebp 04/02/2014 test added for case constructor on shared
-		'EndIf
-		'proc_end():thread(threadcur).pe=FALSE
-	'EndIf
-'
-	'If proccurad=proc(procsv).db Then 'is first instruction ?
-		'If proctop Then
-			'runtype=RTSTEP
-			'procad=0:procin=0:proctop=FALSE:procbot=0' step call execute one step to reach first line
-		'EndIf
-		'proc_new
-		'thread_resume():Exit Sub
-	'ElseIf proccurad=proc(procsv).fn Then
-		'thread(threadcur).pe=TRUE        'is last instruction ?
-	'EndIf
-'
-	'If runtype=RTRUN Then
-		'' test breakpoint on line
-		'If brk_test2(proccurad) Then
-			'fasttimer=Timer-fasttimer
-			'runtype=RTSTEP
-			'procad=0:procin=0:proctop=FALSE:procbot=0
-			'dsp_change(i)
-			'brk_del(0)
-			'Exit Sub
-		'EndIf
-		''test beakpoint on var
-		'If brkv.adr1<>0 Then
-			'If brkv_test() Then
-				'runtype=RTSTEP
-				'procad=0:procin=0:proctop=FALSE:procbot=0
-				'dsp_change(i)
-				'Exit Sub
-			'EndIf
-		'End If
-		'If procad Then 	'test out
-			'If proc(procad).fn=proccurad Then procad=0:procin=0:proctop=FALSE:procbot=0:runtype=RTSTEP 'still running ONE step before stopping
-		'ElseIf procin Then 'test over
-			'If procsk>=procin Then procad=0:procin=0:proctop=FALSE:procbot=0:runtype=RTSTEP:dsp_change(i):Exit Sub
-		'ElseIf procbot Then 'test end of proc
-			 'If proc(procbot).fn=proccurad Then procad=0:procin=0:proctop=FALSE:procbot=0:runtype=RTSTEP:dsp_change(i):Exit Sub 'stop on end of proc STEPRETURN
-		'End If
-		'thread_resume()
-	'ElseIf runtype=RTRUN Then
-   		'fasttimer=Timer-fasttimer
-	  	'For i As Integer = 1 To linenb 'restore CC
-   			'WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
-	  	'Next
-	  	''WriteProcessMemory(dbghand,Cast(LPVOID,rLine(i).ad),@rLine(i).sv,1,0) 'restore old value for execution
-   		'brk_test2(proccurad) ' cancel breakpoint on line, if command halt not really used
-   		'proc_runnew   'creating running proc tree
-   		'var_sh			'updating information about variables
-   		'runtype=RTSTEP
-   		'dsp_change(i)
-		'brk_del(0)
-   'Else 'RTSTEP or RTAUTO
-		'If flagattach Then proc_runnew:flagattach=FALSE
-		''NOTA If rline(i).nu=-1 Then
-			''fb_message("No line for this proc","Code added by compiler (constructor,...)")
-		''Else
-		'dsp_change(i)
-		''EndIf
-		'If runtype=RTAUTO Then
-			'Sleep(autostep)
-			'If threadaut>1 Then 'at least 2 threads
-				'Dim As Integer c=threadcur
-				'Do
-					'c+=1:If c>threadnb Then c=0
-				'Loop Until thread(c).exc
-				'thread_change(c)
-			'EndIf
-			'thread_resume
-		'EndIf
-		'If threadsel<>threadcur AndAlso messbox("New Thread","Previous thread "+Str(thread(threadsel).id)+" changed by "+Str(thread(threadcur).id) _
-				'+Chr(10)+Chr(13)+" Keep new one ?",MB_YESNO)=IDNO Then
-				'thread_change(threadsel)
-		'Else
-			'threadsel=threadcur
-		'EndIf
-   'End If
-'End Sub
 '====================================================================
 ''  load shared and common variables, default=no dll number (d=0)
 '====================================================================

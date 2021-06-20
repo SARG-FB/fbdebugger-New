@@ -275,7 +275,6 @@ While 1
 					'=========================
 					Case EXCEPTION_BREAKPOINT
 					'=========================
-					print "EXCEPTION_BREAKPOINT=";runtype,RTSTEP,RTOFF,adr
 						while 1
 							dim as integer bpidx
 							if runtype=RTCRASH then
@@ -300,13 +299,11 @@ While 1
 								For bpidx =0 To brknb
 									If brkol(bpidx).typ>50 Then Continue For 'disabled
 									if brkol(bpidx).ad=adr then
-										print "BP found=";bpidx
 										exit for
 									EndIf
 								Next
 
 								if bpidx=0 then ''BP on LINE (line, cursor, over,eop,xop)
-									print "CSLINE"
 									thread_search(DebugEv.dwThreadId,CSLINE,bpidx)
 									exit while
 								end if
@@ -329,7 +326,6 @@ While 1
 									exit while
 								end if
 							else ''RTSTEP/RTAUTO
-							print "in step/auto",adr
 								if stopcode=CSUSER then ''CSUSER
 									thread_search(DebugEv.dwThreadId,stopcode,adr)
 								else
