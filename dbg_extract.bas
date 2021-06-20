@@ -1042,11 +1042,13 @@ end sub
 '' ------------------------------------
 private sub dbg_epilog(ofset as integer)
 	proc(procnb).fn=proc(procnb).db+ofset
-	if proc(procnb).fn<>rline(linenb).ad then
-		'' this test is useless as for sub it is ok  .fn = .ad  --> mov rsp, rbp
-		'' for function the last line ('end function' is not given by 224)
-		'' so forcing it
-		rline(linenb).ad=proc(procnb).fn ''KEEP this line even if test is removed
+		if proc(procnb).fn<>rline(linenb).ad then
+			if proc(procnb).nm<>"main" then
+			'' this test is useless as for sub it is ok  .fn = .ad  --> mov rsp, rbp
+			'' for function the last line ('end function' is not given by 224)
+			'' so forcing it except for main
+			rline(linenb).ad=proc(procnb).fn ''KEEP this line even if test is removed
+		end if
 	End If
 end sub
 '' -------------------------------

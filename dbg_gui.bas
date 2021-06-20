@@ -1103,7 +1103,7 @@ private sub menu_enable()
 	SetStateMenu(HMenuwch,MNWCHTTGL,flag)
 	SetStateMenu(HMenuwch,MNWCHTTGA,flag)
 
-	If procnb Then flag=0
+	If procnb Then flag=0 Else flag=1
 	SetStateMenu(HMenuprc,MNENBPRC,flag)
 	SetStateMenu(HMenuprc,MNASMPRC,flag)
 	SetStateMenu(HMenuprc,MNLOCPRC,flag)
@@ -1112,7 +1112,7 @@ private sub menu_enable()
 	SetStateMenu(HMenuvar,MNLOCPRC,flag)
 	SetStateMenu(HMenuvar,MNCALLINE,flag)
 
-	If brknb then flag=0
+	If brknb then flag=0 else flag=1
 	SetStateMenu(HMenusource,MNMNGBRK,flag)
 
 End sub

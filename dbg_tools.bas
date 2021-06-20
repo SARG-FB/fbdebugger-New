@@ -3704,9 +3704,10 @@ private sub proc_runnew()
 	EndIf
 print "nb thread=";threadnb
 	''loading with rbp/ebp and proc index
-	For i As Integer =0 To threadnb
+	For ithd As Integer =0 To threadnb
+		if thread(ithd).sv=-1 then print "thread skipped=";ithd:continue for
 		regbpnb=0
-		GetThreadContext(thread(i).hd,@vcontext)
+		GetThreadContext(thread(ithd).hd,@vcontext)
 		regbp=vcontext.regbp
 		regip=vcontext.regip 'current proc
 
@@ -3732,7 +3733,7 @@ print "proc_runnew j=";j,regbpnb,proc(j).nm
 print "proc_runnew j=regbpnb nbprocs j=";j,procrnb
 		While k<procrnb
 			k+=1
-			If procr(k).thid <> thread(i).id Then Continue While
+			If procr(k).thid <> thread(ithd).id Then Continue While
 			If procr(k).idx=pridx(j) Then
 				j-=1 'running proc still existing so kept
 			Else
@@ -3751,20 +3752,20 @@ print "proc_runnew nb new procs j=";j
 			If proc(pridx(k)).enab=false Then Continue For 'proc state don't follow
 			procrnb+=1
 			procr(procrnb).sk=regbpp(k)
-			procr(procrnb).thid=thread(i).id
+			procr(procrnb).thid=thread(ithd).id
 			procr(procrnb).idx=pridx(k)
 
 			'test if first proc of thread
-			If thread(i).plt=0 Then
-				thread(i).tv=AddTreeViewItem(GTVIEWTHD,"",cast (hicon, 0),0,0,0)
-				thread(i).ptv=thread(i).tv 'last proc
-				thread_text(i)'put text
-				thread(i).st=0 'with fast no starting line could be gotten
+			If thread(ithd).plt=0 Then
+				thread(ithd).tv=AddTreeViewItem(GTVIEWTHD,"",cast (hicon, 0),0,0,0)
+				thread(ithd).ptv=thread(ithd).tv 'last proc
+				thread_text(ithd)'put text
+				thread(ithd).st=0 'with fast no starting line could be gotten
 				procr(procrnb).cl=-1  ' no real calling line
 				libel="ThID="+Str(procr(procrnb).thid)+" "
 				tv=TVI_LAST 'insert in last position
 			Else
-				tv=thread(i).plt 'insert after the last item of thread
+				tv=thread(ithd).plt 'insert after the last item of thread
 				procr(procrnb).cl=calin(k)
 				libel=""
 			EndIf
@@ -3776,8 +3777,8 @@ print "proc_runnew nb new procs j=";j
 			vrr(vrrnb).tv=AddTreeViewItem(GTVIEWVAR,"Not yet filled",cast (hicon, 0),0,TVI_LAST,tv)
 			procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,libel,cast (hicon, 0),0,tv,0)
 
-			thread(i).plt=procr(procrnb).tv 'keep handle last item
-			thread(i).ptv=AddTreeViewItem(GTVIEWTHD,proc(pridx(k)).nm,cast (hicon, 0),0,TVI_FIRST,thread(i).ptv)
+			thread(ithd).plt=procr(procrnb).tv 'keep handle last item
+			thread(ithd).ptv=AddTreeViewItem(GTVIEWTHD,proc(pridx(k)).nm,cast (hicon, 0),0,TVI_FIRST,thread(ithd).ptv)
 
 			var_ini(procrnb,proc(procr(procrnb).idx).vr,proc(procr(procrnb).idx+1).vr-1)
 			procr(procrnb+1).vr=vrrnb+1
@@ -3911,7 +3912,9 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		'end if
    	''?????	brk_test(proccurad) ' cancel breakpoint on line, if command halt not really used
    	
-   		proc_runnew   'creating running proc tree
+		if brkol(0).typ<>10 then ''for skip over always in same proc
+			proc_runnew   'creating running proc tree
+		end if
    		var_sh			'updating information about variables
    		runtype=RTSTEP
    		dsp_change(rln)
@@ -4382,6 +4385,7 @@ private function kill_process(text As String) As Integer
 			#ifdef fulldbg_prt
 			  	dbg_prt ("return code terminate process ="+Str(retcode)+" lasterror="+Str(lasterr))
 		   	#endif
+			mutexunlock blocker
 			thread_resume()
 			While prun:Sleep 500:Wend
 			Return TRUE
@@ -4979,7 +4983,7 @@ private sub debug_event()
 	debugevent=KDBGNOTHING
 
 	if dbgevent = KDBGNOTHING then exit sub
-	print "debug_event 00";time,dbgevent,debugdata,KDBGRKPOINT,"stopcode=";stopcode
+	print "debug_event ";time,dbgevent,debugdata,KDBGRKPOINT,"stopcode=";stopcode
 	select case as const dbgevent
 		Case KDBGRKPOINT
 			if stopcode=CSSTEP orelse stopcode=CSMEM orelse stopcode=CSVAR orelse stopcode=CSUSER then

@@ -330,7 +330,7 @@ While 1
 								end if
 							else ''RTSTEP/RTAUTO
 							print "in step/auto",adr
-								if stopcode<>0 then ''CSUSER
+								if stopcode=CSUSER then ''CSUSER
 									thread_search(DebugEv.dwThreadId,stopcode,adr)
 								else
 									thread_search(DebugEv.dwThreadId,CSSTEP,adr)
