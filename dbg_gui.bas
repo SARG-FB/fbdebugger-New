@@ -502,9 +502,9 @@ private sub brk_manage()
 		hidegadget(GBRKDEL01+ibrk-1,KSHOW)
 
 		typ=brkol(ibrk).typ
-		If typ>10 Then
+		If typ>50 Then
 			text="ENB"
-			typ-=10
+			typ-=50
 		Else
 			text="DSB"
 		EndIf

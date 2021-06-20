@@ -2802,7 +2802,7 @@ End Sub
 Private sub brk_sav
 	For i As Integer =1 To BRKMAX
 		If i<=brknb Then
-			if brkol(i).typ=1 or brkol(i).typ=6 or brkol(i).typ=4 then ''only permanent/tempo/counter
+			if brkol(i).typ=1 or brkol(i).typ=6 or brkol(i).typ=4 or brkol(i).typ=51 or brkol(i).typ=56 or brkol(i).typ=54 then ''only permanent/tempo/counter
 				brkexe(0,i)=source_name(source(brkol(i).isrc))+","+Str(brkol(i).nline)+","+Str(brkol(i).cntrsav)+","+Str(brkol(i).typ)
 			EndIf
 		EndIf
@@ -4303,8 +4303,12 @@ private sub reinit()
 	threadsel=0
 	dumpadr=0
 	brkv_set(0) ''no break on var
-	brknb=0 ''no break on line
-	brk_del(0) ''no break on cursor
+	brk_del(0) ''no break on cursor/etc
+	for ibrk as integer = 1 to brknb
+		if brkol(ibrk).typ<>1 and brkol(ibrk).typ<>4 and brkol(ibrk).typ<>6 and brkol(ibrk).typ<>51 and brkol(ibrk).typ<>54 and brkol(ibrk).typ<>56 then ''keep only perm/temp/counter BP
+			brk_del(ibrk)
+		EndIf
+	Next
 	DeleteTreeViewItemAll(GTVIEWVAR)
 	PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)
 	DeleteTreeViewItemAll(GTVIEWTHD)
