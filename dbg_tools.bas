@@ -3118,14 +3118,11 @@ select case t
 		thread_resume()
 
 	case 11 '' run until end of proc  = EOP
-		rln=line_exec(cln,"Run end of proc not possible, select an executable line")
-		if rln=-1 then exit sub
-
 		''todo add test if proc is disabled then messbox("End of proc","procedure disabled":exit sub
-
+		rln=rlinecur
 		brkol(0).ad=proc(rline(rln).px).fn ''last executable line of proc
 		For rln=1 To linenb
-			If rline(rln).ad=brkol(0).ad Then Exit For ''find nline
+			If rline(rln).ad=brkol(0).ad Then Exit For ''find correponding line
 		Next
 		brkol(0).index=rln
 		brkol(0).typ=11
@@ -3137,8 +3134,7 @@ select case t
 		thread_resume()
 
 	case 12 '' run until exit of prog  = XOP
-		brkol(0).ad=proc(0).fn ''last executable line of prog (?????? to be checked)
-
+		brkol(0).ad=proc(procmain).fn
 		For rln=1 To linenb
 			If rline(rln).ad=brkol(0).ad Then Exit For ''find nline
 		Next
@@ -3653,8 +3649,6 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
    Dim As Integer i,debut=1,fin=linenb+1,adr,iold
    Dim vcontext As CONTEXT
 
-   print "gest brk adr=";ad,rln
-
    'egality added in case attach (example access violation) without -g option, ad=procfn=0....
 	If ad>=procfn Then
 		thread_resume()
@@ -3664,7 +3658,6 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	dbg_prt2("")
 	dbg_prt2("AD gest brk="+hex(ad)+" th="+Str(threadcur))
 	'show_context
-
 
 	proccurad=ad
 		
@@ -4073,6 +4066,7 @@ private function kill_process(text As String) As Integer
 			mutexunlock blocker
 			thread_resume()
 			While prun:Sleep 500:Wend
+			mutexlock blocker
 			Return TRUE
 		Else
 			Return FALSE
@@ -4268,7 +4262,7 @@ End sub
 ''==============================================================================
 '' retrieves the first line for main procedure as not provided by the debug data
 ''==============================================================================
-private sub main_line
+private sub main_line()
 	For iproc As Integer =0 To procnb 'As .nu not consistent for main
 		Dim As integer temp=proc(iproc).db
 		If proc(iproc).nm="main" Then
@@ -4668,13 +4662,12 @@ private sub debug_event()
 	debugevent=KDBGNOTHING
 
 	if dbgevent = KDBGNOTHING then exit sub
-	print "debug_event ";time,dbgevent,debugdata,KDBGRKPOINT,"stopcode=";stopcode
+	print "debug_event ";time,dbgevent,debugdata,KDBGRKPOINT;" ";KDBGCREATEPROC,"stopcode=";stopcode
 	select case as const dbgevent
 		Case KDBGRKPOINT
 			if stopcode=CSSTEP orelse stopcode=CSMEM orelse stopcode=CSVAR orelse stopcode=CSUSER then
 				gest_brk(debugdata)
 			else
-			print "KDBGRKPOINT",debugdata,brkol(debugdata).ad,brkol(debugdata).index
 				gest_brk(brkol(debugdata).ad,brkol(debugdata).index) ''address and line index
 			end if
 			

@@ -43,10 +43,12 @@ dim Shared As Integer rlinecur ''line to be executed
 ''procedures
 dim Shared as tproc proc(PROCMAX) ''list of procs in code
 dim shared As integer procnb
+dim shared As Integer procmain
 
 dim Shared As integer procsv,procsk,proccurad,procfn,procsort
 dim Shared As tprocr procr(PROCRMAX) ''list of running proc
 dim shared As Integer procrnb
+
 
 ''arrays
 dim Shared  As tarr arr(ARRMAX)

@@ -979,9 +979,10 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 		if procname<>"" and (flagmain=true or procname<>"main") then
 			'If InStr(procname,".LT")=0 then  ''to be checked if useful
 		 	If flagmain=TRUE And procname="main" Then
+				procmain=procnb+1
 		 		flagmain=false
 		 		'flagstabd=TRUE'first main ok but not the others
-				print "main found"
+				print "main found=";procnb+1
 		 	endif
 			procnodll=true
 
@@ -1042,14 +1043,16 @@ end sub
 '' ------------------------------------
 private sub dbg_epilog(ofset as integer)
 	proc(procnb).fn=proc(procnb).db+ofset
-		if proc(procnb).fn<>rline(linenb).ad then
-			if proc(procnb).nm<>"main" then
-			'' this test is useless as for sub it is ok  .fn = .ad  --> mov rsp, rbp
-			'' for function the last line ('end function' is not given by 224)
-			'' so forcing it except for main
+	if proc(procnb).fn<>rline(linenb).ad then
+		if proc(procnb).nm<>"main" then
+		'' this test is useless as for sub it is ok  .fn = .ad  --> mov rsp, rbp
+		'' for function the last line ('end function' is not given by 224)
+		'' so forcing it except for main
 			rline(linenb).ad=proc(procnb).fn ''KEEP this line even if test is removed
+		else
+			proc(procnb).fn=rline(linenb).ad
 		end if
-	End If
+	end if
 end sub
 '' -------------------------------
 '' Extracting debug data for elf
