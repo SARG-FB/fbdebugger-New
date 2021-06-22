@@ -312,8 +312,8 @@ While 1
 								if bptyp=2 or bptyp=3 then  ''BP conditional
 									if brk_test(brkol(bpidx).adrvar1,brkol(bpidx).adrvar2,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
 										thread_search(DebugEv.dwThreadId,CSCOND,bpidx)
-										exit while
 									end if
+									exit while
 								elseif bptyp=4 then ''BP counter
 									If brkol(bpidx).counter>0 Then
 										brkol(bpidx).counter-=1'decrement counter

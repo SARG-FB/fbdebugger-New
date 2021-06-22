@@ -421,11 +421,18 @@ enum
 	GBRKDELALL
 	GBRKDISABLE
 	GBRKENABLE
+
+	GBRCVAR1
+	GBRCVALUE
+	GBRCOK
+	GBRCDEL
+	GBRCCOND
+	GTVIEWBRC
 End Enum
 
 ''index selection
 enum
-	GIDXVAR=850
+	GIDXVAR=870
 	GIDXMIN1
 	GIDXMIN5=GIDXMIN1+4
 	GIDXMAX1
@@ -931,6 +938,10 @@ Type tbrkv
 	txt As String	 'name and value for menu
 End type
 
+type tbrclist ''list of item handle for cond BP
+	items as INTEGER
+	itemc as INTEGER
+End Type
 ''======================== Threads ====================================
 Const THREADMAX=50
 Type tthread

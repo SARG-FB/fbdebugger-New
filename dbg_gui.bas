@@ -651,7 +651,6 @@ end sub
 '==============================================================================
 private sub create_brkvbx()
 	hbrkvbx=create_window("Breakpoint on value",10,10,600,150)
-	'WindowBounds
 	centerWindow(hbrkvbx)
 
 	textgadget(GBRKVAR1,6,6,390,30,"Stop if b<byte>=-88")
@@ -661,6 +660,27 @@ private sub create_brkvbx()
 	buttongadget(GBRKVOK,190,75,55,30,"Apply")
 	buttongadget(GBRKVDEL,250,75,55,30,"Delete")
 	comboboxgadget(GBRKVCOND,402,3,54,150)
+end sub
+'==============================================================================
+'' creates the window for managing the breakpoint on variable/memory change
+'==============================================================================
+private sub create_bpcondbx()
+	hbpcondbx=create_window("Breakpoint cond var/const",10,10,700,650)
+	centerWindow(hbpcondbx)
+
+	treeviewgadget(GTVIEWBRC,0,0,500,600,KTRRESTYLE)
+	textgadget(GBRCVAR1,505,5,390,30,"Variable")
+	stringgadget(GBRCVALUE,505,40,120,30,"789")
+	comboboxgadget(GBRCCOND,505,80,54,150)
+	AddComboBoxItem(GBRKVCOND,"=",-1)
+	AddComboBoxItem(GBRKVCOND,"<>",-1)
+	AddComboBoxItem(GBRKVCOND,">",-1)
+	AddComboBoxItem(GBRKVCOND,"<",-1)
+	AddComboBoxItem(GBRKVCOND,">=",-1)
+	AddComboBoxItem(GBRKVCOND,"<=",-1)
+	SetItemComboBox(GBRKVCOND,0)
+	buttongadget(GBRCOK,505,300,55,30,"Apply")
+	buttongadget(GBRCDEL,570,300,55,30,"Cancel")
 end sub
 '==============================================================================
 '' creates the window for Procedure call chain
@@ -1373,6 +1393,7 @@ private sub gui_init()
 	create_settingsbx()
 	create_dumpbx()
 	create_brkbx()
+	create_bpcondbx()
 	create_indexbx()
 	create_cchainbx()
 	create_brkvbx

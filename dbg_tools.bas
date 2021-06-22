@@ -3067,6 +3067,69 @@ private sub brk_unset(ubpon as integer=false)
 		WriteProcessMemory(dbghand,Cast(LPVOID,brkol(0).ad),@breakcpu,1,0)
 	EndIf
 End Sub
+'============================================================================
+''fills array listitem() with all the existing variables/fields for cond BP
+'============================================================================
+private sub brc_fill()
+	dim as integer iparent,inext,temp,hitem,level
+	dim as string text
+
+	hitem=getfirstitemtreeview(GTVIEWVAR)
+	iparent=0
+	inext=0
+	While hitem<>0
+		listitem(listcpt).items=hitem
+		text=Space(level*4)+GetTextTreeView(GTVIEWVAR,hitem)
+		listitem(listcpt).itemc=AddTreeViewItem(GTVIEWBRC,text,cast (hicon, 0),0,TVI_LAST,0)
+		listcpt+=1
+		temp=GetChildItemTreeView(GTVIEWVAR,hitem)
+		level+=1
+	    While temp=0
+			temp=GetNextItemTreeView(GTVIEWVAR,hitem)
+			If temp<>0 Then
+				If inext=temp Then Exit While,While
+				level-=1:Exit While
+			EndIf
+			hitem=GetParentItemTreeView(GTVIEWVAR,hitem)
+			level-=1
+			If hitem=iparent Then Exit While,While
+		Wend
+		hitem=temp
+	Wend
+End Sub
+'====================================================
+'' checks if variable selected for cond BP is ok
+'====================================================
+private sub brc_check()
+	dim as INTEGER hitem=getitemtreeview(GTVIEWBRC),itemc
+	for ilist as integer = 0 to listcpt
+		if hitem=listitem(ilist).items then
+			itemc=listitem(ilist).itemc
+			for ivrr as INTEGER = 1 to vrrnb
+				if vrr(ivrr).tv=itemc then
+					if vrr(ivrr).vr=0 Then exit sub
+				else
+					brkidx1=vrr(ivrr).vr
+					brkidx2=0
+					var_fill(brkidx1)
+					#Ifdef __FB_64BIT__
+					If varfind.pt Then varfind.ty=9 ''pointer integer64 (longint)
+					#Else
+					If varfind.pt Then varfind.ty=1 ''pointer integer32 (long)
+					#EndIf
+					If varfind.ty>10 then
+						messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint")
+						brkidx1=0
+						brkidx2=0
+						exit sub
+					End If
+					SetGadgetText(GBRCVAR1,varfind.nm)
+				EndIf
+			Next
+			exit for
+		EndIf
+	Next
+End Sub
 '=======================================================================
 '' t 1=permanent breakpoint / 2(var/const)-3(var-var)=conditionnal (on a line + condition) / 4=breakpoint with counter /
 ''   5=disable-enable / 6=tempo / 7=change value counter / 8 reset to initial value / 9=cursor line / over =10 / 11=end of proc / 12=end of prog

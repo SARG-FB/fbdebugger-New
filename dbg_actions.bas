@@ -125,7 +125,9 @@ private sub menu_action(poption as integer)
 				EndIf
 			else
 				if brkidx1=0 then
-					messbox("Set BP conditionnal","Need variables for the condition")
+					brc_fill()
+					SetItemComboBox(GBRKVCOND,0)
+					hidewindow(hbpcondbx,KSHOW)
 				else
 					brk_set(2)
 				EndIf
@@ -869,6 +871,20 @@ private sub gadget_action(igadget as LONG)
 					modify_menu(MNSETBRKC,HMenusource,"BP cond with "+tempo+" "+*tst+" "+varfind.nm)
 			End Select
 			hidewindow(hbrkvbx,KHIDE)
+
+		case GBRCOK
+			brkdata2.vlongint=vallng(getgadgettext(GBRKVVALUE))
+			brkdatatype=varfind.ty
+			brkadr1=varfind.ad
+			brkttb=32 shr GetItemComboBox(GBRKVCOND)
+			var tst=brk_comp(brkttb)
+			hidewindow(hbpcondbx,KHIDE)
+			modify_menu(MNSETBRKC,HMenusource,"BP cond with "+varfind.nm+" "+*tst+" "+str(brkdata2.vlongint))
+
+		case GBRCDEL
+			hidewindow(hbpcondbx,KHIDE)
+
+		case GBRCCOND ''nothing
 
 		case GBRKVDEL
 			select case brktyp

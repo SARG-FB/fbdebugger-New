@@ -159,8 +159,9 @@ dim shared as integer brkdatatype
 dim shared as integer brkttb
 dim shared as valeurs brkdata2
 dim shared as integer brktyp  ''type of BP mem/const or mem/mem
-
-
+dim shared as hwnd hbpcondbx ''dialog box for managing var/const cond BP
+dim shared as tbrclist listitem(VRRMAX)
+dim shared as integer listcpt
 
 ''breakpoint on variable/memory (when there is a change)
 Dim Shared As tbrkv brkv
@@ -404,6 +405,8 @@ do
 	elseIf event=EventLBdown Then
 		If EventNumberListView=GIDXTABLE Then
 			index_cell()
+		elseIf EventNumberTreeView=GTVIEWBRC Then
+				brc_check()
 		EndIf
 	elseif event=eventgadget then
 		button_action(eventnumber())
