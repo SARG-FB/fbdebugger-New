@@ -321,10 +321,15 @@ While 1
 										thread_search(DebugEv.dwThreadId,CSCOUNT,bpidx)
 									end if
 									exit while
-								else ''simple BP (perm/tempo)
+								elseif bpidx>brknb and stopcode=CSUSER then
+									thread_search(DebugEv.dwThreadId,stopcode,adr)
+									exit while
+								else
+									''simple BP (perm/tempo)
 									thread_search(DebugEv.dwThreadId,CSBRKPT,bpidx)
 									exit while
 								end if
+
 							else ''RTSTEP/RTAUTO
 								if stopcode=CSUSER then ''CSUSER
 									thread_search(DebugEv.dwThreadId,stopcode,adr)

@@ -4609,7 +4609,6 @@ end sub
 '' Loads dll elements
 '===================================================
 private sub dll_load()
-
 	Dim loaddll As LOAD_DLL_DEBUG_INFO=*cast(LOAD_DLL_DEBUG_INFO ptr,debugdata) '' copy of data from thread 2
 	Dim As String dllfn
 	Dim As Integer d,delta,srcstart
@@ -4630,6 +4629,7 @@ private sub dll_load()
 		srcstart=sourcenb+1
 		if debug_extract(Cast(UInteger,loaddll.lpBaseOfDll),dllfn,DLL)=-1 then
 			dllnb-=1
+			statusbar_text(KSTBSTS,"Running")
 			exit sub
 		end if
 		If (linenb-linenbprev)=0 Then 'not debugged so not taking in account
@@ -4664,6 +4664,7 @@ private sub dll_load()
 		globals_load(d)
 		brk_apply
 	EndIf
+	statusbar_text(KSTBSTS,"Running")
 end sub
 '===================================================
 '' Unloads dll elements
@@ -4697,7 +4698,8 @@ End Sub
 '===========================================
 private sub exception_handle(adr as INTEGER)
 	dim as string linetext
-	gest_brk(rline(thread(threadcur).sv).ad)
+	'gest_brk(rline(thread(threadcur).sv).ad)
+	gest_brk(adr)
 	source_change(rline(thread(threadcur).sv).sx) 'display source
 	line_display(rline(thread(threadcur).sv).nu-1)
 	linetext=line_text(rline(thread(threadcur).sv).nu-1)
