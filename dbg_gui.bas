@@ -490,12 +490,20 @@ end sub
 private sub brk_manage()
 	dim as string text
 	dim as integer srcprev=srcdisplayed,typ
+print "manage"
+print brkol(0).nline
+print brkol(1).nline
 
 	For ibrk as integer =1 To brknb
 		source_change(brkol(ibrk).isrc)
-		text=line_text(brkol(ibrk).nline-1)
+		'text=line_text(brkol(ibrk).nline-1)
 
-		text=" "+source_name(source(brkol(ibrk).isrc))+" ["+Str(brkol(ibrk).nline)+"] cntr="+Str(brkol(ibrk).counter)+" >> "+Left(Trim(text,Any Chr(9)+" "),65)
+		text=" "+source_name(source(brkol(ibrk).isrc))+" ["+Str(brkol(ibrk).nline)+"]"
+		if brkol(ibrk).typ=4 then
+			text+=" cntr="+Str(brkol(ibrk).counter)
+		end if
+		text+=" >> "+Left(Trim(line_text(brkol(ibrk).nline-1),Any Chr(9)+" "),65)
+
 		SetGadgetText(GBRKLINE01+ibrk-1,text)
 		hidegadget(GBRKLINE01+ibrk-1,KSHOW)
 
@@ -672,13 +680,13 @@ private sub create_bpcondbx()
 	textgadget(GBRCVAR1,505,5,390,30,"Variable")
 	stringgadget(GBRCVALUE,505,40,120,30,"789")
 	comboboxgadget(GBRCCOND,505,80,54,150)
-	AddComboBoxItem(GBRKVCOND,"=",-1)
-	AddComboBoxItem(GBRKVCOND,"<>",-1)
-	AddComboBoxItem(GBRKVCOND,">",-1)
-	AddComboBoxItem(GBRKVCOND,"<",-1)
-	AddComboBoxItem(GBRKVCOND,">=",-1)
-	AddComboBoxItem(GBRKVCOND,"<=",-1)
-	SetItemComboBox(GBRKVCOND,0)
+	AddComboBoxItem(GBRCCOND,"=",-1)
+	AddComboBoxItem(GBRCCOND,"<>",-1)
+	AddComboBoxItem(GBRCCOND,">",-1)
+	AddComboBoxItem(GBRCCOND,"<",-1)
+	AddComboBoxItem(GBRCCOND,">=",-1)
+	AddComboBoxItem(GBRCCOND,"<=",-1)
+	SetItemComboBox(GBRCCOND,0)
 	buttongadget(GBRCOK,505,300,55,30,"Apply")
 	buttongadget(GBRCDEL,570,300,55,30,"Cancel")
 end sub
@@ -1080,7 +1088,6 @@ private sub menu_enable()
 	SetStateMenu(HMenuvar2,MNBRKVC,   flag)
 	SetStateMenu(HMenuvar2,MNBRKV1,   flag)
 	SetStateMenu(HMenuvar2,MNBRKV2,   flag)
-	SetStateMenu(HMenuvar6,MNBRCVC,   flag)
 	SetStateMenu(HMenuvar6,MNBRCV1 ,  flag)
 	SetStateMenu(HMenuvar6,MNBRCV2 ,  flag)
 	SetStateMenu(HMenuvar,MNSHSTRG,  flag)
@@ -1184,7 +1191,6 @@ private sub menu_set()
 	MenuItem(MNBRKV2,HMenuvar2, "Var2")
 	MenuItem(MNBRKVS,HMenuvar2, "Show BP if any")
 	HMenuvar6=OpenSubMenu(HMenuvar,"Breakpoint conditional")
-	MenuItem(MNBRCVC,HMenuvar6, "Var / const")
 	MenuItem(MNBRCV1,HMenuvar6, "Var1  (+ var2 then select line)")
 	MenuItem(MNBRCV2,HMenuvar6, "Var2")
 	MenuBar(HMenuvar)

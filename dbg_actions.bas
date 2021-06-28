@@ -124,13 +124,7 @@ private sub menu_action(poption as integer)
 					brk_set(3)
 				EndIf
 			else
-				if brkidx1=0 then
-					brc_fill()
-					SetItemComboBox(GBRKVCOND,0)
-					hidewindow(hbpcondbx,KSHOW)
-				else
-					brk_set(2)
-				EndIf
+				brc_choice()
 			EndIf
 
 		Case MNSETBRKT 'set tempo brkp
@@ -297,13 +291,13 @@ private sub menu_action(poption as integer)
 			messbox("feature not yet implemented","fb_find(1,sfind)")
 			'fb_find(1,sfind)
 
-		case MNBRKVC,MNBRKV1,MNBRCVC,MNBRCV1,MNBRKV2,MNBRCV2
+		case MNBRKVC,MNBRKV1,MNBRCV1,MNBRKV2,MNBRCV2
 			ivar=var_find()
 			if ivar=0 then exit sub
 			'ivar=abs(ivar) ''useful only if field
 
 			select case poption
-				case MNBRKVC,MNBRKV1,MNBRCVC,MNBRCV1
+				case MNBRKVC,MNBRKV1,MNBRCV1
 					''BP var/mem variable/constant or variable/variable
 					''BP cond variable/constant or variable/variable
 					brkidx1=ivar
@@ -323,7 +317,7 @@ private sub menu_action(poption as integer)
 						Exit Sub
 					End If
 					brkdatatype=varfind.ty
-					if poption=MNBRKVC or MNBRCVC then ''select the constant and the test
+					if poption=MNBRKVC then ''select the constant and the test
 						SetGadgetText(GBRKVAR1,varfind.nm)
 						hidegadget(GBRKVAR2,KHIDE)
 						hidegadget(GBRKVVALUE,KSHOW)
@@ -581,7 +575,7 @@ private sub gadget_action(igadget as LONG)
 	   	Case GBRKDISABLE ''disable all
 	      	For ibrk As integer =1 To brknb
 				If brkol(ibrk).typ<3 Then
-					brkol(ibrk).typ+=2
+					brkol(ibrk).typ+=50
 					brk_marker(ibrk)
 					SetGadgetText(GBRKDSB01+ibrk-1,"ENB")
 				EndIf
@@ -590,7 +584,7 @@ private sub gadget_action(igadget as LONG)
 	   	Case GBRKENABLE ''enable all
 			For ibrk As integer =1 To brknb
 				If brkol(ibrk).typ>2 Then
-					brkol(ibrk).typ-=2
+					brkol(ibrk).typ-=50
 					brk_marker(ibrk)
 					SetGadgetText(GBRKDSB01+ibrk-1,"DSB")
 				EndIf
@@ -873,13 +867,20 @@ private sub gadget_action(igadget as LONG)
 			hidewindow(hbrkvbx,KHIDE)
 
 		case GBRCOK
-			brkdata2.vlongint=vallng(getgadgettext(GBRKVVALUE))
 			brkdatatype=varfind.ty
+			if brkdatatype=11 then
+				brkdata2.vsingle=val(getgadgettext(GBRCVALUE))
+			elseIf brkdatatype=12 then
+				brkdata2.vdouble=val(getgadgettext(GBRCVALUE))
+			else
+				brkdata2.vlongint=vallng(getgadgettext(GBRCVALUE))
+			EndIf
 			brkadr1=varfind.ad
-			brkttb=32 shr GetItemComboBox(GBRKVCOND)
+			print "adr brc=";brkadr1
+			brkttb=32 shr GetItemComboBox(GBRCCOND)
 			var tst=brk_comp(brkttb)
 			hidewindow(hbpcondbx,KHIDE)
-			modify_menu(MNSETBRKC,HMenusource,"BP cond with "+varfind.nm+" "+*tst+" "+str(brkdata2.vlongint))
+			brk_set(2)
 
 		case GBRCDEL
 			hidewindow(hbpcondbx,KHIDE)
@@ -907,7 +908,13 @@ private sub gadget_action(igadget as LONG)
 				var tempo=varfind.nm
 				var tst=brk_comp(brkol(brkidx).ttb)
 				if brkol(brkidx).typ=2 then
-					messbox("BP cond with ",tempo+" "+*tst+" "+str(brkol(brkidx).val.vlongint))
+					if brkol(brkidx).datatype=11 then
+						messbox("BP cond with ",tempo+" "+*tst+" "+str(brkol(brkidx).val.vsingle))
+					elseif brkol(brkidx).datatype=12 then
+						messbox("BP cond with ",tempo+" "+*tst+" "+str(brkol(brkidx).val.vdouble))
+					else
+						messbox("BP cond with ",tempo+" "+*tst+" "+str(brkol(brkidx).val.vlongint))
+					end if
 				else
 					var_fill(brkol(brkidx).ivar2)
 					messbox("BP cond with ",tempo+" "+*tst+" "+varfind.nm)
@@ -918,6 +925,8 @@ private sub gadget_action(igadget as LONG)
 
 		case GLOG ''nothing to do
 		case GEDITOR ''nothing to do
+		case GTVIEWBRC ''nothing to do
+		case GBRCVALUE ''nothing to do
 
 		case else
 			messbox("Gadget/menu/button feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))

@@ -226,6 +226,8 @@ While 1
 		Case EXCEPTION_DEBUG_EVENT
 		'=========================
 			'dbg_prt("exception code "+Hex(DebugEv.u.Exception.ExceptionRecord.ExceptionCode))'+DebugEv.u.Exception.dwfirstchance+" adr : "+DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
+
+			PRINT "DEBUG EVENT EXCEPTION"
 			firstchance=DebugEv.u.Exception.dwfirstchance
 			adr=cast(integer,DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
 			'dbg_prt("firstchance="+Str(firstchance))'25/01/2015
@@ -276,7 +278,9 @@ While 1
 					Case EXCEPTION_BREAKPOINT
 					'=========================
 						while 1
-							dim as integer bpidx
+							print "------------------------------------------------------------------------------------------"
+							print "EXCEPTION_BREAKPOINT",adr
+							dim as integer bpidx=-1
 							if runtype=RTCRASH then
 								''don't stop as running until a crash
 								breakadr=adr
@@ -294,42 +298,49 @@ While 1
 										exit while
 									end if
 								end if
-
+print "EXCEPTION_BREAKPOINT,before for"
 								''retrieves BP corresponding at address (loop) -->bpidx
-								For bpidx =0 To brknb
-									If brkol(bpidx).typ>50 Then Continue For 'disabled
-									if brkol(bpidx).ad=adr then
+								For ibrk as integer =0 To brknb
+									If brkol(ibrk).typ>50 Then Continue For 'disabled
+									if brkol(ibrk).ad=adr then
+										bpidx=ibrk
 										exit for
 									EndIf
 								Next
-
-								if bpidx=0 then ''BP on LINE (line, cursor, over,eop,xop)
-									thread_search(DebugEv.dwThreadId,CSLINE,bpidx)
-									exit while
-								end if
-
-								bptyp=brkol(bpidx).typ
-								if bptyp=2 or bptyp=3 then  ''BP conditional
-									if brk_test(brkol(bpidx).adrvar1,brkol(bpidx).adrvar2,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
-										thread_search(DebugEv.dwThreadId,CSCOND,bpidx)
+print "EXCEPTION_BREAKPOINT bpidx=",bpidx
+								if bpidx<>-1 then
+									if bpidx=0 then ''BP on LINE (line, cursor, over,eop,xop)
+										thread_search(DebugEv.dwThreadId,CSLINE,bpidx)
+										exit while
 									end if
-									exit while
-								elseif bptyp=4 then ''BP counter
-									If brkol(bpidx).counter>0 Then
-										brkol(bpidx).counter-=1'decrement counter
+print "EXCEPTION_BREAKPOINT before cond typ=",brkol(bpidx).typ
+									bptyp=brkol(bpidx).typ
+									if bptyp=2 or bptyp=3 then  ''BP conditional
+print "EXCEPTION_BREAKPOINT before brk_test"
+										if brk_test(brkol(bpidx).adrvar1,brkol(bpidx).adrvar2,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
+											print "EXCEPTION_BREAKPOINT after01 brk_test"
+											thread_search(DebugEv.dwThreadId,CSCOND,bpidx)
+										end if
+										print "EXCEPTION_BREAKPOINT after02 brk_test"
+										exit while
+									elseif bptyp=4 then ''BP counter
+										If brkol(bpidx).counter>0 Then
+											brkol(bpidx).counter-=1'decrement counter
+										else
+											thread_search(DebugEv.dwThreadId,CSCOUNT,bpidx)
+										end if
+										exit while
 									else
-										thread_search(DebugEv.dwThreadId,CSCOUNT,bpidx)
+										''simple BP (perm/tempo)
+										thread_search(DebugEv.dwThreadId,CSBRKPT,bpidx)
+										exit while
 									end if
-									exit while
-								elseif bpidx>brknb and stopcode=CSUSER then
-									thread_search(DebugEv.dwThreadId,stopcode,adr)
-									exit while
-								else
-									''simple BP (perm/tempo)
-									thread_search(DebugEv.dwThreadId,CSBRKPT,bpidx)
-									exit while
+									if stopcode=CSUSER then
+										thread_search(DebugEv.dwThreadId,stopcode,adr)
+										exit while
+									end if
 								end if
-
+print "EXCEPTION_BREAKPOINT not found"
 							else ''RTSTEP/RTAUTO
 								if stopcode=CSUSER then ''CSUSER
 									thread_search(DebugEv.dwThreadId,stopcode,adr)
@@ -369,6 +380,7 @@ While 1
 
 							libelexception=excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode)+Chr(13)+Chr(10) 'need chr(10) to dbg_prt otherwise bad print
 							If DebugEv.u.Exception.ExceptionRecord.ExceptionCode=EXCEPTION_ACCESS_VIOLATION Then
+								print "info=";.ExceptionInformation(0),.ExceptionInformation(1),Hex(.ExceptionInformation(1))
 								libelexception+=Accviolstr(.ExceptionInformation(0))+" AT ADR (dec/hex) : "+Str(.ExceptionInformation(1))+" / "+Hex(.ExceptionInformation(1))+Chr(13)+Chr(10)
 							EndIf
 

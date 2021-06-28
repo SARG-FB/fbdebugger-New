@@ -2811,13 +2811,17 @@ End Sub
 '================================================
  '' deletes one breakpoint and compresses data
 '================================================
-private sub brk_del(n As Integer)
+ private sub brk_del(n as integer)
+ 	print "brkdel n=";n
+	print brkol(0).nline
+	print brkol(1).nline
 	brkol(n).typ=0
 	brkol(n).cntrsav=0
 	brk_marker(n)
 	if n=0 then ''run or fast run
 		exit sub
 	EndIf
+	print "n,brknb=";n,brknb
 	brknb-=1
 	For i As Integer =n To brknb
 		brkol(i)=brkol(i+1)
@@ -2836,7 +2840,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 	Dim As Integer flag=0
 	'dim as integer recup(20)
 	dim as valeurs recup1,recup2
-
+print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
 		'If brkv.arr Then 'watching dyn array element ?
 			'adr=vrr(brkv.ivr).ini
 			'ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,4,0)
@@ -2861,6 +2865,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 			else
 				recup2=data2
 			EndIf
+print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 			if recup2.vbyte>recup1.vbyte then
 				If 26 And comptype Then
 					flag=1
@@ -2981,13 +2986,15 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 			End If
 
 		Case 9 'integer64/longint
+		recup1.vlongint=99999999
+		print recup1.vlongint
 			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
 			if adr2 then
 				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,8,0)
 			else
 				recup2=data2
 			EndIf
-
+			print "9 recup 1 et 2 =";adr1,recup1.vlongint,recup2.vlongint
 			if recup2.vlongint>recup1.vlongint then
 				If 26 And comptype Then
 					flag=1
@@ -3001,7 +3008,6 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 					flag=1
 				EndIf
 			End If
-			print "recup 1 et 2 =";recup1.vlongint,recup2.vlongint,flag
 		Case 10 'uinteger64/ulonginit
 			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
 			if adr2 then
@@ -3022,7 +3028,49 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 					flag=1
 				EndIf
 			End If
+		Case 11 'single
+			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,4,0)
+			if adr2 then
+				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,4,0)
+			else
+				recup2=data2
+			EndIf
+			print "11 recup1,recup2=",adr1,recup1.vsingle,recup2.vsingle
+			if recup2.vsingle>recup1.vsingle then
+				If 26 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vsingle<recup1.vsingle Then
+				If 21 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vsingle=recup1.vsingle Then
+				If 35 And comptype Then
+					flag=1
+				EndIf
+			End If
 
+		Case 12 'double
+			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
+			if adr2 then
+				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,8,0)
+			else
+				recup2=data2
+			EndIf
+			print "12 recup 1 et 2 =";adr1,recup1.vdouble,recup2.vdouble
+			if recup2.vdouble>recup1.vdouble then
+				If 26 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vdouble<recup1.vdouble Then
+				If 21 And comptype Then
+					flag=1
+				EndIf
+			ElseIf recup2.vdouble=recup1.vdouble Then
+				If 35 And comptype Then
+					flag=1
+				EndIf
+			End If
 		''strings not yet handled
 		'Case 4,13,14
 			'If brkv.typ=13 Then  ' normal string
@@ -3073,10 +3121,11 @@ End Sub
 private sub brc_fill()
 	dim as integer iparent,inext,temp,hitem,level
 	dim as string text
-
+	DeleteTreeViewItemAll(GTVIEWBRC)
 	hitem=getfirstitemtreeview(GTVIEWVAR)
 	iparent=0
 	inext=0
+	listcpt=0
 	While hitem<>0
 		listitem(listcpt).items=hitem
 		text=Space(level*4)+GetTextTreeView(GTVIEWVAR,hitem)
@@ -3098,18 +3147,38 @@ private sub brc_fill()
 	Wend
 End Sub
 '====================================================
+'' handles cond BP
+'====================================================
+private sub brc_choice()
+	dim as integer cln=line_cursor() 'get line
+	dim as integer rln=line_exec(cln,"Break point Not possible")
+	dim as integer ibrk,typ
+	For ibrk=1 To brknb 'search if still put on this line
+		If brkol(ibrk).nline=cln And brkol(ibrk).isrc=srcdisplayed Then Exit For
+	Next
+	if ibrk<=brknb Then ''existing
+		typ=brkol(ibrk).typ
+		brk_del(ibrk)
+		if typ=2 or typ=3 then
+			exit sub
+		EndIf
+	end if
+	brc_fill()
+	SetItemComboBox(GBRKVCOND,0)
+	hidewindow(hbpcondbx,KSHOW)
+end sub
+'====================================================
 '' checks if variable selected for cond BP is ok
 '====================================================
 private sub brc_check()
-	dim as INTEGER hitem=getitemtreeview(GTVIEWBRC),itemc
+	dim as INTEGER hitem=getitemtreeview(GTVIEWBRC),items
 	for ilist as integer = 0 to listcpt
-		if hitem=listitem(ilist).items then
-			itemc=listitem(ilist).itemc
+		if hitem=listitem(ilist).itemc then
+			items=listitem(ilist).items
 			for ivrr as INTEGER = 1 to vrrnb
-				if vrr(ivrr).tv=itemc then
+				if vrr(ivrr).tv=items then
 					if vrr(ivrr).vr=0 Then exit sub
-				else
-					brkidx1=vrr(ivrr).vr
+					brkidx1=ivrr
 					brkidx2=0
 					var_fill(brkidx1)
 					#Ifdef __FB_64BIT__
@@ -3117,8 +3186,8 @@ private sub brc_check()
 					#Else
 					If varfind.pt Then varfind.ty=1 ''pointer integer32 (long)
 					#EndIf
-					If varfind.ty>10 then
-						messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint")
+					If varfind.ty>12 then
+						messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint, single, double")
 						brkidx1=0
 						brkidx2=0
 						exit sub
@@ -3154,7 +3223,7 @@ select case t
 		brkol(0).index=rln
 		runtype=RTRUN
 		but_enable()
-		brkol(brknb).nline=cln
+		brkol(0).nline=cln
 		brk_marker(0)
 		brk_unset() ''remove ABP + keep UBP or disable them ?
 		thread_resume()
@@ -3233,11 +3302,17 @@ select case t
 				Case 2
 					brkol(brknb).adrvar1=brkadr1
 					brkol(brknb).ivar1=brkidx1
-					brkol(brknb).val.vlongint=brkdata2.vlongint
+					if brkdatatype=11 then
+						brkol(brknb).val.vsingle=brkdata2.vsingle
+					else
+						'' integer (whole) or double number
+						brkol(brknb).val.vlongint=brkdata2.vlongint
+					end if
 					brkol(brknb).ttb=brkttb
 					brkol(brknb).datatype=brkdatatype
 					brktyp=0
 					modify_menu(MNSETBRKC,HMenusource,"Set/Clear [C]onditionnal Breakpoint")
+					brkidx1=0
 				case 3
 					brkol(brknb).adrvar1=brkadr1
 					brkol(brknb).ivar1=brkidx1
@@ -3247,6 +3322,7 @@ select case t
 					brkol(brknb).datatype=brkdatatype
 					brktyp=0
 					modify_menu(MNSETBRKC,HMenusource,"Set/Clear [C]onditionnal Breakpoint")
+					brkidx1=0
 				case 4 'change value counter
 					inputval=input_bx("breakpoint with a counter","Set value counter for a breakpoint","0",7)
 					brkol(brknb).counter=ValUInt(inputval)
@@ -3273,12 +3349,12 @@ select case t
 				Else
 					brkol(ibrk).typ+=50
 				EndIf
-		ElseIf t=brkol(ibrk).typ OrElse (t<>1 and t<>6) then 'brkol(i).typ>1 Then 'cancel breakpoint
-			brk_del(ibrk)
-			Exit Sub
-		Else 'change type of breakpoint to only permanent/temporary
-			brkol(ibrk).typ=t
-			brkol(ibrk).cntrsav=0
+			ElseIf t=brkol(ibrk).typ OrElse (t<>1 and t<>6) then 'brkol(i).typ>1 Then 'cancel breakpoint
+				brk_del(ibrk)
+				Exit Sub
+			Else 'change type of breakpoint to only permanent/temporary
+				brkol(ibrk).typ=t
+				brkol(ibrk).cntrsav=0
 			End If
 		End If
 
@@ -3424,10 +3500,9 @@ private sub dsp_change(index As Integer)
 		if flagupdate=true then
 			var_sh()
 			dump_sh()
-		else
-			watch_array() ''even flagupdate is off watched are updated
-			watch_sh()
-		endif
+		end if
+		watch_array() ''even flagupdate is off watched are updated
+		watch_sh()
 
 		but_enable()
 
@@ -3723,7 +3798,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	'show_context
 
 	proccurad=ad
-		
+
 	if rln=-1 then ''search the line using address
 		i=thread(threadcur).sv+1
 		If rline(i).ad<>ad Then 'hope next source line is next executed line (optimization)
@@ -3826,13 +3901,14 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(brkol(0).index).ad),@rLine(brkol(0).index).sv,1,0) 'restore old value for execution
 		'end if
    	''?????	brk_test(proccurad) ' cancel breakpoint on line, if command halt not really used
-   	
+
 		if brkol(0).typ<>10 then ''for skip over always in same proc
 			proc_runnew   'creating running proc tree
 		end if
    		var_sh			'updating information about variables
    		runtype=RTSTEP
    		dsp_change(rln)
+   		print "avant brk_del"
 		brk_del(0)
    Else 'RTSTEP or RTAUTO
 		If flagattach Then proc_runnew:flagattach=FALSE
@@ -4735,7 +4811,7 @@ private sub debug_event()
 			else
 				gest_brk(brkol(debugdata).ad,brkol(debugdata).index) ''address and line index
 			end if
-			
+
 		Case KDBGCREATEPROC
 			srcstart=sourcenb+1
 			if debug_extract(debugdata,exename)=0 then ''otherwise there is a problem (no debug data or when reading debuggee memory)
