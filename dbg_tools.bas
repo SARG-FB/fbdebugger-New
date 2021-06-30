@@ -2812,9 +2812,6 @@ End Sub
  '' deletes one breakpoint and compresses data
 '================================================
  private sub brk_del(n as integer)
- 	print "brkdel n=";n
-	print brkol(0).nline
-	print brkol(1).nline
 	brkol(n).typ=0
 	brkol(n).cntrsav=0
 	brk_marker(n)
@@ -2852,9 +2849,9 @@ print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
 				'Return FALSE
 			'End If
 		'End If
-
-	''26 --> <> or > or >=
-	''21 --> <> or < or <=
+	''recup2 recup1
+	''21 --> <> or > or >=
+	''26 --> <> or < or <=
 	''35 --> = or >= or <=
 	''16 --> <>
 	Select Case datatype
@@ -2867,11 +2864,11 @@ print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
 			EndIf
 print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 			if recup2.vbyte>recup1.vbyte then
-				If 26 And comptype Then
+				If 21 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vbyte<recup1.vbyte Then
-				If 21 And comptype Then
+				If 26 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vbyte=recup1.vbyte Then
@@ -2888,11 +2885,11 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 				recup2=data2
 			EndIf
 			if recup2.vubyte>recup1.vubyte then
-				If 26 And comptype Then
+				If 21 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vubyte<recup1.vubyte Then
-				If 21 And comptype Then
+				If 26 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vubyte=recup1.vubyte Then
@@ -2909,11 +2906,11 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 				recup2=data2
 			EndIf
 			if recup2.vshort>recup1.vshort then
-				If 26 And comptype Then
+				If 21 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vshort<recup1.vshort Then
-				If 21 And comptype Then
+				If 26 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vshort=recup1.vshort Then
@@ -2930,11 +2927,11 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 				recup2=data2
 			EndIf
 			if recup2.vushort>recup1.vushort then
-				If 26 And comptype Then
+				If 21 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vushort<recup1.vushort Then
-				If 21 And comptype Then
+				If 26 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vushort=recup1.vushort Then
@@ -2951,11 +2948,11 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 				recup2=data2
 			EndIf
 			if recup2.vinteger>recup1.vinteger then
-				If 26 And comptype Then
+				If 21 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vinteger<recup1.vinteger Then
-				If 21 And comptype Then
+				If 26 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vinteger=recup1.vinteger Then
@@ -2972,11 +2969,11 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 				recup2=data2
 			EndIf
 			if recup2.vuinteger>recup1.vuinteger then
-				If 26 And comptype Then
+				If 21 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vuinteger<recup1.vuinteger Then
-				If 21 And comptype Then
+				If 26 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vuinteger=recup1.vuinteger Then
@@ -2996,11 +2993,11 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 			EndIf
 			print "9 recup 1 et 2 =";adr1,recup1.vlongint,recup2.vlongint
 			if recup2.vlongint>recup1.vlongint then
-				If 26 And comptype Then
+				If 21 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vlongint<recup1.vlongint Then
-				If 21 And comptype Then
+				If 26 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vlongint=recup1.vlongint Then
@@ -3016,11 +3013,11 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 				recup2=data2
 			EndIf
 			if recup2.vulongint>recup1.vulongint then
-				If 26 And comptype Then
+				If 21 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vulongint<recup1.vulongint Then
-				If 21 And comptype Then
+				If 26 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vulongint=recup1.vulongint Then
@@ -3037,11 +3034,11 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 			EndIf
 			print "11 recup1,recup2=",adr1,recup1.vsingle,recup2.vsingle
 			if recup2.vsingle>recup1.vsingle then
-				If 26 And comptype Then
+				If 21 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vsingle<recup1.vsingle Then
-				If 21 And comptype Then
+				If 26 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vsingle=recup1.vsingle Then
@@ -3059,11 +3056,11 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 			EndIf
 			print "12 recup 1 et 2 =";adr1,recup1.vdouble,recup2.vdouble
 			if recup2.vdouble>recup1.vdouble then
-				If 26 And comptype Then
+				If 21 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vdouble<recup1.vdouble Then
-				If 21 And comptype Then
+				If 26 And comptype Then
 					flag=1
 				EndIf
 			ElseIf recup2.vdouble=recup1.vdouble Then
@@ -3164,6 +3161,9 @@ private sub brc_choice()
 		EndIf
 	end if
 	brc_fill()
+	varfind.ad=0
+	setgadgettext(GBRCVAR1,"?")
+	setgadgettext(GBRCVALUE,"0")
 	SetItemComboBox(GBRKVCOND,0)
 	hidewindow(hbpcondbx,KSHOW)
 end sub
@@ -4142,6 +4142,7 @@ private sub reinit()
 	''todo 'array_tracking_remove
 	source_change(-1) ''reinit to avoid a potential problem
 	menu_enable()
+	ssadr=0
 end sub
 '================================================================
 '' check if exe bitness if not wrong 32bit<>64bit windows only
@@ -4313,7 +4314,9 @@ End sub
 private sub sources_load(n As integer,exedate as double)
 	dim As integer flgt,fnum
 	dim as any ptr ptrdoc
-	if flagrestart Then
+	if flagrestart=-1 Then
+		print "in source load"
+
 		statusbar_text(KSTBSTS,"Loading sources")
 	   	for isrc As Integer=n To sourcenb ' main index =0
 		   	print "loading ="+source(isrc)
@@ -4395,7 +4398,7 @@ private sub sources_load(n As integer,exedate as double)
 		'	setWindowText(richedit(i),""):ShowWindow(richedit(i),SW_HIDE)'hide all the exceding windows (>sourcenb)
 		'	sendmessage(htab1,TCM_DELETEITEM ,i,0) 'delete tabs
 		'Next
-		flagrestart = true
+		flagrestart = -1
 	endif
 End sub
 ''==============================================================================
@@ -4888,11 +4891,16 @@ end sub
 '' Debuggee restarted, last debugged (using IDBUTRERUN) or one of the 9/10 others
 '==================================================================================
 private sub restart(byval idx as integer=0)
+	''todo maybe cmdline changed so need to be saved
+
 	if idx=0 then
 		Dim As Double dtempo=FileDateTime(exename)
-		If exedate<>0 AndAlso exedate=dtempo Then
-			flagrestart=sourcenb
-			''todo maybe cmdline changed so need to be saved
+		If exedate=0 then
+			exedate=dtempo
+		elseif exedate=dtempo Then
+			flagrestart=sourcenb ''exe not changed so no need to reload sources
+		else
+			flagrestart=-1 ''need to reload sources
 		EndIf
 		If wtchcpt Then flagwtch=1
 	else

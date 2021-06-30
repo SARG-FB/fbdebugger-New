@@ -13,6 +13,7 @@ MutexLock blocker
 dim shared as integer debugevent
 dim shared as integer debugdata ''index of bp or address of BP (case BP on mem)
 dim shared as STRING  libelexception
+dim shared as integer ssadr ''address of line for restoring &hCC when singlestepping
 
 ''codes when debuggee stopped and corresponding texts
 Dim Shared stopcode As Integer

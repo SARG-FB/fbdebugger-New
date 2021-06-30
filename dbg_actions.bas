@@ -867,20 +867,24 @@ private sub gadget_action(igadget as LONG)
 			hidewindow(hbrkvbx,KHIDE)
 
 		case GBRCOK
-			brkdatatype=varfind.ty
-			if brkdatatype=11 then
-				brkdata2.vsingle=val(getgadgettext(GBRCVALUE))
-			elseIf brkdatatype=12 then
-				brkdata2.vdouble=val(getgadgettext(GBRCVALUE))
+			if varfind.ad=0 then
+				messbox("Cond BP","Select a variable")
 			else
-				brkdata2.vlongint=vallng(getgadgettext(GBRCVALUE))
-			EndIf
-			brkadr1=varfind.ad
-			print "adr brc=";brkadr1
-			brkttb=32 shr GetItemComboBox(GBRCCOND)
-			var tst=brk_comp(brkttb)
-			hidewindow(hbpcondbx,KHIDE)
-			brk_set(2)
+				brkdatatype=varfind.ty
+				if brkdatatype=11 then
+					brkdata2.vsingle=val(getgadgettext(GBRCVALUE))
+				elseIf brkdatatype=12 then
+					brkdata2.vdouble=val(getgadgettext(GBRCVALUE))
+				else
+					brkdata2.vlongint=vallng(getgadgettext(GBRCVALUE))
+				EndIf
+				brkadr1=varfind.ad
+				print "adr brc=";brkadr1
+				brkttb=32 shr GetItemComboBox(GBRCCOND)
+				var tst=brk_comp(brkttb)
+				hidewindow(hbpcondbx,KHIDE)
+				brk_set(2)
+			end if
 
 		case GBRCDEL
 			hidewindow(hbpcondbx,KHIDE)
@@ -957,7 +961,7 @@ private sub select_file()
 	if kill_process("Trying to launch but debuggee still running")=FALSE then exit sub
 
 	reinit ''reinit all except GUI parts
-
+	flagrestart=-1
     exe_sav(exename,"")
 	SetTimer(hmain,GTIMER,100,Cast(Any Ptr,@debug_event))
 	#Ifdef __fb_win32__

@@ -189,6 +189,40 @@ private sub debugstring_read(debugev As debug_event)
 
 End Sub
 '====================================================================
+'' prepares singlestepping for restoring cond BP
+'====================================================================
+private sub singlestep_on(tid as integer,bpidx as integer,adr as integer)
+	dim as integer dummy
+	Dim vcontext As CONTEXT
+	dim as integer rln
+	print "singlestep_on"
+    For i As Integer =0 To threadnb
+		If tid=thread(i).id Then
+			threadcontext=thread(i).hd
+
+			'get context
+			vcontext.contextflags=CONTEXT_CONTROL
+			print "get context=";GetThreadContext(threadcontext,@vcontext)
+
+			rln=brkol(bpidx).index
+			''restore initial code
+			WriteProcessMemory(dbghand,Cast(LPVOID,rline(rln).ad),@rLine(rln).sv,1,0)
+			''change EIP go back 1 byte
+			vcontext.regip-=1
+			''set Trace flag on
+			print "av=";bin(vcontext.eflags)
+			vcontext.eflags=bitset(vcontext.eflags,8)
+			print "ap=";bin(vcontext.eflags)
+			''update context
+			print "ON setcontext=";setThreadContext(threadcontext,@vcontext)
+			''rline for restoring BP and use as flag for reseting Trace flag after next exception
+			ssadr=adr
+			print "singlestep_on set and adr=",rline(rln).ad
+			exit sub
+		End If
+	Next
+End Sub
+'====================================================================
 private sub thread_search(tid as integer,bptype as integer,ddata as integer)
 	For i As Integer =0 To threadnb
 		If tid=thread(i).id Then
@@ -227,9 +261,9 @@ While 1
 		'=========================
 			'dbg_prt("exception code "+Hex(DebugEv.u.Exception.ExceptionRecord.ExceptionCode))'+DebugEv.u.Exception.dwfirstchance+" adr : "+DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
 
-			PRINT "DEBUG EVENT EXCEPTION"
 			firstchance=DebugEv.u.Exception.dwfirstchance
 			adr=cast(integer,DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
+			PRINT "DEBUG EVENT EXCEPTION adr=";adr,DebugEv.u.Exception.ExceptionRecord.ExceptionCode
 			'dbg_prt("firstchance="+Str(firstchance))'25/01/2015
 			If firstchance=0 Then 'second try
 				If flagsecond=0 Then
@@ -273,6 +307,15 @@ While 1
 						'mutexlock blocker ''waiting the Go from main thread
 						'mutexunlock blocker
 						'ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
+					'==========================
+					case EXCEPTION_SINGLE_STEP
+					'==========================
+						print "EXCEPTION_SINGLE_STEP",adr
+						''even if singlestepping the exception could also be on a line with a UBP ????
+						''restore previous code
+						WriteProcessMemory(dbghand,Cast(LPVOID,ssadr),@breakcpu,1,0)
+						ssadr=0
+						ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 
 					'=========================
 					Case EXCEPTION_BREAKPOINT
@@ -320,6 +363,8 @@ print "EXCEPTION_BREAKPOINT before brk_test"
 										if brk_test(brkol(bpidx).adrvar1,brkol(bpidx).adrvar2,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
 											print "EXCEPTION_BREAKPOINT after01 brk_test"
 											thread_search(DebugEv.dwThreadId,CSCOND,bpidx)
+										else
+											singlestep_on(DebugEv.dwThreadId,bpidx,adr)
 										end if
 										print "EXCEPTION_BREAKPOINT after02 brk_test"
 										exit while

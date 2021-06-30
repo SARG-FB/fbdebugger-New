@@ -490,9 +490,6 @@ end sub
 private sub brk_manage()
 	dim as string text
 	dim as integer srcprev=srcdisplayed,typ
-print "manage"
-print brkol(0).nline
-print brkol(1).nline
 
 	For ibrk as integer =1 To brknb
 		source_change(brkol(ibrk).isrc)
@@ -677,9 +674,10 @@ private sub create_bpcondbx()
 	centerWindow(hbpcondbx)
 
 	treeviewgadget(GTVIEWBRC,0,0,500,600,KTRRESTYLE)
-	textgadget(GBRCVAR1,505,5,390,30,"Variable")
-	stringgadget(GBRCVALUE,505,40,120,30,"789")
-	comboboxgadget(GBRCCOND,505,80,54,150)
+	textgadget(GBRCVAR1,505,5,390,30,"")
+	comboboxgadget(GBRCCOND,505,40,54,150)
+	stringgadget(GBRCVALUE,505,80,120,30,"")
+
 	AddComboBoxItem(GBRCCOND,"=",-1)
 	AddComboBoxItem(GBRCCOND,"<>",-1)
 	AddComboBoxItem(GBRCCOND,">",-1)
