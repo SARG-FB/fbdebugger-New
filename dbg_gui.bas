@@ -988,6 +988,7 @@ private sub but_enable()
       		statusbar_text(KSTBSTS,"Auto")
    		case Else 'prun=1 --> terminated or no pgm
 			DisableGadget(IDBUTSTEP,1)
+			DisableGadget(IDBUTSTEPOVER,1)
 			DisableGadget(IDBUTRUNEND,1)
 			DisableGadget(IDBUTAUTO,1)
 			DisableGadget(IDBUTRUNEXIT,1)

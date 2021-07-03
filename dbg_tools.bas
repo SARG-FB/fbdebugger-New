@@ -3101,7 +3101,11 @@ private sub brk_unset(ubpon as integer=false)
 	For jbrk As Integer = 1 To brknb ''restore if needed the UBP
 		If brkol(jbrk).typ<50 Then
 			if ubpon=true then
-				WriteProcessMemory(dbghand,Cast(LPVOID,brkol(jbrk).ad),@breakcpu,1,0) ''only BP enabled
+				if rlinecur=brkol(jbrk).index then ''if current line is a BP (permanent/cond/counter)
+					singlestep_on(thread(threadcur).id,jbrk,0)  ''planned to restore the BP after execution
+				else
+					WriteProcessMemory(dbghand,Cast(LPVOID,brkol(jbrk).ad),@breakcpu,1,0) ''only BP enabled
+				EndIf
 			else
 				brkol(jbrk).typ+=50 ''disable all UBP
 				brk_marker(jbrk)
@@ -3215,6 +3219,12 @@ select case t
 		rln=line_exec(cln,"Run to cursor not possible, select an executable line")
 		if rln=-1 then exit sub
 		''messbox("Run to cursor",str(cln)+" "+str(rln)+" "+str(rline(rln).ad)+" "+hex(rline(rln).ad))
+		for ibrk as INTEGER	=1 to brknb
+			if rline(rln).ad=brkol(ibrk).ad then
+				messbox("Run to cursor","Impossible as a breakpoint is already set on this line")
+				exit sub
+			EndIf
+		Next
 		If linecur=cln And srcdisplayed=srccur Then
 			If messbox("Run to cursor","Same line, continue ?",MB_YESNO)=IDNO Then Exit Sub
 		End If
@@ -3225,7 +3235,7 @@ select case t
 		but_enable()
 		brkol(0).nline=cln
 		brk_marker(0)
-		brk_unset() ''remove ABP + keep UBP or disable them ?
+		brk_unset(true) ''remove ABP + keep UBP or disable them ?
 		thread_resume()
 
 	case 10 ''Skip current line / step over
@@ -3246,7 +3256,7 @@ select case t
 		but_enable()
 		brkol(0).nline=rline(rln).nu
 		brk_marker(0)
-		brk_unset() ''remove ABP + keep UBP or disable them ?
+		brk_unset(true) ''remove ABP + keep UBP or disable them ?
 		thread_resume()
 
 	case 11 '' run until end of proc  = EOP
@@ -3262,20 +3272,20 @@ select case t
 		but_enable()
 		brkol(0).nline=rline(rln).nu
 		brk_marker(0)
-		brk_unset() ''remove ABP + keep UBP or disable them ?
+		brk_unset(true) ''remove ABP + keep UBP or disable them ?
 		thread_resume()
 
 	case 12 '' run until exit of prog  = XOP
-		brkol(0).ad=proc(procmain).fn
-		For rln=1 To linenb
-			If rline(rln).ad=brkol(0).ad Then Exit For ''find nline
-		Next
-		brkol(0).index=rln
+		brkol(0).ad=proc(procmain).ed-1 ''BP on ret instruction but doesn't stop ????
+		'For rln=1 To linenb
+			'If rline(rln).ad=brkol(0).ad Then Exit For ''find nline
+		'Next
+		'brkol(0).index=rln
 		brkol(0).typ=12
 		runtype=RTRUN
 		but_enable()
-		brkol(0).nline=rline(rln).nu
-		brk_marker(0)
+		'brkol(0).nline=rline(rln).nu
+		'brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP
 		thread_resume()
 
@@ -3902,13 +3912,12 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		'end if
    	''?????	brk_test(proccurad) ' cancel breakpoint on line, if command halt not really used
 
-		if brkol(0).typ<>10 then ''for skip over always in same proc
+		if brkol(0).typ<>10 then ''for skip over always in same proc, if different thread ???
 			proc_runnew   'creating running proc tree
 		end if
    		var_sh			'updating information about variables
    		runtype=RTSTEP
    		dsp_change(rln)
-   		print "avant brk_del"
 		brk_del(0)
    Else 'RTSTEP or RTAUTO
 		If flagattach Then proc_runnew:flagattach=FALSE
@@ -4142,7 +4151,6 @@ private sub reinit()
 	''todo 'array_tracking_remove
 	source_change(-1) ''reinit to avoid a potential problem
 	menu_enable()
-	ssadr=0
 end sub
 '================================================================
 '' check if exe bitness if not wrong 32bit<>64bit windows only
@@ -4308,18 +4316,36 @@ private sub exe_sav(exename As String,cmdline As String="")
 	ini_write() ''done also when fbdebugger closing but also here in case of crash of fbdebugger
 End sub
 '======================================================================
+''releases the scintilla docs except the one attached to the window
+'======================================================================
+private sub release_doc
+	var ptrdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
+	for isrc as integer =0 to sourcenb
+		if sourceptr(isrc)<>ptrdoc then
+			send_sci(SCI_RELEASEDOCUMENT,0,sourceptr(isrc))
+		end if
+	next
+end sub
+'======================================================================
 ''loads the source code files, by slice : n contains the first to be loaded until sourcenb
 ''n=0 for the first loading
 ''=====================================================================
 private sub sources_load(n As integer,exedate as double)
 	dim As integer flgt,fnum
-	dim as any ptr ptrdoc
+	dim as any ptr ptrdoc,currentprev
 	if flagrestart=-1 Then
-		print "in source load"
-
 		statusbar_text(KSTBSTS,"Loading sources")
+		if currentdoc then ''removes all previous docs
+			release_doc()
+			currentprev=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0)) ''keep for release later
+			for isrc As Integer=0 To sourcenb
+				DeleteItemPanelGadget(GSRCTAB,isrc)
+			next
+			ResetAllComboBox(GFILELIST)
+		EndIf
+
 	   	for isrc As Integer=n To sourcenb ' main index =0
-		   	print "loading ="+source(isrc)
+			print "loading =";isrc,source(isrc)
 		   	if FileExists(source(isrc))=0 Then
 		   		messbox("Loading Source error","File : "+source(isrc)+" not found")
 		   		continue For
@@ -4338,8 +4364,6 @@ private sub sources_load(n As integer,exedate as double)
 			AddPanelGadgetItem(GSRCTAB,isrc,source_name(source(isrc)))
 			''todo later sort the files to get them in alphabetic order
 			AddComboBoxItem(GFILELIST,source_name(source(isrc)),-1)
-
-
 
 			''unicode
 			'If buf(0)=&hEF AndAlso buf(1)=&hBB AndAlso buf(2)=&hBF Then 'UTF8
@@ -4363,7 +4387,7 @@ private sub sources_load(n As integer,exedate as double)
 				messbox("Maybe something to do","the source code contains a BOM code so --> unicode")
 			else
 
-				if isrc=0 then
+				if isrc=0 and currentprev=0 then
 					''first file
 					currentdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
 					sourceptr(0)=currentdoc
@@ -4387,6 +4411,9 @@ private sub sources_load(n As integer,exedate as double)
 	   	if sourcenb<>0 then
 		   	Send_sci(SCI_ADDREFDOCUMENT,0,sourceptr(sourcenb))
 			Send_sci(SCI_SETDOCPOINTER,0,currentdoc)
+			if currentprev then
+				send_sci(SCI_RELEASEDOCUMENT,0,currentprev)
+			EndIf
 		end if
 		SetItemComboBox(GFILELIST,1)
 		''todo
@@ -4418,17 +4445,6 @@ private sub main_line()
 			Next
 		End If
 	Next
-end sub
-'======================================================================
-''releases the scintilla docs except the one attached to the window
-'======================================================================
-private sub release_doc
-	var ptrdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
-	for isrc as integer =0 to sourcenb
-		if sourceptr(isrc)<>ptrdoc then
-			send_sci(SCI_RELEASEDOCUMENT,0,sourceptr(isrc))
-		end if
-	next
 end sub
 '=======================================================================
 '' write some options on file for next launch of fbdebugger
@@ -4673,7 +4689,7 @@ private sub init_debuggee(srcstart as integer)
 	   If flagwtch=0 AndAlso wtchexe(0,0)<>"" Then watch_check(wtchexe())
 	   flagwtch=0
 	EndIf
-	'list_all()
+	list_all()
 	put_breakcpu()
 	''srcstart contains the index for starting the loading of source codes
 	sources_load(srcstart,filedatetime(exename))
@@ -4895,10 +4911,12 @@ private sub restart(byval idx as integer=0)
 
 	if idx=0 then
 		Dim As Double dtempo=FileDateTime(exename)
+		print "restart exe before tests=";exedate,dtempo
 		If exedate=0 then
 			exedate=dtempo
 		elseif exedate=dtempo Then
 			flagrestart=sourcenb ''exe not changed so no need to reload sources
+			print "restart exe with same date=";exedate,dtempo
 		else
 			flagrestart=-1 ''need to reload sources
 		EndIf

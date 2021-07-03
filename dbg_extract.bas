@@ -991,7 +991,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 			proc(procnb).nm=procname
 			proc(procnb).db=adr'+exebase-baseimg 'only when <> exebase and baseimg (DLL)
 			''to be added
-			parse_retval(procnb,Mid(strg,InStr(strg,":")+2,99))'return value .rv + pointer .pt
+			parse_retval(procnb,Mid(strg,InStr(strg,":")+2,99)) 'return value .rv + pointer .pt
 			proc(procnb).enab=true
 			proc(procnb).nu=linenum
 			lastline=0
@@ -1002,7 +1002,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 		end if
 	else
 		proc(procnb).ed=proc(procnb).db+adr
-		print "end of proc=";proc(procnb).ed
+		print "end of proc=";proc(procnb).ed,hex(proc(procnb).ed)
 
 		if proc(procnb).fn>procfn Then procfn=proc(procnb).fn+1 ' just to be sure to be above see gest_brk
 
@@ -1049,8 +1049,8 @@ private sub dbg_epilog(ofset as integer)
 		'' for function the last line ('end function' is not given by 224)
 		'' so forcing it except for main
 			rline(linenb).ad=proc(procnb).fn ''KEEP this line even if test is removed
-		else
-			proc(procnb).fn=rline(linenb).ad
+		'else
+			'proc(procnb).fn=rline(linenb).ad
 		end if
 	end if
 end sub

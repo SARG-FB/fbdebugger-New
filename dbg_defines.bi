@@ -1023,6 +1023,7 @@ declare sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer
 declare function debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL) as integer
 declare sub button_action(button as integer)
 declare sub ini_write()
+declare sub singlestep_on(tid as integer,bpidx as integer,running as integer =1)
 '===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)

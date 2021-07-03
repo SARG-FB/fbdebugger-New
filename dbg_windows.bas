@@ -189,35 +189,35 @@ private sub debugstring_read(debugev As debug_event)
 
 End Sub
 '====================================================================
-'' prepares singlestepping for restoring cond BP
+'' prepares singlestepping for restoring BP
 '====================================================================
-private sub singlestep_on(tid as integer,bpidx as integer,adr as integer)
-	dim as integer dummy
+private sub singlestep_on(tid as integer,bpidx as integer,running as integer =1)
+	dim as integer dummy ''used to align vcontext on 16bit
 	Dim vcontext As CONTEXT
 	dim as integer rln
-	print "singlestep_on"
     For i As Integer =0 To threadnb
 		If tid=thread(i).id Then
 			threadcontext=thread(i).hd
 
 			'get context
 			vcontext.contextflags=CONTEXT_CONTROL
-			print "get context=";GetThreadContext(threadcontext,@vcontext)
+			GetThreadContext(threadcontext,@vcontext)
 
 			rln=brkol(bpidx).index
-			''restore initial code
-			WriteProcessMemory(dbghand,Cast(LPVOID,rline(rln).ad),@rLine(rln).sv,1,0)
-			''change EIP go back 1 byte
-			vcontext.regip-=1
+
+			if running then ''when not running initial code is already restored and no need to decrease EIP
+				''restore initial code
+				WriteProcessMemory(dbghand,Cast(LPVOID,rline(rln).ad),@rLine(rln).sv,1,0)
+				''change EIP go back 1 byte
+				vcontext.regip-=1
+			end if
+
 			''set Trace flag on
-			print "av=";bin(vcontext.eflags)
 			vcontext.eflags=bitset(vcontext.eflags,8)
-			print "ap=";bin(vcontext.eflags)
 			''update context
-			print "ON setcontext=";setThreadContext(threadcontext,@vcontext)
+			setThreadContext(threadcontext,@vcontext)
 			''rline for restoring BP and use as flag for reseting Trace flag after next exception
-			ssadr=adr
-			print "singlestep_on set and adr=",rline(rln).ad
+			ssadr=rline(rln).ad
 			exit sub
 		End If
 	Next
@@ -310,11 +310,9 @@ While 1
 					'==========================
 					case EXCEPTION_SINGLE_STEP
 					'==========================
-						print "EXCEPTION_SINGLE_STEP",adr
 						''even if singlestepping the exception could also be on a line with a UBP ????
 						''restore previous code
 						WriteProcessMemory(dbghand,Cast(LPVOID,ssadr),@breakcpu,1,0)
-						ssadr=0
 						ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 
 					'=========================
@@ -341,7 +339,6 @@ While 1
 										exit while
 									end if
 								end if
-print "EXCEPTION_BREAKPOINT,before for"
 								''retrieves BP corresponding at address (loop) -->bpidx
 								For ibrk as integer =0 To brknb
 									If brkol(ibrk).typ>50 Then Continue For 'disabled
@@ -350,27 +347,23 @@ print "EXCEPTION_BREAKPOINT,before for"
 										exit for
 									EndIf
 								Next
-print "EXCEPTION_BREAKPOINT bpidx=",bpidx
 								if bpidx<>-1 then
 									if bpidx=0 then ''BP on LINE (line, cursor, over,eop,xop)
 										thread_search(DebugEv.dwThreadId,CSLINE,bpidx)
 										exit while
 									end if
-print "EXCEPTION_BREAKPOINT before cond typ=",brkol(bpidx).typ
 									bptyp=brkol(bpidx).typ
 									if bptyp=2 or bptyp=3 then  ''BP conditional
-print "EXCEPTION_BREAKPOINT before brk_test"
 										if brk_test(brkol(bpidx).adrvar1,brkol(bpidx).adrvar2,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
-											print "EXCEPTION_BREAKPOINT after01 brk_test"
 											thread_search(DebugEv.dwThreadId,CSCOND,bpidx)
 										else
-											singlestep_on(DebugEv.dwThreadId,bpidx,adr)
+											singlestep_on(DebugEv.dwThreadId,bpidx)
 										end if
-										print "EXCEPTION_BREAKPOINT after02 brk_test"
 										exit while
 									elseif bptyp=4 then ''BP counter
 										If brkol(bpidx).counter>0 Then
 											brkol(bpidx).counter-=1'decrement counter
+											singlestep_on(DebugEv.dwThreadId,bpidx)
 										else
 											thread_search(DebugEv.dwThreadId,CSCOUNT,bpidx)
 										end if
@@ -385,7 +378,7 @@ print "EXCEPTION_BREAKPOINT before brk_test"
 										exit while
 									end if
 								end if
-print "EXCEPTION_BREAKPOINT not found"
+
 							else ''RTSTEP/RTAUTO
 								if stopcode=CSUSER then ''CSUSER
 									thread_search(DebugEv.dwThreadId,stopcode,adr)
