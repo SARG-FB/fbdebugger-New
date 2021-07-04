@@ -667,7 +667,7 @@ private sub create_brkvbx()
 	comboboxgadget(GBRKVCOND,402,3,54,150)
 end sub
 '==============================================================================
-'' creates the window for managing the breakpoint on variable/memory change
+'' creates the window for managing the cond breakpoint
 '==============================================================================
 private sub create_bpcondbx()
 	hbpcondbx=create_window("Breakpoint cond var/const",10,10,700,650)
@@ -967,7 +967,18 @@ private sub but_enable()
 			DisableGadget(IDBUTEXECMOD,1)
 			Select Case runtype
 				Case RTRUN
-					statusbar_text(KSTBSTS,"Running")
+					select case brkol(0).typ
+						Case 9
+							statusbar_text(KSTBSTS,"Running to cursor")
+						Case 10
+							statusbar_text(KSTBSTS,"Running skip over")
+						Case 11
+							statusbar_text(KSTBSTS,"Running to EOP")
+						Case 12
+							statusbar_text(KSTBSTS,"Running to XOP")
+						case else
+							statusbar_text(KSTBSTS,"Running")
+					End Select
 				Case RTCRASH
 					statusbar_text(KSTBSTS,"Run to crash")
 				Case else

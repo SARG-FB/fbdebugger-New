@@ -299,7 +299,7 @@ private sub menu_action(poption as integer)
 			select case poption
 				case MNBRKVC,MNBRKV1,MNBRCV1
 					''BP var/mem variable/constant or variable/variable
-					''BP cond variable/constant or variable/variable
+					''BP cond variable/variable
 					brkidx1=ivar
 					brkidx2=0
 					var_fill(brkidx1)
@@ -332,12 +332,7 @@ private sub menu_action(poption as integer)
 						'end if
 						SetItemComboBox(GBRKVCOND,0)
 						hidewindow(hbrkvbx,KSHOW)
-
-						if poption=MNBRKVC then
-							brktyp=KBRKMEMCONST
-						else
-							brktyp=KBRCMEMCONST
-						end if
+						brktyp=KBRKMEMCONST
 					end if
 
 				Case MNBRKV2,MNBRCV2
@@ -372,7 +367,14 @@ private sub menu_action(poption as integer)
 					hidegadget(GBRKVAR2,KSHOW)
 					hidegadget(GBRKVVALUE,KHIDE)
 					hidewindow(hbrkvbx,KSHOW)
-
+					ResetAllComboBox(GBRKVCOND)
+					AddComboBoxItem(GBRKVCOND,"=",-1)
+					AddComboBoxItem(GBRKVCOND,"<>",-1)
+					AddComboBoxItem(GBRKVCOND,">",-1)
+					AddComboBoxItem(GBRKVCOND,"<",-1)
+					AddComboBoxItem(GBRKVCOND,">=",-1)
+					AddComboBoxItem(GBRKVCOND,"<=",-1)
+					SetItemComboBox(GBRKVCOND,0)
 					if poption=MNBRKV2 then
 						brktyp=KBRKMEMMEM
 					else
@@ -845,15 +847,6 @@ private sub gadget_action(igadget as LONG)
 					brkv_set(1)
 				Case KBRKMEMMEM
 					brkv_set(2)
-
-				Case KBRCMEMCONST
-					var_fill(brkidx1)
-					brkadr1=varfind.ad
-					brkttb=32 shr GetItemComboBox(GBRKVCOND)
-					var tst=brk_comp(brkttb)
-					brkdata2.vlongint=vallng(getgadgettext(GBRKVVALUE))
-					modify_menu(MNSETBRKC,HMenusource,"BP cond with "+varfind.nm+" "+*tst+" "+str(brkdata2.vlongint))
-
 				Case KBRCMEMMEM
 					var_fill(brkidx1)
 					brkadr1=varfind.ad

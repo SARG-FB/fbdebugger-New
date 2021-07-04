@@ -191,10 +191,9 @@ End Sub
 '====================================================================
 '' prepares singlestepping for restoring BP
 '====================================================================
-private sub singlestep_on(tid as integer,bpidx as integer,running as integer =1)
+private sub singlestep_on(tid as integer,rln as integer,running as integer =1)
 	dim as integer dummy ''used to align vcontext on 16bit
 	Dim vcontext As CONTEXT
-	dim as integer rln
     For i As Integer =0 To threadnb
 		If tid=thread(i).id Then
 			threadcontext=thread(i).hd
@@ -202,8 +201,6 @@ private sub singlestep_on(tid as integer,bpidx as integer,running as integer =1)
 			'get context
 			vcontext.contextflags=CONTEXT_CONTROL
 			GetThreadContext(threadcontext,@vcontext)
-
-			rln=brkol(bpidx).index
 
 			if running then ''when not running initial code is already restored and no need to decrease EIP
 				''restore initial code
@@ -216,7 +213,7 @@ private sub singlestep_on(tid as integer,bpidx as integer,running as integer =1)
 			vcontext.eflags=bitset(vcontext.eflags,8)
 			''update context
 			setThreadContext(threadcontext,@vcontext)
-			''rline for restoring BP and use as flag for reseting Trace flag after next exception
+			''rline for restoring BP
 			ssadr=rline(rln).ad
 			exit sub
 		End If
@@ -337,7 +334,15 @@ While 1
 											thread_search(DebugEv.dwThreadId,CSVAR,adr)
 										end if
 										exit while
+									else
+										for irln as integer =1 to linenb
+											if rline(irln).ad=adr then
+												singlestep_on(DebugEv.dwThreadId,irln)
+												exit for
+											EndIf
+										Next
 									end if
+									'exit while
 								end if
 								''retrieves BP corresponding at address (loop) -->bpidx
 								For ibrk as integer =0 To brknb
@@ -357,13 +362,13 @@ While 1
 										if brk_test(brkol(bpidx).adrvar1,brkol(bpidx).adrvar2,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
 											thread_search(DebugEv.dwThreadId,CSCOND,bpidx)
 										else
-											singlestep_on(DebugEv.dwThreadId,bpidx)
+											singlestep_on(DebugEv.dwThreadId,brkol(bpidx).index)
 										end if
 										exit while
 									elseif bptyp=4 then ''BP counter
 										If brkol(bpidx).counter>0 Then
 											brkol(bpidx).counter-=1'decrement counter
-											singlestep_on(DebugEv.dwThreadId,bpidx)
+											singlestep_on(DebugEv.dwThreadId,brkol(bpidx).index)
 										else
 											thread_search(DebugEv.dwThreadId,CSCOUNT,bpidx)
 										end if
@@ -377,6 +382,8 @@ While 1
 										thread_search(DebugEv.dwThreadId,stopcode,adr)
 										exit while
 									end if
+								else
+									exit while
 								end if
 
 							else ''RTSTEP/RTAUTO

@@ -558,10 +558,10 @@ enum
 end enum
 
 ''break on var/mem or cond
-#define KBRCMEMCONST 1 ''cond  var/const
-#define KBRCMEMMEM   2 ''cond  var/var
-#define KBRKMEMCONST 3 ''mem   var-mem/const
-#define KBRKMEMMEM   4 ''mem   var-mem/mem
+'#define KBRCMEMCONST 1 ''cond  var/const
+#define KBRCMEMMEM   1 ''cond  var/var
+#define KBRKMEMCONST 2 ''mem   var-mem/const
+#define KBRKMEMMEM   3 ''mem   var-mem/mem
 
 enum
 	GBRKVAR1=973
@@ -1023,7 +1023,7 @@ declare sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer
 declare function debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL) as integer
 declare sub button_action(button as integer)
 declare sub ini_write()
-declare sub singlestep_on(tid as integer,bpidx as integer,running as integer =1)
+declare sub singlestep_on(tid as integer,rln as integer,running as integer =1)
 '===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)

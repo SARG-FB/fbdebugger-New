@@ -2818,7 +2818,6 @@ End Sub
 	if n=0 then ''run or fast run
 		exit sub
 	EndIf
-	print "n,brknb=";n,brknb
 	brknb-=1
 	For i As Integer =n To brknb
 		brkol(i)=brkol(i+1)
@@ -2983,8 +2982,6 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 			End If
 
 		Case 9 'integer64/longint
-		recup1.vlongint=99999999
-		print recup1.vlongint
 			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
 			if adr2 then
 				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,8,0)
@@ -3094,27 +3091,34 @@ end function
 '' removes all ABP / disables all UBP if necessary
 '=======================================================================
 private sub brk_unset(ubpon as integer=false)
-	For j As Integer = 1 To linenb 'restore all instructions
-	  WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@rLine(j).sv,1,0)
-	Next
 
-	For jbrk As Integer = 1 To brknb ''restore if needed the UBP
-		If brkol(jbrk).typ<50 Then
-			if ubpon=true then
-				if rlinecur=brkol(jbrk).index then ''if current line is a BP (permanent/cond/counter)
-					singlestep_on(thread(threadcur).id,jbrk,0)  ''planned to restore the BP after execution
+	if brkv.adr1 then ''restore by default ABP on all line
+		For j As Integer = 1 To linenb 'restore all instructions
+		  WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@breakcpu,1,0)
+		Next
+	else
+		For j As Integer = 1 To linenb 'restore all instructions
+		  WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@rLine(j).sv,1,0)
+		Next
+
+		For jbrk As Integer = 1 To brknb ''restore if needed the UBP
+			If brkol(jbrk).typ<50 Then
+				if ubpon=true then
+					if rlinecur=brkol(jbrk).index then ''if current line is a BP (permanent/cond/counter)
+						singlestep_on(thread(threadcur).id,brkol(jbrk).index,0)  ''planned to restore the BP after execution
+					else
+						WriteProcessMemory(dbghand,Cast(LPVOID,brkol(jbrk).ad),@breakcpu,1,0) ''only BP enabled
+					EndIf
 				else
-					WriteProcessMemory(dbghand,Cast(LPVOID,brkol(jbrk).ad),@breakcpu,1,0) ''only BP enabled
-				EndIf
-			else
-				brkol(jbrk).typ+=50 ''disable all UBP
-				brk_marker(jbrk)
+					brkol(jbrk).typ+=50 ''disable all UBP
+					brk_marker(jbrk)
+				end if
 			end if
-		end if
-	Next
-	if brkol(0).typ<>0 then
-		WriteProcessMemory(dbghand,Cast(LPVOID,brkol(0).ad),@breakcpu,1,0)
-	EndIf
+		Next
+		if brkol(0).typ<>0 then
+			WriteProcessMemory(dbghand,Cast(LPVOID,brkol(0).ad),@breakcpu,1,0)
+		EndIf
+	end if
 End Sub
 '============================================================================
 ''fills array listitem() with all the existing variables/fields for cond BP
@@ -3639,6 +3643,7 @@ private sub brkv_set(a As Integer) ''break on variable change
 		SetStateMenu(HMenuvar2,MNBRKVS,1)
 		hidewindow(hbrkvbx ,KHIDE)
 		Exit Sub
+
 	ElseIf a=1 Then ''mem/const
 		var_fill(brkidx1)
 		brkv.typ=brkdatatype
@@ -3648,8 +3653,9 @@ private sub brkv_set(a As Integer) ''break on variable change
 		brkv.ivr1=brkidx1
 		brkv.val.vlongint=vallng(getgadgettext(GBRKVVALUE))
 		tst=brk_comp(brkv.ttb)
-		modify_menu(MNBRKVS,HMenuvar2,varfind.nm+" "+*tst+" "+str(brkdata2.vlongint))
+		modify_menu(MNBRKVS,HMenuvar2,varfind.nm+" "+*tst+" "+str(brkv.val.vlongint))
 		SetStateMenu(HMenuvar2,MNBRKVS,0)
+
 	ElseIf a=2 Then ''mem/mem
 		var_fill(brkidx1)
 		brkv.typ=brkdatatype
@@ -4689,7 +4695,7 @@ private sub init_debuggee(srcstart as integer)
 	   If flagwtch=0 AndAlso wtchexe(0,0)<>"" Then watch_check(wtchexe())
 	   flagwtch=0
 	EndIf
-	list_all()
+	'list_all()
 	put_breakcpu()
 	''srcstart contains the index for starting the loading of source codes
 	sources_load(srcstart,filedatetime(exename))
@@ -4911,7 +4917,6 @@ private sub restart(byval idx as integer=0)
 
 	if idx=0 then
 		Dim As Double dtempo=FileDateTime(exename)
-		print "restart exe before tests=";exedate,dtempo
 		If exedate=0 then
 			exedate=dtempo
 		elseif exedate=dtempo Then
