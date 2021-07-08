@@ -2804,6 +2804,9 @@ Private sub brk_sav()
 		If i<=brknb Then
 			if brkol(i).typ=1 or brkol(i).typ=6 or brkol(i).typ=4 or brkol(i).typ=51 or brkol(i).typ=56 or brkol(i).typ=54 then ''only permanent/tempo/counter
 				brkexe(0,i)=source_name(source(brkol(i).isrc))+","+Str(brkol(i).nline)+","+Str(brkol(i).cntrsav)+","+Str(brkol(i).typ)
+			else
+				brkol(i).typ=0
+				brk_marker(i)
 			EndIf
 		EndIf
 	Next
@@ -3121,35 +3124,31 @@ private sub brk_unset(ubpon as integer=false)
 	end if
 End Sub
 '============================================================================
-''fills array listitem() with all the existing variables/fields for cond BP
+''fills array listitem()
 '============================================================================
-private sub brc_fill()
-	dim as integer iparent,inext,temp,hitem,level
-	dim as string text
+private sub brc_fill(parent as integer,hitem as INTEGER)
+	dim as integer child
+	while hitem<>0
+		listcpt+=1
+		listitem(listcpt).items=hitem
+		listitem(listcpt).itemc=AddTreeViewItem(GTVIEWBRC,GetTextTreeView(GTVIEWVAR,hitem),cast (hicon, 0),0,TVI_LAST,parent)
+		child=GetChildItemTreeView(GTVIEWVAR,hitem)
+		print hitem,GetTextTreeView(GTVIEWVAR,hitem),child
+		if child<>0 then
+			brc_fill(listitem(listcpt).itemc,child)
+		EndIf
+	    hitem=GetNextItemTreeView(GTVIEWVAR,hitem)
+	wend
+End Sub
+'============================================================================
+''prepares for listing all the existing variables/fields for cond BP
+'============================================================================
+private sub brc_fillinit()
+	dim as integer hitem
 	DeleteTreeViewItemAll(GTVIEWBRC)
 	hitem=getfirstitemtreeview(GTVIEWVAR)
-	iparent=0
-	inext=0
-	listcpt=0
-	While hitem<>0
-		listitem(listcpt).items=hitem
-		text=Space(level*4)+GetTextTreeView(GTVIEWVAR,hitem)
-		listitem(listcpt).itemc=AddTreeViewItem(GTVIEWBRC,text,cast (hicon, 0),0,TVI_LAST,0)
-		listcpt+=1
-		temp=GetChildItemTreeView(GTVIEWVAR,hitem)
-		level+=1
-	    While temp=0
-			temp=GetNextItemTreeView(GTVIEWVAR,hitem)
-			If temp<>0 Then
-				If inext=temp Then Exit While,While
-				level-=1:Exit While
-			EndIf
-			hitem=GetParentItemTreeView(GTVIEWVAR,hitem)
-			level-=1
-			If hitem=iparent Then Exit While,While
-		Wend
-		hitem=temp
-	Wend
+	listcpt=-1
+	brc_fill(0,hitem)
 End Sub
 '====================================================
 '' handles cond BP
@@ -3168,7 +3167,7 @@ private sub brc_choice()
 			exit sub
 		EndIf
 	end if
-	brc_fill()
+	brc_fillinit()
 	varfind.ad=0
 	setgadgettext(GBRCVAR1,"?")
 	setgadgettext(GBRCVALUE,"0")
@@ -3749,7 +3748,7 @@ print "j=";j,proc(j).nm
 			If j>procnb Then Exit While
 			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp+SizeOf(integer)),@regip,SizeOf(Integer),0) 'return EIP/RIP
 			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp)                ,@regbp,SizeOf(integer),0) 'previous RBP/EBP
-			print "eip=";hex(regip),"ebp=";regbp:sleep 5000
+			print "eip=";hex(regip),"ebp=";regbp
 			'if regip=0 then exit while
 			calin(regbpnb)=line_call(regip)
 		Wend
