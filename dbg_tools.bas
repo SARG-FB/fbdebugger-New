@@ -2799,7 +2799,7 @@ If f Then
 EndIf
 End Sub
 '============================================
-Private sub brk_sav
+Private sub brk_sav()
 	For i As Integer =1 To BRKMAX
 		If i<=brknb Then
 			if brkol(i).typ=1 or brkol(i).typ=6 or brkol(i).typ=4 or brkol(i).typ=51 or brkol(i).typ=56 or brkol(i).typ=54 then ''only permanent/tempo/counter
@@ -2815,7 +2815,7 @@ End Sub
 	brkol(n).typ=0
 	brkol(n).cntrsav=0
 	brk_marker(n)
-	if n=0 then ''run or fast run
+	if n=0 then ''run
 		exit sub
 	EndIf
 	brknb-=1
@@ -3556,7 +3556,7 @@ end function
 '========================================
 private sub brkv_update()
 
-	var txt=getgadgettext(GBRKVVALUE)
+	var txt=getgadgettext(GBRKVALUE)
 	dim as integer vflag=1
 	dim as double vald
 
@@ -3633,13 +3633,14 @@ end sub
 ''
 '========================================================================
 private sub brkv_set(a As Integer) ''break on variable change
-	Dim As zString ptr tst
+	Dim As String txt
 	If a=0 Then 'cancel break
 		brkv.adr1=0
 		brkv.adr2=0
 		brkv.ivr1=0
 		brkv.ivr2=0
 		Modify_Menu(MNBRKVS,HMenuvar2,"Show BP if any")
+		statusbar_text(KSTBBPM,"")
 		SetStateMenu(HMenuvar2,MNBRKVS,1)
 		hidewindow(hbrkvbx ,KHIDE)
 		Exit Sub
@@ -3651,26 +3652,34 @@ private sub brkv_set(a As Integer) ''break on variable change
 		brkv.vst=""
 		brkv.ttb=32 shr GetItemComboBox(GBRKVCOND)
 		brkv.ivr1=brkidx1
-		brkv.val.vlongint=vallng(getgadgettext(GBRKVVALUE))
-		tst=brk_comp(brkv.ttb)
-		modify_menu(MNBRKVS,HMenuvar2,varfind.nm+" "+*tst+" "+str(brkv.val.vlongint))
-		SetStateMenu(HMenuvar2,MNBRKVS,0)
+		txt=varfind.nm+" "+*brk_comp(brkv.ttb)+" "
+		if brkdatatype=11 then
+			brkv.val.vsingle=val(getgadgettext(GBRKVALUE))
+			txt+=str(brkv.val.vsingle)
+		elseIf brkdatatype=12 then
+			brkv.val.vdouble=val(getgadgettext(GBRKVALUE))
+			txt+=str(brkv.val.vdouble)
+		else
+			brkv.val.vlongint=vallng(getgadgettext(GBRKVALUE))
+			txt+=str(brkv.val.vlongint)
+		EndIf
 
 	ElseIf a=2 Then ''mem/mem
 		var_fill(brkidx1)
 		brkv.typ=brkdatatype
 		brkv.adr1=varfind.ad
-		var tempo=varfind.nm
+		txt=varfind.nm
 		var_fill(brkidx2)
 		brkv.adr2=varfind.ad
 		brkv.ttb=32 shr GetItemComboBox(GBRKVCOND)
 		brkv.ivr1=brkidx1
 		brkv.ivr2=brkidx2
-		tst=brk_comp(brkv.ttb)
-		modify_menu(MNBRKVS,HMenuvar2,tempo+" "+*tst+" "+varfind.nm)
-		SetStateMenu(HMenuvar2,MNBRKVS,0)
+		txt+=*brk_comp(brkv.ttb)+" "+varfind.nm
 	end if
 
+	modify_menu(MNBRKVS,HMenuvar2,txt)
+	SetStateMenu(HMenuvar2,MNBRKVS,0)
+	statusbar_text(KSTBBPM,"BPM-> "+txt)
 		'' if dyn array store real adr
 		'If Cast(Integer,vrb(varfind.pr).arr)=-1 Then
 			'ReadProcessMemory(dbghand,Cast(LPCVOID,vrr(varfind.iv).ini),@brkv.arr,sizeof(integer),0)
@@ -3702,7 +3711,7 @@ private sub brkv_set(a As Integer) ''break on variable change
 	'brkv.txt+=" Stop if it becomes "
 	'ShowListComboBox(GBRKVCOND,1)
 	'SetGadgetText(GBRKVAR1,brkv.txt)
-	'setgadgettext(GBRKVVALUE,brkv.vst)
+	'setgadgettext(GBRKVALUE,brkv.vst)
 	'hidewindow(hbrkvbx,KSHOW)
 End Sub
 '=======================================================
@@ -3730,17 +3739,22 @@ private sub proc_runnew()
 
 		While 1
 			For j =1 To procnb
+				print "j=";j,proc(j).nm,hex(proc(j).db),hex(proc(j).fn)," x ";hex(regip)
 			   If regip>=proc(j).db And regip<=proc(j).fn Then
 			   	regbpnb+=1:regbpp(regbpnb)=regbp:pridx(regbpnb)=j
+print "j=";j,proc(j).nm
 			   	Exit For
 			   EndIf
 			Next
 			If j>procnb Then Exit While
 			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp+SizeOf(integer)),@regip,SizeOf(Integer),0) 'return EIP/RIP
 			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp)                ,@regbp,SizeOf(integer),0) 'previous RBP/EBP
+			print "eip=";hex(regip),"ebp=";regbp:sleep 5000
+			'if regip=0 then exit while
 			calin(regbpnb)=line_call(regip)
 		Wend
 		'delete only if needed
+print "regbpnb=";regbpnb ,procrnb
 		j=regbpnb:k=0
 		While k<procrnb
 			k+=1
@@ -3748,6 +3762,7 @@ private sub proc_runnew()
 			If procr(k).idx=pridx(j) Then
 				j-=1 'running proc still existing so kept
 			Else
+print "delete=";proc(procr(k).idx).nm
 				proc_del(k) 'delete procr
 				k-=1 'to take in account that a procr has been deleted
 			EndIf
@@ -3782,7 +3797,7 @@ private sub proc_runnew()
 			If flagtrace Then dbg_prt ("NEW proc "+proc(pridx(k)).nm)
 			libel+=proc(pridx(k)).nm+":"+proc_retval(pridx(k))
 			If flagverbose Then libel+=" ["+Str(proc(pridx(k)).db)+"]"
-
+print "vrrnb=";vrrnb
 			vrr(vrrnb).tv=AddTreeViewItem(GTVIEWVAR,"Not yet filled",cast (hicon, 0),0,TVI_LAST,tv)
 			procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,libel,cast (hicon, 0),0,tv,0)
 
@@ -4139,11 +4154,12 @@ private sub reinit()
 	dumpadr=0
 	brkv_set(0) ''no break on var
 	brk_del(0) ''no break on cursor/etc
-	for ibrk as integer = 1 to brknb
-		if brkol(ibrk).typ<>1 and brkol(ibrk).typ<>4 and brkol(ibrk).typ<>6 and brkol(ibrk).typ<>51 and brkol(ibrk).typ<>54 and brkol(ibrk).typ<>56 then ''keep only perm/temp/counter BP
-			brk_del(ibrk)
-		EndIf
-	Next
+	brknb=0
+	'for ibrk as integer = 1 to brknb
+		'if brkol(ibrk).typ<>1 and brkol(ibrk).typ<>4 and brkol(ibrk).typ<>6 and brkol(ibrk).typ<>51 and brkol(ibrk).typ<>54 and brkol(ibrk).typ<>56 then ''keep only perm/temp/counter BP
+			'brk_del(ibrk)
+		'EndIf
+	'Next
 	DeleteTreeViewItemAll(GTVIEWVAR)
 	PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)
 	DeleteTreeViewItemAll(GTVIEWTHD)
@@ -4197,6 +4213,21 @@ private function check_bitness(fullname as string) as integer
 	#endif
 	return -1
 end function
+'================================
+'' 
+'================================
+private sub process_terminated()
+	KillTimer(hmain,GTIMER)
+	watch_sav()
+	brk_sav()
+	runtype=RTEND
+	but_enable()
+	menu_enable()
+	shortcut_enable()
+	messbox("","END OF DEBUGGED PROCESS",MB_SYSTEMMODAL)
+	mutexunlock blocker
+	mutexlock blocker
+End Sub
 '====================================================================================================================
 '' if debuggee running ask for killing return true after killing or if nothing running, false debuggee still running
 '====================================================================================================================
@@ -4217,10 +4248,12 @@ private function kill_process(text As String) As Integer
 			#ifdef fulldbg_prt
 			  	dbg_prt ("return code terminate process ="+Str(retcode)+" lasterror="+Str(lasterr))
 		   	#endif
-			mutexunlock blocker
+			'mutexunlock blocker
 			thread_resume()
 			While prun:Sleep 500:Wend
-			mutexlock blocker
+			'mutexunlock blocker
+			'mutexlock blocker
+			process_terminated()
 			Return TRUE
 		Else
 			Return FALSE
@@ -4623,7 +4656,7 @@ private sub closes_debugger()
 		''todo free all the objects menus, etc
 		If sourcenb<>-1 Then ''case exiting without stopping debuggee before
 			watch_sav()
-			brk_sav
+			brk_sav()
 		EndIf
 		ini_write()
 		end
@@ -4763,7 +4796,7 @@ private sub dll_load()
 			WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
 		Next
 		globals_load(d)
-		brk_apply
+		brk_apply()
 	EndIf
 	statusbar_text(KSTBSTS,"Running")
 end sub
@@ -4846,14 +4879,7 @@ private sub debug_event()
 		''Case KDBGCREATETHREAD not used
 
 		Case KDBGEXITPROC
-			KillTimer(hmain,GTIMER)
-			watch_sav()
-			brk_sav()
-			runtype=RTEND
-			but_enable()
-			menu_enable()
-			shortcut_enable()
-			messbox("","END OF DEBUGGED PROCESS",MB_SYSTEMMODAL)
+			process_terminated()
 
 		Case KDBGEXITTHREAD
 			thread_del(debugdata)
@@ -4921,7 +4947,6 @@ private sub restart(byval idx as integer=0)
 			exedate=dtempo
 		elseif exedate=dtempo Then
 			flagrestart=sourcenb ''exe not changed so no need to reload sources
-			print "restart exe with same date=";exedate,dtempo
 		else
 			flagrestart=-1 ''need to reload sources
 		EndIf

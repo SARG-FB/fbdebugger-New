@@ -257,6 +257,8 @@ private sub statusbar_text(fieldn as long, text as string)
 			fieldpos=600
 		Case KSTBPRC
 			fieldpos=800
+		Case KSTBBPM
+			fieldpos=830
 		case KSTBFRT
 			fieldpos=-1
 	End Select
@@ -661,7 +663,7 @@ private sub create_brkvbx()
 	textgadget(GBRKVAR1,6,6,390,30,"Stop if b<byte>=-88")
 	textgadget(GBRKVAR2,6,35,390,30,"var2")
 
-	stringgadget(GBRKVVALUE,6,35,120,30,"")
+	stringgadget(GBRKVALUE,6,35,120,30,"")
 	buttongadget(GBRKVOK,190,75,55,30,"Apply")
 	buttongadget(GBRKVDEL,250,75,55,30,"Delete")
 	comboboxgadget(GBRKVCOND,402,3,54,150)
@@ -1318,6 +1320,7 @@ private sub gui_init()
 	statusbar_text(KSTBUID,"UID number Linux")
 	statusbar_text(KSTBSRC,"Current source")
 	statusbar_text(KSTBPRC,"Current proc")
+	statusbar_text(KSTBBPM,"")
 	statusbar_text(KSTBFRT,"Fast time ?")
 
 	''current line

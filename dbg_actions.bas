@@ -310,8 +310,8 @@ private sub menu_action(poption as integer)
 					If varfind.pt Then varfind.ty=1 ''pointer integer32 (long)
 					#EndIf
 
-					If varfind.ty>10 then
-						messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint")
+					If varfind.ty>12 then
+						messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint, single, double")
 						brkidx1=0
 						brkidx2=0
 						Exit Sub
@@ -320,7 +320,7 @@ private sub menu_action(poption as integer)
 					if poption=MNBRKVC then ''select the constant and the test
 						SetGadgetText(GBRKVAR1,varfind.nm)
 						hidegadget(GBRKVAR2,KHIDE)
-						hidegadget(GBRKVVALUE,KSHOW)
+						hidegadget(GBRKVALUE,KSHOW)
 						ResetAllComboBox(GBRKVCOND)
 						AddComboBoxItem(GBRKVCOND,"=",-1)
 						AddComboBoxItem(GBRKVCOND,"<>",-1)
@@ -348,8 +348,8 @@ private sub menu_action(poption as integer)
 					If varfind.pt Then varfind.ty=1 ''pointer integer32 (long)
 					#EndIf
 
-					If varfind.ty>10 then
-						messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint")
+					If varfind.ty>12 then
+						messbox("Break on var selection error","Only [unsigned] Byte, Short, integer, longint, single, double")
 						brkidx1=0
 						brkidx2=0
 						Exit Sub
@@ -365,7 +365,7 @@ private sub menu_action(poption as integer)
 					var_fill(brkidx1)
 					SetGadgetText(GBRKVAR1,varfind.nm)
 					hidegadget(GBRKVAR2,KSHOW)
-					hidegadget(GBRKVVALUE,KHIDE)
+					hidegadget(GBRKVALUE,KHIDE)
 					hidewindow(hbrkvbx,KSHOW)
 					ResetAllComboBox(GBRKVCOND)
 					AddComboBoxItem(GBRKVCOND,"=",-1)
@@ -497,7 +497,7 @@ private sub gadget_action(igadget as LONG)
 		''case GDUMPTYPE ''nothing to do
 
 		case GBRKVCOND
-		case GBRKVVALUE
+		case GBRKVALUE
 
 
 		case GFILESEL
