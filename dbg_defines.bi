@@ -1026,6 +1026,11 @@ declare function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 declare sub button_action(button as integer)
 declare sub ini_write()
 declare sub singlestep_on(tid as integer,rln as integer,running as integer =1)
+declare sub brk_del(n as integer)
+declare sub brkv_set(a As Integer)
+declare sub brk_apply()
+declare sub brk_sav()
+
 '===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)

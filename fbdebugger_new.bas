@@ -338,7 +338,9 @@ includebinary("buttons/memory.bmp",butENLRMEM)
 
 
 #include "dbg_gui.bas"
+
 #include "dbg_tools.bas"
+#include "dbg_brk.bas"
 #include "dbg_extract.bas"
 #include "dbg_actions.bas"
 #Ifdef __fb_win32__
