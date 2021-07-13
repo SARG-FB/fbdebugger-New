@@ -791,13 +791,14 @@ End Type
 
 Const PROCRMAX=50000 'Running proc
 Type tprocr
-	sk   As UInteger  'stack
-	idx  As UInteger  'index for proc
-	tv   As integer 'index for treeview
+	sk   As Integer  'stack
+	ret  as integer  'return address
+	idx  As Integer  'index for proc
+	tv   As integer  'index for treeview
 	'lst as uinteger 'future array in LIST
-	cl   As Integer   'calling line
-	thid As Integer   'idx thread
-	vr   As Integer   'lower index running variable upper (next proc) -1
+	cl   As Integer  'calling line
+	thid As Integer  'idx thread
+	vr   As Integer  'lower index running variable upper (next proc) -1
 End type
 ''======================== Arrays =========================================
 Const ARRMAX=1500

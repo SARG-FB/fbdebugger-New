@@ -3409,6 +3409,7 @@ private sub proc_new()
 	If procrnb=PROCRMAX Then hard_closing("Max number of sub/func reached limit="+str(PROCRMAX))
 	procrnb+=1'new proc ADD A POSSIBILITY TO INCREASE THIS ARRAY
 	procr(procrnb).sk=procsk
+	ReadProcessMemory(dbghand,Cast(LPCVOID,procsk+sizeof(integer)),@procr(procrnb).ret,sizeof(integer),0)
 	procr(procrnb).thid=thread(threadcur).id
 	procr(procrnb).idx=procsv
 
@@ -3720,8 +3721,8 @@ private sub proc_runnew()
 	dim as integer dummy
 	Dim vcontext As CONTEXT
 	Dim libel As String
-	Dim As UInteger regbp,regip,regbpnb,regbpp(PROCRMAX)
-	Dim As ULong j,k,pridx(PROCRMAX),calin(PROCRMAX)
+	Dim As Integer regbp,regip,regbpnb,regbpp(PROCRMAX),ret(PROCRMAX),retadr
+	Dim As ULong j,k,pridx(PROCRMAX)
 	Dim tv As integer
 	vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER
 	if cast(integer,@vcontext) mod 16 <>0 then
@@ -3735,39 +3736,35 @@ private sub proc_runnew()
 		GetThreadContext(thread(ithd).hd,@vcontext)
 		regbp=vcontext.regbp
 		regip=vcontext.regip 'current proc
-
 		While 1
 			For j =1 To procnb
-				print "j=";j,proc(j).nm,hex(proc(j).db),hex(proc(j).fn)," x ";hex(regip)
 			   If regip>=proc(j).db And regip<=proc(j).fn Then
-			   	regbpnb+=1:regbpp(regbpnb)=regbp:pridx(regbpnb)=j
-print "j=";j,proc(j).nm
+					regbpnb+=1
+					regbpp(regbpnb)=regbp
+					ReadProcessMemory(dbghand,Cast(LPCVOID,regbp+SizeOf(integer)),@regip,SizeOf(Integer),0) 'return EIP/RIP
+					ret(regbpnb)=regip
+					pridx(regbpnb)=j
 			   	Exit For
 			   EndIf
 			Next
 			If j>procnb Then Exit While
-			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp+SizeOf(integer)),@regip,SizeOf(Integer),0) 'return EIP/RIP
-			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp)                ,@regbp,SizeOf(integer),0) 'previous RBP/EBP
-			print "eip=";hex(regip),"ebp=";regbp
-			'if regip=0 then exit while
-			calin(regbpnb)=line_call(regip)
+			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp),@regbp,SizeOf(integer),0) 'previous RBP/EBP
 		Wend
-		'delete only if needed
-print "regbpnb=";regbpnb ,procrnb
-		j=regbpnb:k=0
-		While k<procrnb
-			k+=1
-			If procr(k).thid <> thread(ithd).id Then Continue While
-			If procr(k).idx=pridx(j) Then
-				j-=1 'running proc still existing so kept
-			Else
-print "delete=";proc(procr(k).idx).nm
-				proc_del(k) 'delete procr
-				k-=1 'to take in account that a procr has been deleted
+
+		''skip still existing procedures or delete them
+		for iprc as INTEGER	=1 to procrnb
+			ReadProcessMemory(dbghand,Cast(LPCVOID,procr(iprc).sk+SizeOf(integer)),@retadr,SizeOf(Integer),0) ''current value should be return address
+			if procr(iprc).ret<>retadr then
+				proc_del(iprc) ''return address not any more valid
+			else
+				if procr(iprc).sk=regbpp(regbpnb) and procr(iprc).ret=ret(regbpnb) then
+					regbpnb-=1
+				EndIf
 			EndIf
-		Wend
-		'create new procrs
-		For k As Integer =j To 1 Step -1
+		next
+
+		''create new procrs
+		For k As Integer =regbpnb To 1 Step -1
 			If procrnb=PROCRMAX Then
 				hard_closing("Max number of sub/func reached")
 				Exit Sub
@@ -3789,7 +3786,7 @@ print "delete=";proc(procr(k).idx).nm
 				tv=TVI_LAST 'insert in last position
 			Else
 				tv=thread(ithd).plt 'insert after the last item of thread
-				procr(procrnb).cl=calin(k)
+				procr(procrnb).ret=ret(k)
 				libel=""
 			EndIf
 			'add manage LIST
@@ -4213,7 +4210,7 @@ private function check_bitness(fullname as string) as integer
 	return -1
 end function
 '================================
-'' 
+''
 '================================
 private sub process_terminated()
 	KillTimer(hmain,GTIMER)
