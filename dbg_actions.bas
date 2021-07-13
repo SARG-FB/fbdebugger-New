@@ -81,7 +81,7 @@ private sub menu_action(poption as integer)
 			proc_loc()
 
 		Case MNCALLINE 'locate calling line
-		   proc_loccall(1)
+		   proc_loccall()
 
 		Case MNSHWPROC 'locate proc in proc/var treeview
 			thread_procloc(1)

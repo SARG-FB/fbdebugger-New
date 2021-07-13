@@ -864,37 +864,31 @@ private sub call_chain(thid as integer)
 	hidewindow(hcchainbx,KSHOW)
 end sub
 '===============================================================
-'' 1 juste calling / 2 call chain
+'' calling line
 '===============================================================
-private sub proc_loccall(typ As Integer=1)
-	Dim As Integer hitem,temp,gadget
-	'get current hitem in tree
-	gadget=PanelGadgetGetCursel(GRIGHTTABS)
-	temp=GetItemTreeView(gadget)
+private sub proc_loccall()
+	Dim As Integer hitem,temp
+	temp=GetItemTreeView(GTVIEWVAR)
 
-	If temp=procr(1).tv AndAlso typ=1 Then
+	If temp=procr(1).tv Then
 			messbox("Locate calling line","      Main so no call !!")
 		Exit Sub
 	EndIf
 
 	Do 'search index proc
 		hitem=temp
-		temp=GetParentItemTreeView(gadget,hitem)
+		temp=GetParentItemTreeView(GTVIEWVAR,hitem)
 	Loop While temp
 
 	For i As Integer =1 To procrnb
 		If procr(i).tv=hitem Then
-			If typ=1 Then
-				If procr(i).cl=-1 Then
-					'fb_message("Locate calling line","First proc of thread so no call !!"):Exit Sub
-					thread_execline(2):Exit Sub
-				EndIf
-				temp=procr(i).cl 'calling line
-				source_change(rline(temp).sx) ''display source
-				line_display(rline(temp).nu-1)'Select Line
-			ElseIf typ=2 Then
-				messbox("Feature not yet coded","call chain")
+			If procr(i).cl=-1 Then
+				'fb_message("Locate calling line","First proc of thread so no call !!"):Exit Sub
+				thread_execline(2):Exit Sub
 			EndIf
+			temp=procr(i).cl 'calling line
+			source_change(rline(temp).sx) ''display source
+			line_display(rline(temp).nu,1)'Select Line
 			Exit Sub
   		EndIf
 	Next
@@ -1224,14 +1218,18 @@ End Sub
 '==========================================
 '' finds the calling line for proc
 '==========================================
-private function line_call(regip As UInteger) As Integer
-	For i As Integer=1 To linenb
-		If regip<=rLine(i).ad Then
-			Return i-1
+private function line_call(adr As Integer) As Integer
+	For irline As Integer=1 To linenb
+		If adr<=rLine(irline).ad Then
+			if adr=rLine(irline).ad then
+				Return irline-1
+			else
+				return irline
+			end if
 		EndIf
 	Next
 	Return linenb
-End Function
+end Function
 '=====================================================================
 'in string STRG all the occurences of SRCH are replaced by REPL
 '=====================================================================
@@ -1714,7 +1712,7 @@ private sub proc_loc()
 	EndIf
 
 	source_change(proc(temp).sr) ''display source
-	line_display(proc(temp).nu-1)  ''Select Line
+	line_display(proc(temp).nu,1)  ''Select Line
 End Sub
 
 '=====================================================
@@ -3786,6 +3784,7 @@ private sub proc_runnew()
 				tv=thread(ithd).plt 'insert after the last item of thread
 				procr(procrnb).ret=ret(k)
 				libel=""
+				procr(procrnb).cl=line_call(ret(k))
 			EndIf
 			'add manage LIST
 			If flagtrace Then dbg_prt ("NEW proc "+proc(pridx(k)).nm)
