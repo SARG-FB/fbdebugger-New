@@ -872,7 +872,6 @@ private sub gadget_action(igadget as LONG)
 					brkdata2.vlongint=vallng(getgadgettext(GBRCVALUE))
 				EndIf
 				brkadr1=varfind.ad
-				print "adr brc=";brkadr1
 				brkttb=32 shr GetItemComboBox(GBRCCOND)
 				var tst=brk_comp(brkttb)
 				hidewindow(hbpcondbx,KHIDE)

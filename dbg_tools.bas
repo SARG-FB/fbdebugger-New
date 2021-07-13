@@ -1669,42 +1669,45 @@ End sub
 '' locates a proc in sources from selected line in current treeview
 '====================================================================
 private sub proc_loc()
-	Dim As Integer hitem,temp,t,gadget
+	Dim As Integer hitem,temp,th
 	'get current hitem in tree
-	gadget=PanelGadgetGetCursel(GRIGHTTABS)
-	temp=GetItemTreeView(gadget)
-	If gadget=GTVIEWVAR Then
-		Do 'search index proc
+	select case PanelGadgetGetCursel(GRIGHTTABS)
+		case TABIDXVAR
+			temp=GetItemTreeView(GTVIEWVAR)
+			Do 'search index proc
+				hitem=temp
+				temp=GetParentItemTreeView(GTVIEWVAR,hitem)
+			Loop While temp
+			temp=0
+			For i As Integer =1 To procrnb
+				If procr(i).tv=hitem Then
+					temp=procr(i).idx
+				 Exit For
+				EndIf
+			Next
+			If temp=0 Then
+				messbox("Locate proc","Global variables no proc associated !!")
+				Exit Sub
+			EndIf
+
+		case TABIDXPRC
+			temp=GetItemTreeView(GTVIEWPRC)
 			hitem=temp
-			temp=GetParentItemTreeView(GTVIEWVAR,hitem)
-		Loop While temp
-		temp=0
-		For i As Integer =1 To procrnb
-			If procr(i).tv=hitem Then
-				temp=procr(i).idx
-			 Exit For
+			For i As Integer =1 To procnb
+				If proc(i).tv=hitem Then
+					temp=i
+				 Exit For
+				EndIf
+			Next
+		case else
+			th=thread_select()
+			If th=0 Then ''main, select first line
+				temp=procr(1).idx
+			Else
+				temp=procr(proc_find(thread(th).id,KFIRST)).idx
 			EndIf
-		Next
-		If temp=0 Then
-			messbox("Locate proc","Global variables no proc associated !!")
-			Exit Sub
-		EndIf
-	ElseIf gadget=GTVIEWPRC Then
-		hitem=temp
-		For i As Integer =1 To procnb
-			If proc(i).tv=hitem Then
-				temp=i
-			 Exit For
-			EndIf
-		Next
-	ElseIf gadget=GTVIEWTHD Then
-		t=thread_select()
-		If t=0 Then ''main, select first line
-			temp=procr(1).idx
-		Else
-			temp=procr(proc_find(thread(t).id,KFIRST)).idx
-		EndIf
-	EndIf
+	End select
+
 	If proc(temp).nu=-1 Then
 		messbox("Locate proc","Not possible perhaps add by compiler (ie default constructor, let, etc)")
 		Exit sub
@@ -2839,7 +2842,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 	Dim As Integer flag=0
 	'dim as integer recup(20)
 	dim as valeurs recup1,recup2
-print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
+'print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
 		'If brkv.arr Then 'watching dyn array element ?
 			'adr=vrr(brkv.ivr).ini
 			'ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,4,0)
@@ -2864,7 +2867,6 @@ print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
 			else
 				recup2=data2
 			EndIf
-print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 			if recup2.vbyte>recup1.vbyte then
 				If 21 And comptype Then
 					flag=1
@@ -2991,7 +2993,6 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 			else
 				recup2=data2
 			EndIf
-			print "9 recup 1 et 2 =";adr1,recup1.vlongint,recup2.vlongint
 			if recup2.vlongint>recup1.vlongint then
 				If 21 And comptype Then
 					flag=1
@@ -3032,7 +3033,6 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 			else
 				recup2=data2
 			EndIf
-			print "11 recup1,recup2=",adr1,recup1.vsingle,recup2.vsingle
 			if recup2.vsingle>recup1.vsingle then
 				If 21 And comptype Then
 					flag=1
@@ -3054,7 +3054,6 @@ print "recup 1 et 2 =";recup1.vbyte,recup2.vbyte
 			else
 				recup2=data2
 			EndIf
-			print "12 recup 1 et 2 =";adr1,recup1.vdouble,recup2.vdouble
 			if recup2.vdouble>recup1.vdouble then
 				If 21 And comptype Then
 					flag=1
@@ -3133,7 +3132,6 @@ private sub brc_fill(parent as integer,hitem as INTEGER)
 		listitem(listcpt).items=hitem
 		listitem(listcpt).itemc=AddTreeViewItem(GTVIEWBRC,GetTextTreeView(GTVIEWVAR,hitem),cast (hicon, 0),0,TVI_LAST,parent)
 		child=GetChildItemTreeView(GTVIEWVAR,hitem)
-		print hitem,GetTextTreeView(GTVIEWVAR,hitem),child
 		if child<>0 then
 			brc_fill(listitem(listcpt).itemc,child)
 		EndIf
@@ -3793,7 +3791,6 @@ private sub proc_runnew()
 			If flagtrace Then dbg_prt ("NEW proc "+proc(pridx(k)).nm)
 			libel+=proc(pridx(k)).nm+":"+proc_retval(pridx(k))
 			If flagverbose Then libel+=" ["+Str(proc(pridx(k)).db)+"]"
-print "vrrnb=";vrrnb
 			vrr(vrrnb).tv=AddTreeViewItem(GTVIEWVAR,"Not yet filled",cast (hicon, 0),0,TVI_LAST,tv)
 			procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,libel,cast (hicon, 0),0,tv,0)
 
