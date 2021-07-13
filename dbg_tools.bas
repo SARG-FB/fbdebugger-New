@@ -4125,6 +4125,17 @@ Else
 	dsp_change(thread(0).sv)
 EndIf
 End Sub
+'======================================================================
+''releases the scintilla docs except the one attached to the window
+'======================================================================
+private sub release_doc
+	var ptrdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
+	for isrc as integer =0 to sourcenb
+		if sourceptr(isrc)<>ptrdoc then
+			send_sci(SCI_RELEASEDOCUMENT,0,sourceptr(isrc))
+		end if
+	next
+end sub
 '==============================
 '' Reinitialisation
 '==============================
@@ -4135,6 +4146,16 @@ private sub reinit()
 	stopcode=0
 	flagmain=true
 	compilerversion=""
+	if flagrestart=-1 then
+		if currentdoc then ''removes all previous docs
+			release_doc()
+			oldscintilla=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0)) ''keep for release later
+			for isrc As Integer=0 To sourcenb
+				DeleteItemPanelGadget(GSRCTAB,isrc)
+			next
+			ResetAllComboBox(GFILELIST)
+		end if
+	EndIf
 	sourcenb=-1:dllnb=0
 	vrrnb=0:procnb=0:procrnb=0:linenb=0:cudtnb=0:arrnb=0:procr(1).vr=1
 	procfn=0
@@ -4351,33 +4372,14 @@ private sub exe_sav(exename As String,cmdline As String="")
 	ini_write() ''done also when fbdebugger closing but also here in case of crash of fbdebugger
 End sub
 '======================================================================
-''releases the scintilla docs except the one attached to the window
-'======================================================================
-private sub release_doc
-	var ptrdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
-	for isrc as integer =0 to sourcenb
-		if sourceptr(isrc)<>ptrdoc then
-			send_sci(SCI_RELEASEDOCUMENT,0,sourceptr(isrc))
-		end if
-	next
-end sub
-'======================================================================
 ''loads the source code files, by slice : n contains the first to be loaded until sourcenb
 ''n=0 for the first loading
 ''=====================================================================
 private sub sources_load(n As integer,exedate as double)
 	dim As integer flgt,fnum
-	dim as any ptr ptrdoc,currentprev
+	dim as any ptr ptrdoc
 	if flagrestart=-1 Then
 		statusbar_text(KSTBSTS,"Loading sources")
-		if currentdoc then ''removes all previous docs
-			release_doc()
-			currentprev=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0)) ''keep for release later
-			for isrc As Integer=0 To sourcenb
-				DeleteItemPanelGadget(GSRCTAB,isrc)
-			next
-			ResetAllComboBox(GFILELIST)
-		EndIf
 
 	   	for isrc As Integer=n To sourcenb ' main index =0
 			print "loading =";isrc,source(isrc)
@@ -4422,7 +4424,7 @@ private sub sources_load(n As integer,exedate as double)
 				messbox("Maybe something to do","the source code contains a BOM code so --> unicode")
 			else
 
-				if isrc=0 and currentprev=0 then
+				if isrc=0 and oldscintilla=0 then
 					''first file
 					currentdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
 					sourceptr(0)=currentdoc
@@ -4446,8 +4448,8 @@ private sub sources_load(n As integer,exedate as double)
 	   	if sourcenb<>0 then
 		   	Send_sci(SCI_ADDREFDOCUMENT,0,sourceptr(sourcenb))
 			Send_sci(SCI_SETDOCPOINTER,0,currentdoc)
-			if currentprev then
-				send_sci(SCI_RELEASEDOCUMENT,0,currentprev)
+			if oldscintilla then
+				send_sci(SCI_RELEASEDOCUMENT,0,oldscintilla)
 			EndIf
 		end if
 		SetItemComboBox(GFILELIST,1)

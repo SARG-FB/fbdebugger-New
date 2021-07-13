@@ -23,6 +23,7 @@ Dim Shared stoplibel(20) As String*17 =>{"","BP On line","BP perm/tempo","BP con
 ''source files
 dim Shared as String  source(SRCMAX)        ''source names
 dim shared as any ptr sourceptr(SRCMAX)     ''pointer doc scintilla
+dim shared as any ptr oldscintilla          ''last pointer for scintilla
 dim Shared As UByte   sourcebuf(SRCSIZEMAX) ''buffer for loading source file
 dim Shared as Integer sourcenb =-1          ''number of src, 0 based
 dim Shared As integer sourceix              ''source index when loading data
