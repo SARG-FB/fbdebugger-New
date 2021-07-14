@@ -570,7 +570,7 @@ private sub gadget_action(igadget as LONG)
 
 	   	Case GBRKDELALL    ''Delete all
 	        	For ibrk As Byte=1 To brknb
-					brk_del(ibrk)
+					brk_del(1)
 	        	Next
 	        	hidewindow(hbrkbx,1)
 
