@@ -3126,7 +3126,18 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
    		var_sh			'updating information about variables
    		runtype=RTSTEP
    		dsp_change(rln)
-		brk_del(0)
+		if stopcode=CSLINE then
+			brk_del(0)
+		elseif stopcode=CSBRKPT then
+			for ibrk as INTEGER	= 1 to brknb
+				if brkol(ibrk).index=rln then
+					if brkol(ibrk).typ=6 then
+						brk_del(ibrk) ''remove tempo BP
+						exit for
+					EndIf
+				EndIf
+			Next
+		EndIf
    Else 'RTSTEP or RTAUTO
 		If flagattach Then proc_runnew:flagattach=FALSE
 		'NOTA If rline(i).nu=-1 Then

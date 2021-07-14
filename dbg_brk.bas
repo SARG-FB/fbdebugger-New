@@ -704,7 +704,7 @@ select case t
 		rln=rlinecur
 		For j As Integer =1 To procnb
 			If rline(rln).ad=proc(j).fn Then
-				messbox("Skip line ot possible","Last line of proc")
+				messbox("Skip line not possible","Last line of proc")
 				Exit Sub
 			end if
 		Next
