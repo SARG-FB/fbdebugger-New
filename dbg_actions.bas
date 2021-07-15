@@ -546,13 +546,19 @@ private sub gadget_action(igadget as LONG)
 	   		hidewindow(hbrkbx,KHIDE)
 
 	   	Case GBRKDEL01 to GBRKDEL10 ''delete one breakpoint
-	         brk_del(igadget-GBRKDEL01+1)
-	         hidegadget(igadget,KHIDE)
-	         hidegadget(igadget-GBRKDEL01+GBRKDSB01,KHIDE)
-	         hidegadget(igadget-GBRKDEL01+GBRKLINE01,KHIDE)
-	         If brknb=0 Then
-	            hidewindow(hbrkbx,1) ''no more breakpoint so close the window
-	         EndIf
+			for ibrk as INTEGER = 1 to brknb
+				if brkol(ibrk).index=brkline(igadget-GBRKDEL01+1) then
+					brk_del(ibrk)
+					exit for
+				end if
+			next
+			hidegadget(igadget,KHIDE)
+			hidegadget(igadget-GBRKDEL01+GBRKDSB01,KHIDE)
+			hidegadget(igadget-GBRKDEL01+GBRKLINE01,KHIDE)
+			hidegadget(igadget-GBRKDEL01+GBRKIMG01,KHIDE)
+			If brknb=0 Then
+				hidewindow(hbrkbx,1) ''no more breakpoint so close the window
+			EndIf
 
 		Case GBRKLINE01 to GBRKLINE10 ''click on text
 			source_change(brkol(igadget-GBRKLINE01+1).isrc)

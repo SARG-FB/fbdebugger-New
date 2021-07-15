@@ -840,7 +840,7 @@ End Sub
 '========================================================
 private sub brk_manage()
 	dim as string text
-	dim as integer srcprev=srcdisplayed,typ
+	dim as integer srcprev=srcdisplayed,typ,cpt
 
 	For ibrk as integer =1 To brknb
 		source_change(brkol(ibrk).isrc)
@@ -851,7 +851,8 @@ private sub brk_manage()
 			text+=" cntr="+Str(brkol(ibrk).counter)
 		end if
 		text+=" >> "+Left(Trim(line_text(brkol(ibrk).nline-1),Any Chr(9)+" "),65)
-
+		cpt+=1
+		brkline(cpt)=brkol(ibrk).index
 		SetGadgetText(GBRKLINE01+ibrk-1,text)
 		hidegadget(GBRKLINE01+ibrk-1,KSHOW)
 

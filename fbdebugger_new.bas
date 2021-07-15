@@ -163,7 +163,8 @@ dim shared as valeurs brkdata2
 dim shared as integer brktyp  ''type of BP mem/const or mem/mem
 dim shared as hwnd hbpcondbx ''dialog box for managing var/const cond BP
 dim shared as tbrclist listitem(VRRMAX)
-dim shared as integer listcpt
+dim shared as integer listcpt ''used when filling array for cond BP
+dim shared as INTEGER brkline(BRKMAX) ''used when deleting the BP one by one
 
 ''breakpoint on variable/memory (when there is a change)
 Dim Shared As tbrkv brkv
