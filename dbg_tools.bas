@@ -962,18 +962,6 @@ private function input_bx(title as string,text1 as string,text2 as string="",inp
 	loop until vflag=true
 	return inputval
 end function
-'=========================================================
-'' translates code message to the text (only windows)
-'=========================================================
-private sub winmsg()
-	Dim Buffer As String*210
-	var inputval=input_bx("Window message number","Enter the Windows code",,5)
-	If valint(inputval)<>0 Then
-		'Format the message string
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, ByVal 0,ValInt(inputval) , LANG_NEUTRAL, Buffer, 200, ByVal 0)
-		messbox("Windows message","Code : "+inputval+Chr(10)+"Message : "+buffer)
-	End If
-End Sub
 '===============================
 '' shows value in dec/hex/bin
 '===============================
@@ -992,27 +980,6 @@ private sub line_goto()
 	   line_display(linegoto,1)
 	End If
 End Sub
-'=======================================
-'' lists processes ''todo win32 only
-'=======================================
-private sub process_list()
-	Dim prcinfo As PROCESSENTRY32,snap As HANDLE
-	dim as string text
-	snap=CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, 0)'Take snapshot of running processes
-	If snap <> INVALID_HANDLE_VALUE Then
-		prcinfo.dwSize=SizeOf(PROCESSENTRY32)
-		text="file Process name     ID  Nthread parent id"+Chr(13)+Chr(10)
-		If Process32First (snap,@prcinfo) Then
-			Do
-				text+=fmt(prcinfo.szExeFile,20)+fmt(Str(prcinfo.th32ProcessID),5)+fmt(Str(prcinfo.cntThreads),3)+fmt(Str(prcinfo.th32ParentProcessID),5)+Chr(13)+Chr(10)
-			Loop While  Process32Next (snap,@prcinfo)
-		Else
-			messbox("Process list error","Failed to create process list!")
-		End If
-		CloseHandle (snap)
-	End If
-	SetGadgetText(GEDITOR,text)
-end sub
 '============================================
 '' splits a string in parts of 2 characters
 '============================================
@@ -2909,24 +2876,36 @@ End Sub
 '' after stopping run  retrieves all procedures
 '=======================================================
 private sub proc_runnew()
+
+#ifdef __fb_win32__
 	dim as integer dummy
 	Dim vcontext As CONTEXT
+
+	if cast(integer,@vcontext) mod 16 <>0 then
+		messbox("PRBM","Context not 16byte aligned")
+	EndIf
+	vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER
+#endif	
 	Dim libel As String
 	Dim As Integer regbp,regip,regbpnb,regbpp(PROCRMAX),ret(PROCRMAX),retadr
 	Dim As ULong j,k,pridx(PROCRMAX)
 	Dim tv As integer
-	vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER
-	if cast(integer,@vcontext) mod 16 <>0 then
-		messbox("PRBM","Context not 16byte aligned")
-	EndIf
+
+
 
 	''loading with rbp/ebp and proc index
 	For ithd As Integer =0 To threadnb
 		if thread(ithd).sv=-1 then continue for
 		regbpnb=0
-		GetThreadContext(thread(ithd).hd,@vcontext)
-		regbp=vcontext.regbp
-		regip=vcontext.regip 'current proc
+		#ifdef __fb_win32__
+				GetThreadContext(thread(ithd).hd,@vcontext)
+				regbp=vcontext.regbp
+				regip=vcontext.regip 'current proc
+			#else
+				ptrace(PTRACE_GETREGS, threadcur, NULL, @regs)
+				regbp=regs.xbp
+				regip=regs.xip
+		#endif
 		While 1
 			For j =1 To procnb
 			   If regip>=proc(j).db And regip<=proc(j).fn Then
@@ -3002,9 +2981,13 @@ End Sub
 ''  handles breakpoints
 '========================================================
 private sub gest_brk(ad As Integer,byval rln as integer =-1)
-   Dim As Integer i,debut=1,fin=linenb+1,adr,iold
-   Dim vcontext As CONTEXT
 
+	#Ifdef __fb_win32__
+		dim as integer dummy
+		Dim vcontext As CONTEXT
+		vcontext.contextflags=CONTEXT_CONTROL
+	#endif
+	Dim As Integer i,debut=1,fin=linenb+1,adr,iold
    'egality added in case attach (example access violation) without -g option, ad=procfn=0....
 	If ad>=procfn Then
 		thread_resume()
@@ -3061,41 +3044,66 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	'dbg_prt2("line="+Str(rline(i).nu))
 
 	'get and update registers
-	vcontext.contextflags=CONTEXT_CONTROL
+	#Ifdef __fb_win32__
 	GetThreadContext(threadcontext,@vcontext)
-
+	#else
+	ptrace(PTRACE_GETREGS, threadcur, NULL, @regs)
+	#endif
 
 	If proccurad=proc(procsv).db Then 'is first proc instruction
 
 		If rline(rln).sv=85 Then'check if the first instruction is push ebp opcode=85 / push rbp opcode=&h55=85dec
 			'in this case there is a prologue
 			 'at the beginning of proc EBP not updated so use ESP
-			procsk=vcontext.regsp-SizeOf(Integer) 'ESP-4 for respecting prologue : push EBP then mov ebp,esp / 64bit push rbp then mov rbp,rsp
+			#Ifdef __fb_win32__
+				procsk=vcontext.regsp-SizeOf(Integer) 'ESP-4 for respecting prologue : push EBP then mov ebp,esp / 64bit push rbp then mov rbp,rsp
+			#else
+				procsk=regs.xsp
+			#endif
 		Else
 			If procrnb<>0 Then  'no main and no prologue so naked proc, procrnb not yet updated
-			   procsk=vcontext.regsp
+			   	#Ifdef __fb_win32__
+					procsk=vcontext.regsp
+				#else
+					procsk=regs.xsp
+				#endif
 			   thread(threadcur).nk=procsk
 			Else
-				procsk=vcontext.regsp-20 'if gcc>3 for main prologue is different
+			#Ifdef __fb_win32__
+					procsk=vcontext.regsp-20  'if gcc>3 for main prologue is different
+				#else
+					procsk=regs.xsp-20 ''todo check value 20 should not be correct if 64bit
+				#endif
 			EndIf
 		End If
 	else
 		'only for naked, check if return by comparing top of stack because no epilog
 		If thread(threadcur).nk Then
-			If vcontext.regsp>thread(threadcur).nk Then
+			#Ifdef __fb_win32__
+				If vcontext.regsp>thread(threadcur).nk Then
+			#else
+				if regs.xsp>thread(threadcur).nk Then
+			#endif
 				thread(threadcur).pe=TRUE
 				thread(threadcur).nk=0
 			EndIf
 		End If
 	EndIf
-	vcontext.regip=ad
-
-	setThreadContext(threadcontext,@vcontext)
-
+	#Ifdef __fb_win32__
+		vcontext.regip=ad
+		setThreadContext(threadcontext,@vcontext)
+	#else
+		regs.xip=ad
+		ptrace(PTRACE_SETREGS, threadcur, NULL, @regs)
+	#endif
 	'dbg_prt2("PE"+Str(thread(threadcur).pe)+" "+Str(proccurad)+" "+Str(proc(procsv).fn))
 	If thread(threadcur).pe Then 'if previous instruction was the last of proc
-		If proccurad<>proc(procsv).db Then
-			procsk=vcontext.regbp 'reload procsk with rbp/ebp test added for case constructor on shared
+		If proccurad<>proc(procsv).db Then 'reload procsk with rbp/ebp test added for case constructor on shared
+			#Ifdef __fb_win32__
+				procsk=vcontext.regbp
+			#else
+				procsk=regs.xbp
+			#endif
 		EndIf
 		proc_end():thread(threadcur).pe=FALSE
 	EndIf
@@ -3436,14 +3444,18 @@ end function
 ''
 '================================
 private sub process_terminated()
-	KillTimer(hmain,GTIMER)
+	KillTimer(hmain,GTIMER001)
 	watch_sav()
 	brk_sav()
 	runtype=RTEND
 	but_enable()
 	menu_enable()
 	shortcut_enable()
-	messbox("","END OF DEBUGGED PROCESS",MB_SYSTEMMODAL)
+	#ifdef __fb_win32__
+		messbox("","END OF DEBUGGED PROCESS",MB_SYSTEMMODAL)
+	#else
+		messbox("","END OF DEBUGGED PROCESS")
+	#endif
 	mutexunlock blocker
 	mutexlock blocker
 End Sub
@@ -3481,55 +3493,6 @@ private function kill_process(text As String) As Integer
 		Return true
 	end if
 end function
-
-'====================================================
-'' starts debugge for windows
-'====================================================
-#ifdef __fb_win32__
-	private sub start_pgm(p As Any Ptr)
-		Dim  As Integer pclass,st
-		Dim  As String workdir,cmdl
-		Dim sinfo As STARTUPINFO
-		'directory
-		st=0
-		While InStr(st+1,exename,"\")
-		   st=InStr(st+1,exename,"\")
-		Wend
-		workdir=Left(exename,st)
-		cmdl=""""+exename+""" "+cmdexe(0)
-		#Ifdef fulldbg_prt
-			dbg_prt (Date+" "+Time+"Start Debug with "+cmdl)
-		#EndIf
-		sinfo.cb = Len(sinfo)
-		'Set the flags
-		sinfo.dwFlags = STARTF_USESHOWWINDOW
-		'Set the window's startup position
-		sinfo.wShowWindow = SW_NORMAL
-		'Set the priority class
-		pclass = NORMAL_PRIORITY_CLASS Or CREATE_NEW_CONSOLE Or DEBUG_PROCESS Or DEBUG_ONLY_THIS_PROCESS
-		'Start the program
-		If CreateProcess(exename,StrPtr(cmdl),ByVal NULL,ByVal NULL, FALSE, pclass, _
-		NULL, WorkDir, @sinfo, @pinfo) Then
-			'Wait
-			WaitForSingleObject pinfo.hProcess, 10
-			dbgprocId=pinfo.dwProcessId
-			dbgthreadID=pinfo.dwThreadId
-			dbghand=pinfo.hProcess
-			dbghthread=pinfo.hThread
-			#Ifdef fulldbg_prt
-				dbg_prt ("Create process")
-				dbg_prt ("pinfo.hThread "+Str(pinfo.hThread))
-				dbg_prt ("pinfo.dwThreadId "+Str(pinfo.dwThreadId))
-				dbg_prt ("hand "+Str(dbghand)+" Pid "+Str(dbgprocid))
-			#EndIf
-			prun=TRUE
-			runtype=RTSTEP
-			wait_debug()
-	   Else
-		  messbox("PROBLEM","no debugged pgm -->"+exename+Chr(10)+"error :"+Str(GetLastError()),MB_SYSTEMMODAL)
-	   End If
-#EndIf
-End Sub
 '======================================================================
 ''extracts the file name from full name
 '======================================================================
@@ -3940,67 +3903,6 @@ private sub init_debuggee(srcstart as integer)
 	brk_apply()
 end sub
 '===================================================
-'' Loads dll elements
-'===================================================
-private sub dll_load()
-	Dim loaddll As LOAD_DLL_DEBUG_INFO=*cast(LOAD_DLL_DEBUG_INFO ptr,debugdata) '' copy of data from thread 2
-	Dim As String dllfn
-	Dim As Integer d,delta,srcstart
-
-	dllfn=dll_name(loaddll.hFile)
-	'check yet loaded
-	For i As Integer= 1 To dllnb
-		If dllfn=dlldata(i).fnm Then d=i:Exit For
-	Next
-
-	If d=0 Then 'not found
-		If dllnb>=DLLMAX Then 'limit reached
-			hard_closing("New dll, Number of dll ("+Str(DLLMAX)+") exceeded , change the DLLMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY")
-		EndIf
-		dllnb+=1
-		dlldata(dllnb).hdl=loaddll.hfile
-		dlldata(dllnb).bse=Cast(UInteger,loaddll.lpBaseOfDll)
-		srcstart=sourcenb+1
-		if debug_extract(Cast(UInteger,loaddll.lpBaseOfDll),dllfn,DLL)=-1 then
-			dllnb-=1
-			statusbar_text(KSTBSTS,"Running")
-			exit sub
-		end if
-		If (linenb-linenbprev)=0 Then 'not debugged so not taking in account
-			dllnb-=1
-		Else
-			init_debuggee(srcstart)
-
-			dlldata(dllnb).fnm=dllfn
-			dlldata(dllnb).gbln=vrbgbl-vrbgblprev
-			dlldata(dllnb).gblb=vrbgblprev+1
-			dlldata(dllnb).lnb=linenbprev+1
-			dlldata(dllnb).lnn=linenb
-		End If
-	Else
-		dlldata(d).hdl=loaddll.hfile
-		delta=Cast(Integer,loaddll.lpBaseOfDll-dlldata(d).bse)
-		If delta<>0 Then ''different address so need to change some thing
-			''lines
-			For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
-				rline(i).ad+=delta
-			Next
-			''globals
-			For i As Integer=dlldata(dllnb).gblb To dlldata(dllnb).gblb+dlldata(dllnb).gbln-1
-				vrb(i).adr+=delta
-			Next
-		End If
-		''normally done during debug_extract
-		For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
-			ReadProcessMemory(dbghand,Cast(LPCVOID,rline(i).ad),@rLine(i).sv,1,0) 'sav 1 byte before writing &CC
-			WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
-		Next
-		globals_load(d)
-		brk_apply()
-	EndIf
-	statusbar_text(KSTBSTS,"Running")
-end sub
-'===================================================
 '' Unloads dll elements
 '===================================================
 private sub dll_unload(idll as integer)
@@ -4085,8 +3987,11 @@ private sub debug_event()
 			thread_del(debugdata)
 
 		Case KDBGDLL
+		#Ifdef __fb_win32__
 			dll_load()
-
+		#else
+			messbox("Linux dll","nedd to be coded")
+		#endif
 		Case KDBGDLLUNLOAD
 			dll_unload(debugdata)
 
@@ -4125,10 +4030,10 @@ private sub external_launch()
 
 	exename=debuggee
 	exe_sav(exename,cmdline)
-	SetTimer(hmain,GTIMER,100,Cast(Any Ptr,@debug_event))
+	SetTimer(hmain,GTIMER001,100,Cast(Any Ptr,@debug_event))
 	#Ifdef __fb_win32__
 		If ThreadCreate(@start_pgm)=0 Then
-			KillTimer(hmain,GTIMER)
+			KillTimer(hmain,GTIMER001)
 			messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
 		endif
 	#else
@@ -4162,11 +4067,11 @@ private sub restart(byval idx as integer=0)
 	reinit ''reinit all except GUI parts
 	settitle()
 
-	SetTimer(hmain,GTIMER,100,Cast(Any Ptr,@debug_event))
+	SetTimer(hmain,GTIMER001,100,Cast(Any Ptr,@debug_event))
 
 	#Ifdef __fb_win32__
 		If ThreadCreate(@start_pgm)=0 Then
-			KillTimer(hmain,GTIMER)
+			KillTimer(hmain,GTIMER001)
 			messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
 		endif
 	#else
@@ -4193,8 +4098,12 @@ end sub
 '' changes address of execution (forward or backward) only in the same procedure
 '==================================================================================
 private sub exe_mod() 'execution from cursor
+	#Ifdef __fb_win32__
+		dim as integer dummy ''used to align vcontext on 16bit
+		Dim vcontext As CONTEXT
+		vcontext.contextflags=CONTEXT_CONTROL
+	#endif
 	Dim l As Integer,rln As Integer',b As Integer
-	Dim vcontext As CONTEXT
 
 	l=line_cursor
 
@@ -4219,10 +4128,14 @@ private sub exe_mod() 'execution from cursor
 	'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(i).ad),@rLine(i).sv,1,0) 'restore old value for execution
 	thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=rln
 	'get and update registers
-	vcontext.contextflags=CONTEXT_CONTROL
-	GetThreadContext(threadhs,@vcontext)
-	vcontext.regip=rline(rln).ad
-	SetThreadContext(threadhs,@vcontext)
-
+	#Ifdef __fb_win32__
+		GetThreadContext(threadhs,@vcontext)
+		vcontext.regip=rline(rln).ad
+		SetThreadContext(threadhs,@vcontext)
+	#else
+		ptrace(PTRACE_GETREGS, threadhs, NULL, @regs)
+		regs.xip=rline(rln).ad
+		ptrace(PTRACE_SETREGS, threadhs, NULL, @regs)
+	#endif
 	dsp_change(rln)
 End Sub

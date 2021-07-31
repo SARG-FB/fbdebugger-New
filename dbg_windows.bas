@@ -1,6 +1,113 @@
 ''Windows system for fbdebugger_new
 ''dbg_windows.bas
 
+'====================================================
+'' starts debugge for windows
+'====================================================
+private sub start_pgm(p As Any Ptr)
+		Dim  As Integer pclass,st
+		Dim  As String workdir,cmdl
+		Dim sinfo As STARTUPINFO
+		'directory
+		st=0
+		While InStr(st+1,exename,"\")
+		   st=InStr(st+1,exename,"\")
+		Wend
+		workdir=Left(exename,st)
+		cmdl=""""+exename+""" "+cmdexe(0)
+		#Ifdef fulldbg_prt
+			dbg_prt (Date+" "+Time+"Start Debug with "+cmdl)
+		#EndIf
+		sinfo.cb = Len(sinfo)
+		'Set the flags
+		sinfo.dwFlags = STARTF_USESHOWWINDOW
+		'Set the window's startup position
+		sinfo.wShowWindow = SW_NORMAL
+		'Set the priority class
+		pclass = NORMAL_PRIORITY_CLASS Or CREATE_NEW_CONSOLE Or DEBUG_PROCESS Or DEBUG_ONLY_THIS_PROCESS
+		'Start the program
+		If CreateProcess(exename,StrPtr(cmdl),ByVal NULL,ByVal NULL, FALSE, pclass, _
+		NULL, WorkDir, @sinfo, @pinfo) Then
+			'Wait
+			WaitForSingleObject pinfo.hProcess, 10
+			dbgprocId=pinfo.dwProcessId
+			dbgthreadID=pinfo.dwThreadId
+			dbghand=pinfo.hProcess
+			dbghthread=pinfo.hThread
+			#Ifdef fulldbg_prt
+				dbg_prt ("Create process")
+				dbg_prt ("pinfo.hThread "+Str(pinfo.hThread))
+				dbg_prt ("pinfo.dwThreadId "+Str(pinfo.dwThreadId))
+				dbg_prt ("hand "+Str(dbghand)+" Pid "+Str(dbgprocid))
+			#EndIf
+			prun=TRUE
+			runtype=RTSTEP
+			wait_debug()
+		Else
+			messbox("PROBLEM","no debugged pgm -->"+exename+Chr(10)+"error :"+Str(GetLastError()),MB_SYSTEMMODAL)
+	   End If
+End Sub
+'===================================================
+'' Loads dll elements
+'===================================================
+private sub dll_load()
+	Dim loaddll As LOAD_DLL_DEBUG_INFO=*cast(LOAD_DLL_DEBUG_INFO ptr,debugdata) '' copy of data from thread 2
+	Dim As String dllfn
+	Dim As Integer d,delta,srcstart
+
+	dllfn=dll_name(loaddll.hFile)
+	'check yet loaded
+	For i As Integer= 1 To dllnb
+		If dllfn=dlldata(i).fnm Then d=i:Exit For
+	Next
+
+	If d=0 Then 'not found
+		If dllnb>=DLLMAX Then 'limit reached
+			hard_closing("New dll, Number of dll ("+Str(DLLMAX)+") exceeded , change the DLLMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY")
+		EndIf
+		dllnb+=1
+		dlldata(dllnb).hdl=loaddll.hfile
+		dlldata(dllnb).bse=Cast(UInteger,loaddll.lpBaseOfDll)
+		srcstart=sourcenb+1
+		if debug_extract(Cast(UInteger,loaddll.lpBaseOfDll),dllfn,DLL)=-1 then
+			dllnb-=1
+			statusbar_text(KSTBSTS,"Running")
+			exit sub
+		end if
+		If (linenb-linenbprev)=0 Then 'not debugged so not taking in account
+			dllnb-=1
+		Else
+			init_debuggee(srcstart)
+
+			dlldata(dllnb).fnm=dllfn
+			dlldata(dllnb).gbln=vrbgbl-vrbgblprev
+			dlldata(dllnb).gblb=vrbgblprev+1
+			dlldata(dllnb).lnb=linenbprev+1
+			dlldata(dllnb).lnn=linenb
+		End If
+	Else
+		dlldata(d).hdl=loaddll.hfile
+		delta=Cast(Integer,loaddll.lpBaseOfDll-dlldata(d).bse)
+		If delta<>0 Then ''different address so need to change some thing
+			''lines
+			For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
+				rline(i).ad+=delta
+			Next
+			''globals
+			For i As Integer=dlldata(dllnb).gblb To dlldata(dllnb).gblb+dlldata(dllnb).gbln-1
+				vrb(i).adr+=delta
+			Next
+		End If
+		''normally done during debug_extract
+		For i As Integer=dlldata(dllnb).lnb To dlldata(dllnb).lnb+dlldata(dllnb).lnb-1
+			ReadProcessMemory(dbghand,Cast(LPCVOID,rline(i).ad),@rLine(i).sv,1,0) 'sav 1 byte before writing &CC
+			WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
+		Next
+		globals_load(d)
+		brk_apply()
+	EndIf
+	statusbar_text(KSTBSTS,"Running")
+end sub
 '=====================================================================
 ''finds the dll name
 '=====================================================================
@@ -620,3 +727,36 @@ While 1
 Wend
 Return 0 'not really used
 End Function
+'=========================================================
+'' translates code message to the text (only windows)
+'=========================================================
+private sub winmsg()
+	Dim Buffer As String*210
+	var inputval=input_bx("Window message number","Enter the Windows code",,5)
+	If valint(inputval)<>0 Then
+		'Format the message string
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, ByVal 0,ValInt(inputval) , LANG_NEUTRAL, Buffer, 200, ByVal 0)
+		messbox("Windows message","Code : "+inputval+Chr(10)+"Message : "+buffer)
+	End If
+End Sub
+'=======================================
+'' lists processes ''todo win32 only
+'=======================================
+private sub process_list()
+	Dim prcinfo As PROCESSENTRY32,snap As HANDLE
+	dim as string text
+	snap=CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, 0)'Take snapshot of running processes
+	If snap <> INVALID_HANDLE_VALUE Then
+		prcinfo.dwSize=SizeOf(PROCESSENTRY32)
+		text="file Process name     ID  Nthread parent id"+Chr(13)+Chr(10)
+		If Process32First (snap,@prcinfo) Then
+			Do
+				text+=fmt(prcinfo.szExeFile,20)+fmt(Str(prcinfo.th32ProcessID),5)+fmt(Str(prcinfo.cntThreads),3)+fmt(Str(prcinfo.th32ParentProcessID),5)+Chr(13)+Chr(10)
+			Loop While  Process32Next (snap,@prcinfo)
+		Else
+			messbox("Process list error","Failed to create process list!")
+		End If
+		CloseHandle (snap)
+	End If
+	SetGadgetText(GEDITOR,text)
+end sub

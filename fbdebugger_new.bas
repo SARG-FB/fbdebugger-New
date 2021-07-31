@@ -108,6 +108,8 @@ dim SHARED as integer logtyp
 
 	''attach running exe
 	Dim Shared hattach As HANDLE    'handle to signal attchement done
+#else
+	Dim Shared as long pid ''in code defined as dbghand
 
 #endif
 

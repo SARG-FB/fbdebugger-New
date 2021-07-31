@@ -15,7 +15,7 @@
 #Define fmt2(t,l) Left(t,l)+Space(l-Len(t))
 #Define fmt3(t,l) Space(l-Len(t))+Left(t,l)
 
-#include once "Window9.bi"
+#include once "window9.bi"
 #include once "scintilla.bi"
 #include once "SciLexer.bi"
 #Include Once "file.bi"
@@ -112,12 +112,122 @@
 	'' Output information
 	#define dbg_prt(txt) output_wds(txt)
 	declare sub output_wds(as string)
+	declare sub dll_load()
+	declare sub start_pgm(p As Any Ptr)
 ''end of define for windows
 
-#else
+#else ''======================== LINUX =====================
+	enum PTRACE_REQUEST
+		PTRACE_TRACEME             =0
+		PTRACE_PEEKTEXT            '1
+		PTRACE_PEEKDATA            '2
+		PTRACE_PEEKUSR             '3
+		PTRACE_POKETEXT            '4
+		PTRACE_POKEDATA            '5
+		PTRACE_POKEUSR             '6
+		PTRACE_CONT                '7
+		PTRACE_KILL                '8
+		PTRACE_SINGLESTEP          '9
+		PTRACE_GETREGS         =   12
+		PTRACE_SETREGS            '13
+		PTRACE_GETFPREGS          '14 'Get all floating point registers used by a processes.
+		PTRACE_SETFPREGS          '15 'Set all floating point registers used by a processes.
+		PTRACE_ATTACH             '16
+		PTRACE_DETACH             '17
+		PTRACE_GETFPXREGS         '18 'Get all extended floating point registers used by a processes.
+		PTRACE_SETFPXREGS         '19 'Set all extended floating point registers used by a processes.
+		PTRACE_SYSCALL    =        24 'Continue and stop at the next (return from) syscall
+		PTRACE_SETOPTIONS  =   &h4200
+		PTRACE_GETEVENTMSG = &h4201 'Get last ptrace message
+		PTRACE_GETSIGINFO = &h4202 'Get siginfo for process
+		PTRACE_SETSIGINFO = &h4203 'Set new siginfo for process
+		PTRACE_GETREGSET = &h4204 'Get register content
+		PTRACE_SETREGSET = &h4205 'Set register content
+		PTRACE_SEIZE = &h4206 'Like PTRACE_ATTACH, but do not force tracee to trap and do not affect signal or group stop state
+		PTRACE_INTERRUPT = &h4207 'Trap seized tracee
+		PTRACE_LISTEN = &h4208 'Wait for next group event
+		PTRACE_PEEKSIGINFO = &h4209 'Retrieve siginfo_t structures without removing signals from a queue
+		PTRACE_GETSIGMASK = &h420a 'Get the mask of blocked signals
+		PTRACE_SETSIGMASK = &h420b 'Change the mask of blocked signals
+		PTRACE_SECCOMP_GET_FILTER = &h420c 'Get seccomp BPF filters
+		PTRACE_SECCOMP_GET_METADATA = &h420d 'Get seccomp BPF filter metadata
+	end enum
+
 	'' Output information
 	#define dbg_prt(txt) output_lnx(txt)
-	declare output_lnx(as string)
+	#define dbghand pid
+	#define LPCVOID integer ptr
+	#define LPVOID integer ptr
+	declare sub output_lnx(as string)
+	declare function ReadProcessMemory(child As long,addrdbge As any ptr,addrdbgr As any ptr,lg As Long,rd As any ptr =0) as integer
+	declare Sub writeprocessmemory(child As long,addrdbge As any ptr,addrdbgr As any ptr,lg As Long,rd As Long=0)
+	Extern "C"
+		Declare Function wait_ Alias "wait" (wiStatus As long Ptr) As pid_t
+		Declare Function ptrace(request As ptrace_request, pid As  pid_t, addr As Any Ptr, uData As Any Ptr) As Integer
+	End Extern
+	
+		''DLL
+	Const DLLMAX=300
+	Type tdll
+		As HANDLE   hdl 'handle to close
+		As UInteger bse 'base address
+		As integer  tv  'item treeview to delete
+		As Integer gblb 'index/number in global var table
+		As Integer gbln
+		As Integer  lnb 'index/number in line
+		As Integer  lnn
+		As String   fnm 'full name
+	End Type
+
+	type pt_regs 'or user_regs_struct
+	#ifndef __FB_64BIT__
+		as long ebx
+		as long ecx
+		as long edx
+		as long esi
+		as long edi
+		as long xbp
+		as long eax
+		as long ds', __dsu
+		as long es', __esu
+		as long fs', __fsu
+		as long gs', __gsu
+		as long orig_eax
+		as ulong xip
+		as long  cs', __csu
+		as long eflags
+		as long xsp
+		as long ss', __ssu
+	#else
+	   As Uinteger r15
+	   As Uinteger r14
+	   As Uinteger r13
+	   As Uinteger r12
+	   As Uinteger xbp
+	   As Uinteger rbx
+	   As Uinteger r11
+	   As Uinteger r10
+	   As Uinteger r9
+	   As Uinteger r8
+	   As Uinteger rax
+	   As Uinteger rcx
+	   As Uinteger rdx
+	   As Uinteger rsi
+	   As Uinteger rdi
+	   As Uinteger orig_rax
+	   As Uinteger xip
+	   As Uinteger cs
+	   As Uinteger eflags
+	   As Uinteger xsp
+	   As Uinteger ss
+	   'As Uinteger fs_base
+	   'As Uinteger gs_base
+	   'As Uinteger ds
+	   'As Uinteger es
+	   'As Uinteger fs
+	   'As Uinteger gs
+	end type
+	#endif	
 #endif
 
 #Define TYPESTD 17 ''upper limit for standard type, now 17 for va_list 2020/02/05
@@ -578,7 +688,7 @@ enum
 ''procedure tracking
 	GCCHAIN=980
 '' timer
-	GTIMER
+	GTIMER001
 end enum
 
 '' debug events
@@ -946,8 +1056,13 @@ End Type
 ''======================== Threads ====================================
 Const THREADMAX=50
 Type tthread
- hd  As HANDLE    'handle
- id  As UInteger  'ident
+#ifdef __fb_win32__
+	hd  As HANDLE    'handle
+	id  As UInteger  'ident
+ #else
+	hd as INTEGER  'not use
+	id as long
+#endif
  pe  As Integer   'flag if true indicates proc end
  sv  As Integer   'sav line
  od  As Integer   'previous line
@@ -957,7 +1072,6 @@ Type tthread
  plt As integer 'to keep handle of last proc of thread in proc/var tview
  ptv As integer 'to keep handle of last proc of thread in thread tview
  exc As Integer   'to indicate execution in case of auto 1=yes, 0=no
-
 End Type
 
 ''variable find
@@ -1030,7 +1144,8 @@ declare sub brk_del(n as integer)
 declare sub brkv_set(a As Integer)
 declare sub brk_apply()
 declare sub brk_sav()
-
+declare sub process_list()
+declare sub winmsg()
 '===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)

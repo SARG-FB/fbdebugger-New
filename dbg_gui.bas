@@ -190,7 +190,6 @@ private sub index_sel()
 
 
 	If typ>0 AndAlso typ<TYPESTD andalso nbdim<=2 Then
-		dim lvCol   As LVCOLUMN
 		hidegadget(GIDXTABLE,KSHOW)
 		hidegadget(GIDXAUTO,KSHOW)
 		hidegadget(GIDXUPD,KSHOW)
@@ -521,7 +520,7 @@ private sub create_indexbx()
 	For idx as integer =0 To 4
 		textgadget(GIDXMIN1+idx,18,40+32*idx,93,30,"1")
 		textgadget(GIDXMAX1+idx,117,40+32*idx,93,30,"15")
-		spingadget(GIDXUP1+idx,219,40+32*idx,102,25,100,-2147483648 ,21474836487)
+		spingadget(GIDXUP1+idx,219,40+32*idx,102,25,+2147483647 ,-2147483648,100)
 	next
 
 	buttongadget(GIDXAPPLY,327,40,66,30,"Apply")
@@ -538,7 +537,7 @@ private sub create_indexbx()
 	buttongadget(GIDXCOLL,651,390,70,30,"Column -")
 	buttongadget(GIDXBLKP,651,420,70,30,"Block + >")
 	buttongadget(GIDXBLKL,651,450,70,30,"< Block -")
-	spingadget(GIDXWIDTH,648,480,80,30,80,-2147483648 ,21474836487)
+	spingadget(GIDXWIDTH,648,480,80,30,+2147483647 ,-2147483648,100)
 
 	#Ifdef __FB_WIN32__
 		Var Style=LVS_EX_GRIDLINES or LVS_EX_FULLROWSELECT
@@ -786,7 +785,7 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
     'send_sci( SCI_STYLESETSIZE,STYLE_DEFAULT,11)
     send_sci(SCI_STYLECLEARALL, 0, 0)
     'send_sci( SCI_SETCODEPAGE, SC_CP_UTF8 ,0)
-    send_sci(SCI_SETKEYWORDS,0, Cast(LPARAM,@"sub function operator constructor destructor property"))
+    send_sci(SCI_SETKEYWORDS,0, Cast(integer,@"sub function operator constructor destructor property"))
     'send_sci(SCI_STYLESETFORE, SCE_B_COMMENT, &hff)
     send_sci(SCI_STYLESETFORE, SCE_B_KEYWORD, &h000000ff)
     'send_sci(SCI_STYLESETFORE, SCE_B_NUMBER, &h0)
@@ -868,8 +867,13 @@ private sub but_enable()
 			DisableGadget(IDBUTEXECMOD,0)
 
 			statusbar_text(KSTBSTS,"Waiting "+stoplibel(stopcode))
-			statusbar_text(KSTBTHD,"Thread "+Str(thread(threadcur).id))
-			statusbar_text(KSTBUID,"Thread "+Str(thread(threadcur).id))
+			#Ifdef __fb_win32__
+				statusbar_text(KSTBTHD,"Thread "+Str(thread(threadcur).id))
+				statusbar_text(KSTBUID,"")
+			#else
+				statusbar_text(KSTBTHD,"Pid "+Str(dbghand))
+				statusbar_text(KSTBUID,"Uid empty for now")
+			#endif
 			statusbar_text(KSTBSRC,source_name(source(proc(procsv).sr)))
 			statusbar_text(KSTBPRC,proc(procsv).nm)
 			statusbar_text(KSTBFRT,left(Str(fasttimer),10))
@@ -1234,8 +1238,8 @@ private sub gui_init()
 	''status bar
 	StatusBarGadget(GSTATUSBAR,"",SBT_TOOLTIPS)
 	statusbar_text(KSTBSTS,"No program")
-	statusbar_text(KSTBTHD,"Thread number")
-	statusbar_text(KSTBUID,"UID number Linux")
+	statusbar_text(KSTBTHD,"WDS Tid or LNX Pid")
+	statusbar_text(KSTBUID,"LNX Uid")
 	statusbar_text(KSTBSRC,"Current source")
 	statusbar_text(KSTBPRC,"Current proc")
 	statusbar_text(KSTBBPM,"")

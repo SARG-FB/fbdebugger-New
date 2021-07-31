@@ -49,8 +49,11 @@ private sub menu_action(poption as integer)
 			EndIf
 
 		Case MNWINMSG
-            winmsg()
-
+			#ifdef __fb_win32__
+				winmsg()
+			#else
+				messbox("Display text for Linux error","feature not yet implemented (procedure linmsg)")
+			#endif
         Case MNSHWBDH
             dechexbin()
 
@@ -961,10 +964,10 @@ private sub select_file()
 	reinit ''reinit all except GUI parts
 	flagrestart=-1
     exe_sav(exename,"")
-	SetTimer(hmain,GTIMER,100,Cast(Any Ptr,@debug_event))
+	SetTimer(hmain,GTIMER001,100,Cast(Any Ptr,@debug_event))
 	#Ifdef __fb_win32__
 		If ThreadCreate(@start_pgm)=0 Then
-			KillTimer(hmain,GTIMER)
+			KillTimer(hmain,GTIMER001)
 			messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
 		endif
 	#else

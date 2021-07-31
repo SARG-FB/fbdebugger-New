@@ -1262,7 +1262,11 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 		While 1
 			If ReadProcessMemory(dbghand,Cast(LPCVOID,basestab),@recupstab,sizeof(udtstab),0)=0 Then
 				#Ifdef fulldbg_prt
-					dbg_prt ("error reading memory "+Str(GetLastError))
+					#ifdef __fb_win32__
+						dbg_prt ("error reading memory "+Str(GetLastError))
+					#else
+						dbg_prt ("error reading memory")
+					#EndIf
 				#EndIf
 				messbox("Loading stabs","ERROR When reading memory"):return -1
 			End If
@@ -1280,7 +1284,14 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 			EndIf
 
 			If ReadProcessMemory(dbghand,Cast(LPCVOID,recupstab.stabs+basestabs),@recup,sizemax,0)=0 Then
-				messbox("Loading stabs","ERROR When reading memory : "+Str(GetLastError)+Chr(10)+"Exit loading"):return -1
+				#Ifdef fulldbg_prt
+					#ifdef __fb_win32__
+						dbg_prt ("error reading memory "+Str(GetLastError))
+					#else
+						dbg_prt ("error reading memory")
+					#EndIf
+				#EndIf
+				messbox("Loading stabs","ERROR When reading memory"+Chr(10)+"Exit loading"):return -1
 			End If
 
 			#Ifdef fulldbg_prt
