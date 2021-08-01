@@ -108,9 +108,20 @@ dim SHARED as integer logtyp
 
 	''attach running exe
 	Dim Shared hattach As HANDLE    'handle to signal attchement done
-#else
-	Dim Shared as long pid ''in code defined as dbghand
+#else ''linux
+	dim shared as long pid '' in code defined dgbhand
+	dim shared as long threadhs '' in code defined dgbhand
+	dim shared as long threadcur '' index
+	dim shared as long threadprv '' index
+	dim shared as long threadsel '' index
+	Dim Shared threadaut As Integer     'number of threads for change when  auto executing
+	dim shared as pt_regs regs
+	Dim Shared As tthread thread(THREADMAX) ''zero based
+	Dim Shared As Integer threadnb =-1
 
+	''DLL = .so
+	Dim Shared As tdll dlldata(DLLMAX) ''base 1
+	Dim Shared As Integer dllnb
 #endif
 
 ''miscellanous data
