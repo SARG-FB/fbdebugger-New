@@ -1,4 +1,4 @@
-'=================================================================
+''=================================================================
 '===== DEBUGGER FOR FREEBASIC === (C) 2006-2021 Laurent GRAS =====
 '=================================================================
 
@@ -9,11 +9,12 @@ dim shared as string defarray(99999) ''remove me when all runs finely
 ''mutex for blocking second thread before continue
 dim shared as any ptr blocker
 blocker=mutexcreate
-MutexLock blocker
+
+
 dim shared as integer debugevent
 dim shared as integer debugdata ''index of bp or address of BP (case BP on mem)
 dim shared as STRING  libelexception
-dim shared as integer ssadr ''address of line for restoring &hCC when singlestepping
+dim shared as integer ssadr ''address of line for restoring breakcpu when singlestepping
 
 ''codes when debuggee stopped and corresponding texts
 Dim Shared stopcode As Integer
@@ -45,6 +46,7 @@ dim Shared As Integer rlinecur ''line to be executed
 ''procedures
 dim Shared as tproc proc(PROCMAX) ''list of procs in code
 dim shared As integer procnb
+dim shared As integer procnew ''used for finding address of first fbc line
 dim shared As Integer procmain
 
 dim Shared As integer procsv,procsk,proccurad,procfn,procsort
@@ -88,7 +90,7 @@ dim SHARED as integer logtyp
 #ifdef __fb_win32__
 	''Threads
 	Dim Shared thread(THREADMAX) As tthread  ''zero based
-	Dim Shared threadnb As Integer =-1
+	Dim Shared threadnb As Integer
 	Dim Shared threadcur As Integer
 	Dim Shared threadprv As Integer     'previous thread used when mutexunlock released thread or after thread create
 	Dim Shared threadsel As Integer     'thread selected by user, used to send a message if not equal current
@@ -108,8 +110,12 @@ dim SHARED as integer logtyp
 
 	''attach running exe
 	Dim Shared hattach As HANDLE    'handle to signal attchement done
+	
+	print "MutexLock00":MutexLock blocker
 #else ''linux
+	dim shared as long dbgpid '' debugger pid
 	dim shared as long pid '' in code defined dgbhand
+	dim shared as long thread2 ''second thread
 	dim shared as long threadhs '' in code defined dgbhand
 	dim shared as long threadcur '' index
 	dim shared as long threadprv '' index
@@ -117,11 +123,21 @@ dim SHARED as integer logtyp
 	Dim Shared threadaut As Integer     'number of threads for change when  auto executing
 	dim shared as pt_regs regs
 	Dim Shared As tthread thread(THREADMAX) ''zero based
-	Dim Shared As Integer threadnb =-1
-
+	Dim Shared As Integer threadnb
+	dim shared as GtkWidget ptr wsci
 	''DLL = .so
-	Dim Shared As tdll dlldata(DLLMAX) ''base 1
+	Dim Shared As tdll dlldata(DLLMAX) ''base 1   
 	Dim Shared As Integer dllnb
+	Dim Shared As Integer msgcmd
+	Dim Shared As Integer msgad
+	Dim Shared As Integer msgad2
+	Dim Shared As Integer msgdata
+	Dim Shared As Integer msgdata2
+	dim shared as ANY ptr condid
+	dim shared as integer afterkilled
+	condid=condcreate()
+	dim shared as boolean bool1,bool2 ''predicate for each thread of the debugger
+	
 #endif
 
 ''miscellanous data
@@ -361,19 +377,20 @@ includebinary("buttons/memory.bmp",butENLRMEM)
 	#include "dbg_windows.bas"
 #else
 	#include "dbg_linux.bas"
+	dbgpid=getpid
+	print "first pid=";dbgpid
 #EndIf
-
-gui_init
+print "before gui_init"
+gui_init()
+print "after gui_init"
 ini_read()
-reinit
-
-statusbar_text(KSTBSTS,"No debuggee")
-
+reinit()
+statusbar_text(KSTBSTS,"Ready")
+	
 ''fbdebugger launched by script or another application (ex editor) with debuggee and possibly params
 if command(0)<>"" then
 	external_launch()
 EndIf
-
 '====================
 ''main loop
 '====================
@@ -393,7 +410,7 @@ do
 		end if
 		continue do
 	end if
-	''size changed
+	'size changed ''todo enable
 	if event=EventSize then
 		if EventHwnd=hmain then
 			size_changed()
@@ -405,21 +422,7 @@ do
 		menu_action(EventNumber)
 	'' contextual menu
 	ElseIf event=eventrbdown then
-		if MouseX<500 then
-			DisplayPopupMenu(HMenusource, GlobalMouseX,GlobalMouseY)
-		else
-			if PanelGadgetGetCursel(GRIGHTTABS)=TABIDXVAR then
-				DisplayPopupMenu(HMenuvar, GlobalMouseX,GlobalMouseY)
-			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXPRC then
-				DisplayPopupMenu(HMenuprc, GlobalMouseX,GlobalMouseY)
-			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXTHD then
-				DisplayPopupMenu(HMenuthd, GlobalMouseX,GlobalMouseY)
-			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXWCH then
-				DisplayPopupMenu(HMenuwch, GlobalMouseX,GlobalMouseY)
-			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXDMP then
-				if dumpadr<>0 then hidewindow(hdumpbx,KSHOW)
-			endif
-		endif
+		context_menu()
 	elseIf event=EventLBdown Then
 		If EventNumberListView=GIDXTABLE Then
 			index_cell()

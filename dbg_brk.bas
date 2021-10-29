@@ -302,7 +302,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 	Dim As Integer flag=0
 	'dim as integer recup(20)
 	dim as valeurs recup1,recup2
-'print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
+print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
 		'If brkv.arr Then 'watching dyn array element ?
 			'adr=vrr(brkv.ivr).ini
 			'ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,4,0)
@@ -319,14 +319,24 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 	''26 --> <> or < or <=
 	''35 --> = or >= or <=
 	''16 --> <>
+	
+	#Ifdef __fb_win32__
+		ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
+	#else
+		recup1.vlongint=readmemlongint(thread(threadcur).id, adr1)
+	#endif
+	if adr2 then
+		#Ifdef __fb_win32__
+			ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,8,0)
+		#else
+			recup2.vlongint=readmemlongint(thread(threadcur).id, adr2)
+		#endif
+	else
+		recup2=data2
+	EndIf
+print "recup1,recup2=";recup1.vlongint,recup2.vlongint ''todo remove me
 	Select Case datatype
 		Case 2 'byte
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,1,0)
-			if adr2 then
-				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,1,0)
-			else
-				recup2=data2
-			EndIf
 			if recup2.vbyte>recup1.vbyte then
 				If 21 And comptype Then
 					flag=1
@@ -342,12 +352,6 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 			End If
 
 		Case 3 'ubyte
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,1,0)
-			if adr2 then
-				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,1,0)
-			else
-				recup2=data2
-			EndIf
 			if recup2.vubyte>recup1.vubyte then
 				If 21 And comptype Then
 					flag=1
@@ -363,12 +367,6 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 			End If
 
 		Case 5 'short
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,2,0)
-			if adr2 then
-				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,2,0)
-			else
-				recup2=data2
-			EndIf
 			if recup2.vshort>recup1.vshort then
 				If 21 And comptype Then
 					flag=1
@@ -384,12 +382,6 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 			End If
 
 		Case 6 'ushort
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,2,0)
-			if adr2 then
-				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,2,0)
-			else
-				recup2=data2
-			EndIf
 			if recup2.vushort>recup1.vushort then
 				If 21 And comptype Then
 					flag=1
@@ -405,12 +397,6 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 			End If
 
 		Case 1 'integer32/long
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,4,0)
-			if adr2 then
-				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,4,0)
-			else
-				recup2=data2
-			EndIf
 			if recup2.vinteger>recup1.vinteger then
 				If 21 And comptype Then
 					flag=1
@@ -426,12 +412,6 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 			End If
 
 		Case 8 'uinteger32/ulong
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,4,0)
-			if adr2 then
-				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,4,0)
-			else
-				recup2=data2
-			EndIf
 			if recup2.vuinteger>recup1.vuinteger then
 				If 21 And comptype Then
 					flag=1
@@ -447,12 +427,6 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 			End If
 
 		Case 9 'integer64/longint
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
-			if adr2 then
-				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,8,0)
-			else
-				recup2=data2
-			EndIf
 			if recup2.vlongint>recup1.vlongint then
 				If 21 And comptype Then
 					flag=1
@@ -467,12 +441,6 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 				EndIf
 			End If
 		Case 10 'uinteger64/ulonginit
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
-			if adr2 then
-				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,8,0)
-			else
-				recup2=data2
-			EndIf
 			if recup2.vulongint>recup1.vulongint then
 				If 21 And comptype Then
 					flag=1
@@ -487,12 +455,6 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 				EndIf
 			End If
 		Case 11 'single
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,4,0)
-			if adr2 then
-				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,4,0)
-			else
-				recup2=data2
-			EndIf
 			if recup2.vsingle>recup1.vsingle then
 				If 21 And comptype Then
 					flag=1
@@ -508,12 +470,6 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 			End If
 
 		Case 12 'double
-			ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
-			if adr2 then
-				ReadProcessMemory(dbghand,Cast(LPCVOID,adr2),@recup2,8,0)
-			else
-				recup2=data2
-			EndIf
 			if recup2.vdouble>recup1.vdouble then
 				If 21 And comptype Then
 					flag=1
@@ -553,7 +509,7 @@ end function
 '' removes all ABP / disables all UBP if necessary
 '=======================================================================
 private sub brk_unset(ubpon as integer=false)
-
+	dim as integer bponline
 	if brkv.adr1 then ''restore by default ABP on all line
 		For j As Integer = 1 To linenb 'restore all instructions
 		  WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@breakcpu,1,0)
@@ -567,10 +523,9 @@ private sub brk_unset(ubpon as integer=false)
 			If brkol(jbrk).typ<50 Then
 				if ubpon=true then
 					if rlinecur=brkol(jbrk).index then ''if current line is a BP (permanent/cond/counter)
-						singlestep_on(thread(threadcur).id,brkol(jbrk).index,0)  ''planned to restore the BP after execution
-					else
-						WriteProcessMemory(dbghand,Cast(LPVOID,brkol(jbrk).ad),@breakcpu,1,0) ''only BP enabled
+						bponline=jbrk
 					EndIf
+					WriteProcessMemory(dbghand,Cast(LPVOID,brkol(jbrk).ad),@breakcpu,1,0) ''only BP enabled
 				else
 					brkol(jbrk).typ+=50 ''disable all UBP
 					brk_marker(jbrk)
@@ -578,8 +533,14 @@ private sub brk_unset(ubpon as integer=false)
 			end if
 		Next
 		if brkol(0).typ<>0 then
+			print "put CC on line ad=";hex(brkol(0).ad)
 			WriteProcessMemory(dbghand,Cast(LPVOID,brkol(0).ad),@breakcpu,1,0)
 		EndIf
+		'if bponline then
+			'print "bp on line="
+			'singlestep_on(thread(threadcur).id,brkol(bponline).index,0)  ''planned to restore the BP after execution
+			'ssadr=brkol(bponline).ad
+		'EndIf
 	end if
 End Sub
 '============================================================================
@@ -716,6 +677,7 @@ select case t
 		runtype=RTRUN
 		but_enable()
 		brkol(0).nline=rline(rln).nu
+		print "skipping line=";rline(rln).nu,rline(rln).ad
 		brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP or disable them ?
 		thread_resume()
@@ -748,8 +710,8 @@ select case t
 		'brkol(0).nline=rline(rln).nu
 		'brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP
-		thread_resume()
-
+		'thread_resume()
+		resume_exec()
 	case else
 		rln=line_exec(cln,"Break point Not possible")
 		if rln=-1 then exit sub
@@ -798,11 +760,12 @@ select case t
 					inputval=input_bx("breakpoint with a counter","Set value counter for a breakpoint","0",7)
 					brkol(brknb).counter=ValUInt(inputval)
 					brkol(brknb).cntrsav=brkol(brknb).counter
+					print "counter=";brknb,brkol(brknb).counter
 			End select
 		Else 'still put
 			If t=7 Then 'change value counter
 				if  brkol(ibrk).cntrsav Then
-					inputval=input_bx("Change value counter, remaining= "+Str(brkol(ibrk).counter)," initial below"+Str(brkol(ibrk).cntrsav),,7)
+					inputval=input_bx("Change value counter, remaining = "+Str(brkol(ibrk).counter)," initial = "+Str(brkol(ibrk).cntrsav),,7)
 					brkol(ibrk).counter=ValUInt(inputval)
 					brkol(ibrk).cntrsav=brkol(ibrk).counter
 				else

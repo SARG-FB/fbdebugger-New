@@ -9,9 +9,12 @@ private sub menu_action(poption as integer)
 		case MNABOUT
             If messbox("FB DEBUGGER "+ver3264,"Debugger for FreeBASIC (Windows/Linux 32/64)"+Chr(13)+Chr(13)+fbdebuggerversion+" / "+__DATE__+Chr(13)+"(C) L.GRAS  debug @ aliceadsl . fr"+Chr(13)+Chr(13) _
                +"Select YES for accessing to the dedicated page on the forum"+Chr(13)+"http://www.freebasic.net/forum/viewtopic.php?f=8&t=13935",MB_YESNO)=6 Then
-               	Shell "start http://www.freebasic.net/forum/viewtopic.php?f=8""&t""=13935"
-            endif
-
+				#ifdef __fb_win32__
+					Shell "start http://www.freebasic.net/forum/viewtopic.php?f=8""&t""=13935"
+				#else
+					runprogram("firefox","http://www.freebasic.net/forum/viewtopic.php?f=8&t=13935")
+				#endif
+			endif
 		case MNCMPINF
 			if compilerversion<>"" then
 				messbox("Compiler version","Debuggee compiled by "+compilerversion)
@@ -122,7 +125,7 @@ private sub menu_action(poption as integer)
 		Case MNSETBRKC 'set breakpoint conditionnal
 			if brktyp=KBRCMEMMEM then
 				if brkidx1=0 or brkidx2=0 then
-					messbox("Set BP conditionnal","Need variables for the condition")
+					messbox("Set BP conditional","Need variables for the condition")
 				else
 					brk_set(3)
 				EndIf
@@ -931,6 +934,7 @@ private sub gadget_action(igadget as LONG)
 		case GLOG ''nothing to do
 		case GEDITOR ''nothing to do
 		case GTVIEWBRC ''nothing to do
+		'print  "GTVIEWBRC clicked on"
 		case GBRCVALUE ''nothing to do
 
 		case else
@@ -945,39 +949,46 @@ private sub select_file()
 		var selfile= OpenFileRequester("Select exe file","C:\","Exe files (*.exe)"_
 		+Chr(0)+"*.exe"+Chr(0))
 	#else
-		var selfile= OpenFileRequester("Select exe file","","Exe files)"_
-		+Chr(0)+"*.*"+Chr(0))
+		var selfile=OpenFileRequesterExe("Select exe file","/home/user/")
+		'var selfile= OpenFileRequester("Select exe file","","Exe files)"_
+		'+Chr(0)+""+Chr(0))
 	#endif
 	If selfile="" then
-		messbox("No file selected","")
-		exename=""
+		messbox("File selection","No file selected")
+		'exename=""
 		exit sub
 	else
 		exename=selfile
-		messbox("File selected",exename)
+		'messbox("File selection","File selected = "+exename)
+		print "File selected = "+exename
 	end if
 
 	if check_bitness(exename)=0 then exit sub ''bitness of debuggee and fbdebugger not corresponding
 
 	if kill_process("Trying to launch but debuggee still running")=FALSE then exit sub
-
 	reinit ''reinit all except GUI parts
 	flagrestart=-1
     exe_sav(exename,"")
-	SetTimer(hmain,GTIMER001,100,Cast(Any Ptr,@debug_event))
+	SetTimer(hmain,GTIMER001,500,Cast(Any Ptr,@debug_event))
 	#Ifdef __fb_win32__
 		If ThreadCreate(@start_pgm)=0 Then
 			KillTimer(hmain,GTIMER001)
-			messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
+			messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
 		endif
 	#else
-		messbox("feature to be coded linux","after selecting file")
+		print "before thread create"
+		If ThreadCreate(@start_pgm)=0 Then
+			print "timer killed"
+			KillTimer(hmain,GTIMER001)
+			messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
+		endif
 	#endif
 end sub
 '==============================================================
 '' handles actions for each button
 '==============================================================
 private sub button_action(button as integer)
+	static as Hmenu HMenuexe
 	select case button
 		case IDBUTSTEP 'STEP
 			stopcode=0
@@ -987,7 +998,7 @@ private sub button_action(button as integer)
 		case IDBUTSTEPOVER 'STEP+ over
 			brk_set(10)
 			hidewindow(hcchainbx,KHIDE)
-			thread_resume()
+			'thread_resume()
 
         Case IDBUTAUTO 'simple thread auto
 			runtype=RTAUTO
@@ -998,14 +1009,29 @@ private sub button_action(button as integer)
 		case IDBUTRUNEXIT
 			brk_set(12)
 			hidewindow(hcchainbx,KHIDE)
-			thread_resume()
+			'thread_resume()
 
 		case IDBUTSTOP
 			If runtype=RTFREE Or runtype=RTRUN Then
 				runtype=RTRUN 'to treat free as run
-				For i As Integer = 1 To linenb 'restore every breakpoint
-					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
-				Next
+				#Ifdef __fb_win32__
+					For i As Integer = 1 To linenb 'restore every breakpoint
+						WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
+					Next
+				#else
+					sigusr_send()
+					'print "sigusr1 sent with return code=";syscall(sys_tgkill,dbgpid,thread2,SIGUSR1)
+					'print "err=";errno
+					'mutexlock blocker
+					'msgcmd=KPT_RESTALL
+					'bool2=true
+					'condsignal(condid)
+					'while bool1<>true
+						'condwait(condid,blocker)
+					'wend
+					'bool1=false
+					'mutexunlock blocker
+				#endif
 			Else
 				runtype=RTSTEP
 			EndIf
@@ -1038,13 +1064,17 @@ private sub button_action(button as integer)
 			restart()
 
 		case IDBUTATTCH
+		sigusr_send()
 			messbox("feature not implemented","button = IDBUTATTACH")
-
+			
 		case IDBUTKILL
 			kill_process("Terminate immediatly no saved data, other option Release")
 
 		case IDBUTLASTEXE
-			var HMenuexe=CreatePopMenu()
+			if HMenuexe then
+				Delete_Menu(HMenuexe)
+			EndIf
+			HMenuexe=CreatePopMenu()
 			For iitem As integer =0 To 9
 				If savexe(iitem)<>"" Then
 					MenuItem(MNEXEFILE0+iitem,HMenuexe,savexe(iitem))
@@ -1052,10 +1082,9 @@ private sub button_action(button as integer)
 				EndIf
 			Next
 			DisplayPopupMenu(HMenuexe, GlobalMouseX,GlobalMouseY)
-			Delete_Menu(HMenuexe)
 
-		case IDBUTCURSOR
-		''''messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
+		case IDBUTCURSOR  ''run to cursor line
+			'messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
 			brk_set(9)
 			hidewindow(hcchainbx,KHIDE)
 
@@ -1067,7 +1096,7 @@ private sub button_action(button as integer)
 				brk_set(11)
 			EndIf
 			hidewindow(hcchainbx,KHIDE)
-			thread_resume()
+			'thread_resume()
 
 		case IDBUTUPDATE
 			if flagupdate=true then

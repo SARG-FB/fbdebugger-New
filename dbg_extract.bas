@@ -906,7 +906,11 @@ private sub dbg_file(strg as string,value as integer)
 		if right(strg,4)<>".bas" and right(strg,3)<>".bi" then
 			path=strg
 		else
-			fullname=lcase(path+strg)
+			#ifdef __fb_win32__
+				fullname=lcase(path+strg)
+			#else
+				fullname=path+strg ''file names are sensitive on linux
+			#endif
 			path=""
 			print "full source name=";fullname
 			if check_source(fullname)=-1 then ''useful check_source ???
@@ -928,7 +932,9 @@ private sub dbg_include(strg as string)
 	if instr(strg,any "/\")=0 then ''just the name no path
 		strg=left(source(0),instrrev(source(0),any "/\"))+strg ''adding path
 	end if
-	strg=LCase(strg)
+	#ifdef __fb_win32__
+		strg=lcase(strg) ''only WDS file names are sensitive on LNX
+	#endif
 	temp=check_source(strg)
 	if temp=-1 Then
 		sourcenb+=1
@@ -945,24 +951,20 @@ end sub
 '' -----------------------
 private sub dbg_line(linenum as integer,ofset as integer)
 	if linenum then
-		'if linenum>lastline then
-			if ofset+proc(procnb).db<>rline(linenb).ad Then ''checking to avoid asm with just comment line
- 				linenb+=1
-			endif
-			rline(linenb).ad=ofset+proc(procnb).db
-			rLine(linenb).nu=linenum
-			rLine(linenb).px=procnb
-
-			''to be checked maybe fixed so useless
-			rline(linenb).sx=sourceix ''for line in include and not in a proc
-
-			''to be checked if still usefull
-			If ofset<>0 Then lastline=linenum ''first proc line always coded 1 but ad=0
-
-			'print "linenum=";linenum;" adress=";rline(linenb).ad
-		'else
-			'print "linenum=";linenum;" not>lastline=";lastline
-		'endif
+		if ofset+proc(procnb).db<>rline(linenb).ad Then ''checking to avoid asm with just comment line
+			linenb+=1
+		endif
+		rline(linenb).ad=ofset+proc(procnb).db
+		rLine(linenb).nu=linenum
+		rLine(linenb).px=procnb
+		if procnew <> procnb then ''find the address for first fbc line
+			if ofset<>0 then
+				procnew=procnb
+				proc(procnb).first=rline(linenb).ad
+			EndIf
+		EndIf
+		''to be checked maybe fixed so useless
+		rline(linenb).sx=sourceix ''for line in include and not in a proc
 	else
 		print "line number=0"
 	end if
@@ -1002,7 +1004,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 		end if
 	else
 		proc(procnb).ed=proc(procnb).db+adr
-		print "end of proc=";proc(procnb).ed,hex(proc(procnb).ed)
+		'print "end of proc=";proc(procnb).ed,hex(proc(procnb).ed)
 
 		if proc(procnb).fn>procfn Then procfn=proc(procnb).fn+1 ' just to be sure to be above see gest_brk
 
@@ -1067,17 +1069,17 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 
 	for ibuf as integer =1 to size/16
 		get #1,ofset+1,buf()
-		print ibuf;" "; hex(buf(0));" --> ";
+		'print ibuf;" "; hex(buf(0));" --> ";
 		stab.full=buf(0)
-		print "C="+str(stab.cod)+" D="+str(stab.desc)+" O="+str(stab.offst);" ";
+		'print "C="+str(stab.cod)+" D="+str(stab.desc)+" O="+str(stab.offst);" ";
 
 		strg=space(400)
 		get #1,ofstr+stab.offst,strg
 		strg=""+*strptr(strg)
-		print strg;" ";
+		'print strg;" ";
 
 		value=buf(1)
-		print "D="+str(value)+" H="+hex(value)
+		'print "D="+str(value)+" H="+hex(value)
 
 		select case as const stab.cod
 			case 100 '' file name
@@ -1101,7 +1103,7 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 		end select
 		ofset+=16
 	next
-	print
+	'print
 end sub
 '' ------------------------------------------------------------------------------------
 '' Retrieving sections .dbgdat (offset and size) and .dbgdat (offset) in the elf file
@@ -1157,7 +1159,7 @@ private function elf_extract(filename as string) as integer
 		sect_name=space(40)
 		get #1,ofset+1,sect_name
 		sect_name=""+*strptr(sect_name)
-		'print "name=";sect_name
+		print "name=";sect_name
 
 		ofset=walk_section+of_offset_infile
 		get #1,ofset+1,ulgt
@@ -1178,8 +1180,13 @@ private function elf_extract(filename as string) as integer
 
 		walk_section+=sect_size
 	next
-	load_dat(dbg_dat_of,dbg_dat_size,dbg_str_of)
-
+	if dbg_dat_of=0 then
+		messbox("Loading error","Debug data not found, compile with -gen gas/gas64 and -g")
+		close #1
+		return 0
+	else
+		load_dat(dbg_dat_of,dbg_dat_size,dbg_str_of)
+	endif
 	close #1
 	return -1
 end function
@@ -1323,6 +1330,45 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 		Wend
 	EndIf
 end function
-
+'===================================================
+'' list all extracted data
+'===================================================
+private sub list_all()
+	dim scopelabel(1 to ...) as const zstring ptr={@"local",@"global",@"static",@"byref param",@"byval param",@"common"}
+	print "sources ------------------------------------------------------- ";"total=";sourcenb+1
+	for isrc as integer =0 to sourcenb
+		print "isrc=";isrc;" ";source(isrc)
+	next
+	print "procedures ------------------------------------------------------- ";procnb
+	for iprc as integer =1 to procnb
+		print "iprc=";iprc;" ";source(proc(iprc).sr);" ";proc(iprc).nm;" ";proc(iprc).nu;" ";udt(proc(iprc).rv).nm
+		print "lower/upper/end ad=";hex(proc(iprc).db);" ";hex(proc(iprc).fn);" ";hex(proc(iprc).ed)
+	next
+	print "Lines ---------------------------------------------------------- ";linenb
+	for iline as integer = 1 to linenb
+		print "iline=";iline;" proc=";proc(rline(iline).px).nm;" ";rline(iline).nu;" ";hex(rline(iline).ad)
+	next
+	print
+	print "types ----------------------------------------------------------- ";udtmax
+	for iudt as integer=1 to udtmax
+		if udt(iudt).nm<>"" then
+			print "iudt=";iudt;" ";udt(iudt).nm;" ";udt(iudt).lg
+			if udt(iudt).ub<>0 then
+				for icudt as integer =udt(iudt).lb to udt(iudt).ub
+					print "icudt=";cudt(icudt).nm
+				next
+			end if
+		end if
+	next
+	print "global variables ---------------------------------------------------------- ";vrbgbl
+	for ivrb as integer=1 to vrbgbl
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+	next
+	print "local variables ----------------------------------------------------------- ";vrbloc-VGBLMAX
+	for ivrb as integer=VGBLMAX+1 to vrbloc
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+	next
+	print "end of list all"
+end sub
 
 
