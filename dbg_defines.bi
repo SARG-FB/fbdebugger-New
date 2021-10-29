@@ -15,6 +15,7 @@
 #Define fmt2(t,l) Left(t,l)+Space(l-Len(t))
 #Define fmt3(t,l) Space(l-Len(t))+Left(t,l)
 
+#define disable_webgadget ''to avoid issue with libwebkitgtk1.0.so old version not always installed
 #include once "window9.bi"
 #include once "scintilla.bi"
 #include once "SciLexer.bi"
@@ -112,11 +113,42 @@
 	'' Output information
 	#define dbg_prt(txt) output_wds(txt)
 	declare sub output_wds(as string)
-	declare sub dll_load()
-	declare sub start_pgm(p As Any Ptr)
+	
+	#define HCOMBO 80
 ''end of define for windows
 
+''==========================================================
 #else ''======================== LINUX =====================
+''==========================================================
+
+	enum
+		KPT_CONT=1
+		KPT_GETREGS
+		KPT_SETREGS
+		KPT_CC ''for restoring breakpoint instruction
+		KPT_WRITEMEM
+		KPT_READMEM
+		KPT_RESTORE ''for restoring the saved byte
+		KPT_RESTALL ''for restoring all the saved bytes (halting)
+		KPT_EXIT ''quit thread2
+		KPT_SSTEP ''executing single_step
+	End Enum
+	
+	enum
+		KDONOTHING
+		KRESTART
+		KRESTART9=KRESTART+9
+		KENDALL
+		KLOADEXE
+		KCRASHED
+	End Enum
+	
+	#ifdef __fb_64bit__
+		#define FIRSTBYTE &hFFFFFFFFFFFFFF00
+	#else	
+		#define FIRSTBYTE &hFFFFFF00
+	#EndIf
+
 	enum PTRACE_REQUEST
 		PTRACE_TRACEME             =0
 		PTRACE_PEEKTEXT            '1
@@ -156,14 +188,27 @@
 	'' Output information
 	#define dbg_prt(txt) output_lnx(txt)
 	#define dbghand pid
+	
+	#define HCOMBO 30
 	#define LPCVOID integer ptr
 	#define LPVOID integer ptr
 	declare sub output_lnx(as string)
 	declare function ReadProcessMemory(child As long,addrdbge As any ptr,addrdbgr As any ptr,lg As Long,rd As any ptr =0) as integer
-	declare Sub writeprocessmemory(child As long,addrdbge As any ptr,addrdbgr As any ptr,lg As Long,rd As Long=0)
+	declare function ReadProcessMemory_th2(child As long,addrdbge As any ptr,addrdbgr As any ptr,lg As Long,rd As any ptr=0) as integer
+	declare function readmemlongint(child As long,addrdbge As integer)as integer
+	declare function writeprocessmemory(child As long,addrdbge As any ptr,addrdbgr As any ptr,lg As Long,rd As any ptr =0) as integer
+	declare sub thread_rsm()
+	declare Function OpenFileRequesterExe(sTitle As String , sCurDir As String, sPattern As String = "EXE files", iFlag As Long = 0, sTemplateFileName As String = "",  hParentWin As HWND = 0) As String
+	declare function elf_extract(as string)as INTEGER
+	declare function pthread_kill alias "pthread_kill"(as long,as long) as long
+	Declare function linux_kill alias "kill"(as long,as long) as long
+	declare sub sigusr_send()
+	
 	Extern "C"
 		Declare Function wait_ Alias "wait" (wiStatus As long Ptr) As pid_t
-		Declare Function ptrace(request As ptrace_request, pid As  pid_t, addr As Any Ptr, uData As Any Ptr) As Integer
+		'Declare Function gettid Alias "gettid" () As pid_t
+		Declare Function ptrace(request As ptrace_request, pid As  pid_t, addr As Any Ptr, uData As Any Ptr) As integer
+		'declare function pthread_mutex_trylock(mutex as ANY	ptr) as long
 	End Extern
 	
 		''DLL
@@ -220,15 +265,16 @@
 	   As Uinteger eflags
 	   As Uinteger xsp
 	   As Uinteger ss
-	   'As Uinteger fs_base
-	   'As Uinteger gs_base
-	   'As Uinteger ds
-	   'As Uinteger es
-	   'As Uinteger fs
-	   'As Uinteger gs
+	   As Uinteger fs_base
+	   As Uinteger gs_base
+	   As Uinteger ds
+	   As Uinteger es
+	   As Uinteger fs
+	   As Uinteger gs	   
 	end type
 	#endif	
 #endif
+''====================== end for linux =========================
 
 #Define TYPESTD 17 ''upper limit for standard type, now 17 for va_list 2020/02/05
 
@@ -873,7 +919,7 @@ Const LINEMAX=100000
 Type tline
 	ad As uinteger ''offset relative to proc address
 	nu As integer  ''number in file
-	sv As byte     ''saved value replaced by &hCC
+	sv As byte     ''saved value replaced by breakcpu
 	px As UShort   ''proc index
 	sx As UShort   ''source index need it now for lines from include and not inside proc
 end Type
@@ -885,10 +931,11 @@ Enum
 End Enum
 
 Type tproc
-	nm As String   'name
-	db As UInteger 'lower address
-	fn As UInteger 'upper line address
-	ed As UInteger 'upper proc end
+	nm As String   ''name
+	db As Integer ''beginning address
+	first as integer ''first address corresponding to a fbc line
+	fn As Integer ''last address of fbc line
+	ed As Integer ''last address +1 (begin of next proc)
 	sr As UShort   'source index
 	nu As Long     'line number to quick access
 	vr As UInteger 'lower index variable upper (next proc) -1
@@ -1145,7 +1192,13 @@ declare sub brkv_set(a As Integer)
 declare sub brk_apply()
 declare sub brk_sav()
 declare sub process_list()
+declare sub gest_brk(ad As Integer,byval rln as integer =-1)
+declare sub list_all()
+declare sub restart_exe(byval idx as integer)
+declare sub dll_load()
 declare sub winmsg()
+declare sub start_pgm(p As Any Ptr)
+declare sub resume_exec()
 '===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)

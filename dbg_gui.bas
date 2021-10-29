@@ -320,9 +320,10 @@ private sub size_changed()
 	'messbox("resizing",str(SizeX)+" "+str(SizeY))
 	if sizey>250 then
 		#ifdef __fb_win32__
-			ResizeWindow(hscint,0,80,,WindowClientHeight(hmain)-100)
+			ResizeWindow(hscint,0,83,,WindowClientHeight(hmain)-105)
 		#else
-			messbox("Function not coded under linux","so size remains inchanged")
+			'messbox("Function not coded under linux","so size remains inchanged")
+			gtk_widget_set_size_request(wsci, 450, WindowClientHeight(hmain)-105)
 		#endif
 	end if
 end sub
@@ -345,7 +346,7 @@ end sub
 ''Loading of buttons from memory
 '=================================
 private sub load_button2(id as INTEGER,xcoord as INTEGEr,ycoord as INTEGER=0,himage as any ptr,tooltiptext as zstring ptr=0,idtooltip as integer=-1,disab as long=1)
-	ButtonImageGadget(id,xcoord,ycoord,30,26,Catch_Image(himage),  BS_BITMAP)
+	ButtonImageGadget(id,xcoord,ycoord,35,30,Catch_Image(himage),  BS_BITMAP)
 	if tooltiptext then
 		if idtooltip<>-1 then
 			GadgetToolTip(id,*tooltiptext,idtooltip)
@@ -565,10 +566,9 @@ private sub create_brkbx()
 	next
 
 	buttongadget(GBRKCLOSE,10,ypos+40,80,30,"Close")
-	buttongadget(GBRKDELALL,105,ypos+40,80,30,"Delete all")
-	buttongadget(GBRKDISABLE,200,ypos+40,80,30,"Disable all")
-	buttongadget(GBRKENABLE,285,ypos+40,80,30,"Enable all")
-
+	buttongadget(GBRKDELALL,105,ypos+40,90,30,"Delete all")
+	buttongadget(GBRKDISABLE,200,ypos+40,90,30,"Disable all")
+	buttongadget(GBRKENABLE,295,ypos+40,90,30,"Enable all")
 end sub
 '==============================================================================
 '' creates the window for managing the breakpoint on variable/memory change
@@ -583,7 +583,7 @@ private sub create_brkvbx()
 	stringgadget(GBRKVALUE,6,35,120,30,"")
 	buttongadget(GBRKVOK,190,75,55,30,"Apply")
 	buttongadget(GBRKVDEL,250,75,55,30,"Delete")
-	comboboxgadget(GBRKVCOND,402,3,54,150)
+	comboboxgadget(GBRKVCOND,402,3,54,HCOMBO)
 end sub
 '==============================================================================
 '' creates the window for managing the cond breakpoint
@@ -594,7 +594,7 @@ private sub create_bpcondbx()
 
 	treeviewgadget(GTVIEWBRC,0,0,500,600,KTRRESTYLE)
 	textgadget(GBRCVAR1,505,5,390,30,"")
-	comboboxgadget(GBRCCOND,505,40,54,150)
+	comboboxgadget(GBRCCOND,505,40,54,HCOMBO)
 	stringgadget(GBRCVALUE,505,80,120,30,"")
 
 	AddComboBoxItem(GBRCCOND,"=",-1)
@@ -605,7 +605,7 @@ private sub create_bpcondbx()
 	AddComboBoxItem(GBRCCOND,"<=",-1)
 	SetItemComboBox(GBRCCOND,0)
 	buttongadget(GBRCOK,505,300,55,30,"Apply")
-	buttongadget(GBRCDEL,570,300,55,30,"Cancel")
+	buttongadget(GBRCDEL,570,300,60,30,"Cancel")
 end sub
 '==============================================================================
 '' creates the window for Procedure call chain
@@ -643,7 +643,6 @@ private sub create_shwexpbx()
 	buttongadget(GSHWINC,640,325,25,30,"+1")
 	buttongadget(GSHWUPD,510,360,95,30,"Update")
 	htviewshw=treeviewgadget(GTVIEWSHW,0,0,500,500,KTRRESTYLE)
-
 end sub
 '=============================================================
 '' creates the window for handling parameters of dump memory
@@ -724,6 +723,7 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 		gtk_widget_show_all(pGlobalTypeWindow9->CurentHwnd)
 		gtk_widget_grab_focus(GTK_WIDGET(editor))
 		hsci=cast(hwnd, sci)
+		wsci=editor
 	#endif
 	hscint=hsci ''need to be done as used in send_sci
 
@@ -800,8 +800,7 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
     send_sci(SCI_INDICSETUNDER,0,TRUE)
     send_sci(SCI_INDICSETALPHA,0,255)
     send_sci(SCI_SETINDICATORVALUE,0,0)
-'===========
-	'send_sci(SCI_USEPOPUP,SC_POPUP_NEVER,0)
+	send_sci(SCI_USEPOPUP,SC_POPUP_NEVER,0)
 End sub
 '===========================================================
 ''set the title of main window
@@ -836,17 +835,16 @@ private sub create_settingsbx()
 
 	groupgadget(BUTGROUP,10,380,450,60,"Click on a button for setting/removing")
 	load_button2(SETBUTSTEP,12,400,butSTEP,@"[S]tep/line by line",,0)
-	load_button2(SETBUTSTEPOVER,44,400,butSTEPOVER,@"Step [O]ver line",,0)
-	load_button2(SETBUTAUTO,76,400,butAUTO,@"Step [A]utomatically, stopped by [H]alt",,0)
-	load_button2(SETBUTSTOP,108,400,butSTOP,@"[H]alt running pgm",,0)
-	load_button2(SETBUTCURSOR,140,400,butCURSOR,@"[R]un to cursor, stopped by [H]alt",,0)
-	load_button2(SETBUTRUNEND,172,400,butRUNEND,@"[E]nd current proc, stopped by [H]alt",,0)
-	load_button2(SETBUTRUNEXIT,204,400,butRUNEXIT,@"Run to e[X]it of prog, stopped by [H]alt",,0)
-	load_button2(SETBUTKILL,236,400,butKILL,@"CAUTION [K]ill process",,0)
-	load_button2(SETBUTEXECMOD,268,400,butEXEMOD,@"[M]odify execution, continue with line under cursor",,0)
-	load_button2(SETBUTCRASH,300,400,butRUNCRASH,@"Run to crash in [L]ibrary, stopped by [H]alt",,0)
-	load_button2(SETBUTFREE,332,400,butFREE,@"[F]ree debugged prgm",,0)
-
+	load_button2(SETBUTSTEPOVER,48,400,butSTEPOVER,@"Step [O]ver line",,0)
+	load_button2(SETBUTAUTO,84,400,butAUTO,@"Step [A]utomatically, stopped by [H]alt",,0)
+	load_button2(SETBUTSTOP,120,400,butSTOP,@"[H]alt running pgm",,0)
+	load_button2(SETBUTCURSOR,156,400,butCURSOR,@"[R]un to cursor, stopped by [H]alt",,0)
+	load_button2(SETBUTRUNEND,192,400,butRUNEND,@"[E]nd current proc, stopped by [H]alt",,0)
+	load_button2(SETBUTRUNEXIT,228,400,butRUNEXIT,@"Run to e[X]it of prog, stopped by [H]alt",,0)
+	load_button2(SETBUTKILL,264,400,butKILL,@"CAUTION [K]ill process",,0)
+	load_button2(SETBUTEXECMOD,300,400,butEXEMOD,@"[M]odify execution, continue with line under cursor",,0)
+	load_button2(SETBUTCRASH,336,400,butRUNCRASH,@"Run to crash in [L]ibrary, stopped by [H]alt",,0)
+	load_button2(SETBUTFREE,372,400,butFREE,@"[F]ree debugged prgm",,0)
 end sub
 '=========================================================================
 '' enables or disables buttons according the status and updates status
@@ -871,8 +869,8 @@ private sub but_enable()
 				statusbar_text(KSTBTHD,"Thread "+Str(thread(threadcur).id))
 				statusbar_text(KSTBUID,"")
 			#else
-				statusbar_text(KSTBTHD,"Pid "+Str(dbghand))
-				statusbar_text(KSTBUID,"Uid empty for now")
+				statusbar_text(KSTBTHD,"Thread "+Str(thread(0).id))
+				statusbar_text(KSTBUID,"Thread "+Str(thread(threadcur).id))
 			#endif
 			statusbar_text(KSTBSRC,source_name(source(proc(procsv).sr)))
 			statusbar_text(KSTBPRC,proc(procsv).nm)
@@ -1222,56 +1220,29 @@ private sub gui_init()
 	''main windows
 	hmain=OpenWindow("",10,10,1150,600)
 	settitle()
-	''scintilla gadget
-	create_scibx(GSCINTILLA,0,80,450,WindowClientHeight(hmain)-100,)
-
-	''source panel
-	'Var font=LoadFont("Arial",40)
-
-	PanelGadget(GSRCTAB,2,52,450,20)
-    SetGadgetFont(GSRCTAB,CINT(LoadFont("Courier New",11)))
-
-	''file combo/buuton ''idee mettre dans le menu affichage de la liste (du combo)
-	ComboBoxGadget(GFILELIST,790,0,200,80)
-	ButtonGadget(GFILESEL,992,2,30,20,"Go")
-
-	''status bar
-	StatusBarGadget(GSTATUSBAR,"",SBT_TOOLTIPS)
-	statusbar_text(KSTBSTS,"No program")
-	statusbar_text(KSTBTHD,"WDS Tid or LNX Pid")
-	statusbar_text(KSTBUID,"LNX Uid")
-	statusbar_text(KSTBSRC,"Current source")
-	statusbar_text(KSTBPRC,"Current proc")
-	statusbar_text(KSTBBPM,"")
-	statusbar_text(KSTBFRT,"Fast time ?")
-
-	''current line
-	textGadget(GCURRENTLINE,2,28,450,30,"Next exec line : ",SS_NOTIFY )
-	'textGadget(GCURRENTLINE,2,28,450,30,"1234567890123456789012345678901234567890123456789012345678901234567890",SS_NOTIFY )
-	GadgetToolTip(GCURRENTLINE,"next executed line"+chr(13)+"Click on me to reach the line",GCURLINETTIP)
 
 	''buttons
 	load_button2(IDBUTSTEP,8,,butSTEP,@"[S]tep/line by line")
-	load_button2(IDBUTSTEPOVER,40,,butSTEPOVER,@"Step [O]ver line")
-	load_button2(IDBUTAUTO,72,,butAUTO,@"Step [A]utomatically, stopped by [H]alt")
-	load_button2(IDBUTSTOP,110,,butSTOP,@"[H]alt running pgm")
-	load_button2(IDBUTCURSOR,148,,butCURSOR,@"[R]un to cursor, stopped by [H]alt")
-	load_button2(IDBUTRUNEND,180,,butRUNEND,@"[E]nd current proc, stopped by [H]alt")
-	load_button2(IDBUTRUNEXIT,212,,butRUNEXIT,@"Run to e[X]it of prog, stopped by [H]alt")
-	load_button2(IDBUTKILL,250,,butKILL,@"CAUTION [K]ill process")
-	load_button2(IDBUTEXECMOD,282,,butEXEMOD,@"[M]odify execution, continue with line under cursor")
-	load_button2(IDBUTCRASH,314,,butRUNCRASH,@"Run to crash in [L]ibrary, stopped by [H]alt")
-	load_button2(IDBUTFREE,352,,butFREE,@"[F]ree debugged prgm")
+	load_button2(IDBUTSTEPOVER,44,,butSTEPOVER,@"Step [O]ver line")
+	load_button2(IDBUTAUTO,80,,butAUTO,@"Step [A]utomatically, stopped by [H]alt")
+	load_button2(IDBUTSTOP,116,,butSTOP,@"[H]alt running pgm")
+	load_button2(IDBUTCURSOR,152,,butCURSOR,@"[R]un to cursor, stopped by [H]alt")
+	load_button2(IDBUTRUNEND,188,,butRUNEND,@"[E]nd current proc, stopped by [H]alt")
+	load_button2(IDBUTRUNEXIT,224,,butRUNEXIT,@"Run to e[X]it of prog, stopped by [H]alt")
+	load_button2(IDBUTKILL,260,,butKILL,@"CAUTION [K]ill process")
+	load_button2(IDBUTEXECMOD,296,,butEXEMOD,@"[M]odify execution, continue with line under cursor")
+	load_button2(IDBUTCRASH,332,,butRUNCRASH,@"Run to crash in [L]ibrary, stopped by [H]alt")
+	load_button2(IDBUTFREE,368,,butFREE,@"[F]ree debugged prgm")
 
-	load_button2(IDBUTRERUN,466,,butRERUN,@"Restart debugging (exe)",TTRERUN,1)
-	load_button2(IDBUTLASTEXE,498,,butLASTEXE,@"Last 10 exe(s)",,0)
-	load_button2(IDBUTATTCH,530,,butATTCH,@"Attach running program",,0)
-	load_button2(IDBUTFILE,562,,butFILE,@"Select EXE",,0)
-	load_button2(IDBUTTOOL,628,,butTOOL,@"Some usefull....Tools",,0)
-	load_button2(IDBUTUPDATE,660,,butUPDATE,@"Update On /Update off : variables, dump",,0)
-	load_button2(IDBUTENLRSRC,692,,butENLRSRC,@"Enlarge/reduce source")
-	load_button2(IDBUTENLRVAR,724,,butENLRVAR,@"Enlarge/reduce proc/var")
-	load_button2(IDBUTENLRMEM,756,,butENLRMEM,@ "Enlarge/reduce dump memory")
+	load_button2(IDBUTRERUN,440,,butRERUN,@"Restart debugging (exe)",TTRERUN,1)
+	load_button2(IDBUTLASTEXE,476,,butLASTEXE,@"Last 10 exe(s)",,0)
+	load_button2(IDBUTATTCH,512,,butATTCH,@"Attach running program",,0)
+	load_button2(IDBUTFILE,548,,butFILE,@"Select EXE",,0)
+	load_button2(IDBUTTOOL,610,,butTOOL,@"Some usefull....Tools",,0)
+	load_button2(IDBUTUPDATE,646,,butUPDATE,@"Update On /Update off : variables, dump",,0)
+	load_button2(IDBUTENLRSRC,685,,butENLRSRC,@"Enlarge/reduce source")
+	load_button2(IDBUTENLRVAR,721,,butENLRVAR,@"Enlarge/reduce proc/var")
+	load_button2(IDBUTENLRMEM,757,,butENLRMEM,@ "Enlarge/reduce dump memory")
 
 	''bmb(25)=Loadbitmap(fb_hinstance,Cast(LPSTR,MAKEINTRESOURCE(1025))) 'if toogle noupdate
 	''no sure to implement this one
@@ -1287,6 +1258,30 @@ private sub gui_init()
 	'  SendMessage(hwnd,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
 	'  SendMessage(hwnd,WM_SETICON,ICON_SMALL,Cast(Lparam,icon))
 	'D:"+slash+"telechargements"+slash+"win9"+slash+"tmp"+slash+"
+
+	''current line
+	textGadget(GCURRENTLINE,2,30,450,30,"Next exec line : ",SS_NOTIFY )
+	GadgetToolTip(GCURRENTLINE,"next executed line"+chr(13)+"Click on me to reach the line",GCURLINETTIP)
+
+	PanelGadget(GSRCTAB,2,52,450,20)
+    SetGadgetFont(GSRCTAB,CINT(LoadFont("Courier New",11)))
+    
+	''file combo/button
+	ComboBoxGadget(GFILELIST,790,0,200,HCOMBO)
+	ButtonGadget(GFILESEL,992,0,35,30,"Go")
+	
+	''scintilla gadget
+	create_scibx(GSCINTILLA,0,83,450,WindowClientHeight(hmain)-105,)
+
+	''status bar
+	StatusBarGadget(GSTATUSBAR,"",SBT_TOOLTIPS)
+	statusbar_text(KSTBSTS,"Initialization")
+	statusbar_text(KSTBTHD,"Tid or Pid")
+	statusbar_text(KSTBUID,"Tid")
+	statusbar_text(KSTBSRC,"Current source")
+	statusbar_text(KSTBPRC,"Current proc")
+	statusbar_text(KSTBBPM,"")
+	statusbar_text(KSTBFRT,"Fast time ?")
 
 	#ifdef __fb_win32__
 		var icon=loadimage(0,@"fbdebugger.ico",IMAGE_ICON,0,0,LR_LOADFROMFILE or LR_DEFAULTSIZE)
@@ -1322,13 +1317,13 @@ private sub gui_init()
 	hlviewdmp=ListViewGadget(GDUMPMEM,0,0,599,380,style)
 	AddListViewColumn(GDUMPMEM, "Address",0,0,100)
 	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
-
+	SetGadgetFont(GDUMPMEM,CINT(LoadFont("Courier New",10)))
+	
 	''for log display
 	hlogbx=create_window("Log file",10,10,450,550)
 	EditorGadget(GLOG,10,10,400,500,"Your log file if any")
 	ReadOnlyEditor(GLOG,1)
-
-
+	hidewindow(hlogbx,KHIDE)
 
 	create_shwexpbx()
 	create_settingsbx()
@@ -1348,3 +1343,41 @@ end sub
 private sub freegadgets()
 	messbox("Feature to be coded","freegadgets()")
 end sub
+'========================  SM_CYBORDER
+''contextual menu
+'========================
+sub context_menu()
+	dim as integer mx=globalMouseX-windowx(hmain),my=globalMousey-windowy(hmain)-20
+    dim as long iCaption , iBorder
+ 
+    #ifdef __fb_win32__
+		iCaption=GetSystemMetrics(SM_CYCAPTION)
+    #else
+		GetWindowsCaptionBorderSize(hmain , @iCaption, @iBorder) 
+    #EndIf
+
+	'print globalMouseX,windowx(hmain),globalMouseX-windowx(hmain)
+	'print mx,gadgetx(GSRCTAB),gadgetwidth(GSRCTAB),gadgetx(GSRCTAB)+gadgetwidth(GSRCTAB) 
+	if mx>=gadgetx(GSRCTAB) and mx<=gadgetx(GSRCTAB)+gadgetwidth(GSRCTAB)-iCaption  then
+		'print globalMousey,windowy(hmain),globalMousey-windowy(hmain)-20
+		'print windowy(gadgetid(GSRCTAB)),WindowClientHeight(hmain),windowy(gadgetid(GSRCTAB))+WindowClientHeight(hmain)-95 
+		if my>=gadgety(GSRCTAB)+30 and my<=gadgety(GSRCTAB)+WindowClientHeight(hmain)-85 then
+			DisplayPopupMenu(HMenusource, GlobalMouseX,GlobalMouseY)
+		End If
+	elseif mx>=gadgetx(GRIGHTTABS) and mx<=gadgetx(GRIGHTTABS)+gadgetwidth(GRIGHTTABS) then
+		'print "my=";my,"yy right=";windowy(gadgetid(GRIGHTTABS))+30,windowy(gadgetid(GRIGHTTABS))+windowheight(gadgetid(GRIGHTTABS))
+		if my>=gadgety(GRIGHTTABS)+30 and my<=gadgety(GRIGHTTABS)+gadgetheight(GRIGHTTABS) then
+			if PanelGadgetGetCursel(GRIGHTTABS)=TABIDXVAR then
+				DisplayPopupMenu(HMenuvar, GlobalMouseX,GlobalMouseY)
+			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXPRC then
+				DisplayPopupMenu(HMenuprc, GlobalMouseX,GlobalMouseY)
+			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXTHD then
+				DisplayPopupMenu(HMenuthd, GlobalMouseX,GlobalMouseY)
+			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXWCH then
+				DisplayPopupMenu(HMenuwch, GlobalMouseX,GlobalMouseY)
+			elseif PanelGadgetGetCursel(GRIGHTTABS)=TABIDXDMP then
+				if dumpadr<>0 then hidewindow(hdumpbx,KSHOW)
+			end if
+		end if
+	end if
+End Sub
