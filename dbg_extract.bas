@@ -966,7 +966,7 @@ private sub dbg_line(linenum as integer,ofset as integer)
 		''to be checked maybe fixed so useless
 		rline(linenb).sx=sourceix ''for line in include and not in a proc
 	else
-		print "line number=0"
+		'print "line number=0"
 	end if
 end sub
 '' ---------------------------------------------
@@ -1000,7 +1000,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 			proc(procnb+1).vr=proc(procnb).vr 'in case there is not param nor local var
 			proc(procnb).rvadr=0 'for now only used in gcc case
 
-			print "proc =";proc(procnb).nm;" in source=";source(proc(procnb).sr)
+			'print "proc =";proc(procnb).nm;" in source=";source(proc(procnb).sr)
 		end if
 	else
 		proc(procnb).ed=proc(procnb).db+adr

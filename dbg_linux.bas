@@ -455,8 +455,19 @@ private function writeprocessmemory_th2(child As long,addrdbge As any ptr,addrdb
 	EndIf
 	return 1
 End function
-private function readmemlongint(child As long,addrdbge As integer)as integer
-	return ptrace(PTRACE_PEEKDATA,child, cast(any ptr,addrdbge),NULL)
+private function readmemlongint(child As long,addrdbge As integer)as longint
+	#ifdef __FB_64BIT__
+		return ptrace(PTRACE_PEEKDATA,child, cast(any ptr,addrdbge),NULL)
+	#else
+		dim as longint lgint
+		dim as integer value
+		value=ptrace(PTRACE_PEEKDATA,child, cast(any ptr,addrdbge),NULL)
+		lgint=value
+		addrdbge+=sizeof(integer)
+		value=ptrace(PTRACE_PEEKDATA,child, cast(any ptr,addrdbge),NULL)
+		lgint+=value shl 32
+		return lgint
+	#endif
 End Function
 '==========================================
 private function ReadProcessMemory_th2(child As long,addrdbge As any ptr,addrdbgr As any ptr,lg As Long,rd As any ptr=0) as integer
@@ -492,11 +503,11 @@ private sub putbreaks()
 	print"in put breaks",linenb,"child=";child
 	For j As Long=1 To linenb
 		With rline(j)
-			Print "nu=";.nu;" ad=";.ad;"/";hex(.ad),
+			'Print "nu=";.nu;" ad=";.ad;"/";hex(.ad),
 			If proc(.px).nu=-1 Then 
 				Print " never reached added by compiler" 
 			Else
-				print
+				'print
 				errno=0
 				dta = ptrace(PTRACE_PEEKTEXT,child,cast(any ptr,.ad),null)
 				if errno<>0 then print "error=";errno
@@ -599,12 +610,16 @@ private sub brp_stop(tid as integer,bptype as integer,ddata as integer)
 				select case as const msgcmd
 					Case KPT_CONT
 						print "cont"
-						'mutexlock blocker
 						bool1=true
 						condsignal(condid)
 						mutexunlock blocker
 						ptrace(PTRACE_CONT,thread(threadcur).id,0,0)									
 						exit while
+						
+					Case KPT_XIP ''update EIP or RIP
+						ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
+						regs.xip=msgad
+						ptrace(PTRACE_SETREGS, thread(threadcur).id, NULL, @regs)						
 						
 					Case KPT_CC
 						dta = ptrace(PTRACE_PEEKTEXT,thread(threadcur).id,cast(any ptr,msgad),null)		
@@ -627,7 +642,6 @@ private sub brp_stop(tid as integer,bptype as integer,ddata as integer)
 						ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
 						
 					Case KPT_SETREGS
-						print "xip set by KPT_SETREGS=";hex(regs.xip)
 						ptrace(PTRACE_SETREGS, thread(threadcur).id, NULL, @regs)
 						
 					Case KPT_READMEM
@@ -638,7 +652,7 @@ private sub brp_stop(tid as integer,bptype as integer,ddata as integer)
 						
 					case KPT_RESTORE
 						dta = ptrace(PTRACE_PEEKTEXT,thread(threadcur).id,cast(any ptr,msgad),null)	
-						print "data read=";hex(dta),hex((dta and FIRSTBYTE )),hex(msgdata)
+						'print "data read=";hex(dta),hex((dta and FIRSTBYTE )),hex(msgdata)
 						dta = (dta and FIRSTBYTE ) or msgdata
 						print "KPT_RESTORE=";ptrace(PTRACE_POKETEXT,thread(threadcur).id,cast(any ptr,msgad),cast(any ptr,dta));" ";hex(msgad);" ";,hex(dta)
 						bool1=true
@@ -723,7 +737,6 @@ private sub start_pgm(p As Any Ptr)
 					exit while
 				elseif WIFSIGNALED(status) then
 					prun=false
-					afterkilled=KDONOTHING
 					print "Killed by=";WTERMSIG(status)
 					debugdata=WTERMSIG(status)
 					debugevent=KDBGEXITPROC

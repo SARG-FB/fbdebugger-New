@@ -509,7 +509,6 @@ end function
 '' removes all ABP / disables all UBP if necessary
 '=======================================================================
 private sub brk_unset(ubpon as integer=false)
-	dim as integer bponline
 	if brkv.adr1 then ''restore by default ABP on all line
 		For j As Integer = 1 To linenb 'restore all instructions
 		  WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@breakcpu,1,0)
@@ -522,9 +521,6 @@ private sub brk_unset(ubpon as integer=false)
 		For jbrk As Integer = 1 To brknb ''restore if needed the UBP
 			If brkol(jbrk).typ<50 Then
 				if ubpon=true then
-					if rlinecur=brkol(jbrk).index then ''if current line is a BP (permanent/cond/counter)
-						bponline=jbrk
-					EndIf
 					WriteProcessMemory(dbghand,Cast(LPVOID,brkol(jbrk).ad),@breakcpu,1,0) ''only BP enabled
 				else
 					brkol(jbrk).typ+=50 ''disable all UBP
@@ -536,11 +532,6 @@ private sub brk_unset(ubpon as integer=false)
 			print "put CC on line ad=";hex(brkol(0).ad)
 			WriteProcessMemory(dbghand,Cast(LPVOID,brkol(0).ad),@breakcpu,1,0)
 		EndIf
-		'if bponline then
-			'print "bp on line="
-			'singlestep_on(thread(threadcur).id,brkol(bponline).index,0)  ''planned to restore the BP after execution
-			'ssadr=brkol(bponline).ad
-		'EndIf
 	end if
 End Sub
 '============================================================================
