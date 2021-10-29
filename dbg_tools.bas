@@ -2882,15 +2882,15 @@ End Sub
 '=======================================================
 private sub proc_runnew()
 
-#ifdef __fb_win32__
-	dim as integer dummy
-	Dim vcontext As CONTEXT
+	#ifdef __fb_win32__
+		dim as integer dummy
+		Dim vcontext As CONTEXT
 
-	if cast(integer,@vcontext) mod 16 <>0 then
-		messbox("PRBM","Context not 16byte aligned")
-	EndIf
-	vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER
-#endif	
+		if cast(integer,@vcontext) mod 16 <>0 then
+			messbox("PRBM","Context not 16byte aligned")
+		EndIf
+		vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER
+	#endif	
 	Dim libel As String
 	Dim As Integer regbp,regip,regbpnb,regbpp(PROCRMAX),ret(PROCRMAX),retadr
 	Dim As ULong j,k,pridx(PROCRMAX)
@@ -2971,10 +2971,8 @@ private sub proc_runnew()
 			If flagverbose Then libel+=" ["+Str(proc(pridx(k)).db)+"]"
 			vrr(vrrnb).tv=AddTreeViewItem(GTVIEWVAR,"Not yet filled",cast (hicon, 0),0,TVI_LAST,tv)
 			procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,libel,cast (hicon, 0),0,tv,0)
-
 			thread(ithd).plt=procr(procrnb).tv 'keep handle last item
 			thread(ithd).ptv=AddTreeViewItem(GTVIEWTHD,proc(pridx(k)).nm,cast (hicon, 0),0,TVI_FIRST,thread(ithd).ptv)
-
 			var_ini(procrnb,proc(procr(procrnb).idx).vr,proc(procr(procrnb).idx+1).vr-1)
 			procr(procrnb+1).vr=vrrnb+1
 			If proc(procsv).nm="main" Then procr(procrnb).vr=1 'constructors for shared they are executed before main so reset index for first variable of main
@@ -3040,7 +3038,7 @@ private sub globals_load(d As Integer=0)
 End Sub
 '======================================================================================================
 private sub proc_del(j As Integer,t As Integer=1)
-	Dim  As Integer tempo,th
+	Dim  As Integer tempo,th,thid
 	Dim parent As integer
 	Dim As String text
 
@@ -3080,29 +3078,37 @@ private sub proc_del(j As Integer,t As Integer=1)
 		end if
 	end if
 
-	' compress running variables
+	''compress running variables
 	tempo=procr(j+1).vr-procr(j).vr
 	vrrnb-=tempo
 	For i As Integer = procr(j).vr To vrrnb
 		vrr(i)=vrr(i+tempo)
 	Next
 
-
+	thid=procr(j).thid
 	If t=1 Then 'not dll
-		th=thread_select(procr(j).thid) 'find thread index
+		th=thread_select(thid) 'find thread index
 		parent=GetParentItemTreeView(GTVIEWTHD,thread(th).ptv)
 		DeleteTreeViewItem(GTVIEWTHD,thread(th).ptv) ''delete item
-		thread(th).ptv=parent 'parent becomes the last
+		thread(th).ptv=parent 'parent becomes the last		
 		thread_text(th) 'update thread text
 	EndIf
 
-	' compress procr and update vrr index
+	''compress procr and update vrr index
 	procrnb-=1
 	For i As Integer =j To procrnb
 		procr(i)=procr(i+1)
 		procr(i).vr-=tempo
 	Next
 
+	''find the last proc item in treeview
+	For iprc As Integer = procrnb to 1
+		if procr(iprc).thid=thid then
+			thread(th).plt=procr(iprc).tv
+			exit for
+		EndIf
+	next
+		
 End Sub
 '=====================================================
 private sub thread_del(thid As UInteger)
@@ -3980,32 +3986,35 @@ private sub jitdbg()
 	'	Exit Sub
 	'EndIf
 end sub
-
 '=================================================================================
 '' changes address of execution (forward or backward) only in the same procedure
 '==================================================================================
-private sub exe_mod() 'execution from cursor
+private sub exec_mod() 'execution from cursor
 	#Ifdef __fb_win32__
 		dim as integer dummy ''used to align vcontext on 16bit
 		Dim vcontext As CONTEXT
 		vcontext.contextflags=CONTEXT_CONTROL
 	#endif
-	Dim l As Integer,rln As Integer',b As Integer
+	Dim cln As Integer,rln As Integer',b As Integer
 
-	l=line_cursor
+	cln=line_cursor() 'get line
+	rln=line_exec(cln,"Changing next executed line not possible, select an executable line")
+	print "cln rln=";cln,rln,rline(rln).nu
+	if rln=-1 then exit sub
+	
+	'If rline(rln+1).nu=cln+1 And rline(rln+1).sx=srcdisplayed Then rln+=1 ''weird case : first line main proc
 
-	rln=line_exec(l,"Execution on cursor")
-	If rline(rln+1).nu=l+1 And rline(rln+1).sx=srcdisplayed Then rln+=1 ''weird case : first line main proc
+	if rln=rlinecur then exit sub ''same line
 
-	If linecur=l+1 And srcdisplayed=srccur Then
-		If messbox("Execution on cursor","Same line, continue ?",MB_YESNO)=IDNO Then
-			Exit Sub
-		EndIf
-	End If
+	'If linecur=l+1 And srcdisplayed=srccur Then
+		'If messbox("Execution on cursor","Same line, continue ?",MB_YESNO)=IDNO Then
+			'Exit Sub
+		'EndIf
+	'End If
 
 	'check inside same proc if not msg
 	If rLine(rln).ad>proc(procsv).fn Or rLine(rln).ad<=proc(procsv).db Then
-		messbox("Execution on cursor","Only inside current proc !!!")
+		messbox("Changing next executed line","Not possible : only inside the current procedure")
 		Exit Sub
 	End If
 	If rLine(rln).ad=proc(procsv).fn Then
@@ -4020,9 +4029,19 @@ private sub exe_mod() 'execution from cursor
 		vcontext.regip=rline(rln).ad
 		SetThreadContext(threadhs,@vcontext)
 	#else
-		ptrace(PTRACE_GETREGS, threadhs, NULL, @regs)
-		regs.xip=rline(rln).ad
-		ptrace(PTRACE_SETREGS, threadhs, NULL, @regs)
+	print "changing exec=";hex(rline(rln).ad),rline(rln).nu
+		mutexlock blocker
+		msgad=rline(rln).ad
+		msgcmd=KPT_XIP
+		bool2=true
+		condsignal(condid)
+			while bool1<>true
+		condwait(condid,blocker)
+		wend
+		bool1=false
+		mutexunlock blocker
 	#endif
-	dsp_change(rln)
+	'dsp_change(rln)
+	linecur_change(rln)
+	rlinecur=rln
 End Sub

@@ -132,10 +132,11 @@
 		KPT_RESTALL ''for restoring all the saved bytes (halting)
 		KPT_EXIT ''quit thread2
 		KPT_SSTEP ''executing single_step
+		KPT_XIP ''for updating xip
 	End Enum
 	
 	enum
-		KDONOTHING
+		KDONOTHING=-1
 		KRESTART
 		KRESTART9=KRESTART+9
 		KENDALL
@@ -195,7 +196,7 @@
 	declare sub output_lnx(as string)
 	declare function ReadProcessMemory(child As long,addrdbge As any ptr,addrdbgr As any ptr,lg As Long,rd As any ptr =0) as integer
 	declare function ReadProcessMemory_th2(child As long,addrdbge As any ptr,addrdbgr As any ptr,lg As Long,rd As any ptr=0) as integer
-	declare function readmemlongint(child As long,addrdbge As integer)as integer
+	declare function readmemlongint(child As long,addrdbge As integer)as longint
 	declare function writeprocessmemory(child As long,addrdbge As any ptr,addrdbgr As any ptr,lg As Long,rd As any ptr =0) as integer
 	declare sub thread_rsm()
 	declare Function OpenFileRequesterExe(sTitle As String , sCurDir As String, sPattern As String = "EXE files", iFlag As Long = 0, sTemplateFileName As String = "",  hParentWin As HWND = 0) As String

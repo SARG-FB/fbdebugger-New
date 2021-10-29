@@ -421,7 +421,7 @@ do
 	If event=EventMenu then
 		menu_action(EventNumber)
 	'' contextual menu
-	ElseIf event=eventrbdown then
+	ElseIf event=eventrbup then
 		context_menu()
 	elseIf event=EventLBdown Then
 		If EventNumberListView=GIDXTABLE Then

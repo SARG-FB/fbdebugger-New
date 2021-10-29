@@ -1068,6 +1068,7 @@ private sub button_action(button as integer)
 			messbox("feature not implemented","button = IDBUTATTACH")
 			
 		case IDBUTKILL
+			afterkilled=KDONOTHING
 			kill_process("Terminate immediatly no saved data, other option Release")
 
 		case IDBUTLASTEXE
@@ -1089,7 +1090,7 @@ private sub button_action(button as integer)
 			hidewindow(hcchainbx,KHIDE)
 
 		case IDBUTEXECMOD
-			messbox("feature not implemented","button = IDBUTEXECMOD")
+			exec_mod()
 
         Case IDBUTRUNEND 'STEP at end of proc
 			If rline(thread(threadcur).sv).ad<>proc(procsv).fn Then 'if current line is end of proc simple step
