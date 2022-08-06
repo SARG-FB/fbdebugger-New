@@ -11,14 +11,6 @@ objdump.bat
 objdump.exe
 scilexer.bi
 scintilla.bi
-test_debug
-test_include.bas
-test_include2.bas
-test_include_main
-test_include_main.a64
-test_include_main.bas
-for_test_gui.bas
-test_win9.exe
 Window9.bi
 window9.chm
 window9.chw
@@ -28,3 +20,7 @@ Window9_2.bi
 *.txt
 *.exe
 *.asm
+*.png
+arrays.*
+test*.*
+*.zip

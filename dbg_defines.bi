@@ -7,8 +7,8 @@
 
 #Define fbdebuggerversion "V 3.00 BETA 32-64bit"
 
-#define fulldbg_prt 'uncomment to get more information
-#Define dbg_prt2 dbg_prt 'Rem 'used temporary for debugging fbdebugger, change rem by dbg_prt
+'#define fulldbg_prt 'uncomment to get more information
+#Define dbg_prt2 rem 'dbg_prt 'used temporary for debugging fbdebugger, change rem by dbg_prt
 
  'take l char form a string and complete with spaces if needed
 #Define fmt(t,l) Left(t,l)+Space(l-Len(t))+"  "
@@ -113,8 +113,14 @@
 	'' Output information
 	#define dbg_prt(txt) output_wds(txt)
 	declare sub output_wds(as string)
-	
+
 	#define HCOMBO 80
+
+	''on Windows the function can return zero even an item is selected so replaced by the API
+	#undef getitemtreeview
+	#define getitemtreeview(treeid) SendMessage(gadgetid(treeid),TVM_GETNEXTITEM,TVGN_CARET,0)
+
+
 ''end of define for windows
 
 ''==========================================================
@@ -122,19 +128,23 @@
 ''==========================================================
 
 	enum
+		KPT_EXIT    ''exiting loop in br_stop
 		KPT_CONT=1
+		KPT_CONTALL ''continue all stopped threads
 		KPT_GETREGS
 		KPT_SETREGS
-		KPT_CC ''for restoring breakpoint instruction
+		KPT_CC      ''for restoring breakpoint instruction
+		KPT_CCALL    ''for restoring/removing all breakpoints on fbc instruction
 		KPT_WRITEMEM
 		KPT_READMEM
 		KPT_RESTORE ''for restoring the saved byte
 		KPT_RESTALL ''for restoring all the saved bytes (halting)
-		KPT_EXIT ''quit thread2
-		KPT_SSTEP ''executing single_step
-		KPT_XIP ''for updating xip
+		KPT_KILL    ''quit thread2
+		KPT_SSTEP   ''executing single_step
+		KPT_XIP     ''for updating xip
+		KPT_SIGNAL  ''pending signal
 	End Enum
-	
+
 	enum
 		KDONOTHING=-1
 		KRESTART
@@ -143,10 +153,10 @@
 		KLOADEXE
 		KCRASHED
 	End Enum
-	
+
 	#ifdef __fb_64bit__
 		#define FIRSTBYTE &hFFFFFFFFFFFFFF00
-	#else	
+	#else
 		#define FIRSTBYTE &hFFFFFF00
 	#EndIf
 
@@ -189,7 +199,7 @@
 	'' Output information
 	#define dbg_prt(txt) output_lnx(txt)
 	#define dbghand pid
-	
+
 	#define HCOMBO 30
 	#define LPCVOID integer ptr
 	#define LPVOID integer ptr
@@ -204,14 +214,15 @@
 	declare function pthread_kill alias "pthread_kill"(as long,as long) as long
 	Declare function linux_kill alias "kill"(as long,as long) as long
 	declare sub sigusr_send()
-	
+	declare function signal_pending() as integer
+
 	Extern "C"
 		Declare Function wait_ Alias "wait" (wiStatus As long Ptr) As pid_t
 		'Declare Function gettid Alias "gettid" () As pid_t
 		Declare Function ptrace(request As ptrace_request, pid As  pid_t, addr As Any Ptr, uData As Any Ptr) As integer
 		'declare function pthread_mutex_trylock(mutex as ANY	ptr) as long
 	End Extern
-	
+
 		''DLL
 	Const DLLMAX=300
 	Type tdll
@@ -271,11 +282,51 @@
 	   As Uinteger ds
 	   As Uinteger es
 	   As Uinteger fs
-	   As Uinteger gs	   
+	   As Uinteger gs
 	end type
-	#endif	
+	#endif
+	#define	EPERM		 1
+	#define	ENOENT		 2
+	#define	ESRCH		 3
+	#define	EINTR		 4
+	#define	EIO		 	 5
+	#define	ENXIO		 6
+	#define	E2BIG		 7
+	#define	ENOEXEC		 8
+	#define	EBADF		 9
+	#define	ECHILD		10
+	#define	EAGAIN		11
+	#define	ENOMEM		12
+	#define	EACCES		13
+	#define	EFAULT		14
+	#define	ENOTBLK		15
+	#define	EBUSY		16
+	#define	EEXIST		17
+	#define	EXDEV		18
+	#define	ENODEV		19
+	#define	ENOTDIR		20
+	#define	EISDIR		21
+	#define	EINVAL		22
+	#define	ENFILE		23
+	#define	EMFILE		24
+	#define	ENOTTY		25
+	#define	ETXTBSY		26
+	#define	EFBIG		27
+	#define	ENOSPC		28
+	#define	ESPIPE		29
+	#define	EROFS		30
+	#define	EMLINK		31
+	#define	EPIPE		32
+	#define	EDOM		33
+	#define	ERANGE		34
 #endif
 ''====================== end for linux =========================
+type tlist
+	as integer parent
+	as integer child
+	as zstring ptr nm
+	'as INTEGER idx
+end type
 
 #Define TYPESTD 17 ''upper limit for standard type, now 17 for va_list 2020/02/05
 
@@ -458,7 +509,7 @@ enum
 	MNTHRDCHG=1200 ''select thread
 	MNLOCPRC  ''locate proc
 	MNTHRDKLL ''kill  thread
-	MNEXCLINE ''show  next executed line
+	MNTHRDBLK ''block thread
 	MNCREATHR ''show  line creating thread
 	MNTHRDLST ''list  threads
 	MNSHWPROC ''show  proc in proc/var
@@ -631,12 +682,13 @@ End Type
 
 ''for settings
 enum
-	LOGGROUP=900
+	LOGGROUP=910
 	GLOGOFF
 	GLOGON
 	GLOGCONT
 	GTRACEPROC
 	GTRACELINE
+	GASCII
 	GVERBOSE
 	GTEXTDELAY
 	GAUTODELAY
@@ -665,7 +717,7 @@ end enum
 
 ''for dump memory
 enum
-	GDUMPAPPLY=930
+	GDUMPAPPLY=940
 	GDUMPADR
 	GDUMPEDIT
 
@@ -696,11 +748,12 @@ enum
 	GDUMPPTR2
 
 	GDUMPTYPE
+	GDUMPCTRL
 end enum
 
 ''shw/exp
 enum
-	GSHWWCH=960
+	GSHWWCH=970
 	GSHWDMP
 	GSHWEDT
 	GSHWSTR
@@ -722,7 +775,7 @@ end enum
 #define KBRKMEMMEM   3 ''mem   var-mem/mem
 
 enum
-	GBRKVAR1=973
+	GBRKVAR1=990
 	GBRKVAR2
 	GBRKVALUE
 	GBRKVOK
@@ -733,7 +786,7 @@ end enum
 ''miscellaneous
 enum
 ''procedure tracking
-	GCCHAIN=980
+	GCCHAIN=1000
 '' timer
 	GTIMER001
 end enum
@@ -742,9 +795,9 @@ end enum
 enum
  KDBGNOTHING = 0
  KDBGRKPOINT
- KDBGCREATEPROC
- 'KDBGCREATETHREAD
- KDBGEXITPROC
+ KDBGCREATEPROCESS
+ KDBGCREATETHREAD
+ KDBGEXITPROCESS
  KDBGEXITTHREAD
  KDBGDLL
  KDBGDLLUNLOAD
@@ -762,7 +815,7 @@ end enum
 #define KEDITTOP  6
 
 enum
-	GEDTVAR=990
+	GEDTVAR=1100
 	GEDTVALUE
 	GEDTOK
 	GEDTCANCEL
@@ -869,6 +922,20 @@ Enum ''type udt/redim/dim
 	TYDIM
 End enum
 
+enum ''thread status
+	KTHD_RUN '0
+	KTHD_STOP
+	KTHD_BLKD
+	KTHD_INIT
+	KTHD_OUT ''out of scope  ?? used
+End Enum
+
+ ''for ccstate
+enum KCC_STATE
+	KCC_NONE
+	KCC_ALL
+End Enum
+
 Enum ''type of running
 	RTRUN
 	RTSTEP
@@ -891,6 +958,7 @@ enum ''stop code
 	CSACCVIOL
 	CSNEWTHRD
 	CSEXCEP
+	CSTHREADS
 End Enum
 
 ''for dissassembly
@@ -900,8 +968,15 @@ End Enum
 
 Union pointeurs
 	pxxx As Any Ptr
-	pinteger As Integer Ptr
-	puinteger As UInteger Ptr
+	#Ifdef __FB_64BIT__
+	   pinteger As Long Ptr
+	   puinteger As ULong Ptr
+	#Else
+	   pinteger As Integer Ptr
+	   puinteger As UInteger Ptr
+	#EndIf
+	'pinteger As Integer Ptr
+	'puinteger As UInteger Ptr
 	psingle As Single Ptr
 	pdouble As Double Ptr
 	plongint As LongInt Ptr
@@ -920,7 +995,7 @@ Const LINEMAX=100000
 Type tline
 	ad As uinteger ''offset relative to proc address
 	nu As integer  ''number in file
-	sv As byte     ''saved value replaced by breakcpu
+	sv As ubyte     ''saved value replaced by breakcpu
 	px As UShort   ''proc index
 	sx As UShort   ''source index need it now for lines from include and not inside proc
 end Type
@@ -1120,6 +1195,8 @@ Type tthread
  plt As integer 'to keep handle of last proc of thread in proc/var tview
  ptv As integer 'to keep handle of last proc of thread in thread tview
  exc As Integer   'to indicate execution in case of auto 1=yes, 0=no
+ sts as integer ''status running /stopped /init /out of scop debugger (library)
+ stack as integer ''stack of last proc
 End Type
 
 ''variable find
@@ -1200,6 +1277,13 @@ declare sub dll_load()
 declare sub winmsg()
 declare sub start_pgm(p As Any Ptr)
 declare sub resume_exec()
+declare function proc_find(thid As Integer,t As Byte) As Integer
+declare function proc_name(ad As UInteger) As String
+declare sub proc_sh()
+declare function proc_verif(p as integer) As Boolean
+declare function proc_retval(prcnb As Integer) As String
+declare sub proc_watch(procridx As Integer)
+declare sub brk_manage(title as string)
 '===========================================================================================
 '' could be removed when every enum have been tested
 dim shared as string enumdef(10000)
@@ -1366,7 +1450,7 @@ enumdef(MNCMPINF)="MNCMPINF"
 enumdef(MNCREATHR)="MNCREATHR"
 enumdef(MNDBGHELP)="MNDBGHELP"
 enumdef(MNRESETLOG)="MNRESETLOG"
-enumdef(MNEXCLINE)="MNEXCLINE"
+enumdef(MNTHRDBLK)="MNTHRDBLK"
 enumdef(MNEXEFILE0)="MNEXEFILE0"
 enumdef(MNEXEFILE1)="MNEXEFILE1"
 enumdef(MNEXEFILE2)="MNEXEFILE2"

@@ -1,5 +1,5 @@
 ''=================================================================
-'===== DEBUGGER FOR FREEBASIC === (C) 2006-2021 Laurent GRAS =====
+'===== DEBUGGER FOR FREEBASIC === (C) 2006-2022 Laurent GRAS =====
 '=================================================================
 
 dim shared as string defarray(99999) ''remove me when all runs finely
@@ -10,19 +10,27 @@ dim shared as string defarray(99999) ''remove me when all runs finely
 dim shared as any ptr blocker
 blocker=mutexcreate
 
+''state of cc on each line can be KCC_ALL / KCC_NONE
+''could be partially true but should be the main state
+dim shared as KCC_STATE ccstate
 
 dim shared as integer debugevent
 dim shared as integer debugdata ''index of bp or address of BP (case BP on mem)
 dim shared as STRING  libelexception
 dim shared as integer ssadr ''address of line for restoring breakcpu when singlestepping
+dim shared as INTEGER firsttime
+dim shared as INTEGER srcstart
 
 ''codes when debuggee stopped and corresponding texts
 Dim Shared stopcode As Integer
 Dim Shared stoplibel(20) As String*17 =>{"","BP On line","BP perm/tempo","BP cond","BP var","BP mem"_
-,"BP count","Halt by user","Access violation","New thread","Exception"}
+,"BP count","Halt by user","Access violation","thread created","Exception","multi threads"}
 
 ''source files
-dim Shared as String  source(SRCMAX)        ''source names
+dim Shared as String  source(SRCMAX)        ''source names with path
+dim Shared as String  srcname(SRCMAX)       ''source names without path
+dim Shared as tlist   srclist(SRCMAX)       ''to sort
+dim shared as integer srclistfirst          ''first sorted element
 dim shared as any ptr sourceptr(SRCMAX)     ''pointer doc scintilla
 dim shared as any ptr oldscintilla          ''last pointer for scintilla
 dim Shared As UByte   sourcebuf(SRCSIZEMAX) ''buffer for loading source file
@@ -48,6 +56,8 @@ dim Shared as tproc proc(PROCMAX) ''list of procs in code
 dim shared As integer procnb
 dim shared As integer procnew ''used for finding address of first fbc line
 dim shared As Integer procmain
+dim shared as tlist   proclist(PROCMAX)
+dim shared as integer proclistfirst ''first sorted element
 
 dim Shared As integer procsv,procsk,proccurad,procfn,procsort
 dim Shared As tprocr procr(PROCRMAX) ''list of running proc
@@ -87,6 +97,9 @@ dim shared as hwnd hlogbx
 dim shared as string vlog
 dim SHARED as integer logtyp
 
+dim shared as hwnd heditorbx
+dim shared as integer afterkilled ''what doing after debuggee killed
+
 #ifdef __fb_win32__
 	''Threads
 	Dim Shared thread(THREADMAX) As tthread  ''zero based
@@ -94,7 +107,6 @@ dim SHARED as integer logtyp
 	Dim Shared threadcur As Integer
 	Dim Shared threadprv As Integer     'previous thread used when mutexunlock released thread or after thread create
 	Dim Shared threadsel As Integer     'thread selected by user, used to send a message if not equal current
-	Dim Shared threadaut As Integer     'number of threads for change when  auto executing
 	Dim Shared threadcontext As HANDLE
 	Dim Shared threadhs As HANDLE       'handle thread to resume
 	Dim Shared dbgprocid As Integer     'pinfo.dwProcessId : debugged process id
@@ -110,23 +122,28 @@ dim SHARED as integer logtyp
 
 	''attach running exe
 	Dim Shared hattach As HANDLE    'handle to signal attchement done
-	
-	print "MutexLock00":MutexLock blocker
+
+	'print "MutexLock00"
+	MutexLock blocker
 #else ''linux
 	dim shared as long dbgpid '' debugger pid
 	dim shared as long pid '' in code defined dgbhand
 	dim shared as long thread2 ''second thread
 	dim shared as long threadhs '' in code defined dgbhand
 	dim shared as long threadcur '' index
-	dim shared as long threadprv '' index
 	dim shared as long threadsel '' index
-	Dim Shared threadaut As Integer     'number of threads for change when  auto executing
+	dim shared as long threadnewid '' new thread tid
+	dim shared as integer threadnewidcount '' count for new thread (needed for accessing first basic line)
+
+	dim shared as long statussaved
+	dim shared as long threadsaved
+
 	dim shared as pt_regs regs
 	Dim Shared As tthread thread(THREADMAX) ''zero based
 	Dim Shared As Integer threadnb
 	dim shared as GtkWidget ptr wsci
 	''DLL = .so
-	Dim Shared As tdll dlldata(DLLMAX) ''base 1   
+	Dim Shared As tdll dlldata(DLLMAX) ''base 1
 	Dim Shared As Integer dllnb
 	Dim Shared As Integer msgcmd
 	Dim Shared As Integer msgad
@@ -134,10 +151,17 @@ dim SHARED as integer logtyp
 	Dim Shared As Integer msgdata
 	Dim Shared As Integer msgdata2
 	dim shared as ANY ptr condid
-	dim shared as integer afterkilled
 	condid=condcreate()
 	dim shared as boolean bool1,bool2 ''predicate for each thread of the debugger
-	
+
+
+	dim shared errorlibel(...) as string*35=>{"","Operation not permitted","No such file or directory","No such process","Interrupted system call" _
+	,"I/O error","No such device or address","Argument list too long","Exec format error","Bad file number","No child processes","Try again" _
+	,"Out of memory","Permission denied","Bad address","Block device required","Device or resource busy","File exists","Cross-device link" _
+	,"No such device","Not a directory","Is a directory","Invalid argument","File table overflow","Too many open files","Not a typewriter" _
+	,"Text file busy","File too large","No space left on device","Illegal seek","Read-only file system","Too many links","Broken pipe" _
+	,"Math argument out of domain of func","Math result not representable"}
+
 #endif
 
 ''miscellanous data
@@ -156,6 +180,7 @@ Dim Shared As Integer flagwtch  =0     'flag =0 clean watched / 1 no cleaning in
 Dim Shared As Byte flaglog =0         ' flag for dbg_prt 0 --> no output / 1--> only screen / 2-->only file / 3 --> both
 Dim Shared As Byte flagtrace          ' flag for trace mode : 1 proc / +2 line
 Dim Shared As Byte flagverbose        ' flag for verbose mode
+Dim Shared As Byte flagascii          ' flag for dump displays only code ascii <128 by default just >32
 dim shared as boolean flagupdate = true ''if true proc/var, dump and watched displayed
 Dim Shared as boolean flagattach      ' flag for attach
 
@@ -168,6 +193,7 @@ dim shared as integer setbuttons =-1 ''all buttons are set
 
 ''for autostepping
 dim shared as integer autostep=50
+dim shared as integer flaghalt
 
 ''watched
 dim Shared wtch(WTCHMAX) As twtch  ''zero based
@@ -214,6 +240,7 @@ dim shared as hwnd hdumpbx ''window for handling dump
 Dim Shared dumplines As Integer =20 'nb lines(default 20)
 Dim Shared dumpadr   As Integer    'address for dump
 Dim Shared dumpbase  As Integer =0 'value dump dec=0 or hexa=50
+dim shared dumpadrbase   as integer =1 'address display in dec (1) or hex (0)
 Dim Shared dumpnbcol As Integer
 Dim Shared dumptyp   As Integer =2
 
@@ -368,25 +395,23 @@ includebinary("buttons/memory.bmp",butENLRMEM)
 
 
 #include "dbg_gui.bas"
-
 #include "dbg_tools.bas"
 #include "dbg_brk.bas"
 #include "dbg_extract.bas"
+#include "dbg_proc.bas"
 #include "dbg_actions.bas"
 #Ifdef __fb_win32__
 	#include "dbg_windows.bas"
 #else
 	#include "dbg_linux.bas"
 	dbgpid=getpid
-	print "first pid=";dbgpid
+	'print "first pid=";dbgpid
 #EndIf
-print "before gui_init"
 gui_init()
-print "after gui_init"
 ini_read()
 reinit()
 statusbar_text(KSTBSTS,"Ready")
-	
+
 ''fbdebugger launched by script or another application (ex editor) with debuggee and possibly params
 if command(0)<>"" then
 	external_launch()
@@ -394,6 +419,11 @@ EndIf
 '====================
 ''main loop
 '====================
+#ifdef __fb_win32__
+Dim As Long iEventRightClick = Eventrbdown
+#else
+Dim As Long iEventRightClick = Eventrbup
+#endif
 do
 	Var event=WaitEvent()
 	''closing a window
@@ -410,7 +440,7 @@ do
 		end if
 		continue do
 	end if
-	'size changed ''todo enable
+	'size changed
 	if event=EventSize then
 		if EventHwnd=hmain then
 			size_changed()
@@ -420,8 +450,9 @@ do
 
 	If event=EventMenu then
 		menu_action(EventNumber)
+
 	'' contextual menu
-	ElseIf event=eventrbup then
+	Elseif Event=iEventRightClick Then
 		context_menu()
 	elseIf event=EventLBdown Then
 		If EventNumberListView=GIDXTABLE Then

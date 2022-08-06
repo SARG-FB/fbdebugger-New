@@ -1,6 +1,51 @@
 ''tools for fbdebugger_new
 ''dbg_tools.bas
 
+'========================================
+'' Insert in alphanumeric order (CAUTION 1 based)
+'========================================
+sub list_insert(list() as tlist,zstrg as zstring ptr, prnb as integer,byref listbegin as INTEGER)
+		dim as integer listidx
+		if prnb=1 then
+			list(1).parent=-1
+			list(1).child=-1
+			list(1).nm=zstrg
+			listbegin=1
+		else
+			listidx=listbegin
+			while 1
+				if *zstrg>*list(listidx).nm then
+					if list(listidx).child=-1 then ''last element of the list
+						''insert after last element
+						list(listidx).child=prnb
+						list(prnb).parent=listidx
+						list(prnb).child=-1
+						list(prnb).nm=zstrg
+						exit while
+					else
+						listidx=list(listidx).child
+					EndIf
+				else
+					if list(listidx).parent=-1 then ''first element of the list
+						''insert before first element
+						list(prnb).parent=-1
+						list(prnb).child=listidx
+						list(listidx).parent=prnb
+						list(prnb).nm=zstrg
+						listbegin=prnb
+						exit while
+					else ''insert in the middle
+						list(prnb).parent=list(listidx).parent
+						list(prnb).child=listidx
+						list(list(listidx).parent).child=prnb
+						list(listidx).parent=prnb
+						list(prnb).nm=zstrg
+						exit while
+					EndIf
+				EndIf
+			wend
+		EndIf
+End Sub
 '================================================================
 ''lists procedures and variables then puts in clipboard or log
 '================================================================
@@ -105,8 +150,8 @@ private sub string_sh(tv as integer)
 		WStrg[inc]=0:WStrg[inc+1]=0:WStrg[inc+2]=0:WStrg[inc+3]=0 'end of wstring
 		setgadgettext(GEDITOR,wstrg)
 	EndIf
-	setwindowtext(hlogbx,varfind.nm)
-	hidewindow(hlogbx,KSHOW)
+	setwindowtext(heditorbx,varfind.nm)
+	hidewindow(heditorbx,KSHOW)
 End Sub
 '====================================
 '' click on a cell in an array
@@ -128,7 +173,7 @@ private sub index_cell()
 	else
 		''editing value
 		var adr=indexdata.adr+iline*indexdata.sizeline+indexdata.size*(icol-1)
-		edit_fill("Editing a cell from array "+str(iline)+"/"+str(icol)+"="+GetTextItemListView(GIDXTABLE,iline,icol),adr,indexdata.typ,0,KEDITARR)
+		edit_fill("Array element"+str(iline)+"/"+str(icol)+"="+GetTextItemListView(GIDXTABLE,iline,icol),adr,indexdata.typ,0,KEDITARR)
 	EndIf
 end sub
 '==============================================
@@ -747,6 +792,7 @@ private sub dll_list()
 		text+=Chr(13)+Chr(10)
 	Next
 	SetGadgetText(GEDITOR,text)
+	hidewindow(heditorbx,KSHOW)
 end sub
 
 '================================================================
@@ -765,7 +811,7 @@ private function thread_select(id As Integer =0) As Integer
 		Loop While temp
 
 		text=GetTextTreeView(GTVIEWTHD,hitem)
-		thid=ValInt(Mid(text,10,6))
+		thid=ValInt(Mid(text,13,6))
 	Else
 		thid=id
 	End If
@@ -863,37 +909,6 @@ private sub call_chain(thid as integer)
 	source_change(srcprev)
 	hidewindow(hcchainbx,KSHOW)
 end sub
-'===============================================================
-'' calling line
-'===============================================================
-private sub proc_loccall()
-	Dim As Integer hitem,temp
-	temp=GetItemTreeView(GTVIEWVAR)
-
-	If temp=procr(1).tv Then
-			messbox("Locate calling line","      Main so no call !!")
-		Exit Sub
-	EndIf
-
-	Do 'search index proc
-		hitem=temp
-		temp=GetParentItemTreeView(GTVIEWVAR,hitem)
-	Loop While temp
-
-	For i As Integer =1 To procrnb
-		If procr(i).tv=hitem Then
-			If procr(i).cl=-1 Then
-				'fb_message("Locate calling line","First proc of thread so no call !!"):Exit Sub
-				thread_execline(2):Exit Sub
-			EndIf
-			temp=procr(i).cl 'calling line
-			source_change(rline(temp).sx) ''display source
-			line_display(rline(temp).nu,1)'Select Line
-			Exit Sub
-  		EndIf
-	Next
-	messbox("Locate calling line","Impossible to find with Global shared")
-End Sub
 '===================================================================================
 '' check if the line is executable return -1 if false otherwise the rline index
 '===================================================================================
@@ -1058,11 +1073,10 @@ End Sub
 '' changes the used base (dec/hex) for the displayed addresses
 '===============================================================
 private sub dump_baseadr()
-	static as integer decbase=1
 	dim as integer ad=dumpadr
-	decbase=1-decbase
+	dumpadrbase=1-dumpadrbase
 	For jline as integer =0 To dumplines-1
-		if decbase=1 then
+		if dumpadrbase=1 then
 			SetTextItemListView(GDUMPMEM,jline,0,str(ad))
 		else
 			SetTextItemListView(GDUMPMEM,jline,0,hex(ad))
@@ -1077,15 +1091,16 @@ private sub dump_cell()
 	if dumpnbcol=0 then exit sub
 	var iline=GetItemListView()
 	var icol=GetSubItemListView()
-	if iline>0 and icol>0 then
-		if FlagKeyListView=2 then ''CTRL
-			dumpadr+=16*GetItemListView()+(16\dumpnbcol)*(GetSubItemListView()-1)
+	var flag=FlagKeyListView
+	if iline>=0 and icol>0 then
+		if flag=2 then ''CTRL
+			dumpadr+=16*iline+(16\dumpnbcol)*(icol-1)
 			dump_sh()
 			SetGadgetText(GDUMPADR,str(dumpadr))
 		else
 			''editing value
-			var adr=dumpadr+16*GetItemListView()+(16\dumpnbcol)*(GetSubItemListView()-1)
-			edit_fill("Editing a cell from dump memory "+str(adr)+"="+GetTextItemListView(GDUMPMEM,iline,icol),adr,dumptyp,0,KEDITDMP)
+			var adr=dumpadr+16*iline+(16\dumpnbcol)*(icol-1)
+			edit_fill("Memory "+str(adr)+"="+GetTextItemListView(GDUMPMEM,iline,icol),adr,dumptyp,0,KEDITDMP)
 			exit sub
 		end if
 	end if
@@ -1106,7 +1121,7 @@ end sub
 '' edits the top/left cell
 '======================================
 private sub dump_edit()
-	edit_fill("Editing a cell from dump memory "+str(dumpadr)+"="+str(GetTextItemListView(GDUMPMEM,0,1)),dumpadr,dumptyp,0,KEDITTOP)
+	edit_fill("Memory "+str(dumpadr)+"="+str(GetTextItemListView(GDUMPMEM,0,1)),dumpadr,dumptyp,0,KEDITTOP)
 end sub
 '======================================
 '' displays updated dumpmem
@@ -1120,7 +1135,11 @@ private sub dump_sh()
 	DeleteListViewItemsAll(GDUMPMEM) ''delete all items
 	ad=dumpadr
 	For jline as integer =0 To dumplines-1
-		AddListViewItem(GDUMPMEM,str(ad),0,jline,0) ''adress
+		if dumpadrbase=1 then
+			AddListViewItem(GDUMPMEM,str(ad),0,jline,0) ''adress
+		else
+			AddListViewItem(GDUMPMEM,hex(ad),0,jline,0) ''adress
+		end if
 		ReadProcessMemory(dbghand,Cast(LPCVOID,ad),@buf(0),16,@r)
 		#ifdef __fb_win32__
 			ad+=r
@@ -1176,13 +1195,27 @@ private sub dump_sh()
 		  AddListViewItem(GDUMPMEM,tmp,0,jline,icol)
 		Next
 		ascii=""
-		For ibuf as integer=1 To 16
-		  If buf(ibuf-1)>31 Then
-			  ascii+=Chr(buf(ibuf-1))
-		  Else
-			  ascii+="."
-		  End If
-		Next
+		#ifdef __FB_LINUX__
+			For ibuf as integer=1 To 16
+				ascii+=Chr(buf(ibuf-1))
+			Next
+
+			if g_utf8_validate(strptr(ascii),-1,0)<>true then
+				for ibuf as integer=0 to 15
+					if ascii[ibuf]<32 or ascii[ibuf]>126 then
+						ascii[ibuf]=asc(".")
+					EndIf
+				Next
+			EndIf
+		#else
+			For ibuf as integer=1 To 16
+				If buf(ibuf-1)<32 orelse (flagascii=1 and buf(ibuf-1)>126) Then
+					ascii+="."
+				Else
+					ascii+=Chr(buf(ibuf-1))
+				End If
+			Next
+		#endif
 		AddListViewItem(GDUMPMEM,ascii,0,jline,dumpnbcol+1)
 	Next
 End Sub
@@ -1233,7 +1266,7 @@ private sub var_dump(tv As HWND,ptd As Long =0)
 
 	If ptd Then 'dumping pointed data
 		If varfind.pt=0 Then messbox("Dumping pointed data","The selected variable is not a pointer"):Exit Sub
-		ReadProcessMemory(dbghand,Cast(LPCVOID,dumpadr),@dumpadr,4,0)
+		ReadProcessMemory(dbghand,Cast(LPCVOID,dumpadr),@dumpadr,SizeOf(Integer),0)
 	EndIf
 
 	If udt(varfind.ty).en Then
@@ -1247,7 +1280,7 @@ private sub var_dump(tv As HWND,ptd As Long =0)
 	   Select Case dumptyp
 		Case 13 'string
 			 dumptyp=2 'default for string
-			 ReadProcessMemory(dbghand,Cast(LPCVOID,dumpadr),@dumpadr,4,0)'string address
+			 ReadProcessMemory(dbghand,Cast(LPCVOID,dumpadr),@dumpadr,SizeOf(Integer),0) ''string address
 		Case 4,14 'f or zstring
 			dumptyp=2
 		Case Is>TYPESTD
@@ -1574,32 +1607,7 @@ private function var_find2(tv As HWND) As Integer 'return -1 if error
 		Next
 	End If
 End Function
-'=====================================================================
-private function proc_find(thid As Integer,t As Byte) As Integer 'find first/last proc for thread
-	If t=KFIRST Then
-		For i As Integer =1 To procrnb
-			If procr(i).thid = thid Then Return i
-		Next
-	Else
-		For i As Integer = procrnb To 1 Step -1
-			If procr(i).thid = thid Then Return i
-		Next
-	End If
-End Function
-'===================================
-private function proc_retval(prcnb As Integer) As String
-	Dim p As Integer = proc(prcnb).pt
-	If p Then
-	 	If p>220 Then
-			Return String(p-220,"*")+" Function"
-		ElseIf p>200 Then
-			Return String(p-200,"*")+" Sub"
-		Else
-			Return String(p,"*")+" "+udt(proc(prcnb).rv).nm
-	 	End If
-	End If
-	Return udt(proc(prcnb).rv).nm
-End Function
+
 '=======================================
 '' lists threads
 '=======================================
@@ -1619,6 +1627,7 @@ private sub thread_list()
 		text+=Chr(13)
 	Next
 	SetGadgetText(GEDITOR,text)
+	hidewindow(heditorbx,KSHOW)
 end sub
 '===========================================
 '' restore instruction and resume thread
@@ -1634,57 +1643,6 @@ Private sub thread_resume()
 		thread_rsm()
 	#endif
 End sub
-'====================================================================
-'' locates a proc in sources from selected line in current treeview
-'====================================================================
-private sub proc_loc()
-	Dim As Integer hitem,temp,th
-	'get current hitem in tree
-	select case PanelGadgetGetCursel(GRIGHTTABS)
-		case TABIDXVAR
-			temp=GetItemTreeView(GTVIEWVAR)
-			Do 'search index proc
-				hitem=temp
-				temp=GetParentItemTreeView(GTVIEWVAR,hitem)
-			Loop While temp
-			temp=0
-			For i As Integer =1 To procrnb
-				If procr(i).tv=hitem Then
-					temp=procr(i).idx
-				 Exit For
-				EndIf
-			Next
-			If temp=0 Then
-				messbox("Locate proc","Global variables no proc associated !!")
-				Exit Sub
-			EndIf
-
-		case TABIDXPRC
-			temp=GetItemTreeView(GTVIEWPRC)
-			hitem=temp
-			For i As Integer =1 To procnb
-				If proc(i).tv=hitem Then
-					temp=i
-				 Exit For
-				EndIf
-			Next
-		case else
-			th=thread_select()
-			If th=0 Then ''main, select first line
-				temp=procr(1).idx
-			Else
-				temp=procr(proc_find(thread(th).id,KFIRST)).idx
-			EndIf
-	End select
-
-	If proc(temp).nu=-1 Then
-		messbox("Locate proc","Not possible perhaps add by compiler (ie default constructor, let, etc)")
-		Exit sub
-	EndIf
-
-	source_change(proc(temp).sr) ''display source
-	line_display(proc(temp).nu,1)  ''Select Line
-End Sub
 
 '=====================================================
 '' finds the thread in GTVIEWTHD
@@ -1751,129 +1709,91 @@ private sub thread_text(th As Integer=-1)
 		lo=th:hi=th
 	EndIf
 
-	For i As Integer=lo To hi
-		thid=thread(i).id
+	For ith As Integer=lo To hi
+		if thread(ith).tv=0 then
+			continue for ''no need to update
+		end if
+		thid=thread(ith).id
 		p=proc_find(thid,KLAST)
-		if thread(i).exc=0 then
-			libel="D> "
-		else
-			libel=""
-		EndIf
+		select case thread(ith).sts
+			case KTHD_RUN
+				libel="R> "
+			case KTHD_STOP
+				libel="S> "
+			case KTHD_BLKD
+				libel="B> "
+			case KTHD_OUT
+				libel="O> "
+			Case else
+				libel="?> "
+		End select
 		libel+="threadID="+fmt2(Str(thid),6)+" : "+proc(procr(p).idx).nm
-		If flagverbose Then
-			libel+=" HD: "+Str(thread(i).hd)
-		EndIf
-		If threadhs=thread(i).hd Then
-			libel+=" (next execution)"
-		EndIf
-		SetTextItemTreeView(GTVIEWTHD,thread(i).tv,libel)
+
+		#ifdef __FB_WIN32__
+			If flagverbose Then
+				libel+=" HD: "+Str(thread(ith).hd)
+			EndIf
+			'If threadhs=thread(ith).hd Then
+				'libel+=" (next execution)"
+			'EndIf
+		#else
+			'If threadcur=ith Then
+				'libel+=" (next execution)"
+			'EndIf
+		#endif
+		SetTextItemTreeView(GTVIEWTHD,thread(ith).tv,libel)
 	Next
 End Sub
 '=======================================================================================
 private sub thread_change(th As Integer =-1)
 	Dim As Integer t,s
+
+	if runtype<>RTSTEP then
+		messbox("Changing thread","Not possible as current thread is running"+chr(10)+"If the thread is waiting (sleep, input, etc) try to quit this state")
+		exit sub
+	EndIf
+
 	If th=-1 Then
 		t=thread_select()
 	Else
 		t=th
 	EndIf
+
 	s=threadcur
 	'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0) 'restore CC previous line current thread
-	threadcur=t:threadprv=t
+	threadcur=t
 	'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution selected thread
 	threadhs=thread(threadcur).hd
 	procsv=rline(thread(threadcur).sv).px
+	threadsel=threadcur
 	thread_text(t)
 	thread_text(s)
-	threadsel=threadcur
 	dsp_change(thread(threadcur).sv)
 End Sub
 '================================================
-'' manages for auto execution or not 1=yes 0=no
+'' blocks/unblocks the selected thread
 '================================================
-private sub thread_enable()
+private sub thread_block()
 	var th=thread_select()
-	thread(th).exc=1-thread(th).exc
+	if thread(th).sts=KTHD_BLKD then
+		thread(th).sts=KTHD_STOP
+	elseif thread(th).sts=KTHD_STOP then
+		thread(th).sts=KTHD_BLKD
+	else
+		messbox("Trying to block thread","Only if stopped")
+	EndIf
 	thread_text(th)
 End Sub
-'=========================================
-'' returns true if proc running
-'=========================================
-private function proc_verif(p as integer) As Boolean
-	For i As UShort =1 To procrnb
-		If procr(i).idx = p Then Return TRUE
-	Next
-	Return FALSE
-End Function
-'=================================================================================================
-'' changes the status of the procedure enabled / disabled = doesn't be handled in running proc
-'=================================================================================================
-private sub proc_enable() ''enab=true-> enabled / false -> disabled
-	var item=GetItemTreeView(GTVIEWPRC)
-	dim as integer prc
-	dim as string text
-    Do
-        prc+=1
-    Loop While proc(prc).tv<>item
-
-    If proc(prc).enab=true Then
-    	If proc_verif(prc) Then
-			messbox("Proc "+proc(prc).nm+" is running","Can't be disabled")
-    	Else
-			proc(prc).enab=false
-			text=GetTextTreeView(GTVIEWPRC,proc(prc).tv)
-			SetTextItemTreeView(GTVIEWPRC,proc(prc).tv,"D "+mid(text,2))
-			For i As Integer =1 To linenb
-				If rline(i).px=prc Then  WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@rline(i).sv,1,0)
-			Next
-        End If
-    Else
-		If messbox("Enable Proc "+proc(prc).nm,"If running --> big problem",MB_YESNO)=IDYES Then
-			proc(prc).enab=true
-			For i As Integer =1 To linenb
-				If rline(i).px=prc Then
-					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
-				end if
-			Next
-			text=GetTextTreeView(GTVIEWPRC,proc(prc).tv)
-			SetTextItemTreeView(GTVIEWPRC,proc(prc).tv,"E "+mid(text,2))
-		End If
-    End If
-End Sub
-'===========================================================
-private sub proc_sh()
-	Dim libel As String
-	DeleteTreeViewItemall(GTVIEWPRC)
-
-	If procsort=KMODULE Then 'sorted by module
-		messbox("feature not coded","sort by module for procs so forcing by name")
-		procsort=KPROCNM
-	end if
-
-	For j As Integer =1 To procnb
-		With proc(j)
-			if .enab=true then
-				libel="E> " '' for indicating if the proc is enabled : followed
-			else
-				libel="D> " ''disabled
-			EndIf
-			If procsort=KMODULE Then 'sorted by module
-				'libel+=name_extract(source(.sr))+">> "+.nm+":"+proc_retval(j)
-			Else 'sorted by proc name
-				libel+=.nm+":"+proc_retval(j)+"   in : "+source_name(source(.sr))
-			EndIf
-			If flagverbose Then libel+=" ["+Str(.db)+"/"+hex(.db)+"]"
-			.tv=AddTreeViewItem(GTVIEWPRC,libel,cast (hicon, 0),0,TVI_LAST,0)
-		End With
-	Next
-End Sub
-'=====================================================
-private function proc_name(ad As UInteger) As String 'find name proc using address
-	For i As Integer =1 To procnb
-		If proc(i).db=ad Then Return Str(ad)+" >> "+proc(i).nm
-	Next
-	Return Str(ad)
-End Function
+'====================================
+'' returns index using thread().id
+'====================================
+private function thread_index(tid as long) as INTEGER
+	For ith As Integer =0 To threadnb
+		If tid=thread(ith).id Then
+			return ith
+		EndIf
+	next
+end function
 '===================================================
 private function enum_find(t As Integer,v As Integer) As String
 	'find the text associated with an enum value
@@ -1887,7 +1807,7 @@ End Function
 private function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="") As String
 	Dim adr As UInteger,varlib As String
 	Union lpointers
-	#If __FB64BIT__
+	#Ifdef __FB_64BIT__
 	   pinteger As Long Ptr
 	   puinteger As ULong Ptr
 	#Else
@@ -1932,8 +1852,8 @@ private function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As S
 		End If
 	Else
 		varlib=udt(t).nm+">"
-	  If flagverbose Then varlib+="[sz "+Str(udt(t).lg)+" / "+sOffset+Str(pany)+"]"
-	  If pany Then
+		If flagverbose Then varlib+="[sz "+Str(udt(t).lg)+" / "+sOffset+hex(pany)+"]"
+		If pany Then
 		 If t>0 And t<=TYPESTD Then
 		 	varlib+="="
 				Select Case t
@@ -2158,7 +2078,7 @@ private function var_sh1(i As Integer) As String
 					temp2+=2*SizeOf(Integer) ' 'lbound
 					ReadProcessMemory(dbghand,Cast(LPCVOID,temp2),@temp1,SizeOf(Integer),0)
 					If vrr(i).ad=0 Then 'init index lbound
-						'print "i k temp3 temp2 temp1=";i,k,temp3,temp2,temp1
+						print "i k temp3 temp2 temp1=";i,k,temp3,temp2,temp1
 						vrr(i).ix(k)=temp1
 					Else
 						If vrr(i).ix(k)<temp1 Then vrr(i).ix(k)=temp1 'index can't be <lbound
@@ -2222,7 +2142,7 @@ private function var_sh1(i As Integer) As String
 				temp2*=(vubound(k)-vlbound(k)+1)
 			Next
 		   vrr(i).ad=vrr(i).ini+temp1*udtlg
-		 If .typ>TYPESTD Then update_address(i) ''udt case
+		 If typ>TYPESTD Then update_address(i) ''udt case
 	 	End If
    End If
 
@@ -2719,125 +2639,6 @@ private sub watch_addtr()
 		If wtchnew<>-1 Then watch_trace(wtchnew)
 	EndIf
 End Sub
-
-'=============================================================
-private sub proc_watch(procridx As Integer) 'called with running proc index
-	Dim As Integer prcidx=procr(procridx).idx,vridx
-	If wtchcpt=0 Then Exit Sub
-	For i As Integer= 0 To WTCHMAX
-	   If wtch(i).psk=-3 Then 'local var
-			If wtch(i).idx=prcidx Then
-			   wtch(i).adr=vrr(procr(procridx).vr+wtch(i).dlt).ad
-			   wtch(i).psk=procr(procridx).sk
-			EndIf
-	   ElseIf wtch(i).psk=-4 Then 'session watch
-		If wtch(i).idx=prcidx Then
-				vridx=var_search(procridx,wtch(i).vnm(),wtch(i).vnb,wtch(i).var,wtch(i).pnt)
-				If vridx=-1 Then
-					messbox("Proc watch","Running var not found")
-					Continue For
-				EndIf
-				var_fill(vridx)
-			  watch_add(wtch(i).tad,i)
-		EndIf
-	   EndIf
-	Next
-End Sub
-'=======================================
-'' new procedure sub ou function
-'=======================================
-private sub proc_new()
-	Dim libel As String
-	Dim tv As integer
-	If procrnb=PROCRMAX Then hard_closing("Max number of sub/func reached limit="+str(PROCRMAX))
-	procrnb+=1'new proc ADD A POSSIBILITY TO INCREASE THIS ARRAY
-	procr(procrnb).sk=procsk
-	ReadProcessMemory(dbghand,Cast(LPCVOID,procsk+sizeof(integer)),@procr(procrnb).ret,sizeof(integer),0)
-	procr(procrnb).thid=thread(threadcur).id
-	procr(procrnb).idx=procsv
-
-	'test if first proc of thread
-	print "threadcur=";threadcur,thread(threadcur).plt,proc(procsv).nm
-	If thread(threadcur).plt=0 Then
-		procr(procrnb).cl=-1  ''no real calling line
-		libel="ThID="+Str(procr(procrnb).thid)+" "
-		thread(threadcur).tv=AddTreeViewItem(GTVIEWTHD,"Not filled",cast (hicon, 0),0,TVI_LAST,0)
-		
-		thread(threadcur).ptv=thread(threadcur).tv ''last proc
-		thread_text() ''put text not only current but all to reset previous thread text
-		tv=TVI_LAST ''insert in last position
-	Else
-		procr(procrnb).cl=thread(threadcur).od
-		tv=thread(threadcur).plt 'insert after the last item of thread
-	EndIf
-
-	'add manage LIST
-	If flagtrace Then dbg_prt ("NEW proc "+Str(procsv)+" "+proc(procsv).nm)
-	libel+=proc(procsv).nm+":"+proc_retval(procsv)
-	If flagverbose Then libel+=" ["+Str(proc(procsv).db)+"]"
-
-	procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,libel,cast (hicon, 0),0,tv,0)
-	thread(threadcur).plt=procr(procrnb).tv 'keep handle last item
-
-	'add new proc to thread treeview
-	thread(threadcur).ptv=AddTreeViewItem(GTVIEWTHD,"Proc : "+proc(procsv).nm,cast (hicon, 0),0,TVI_FIRST,thread(threadcur).ptv)
-	thread_text(threadcur)
-	var_ini(procrnb,proc(procr(procrnb).idx).vr,proc(procr(procrnb).idx+1).vr-1)
-	procr(procrnb+1).vr=vrrnb+1
-	If proc(procsv).nm="main" Then
-		procr(procrnb).vr=1 'constructors for shared are executed before main so reset index for first variable of main 04/02/2014
-	EndIf
-	proc_watch(procrnb) 'reactivate watched var
-
-	PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)	''for forcing a windows update
-
-End Sub
-'=============================
-'' end of proc
-'=============================
-Private sub proc_end()
-Dim As Long limit=-1
-Var thid=thread(threadcur).id
-'find the limit for deleting proc (see below different cases)
-
-For j As Long =procrnb To 1 Step -1
-	If procr(j).thid =thid  Then
-	   If limit=-1 Then limit=j
-	   If procr(j).idx=procsv Then
-	   	If j<>limit Then limit=j+1
-	   	Exit For
-	   EndIf
-	EndIf
-Next
-''delete all elements (treeview, varr, ) until the limit
-For j As Long =procrnb To limit Step -1
-   If procr(j).thid = thid Then
-		proc_del(j)
-	End If
-Next
-
-If flagtrace Then dbg_prt ("RETURN to proc "+proc(procsv).nm)
-
-'' The removing of procs is done after the end is eached AND when a next line is executed. It could be a simple line or a call to a new proc.
-'' in this last case it's a bit complicated.
-
-'' handle case multiple returns in a recursive proc, breakcpu not restored between each execution....
-'see example below, the first test data would not be deleted
-'function test(a As integer) As integer
-'	If a=2 Then
-'		Return test(1)
-'	EndIf
-'End function
-'test(2)
-
-''4 cases :
-'' index    1         2            3                       also 3       limit
-''normal   main --> mysub                                               >> 2
-''recursif main --> test -->      test                                     2
-''         main --> mysub --> constructor then immediatly destructor       3
-''         main --> destructor then immediatly       same destructor       3
-
-End Sub
 '========================================================
 private sub var_sh() 'show master var
 	For i As Integer =1 To vrrnb
@@ -2850,6 +2651,7 @@ End Sub
 '' handles display at end of run or when running auto
 '======================================================
 private sub dsp_change(index As Integer)
+	dim as integer tot
 	linecur_change(index)
 	If flagtrace And 2 Then dbg_prt(LTrim(line_text(linecur-1),Any " "+Chr(9)))
 	If runtype=RTAUTO Then
@@ -2863,8 +2665,16 @@ private sub dsp_change(index As Integer)
 		watch_array() ''even flagupdate is off watched are updated
 		watch_sh()
 
-		but_enable()
+		for ithd as integer =0 to threadnb
+			if  thread(ithd).sts=KTHD_STOP then
+				tot+=1
+			EndIf
+		Next
+		if tot>1 then
+			stopcode=CSTHREADS
+		EndIf
 
+		but_enable()
 		If PanelGadgetgetCursel(GRIGHTTABS) = TABIDXPRC Then
 			proc_sh()
 		elseIf PanelGadgetgetCursel(GRIGHTTABS) = TABIDXTHD Then
@@ -2876,111 +2686,6 @@ private sub dsp_change(index As Integer)
 		EndIf
 	End If
 End Sub
-
-'=======================================================
-'' after stopping run  retrieves all procedures
-'=======================================================
-private sub proc_runnew()
-
-	#ifdef __fb_win32__
-		dim as integer dummy
-		Dim vcontext As CONTEXT
-
-		if cast(integer,@vcontext) mod 16 <>0 then
-			messbox("PRBM","Context not 16byte aligned")
-		EndIf
-		vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER
-	#endif	
-	Dim libel As String
-	Dim As Integer regbp,regip,regbpnb,regbpp(PROCRMAX),ret(PROCRMAX),retadr
-	Dim As ULong j,k,pridx(PROCRMAX)
-	Dim tv As integer
-
-
-
-	''loading with rbp/ebp and proc index
-	For ithd As Integer =0 To threadnb
-		if thread(ithd).sv=-1 then continue for
-		regbpnb=0
-		#ifdef __fb_win32__
-				GetThreadContext(thread(ithd).hd,@vcontext)
-				regbp=vcontext.regbp
-				regip=vcontext.regip 'current proc
-			#else
-				ptrace(PTRACE_GETREGS, threadcur, NULL, @regs)
-				regbp=regs.xbp
-				regip=regs.xip
-		#endif
-		While 1
-			For j =1 To procnb
-			   If regip>=proc(j).db And regip<=proc(j).fn Then
-					regbpnb+=1
-					regbpp(regbpnb)=regbp
-					ReadProcessMemory(dbghand,Cast(LPCVOID,regbp+SizeOf(integer)),@regip,SizeOf(Integer),0) 'return EIP/RIP
-					ret(regbpnb)=regip
-					pridx(regbpnb)=j
-			   	Exit For
-			   EndIf
-			Next
-			If j>procnb Then Exit While
-			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp),@regbp,SizeOf(integer),0) 'previous RBP/EBP
-		Wend
-
-		''skip still existing procedures or delete them
-		for iprc as INTEGER	=1 to procrnb
-			ReadProcessMemory(dbghand,Cast(LPCVOID,procr(iprc).sk+SizeOf(integer)),@retadr,SizeOf(Integer),0) ''current value should be return address
-			if procr(iprc).ret<>retadr then
-				proc_del(iprc) ''return address not any more valid
-			else
-				if procr(iprc).sk=regbpp(regbpnb) and procr(iprc).ret=ret(regbpnb) then
-					regbpnb-=1
-				EndIf
-			EndIf
-		next
-
-		''create new procrs
-		For k As Integer =regbpnb To 1 Step -1
-			If procrnb=PROCRMAX Then
-				hard_closing("Max number of sub/func reached")
-				Exit Sub
-			EndIf
-			If proc(pridx(k)).enab=false Then Continue For 'proc state don't follow
-			procrnb+=1
-			procr(procrnb).sk=regbpp(k)
-			procr(procrnb).thid=thread(ithd).id
-			procr(procrnb).idx=pridx(k)
-
-			'test if first proc of thread
-			If thread(ithd).plt=0 Then
-				thread(ithd).tv=AddTreeViewItem(GTVIEWTHD,"",cast (hicon, 0),0,0,0)
-				thread(ithd).ptv=thread(ithd).tv 'last proc
-				thread_text(ithd)'put text
-				thread(ithd).st=0 'with fast no starting line could be gotten
-				procr(procrnb).cl=-1  ' no real calling line
-				libel="ThID="+Str(procr(procrnb).thid)+" "
-				tv=TVI_LAST 'insert in last position
-			Else
-				tv=thread(ithd).plt 'insert after the last item of thread
-				procr(procrnb).ret=ret(k)
-				libel=""
-				procr(procrnb).cl=line_call(ret(k))
-			EndIf
-			'add manage LIST
-			If flagtrace Then dbg_prt ("NEW proc "+proc(pridx(k)).nm)
-			libel+=proc(pridx(k)).nm+":"+proc_retval(pridx(k))
-			If flagverbose Then libel+=" ["+Str(proc(pridx(k)).db)+"]"
-			vrr(vrrnb).tv=AddTreeViewItem(GTVIEWVAR,"Not yet filled",cast (hicon, 0),0,TVI_LAST,tv)
-			procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,libel,cast (hicon, 0),0,tv,0)
-			thread(ithd).plt=procr(procrnb).tv 'keep handle last item
-			thread(ithd).ptv=AddTreeViewItem(GTVIEWTHD,proc(pridx(k)).nm,cast (hicon, 0),0,TVI_FIRST,thread(ithd).ptv)
-			var_ini(procrnb,proc(procr(procrnb).idx).vr,proc(procr(procrnb).idx+1).vr-1)
-			procr(procrnb+1).vr=vrrnb+1
-			If proc(procsv).nm="main" Then procr(procrnb).vr=1 'constructors for shared they are executed before main so reset index for first variable of main
-			proc_watch(procrnb) 'reactivate watched var
-		Next
-   Next
-End Sub
-
 '====================================================================
 ''  load shared and common variables, default=no dll number (d=0)
 '====================================================================
@@ -2991,7 +2696,9 @@ private sub globals_load(d As Integer=0)
 	If vrbgblprev<>vrbgbl Then 'need to do ?
 		If vrbgblprev=0 Then
 			procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,"Globals (shared/common) in : main ",cast (hicon, 0),0,0,0) 'only first time
+			'print "var ini in globals_load 00"
 			var_ini(procrnb,1,vrbgbl) ''add vrbgblprev instead 1
+			'print "var ini in globals_load 01"
 			'dbg_prt2("procrnb="+Str(procrnb))
 			procr(procrnb+1).vr=vrrnb+1 ''to avoid removal of global vars when the first executed proc is not the main one
 		Else
@@ -3036,88 +2743,15 @@ private sub globals_load(d As Integer=0)
 		EndIf
 	EndIf
 End Sub
-'======================================================================================================
-private sub proc_del(j As Integer,t As Integer=1)
-	Dim  As Integer tempo,th,thid
-	Dim parent As integer
-	Dim As String text
 
-	' delete procr in treeview
-	DeleteTreeViewItem(GTVIEWVAR,procr(j).tv)
-	'delete watch
-	For i As Integer =0 To WTCHMAX
-		'keep the watched var for reusing !!!
-		If wtch(i).psk=procr(j).sk Then
-			wtch(i).psk=-3
-		End If
-	Next
-	'delete breakvar
-	If brkv.psk=procr(j).sk Then brkv_set(0)
-
-	'' remove array tracking : either suppressed array or one of the variable used as index
-	If procr(j+1).vr>trckarr(0).idx AndAlso trckarr(0).idx>=procr(j).vr Then
-		''todo add array_tracking_remove
-	Else
-		For i As Long =0 To 4
-			If trckarr(i).memadr Then
-				If procr(j+1).vr>trckarr(i).iv AndAlso trckarr(i).iv>=procr(j).vr Then
-					''todo add array_tracking_remove
-					Exit For
-				End If
-			End if
-		Next
-	End If
-
-	''close shw/exp except if static
-	If shwexp.free=false then
-		if shwexp.procr=j then
-			if shwexp.mem<>3 then ''only local and not a static
-				hidewindow(hshwexpbx,KHIDE)
-				shwexp.free=true
-			end if
-		end if
-	end if
-
-	''compress running variables
-	tempo=procr(j+1).vr-procr(j).vr
-	vrrnb-=tempo
-	For i As Integer = procr(j).vr To vrrnb
-		vrr(i)=vrr(i+tempo)
-	Next
-
-	thid=procr(j).thid
-	If t=1 Then 'not dll
-		th=thread_select(thid) 'find thread index
-		parent=GetParentItemTreeView(GTVIEWTHD,thread(th).ptv)
-		DeleteTreeViewItem(GTVIEWTHD,thread(th).ptv) ''delete item
-		thread(th).ptv=parent 'parent becomes the last		
-		thread_text(th) 'update thread text
-	EndIf
-
-	''compress procr and update vrr index
-	procrnb-=1
-	For i As Integer =j To procrnb
-		procr(i)=procr(i+1)
-		procr(i).vr-=tempo
-	Next
-
-	''find the last proc item in treeview
-	For iprc As Integer = procrnb to 1
-		if procr(iprc).thid=thid then
-			thread(th).plt=procr(iprc).tv
-			exit for
-		EndIf
-	next
-		
-End Sub
 '=====================================================
 private sub thread_del(thid As UInteger)
 	Dim As Integer k=1,threadsup,threadold=threadcur
-	print "thid=";thid
+	'print "in thread_del thid=";thid
 
 	For i As Integer =1 To threadnb
 		If thid<>thread(i).id Then
-			If i<>k Then 
+			If i<>k Then
 				thread(k)=thread(i)
 				If i=threadcur Then
 					threadcur=k 'optimization
@@ -3125,53 +2759,56 @@ private sub thread_del(thid As UInteger)
 			EndIf
 			k+=1
 		Else
-		threadsup=i
-		thread(threadsup).plt=0
-		thread(threadsup).pe=0
-		If thread(i).sv<>-1 Then
-			'delete thread item and child
-				DeleteTreeViewItem(GTVIEWTHD,thread(i).tv)
-			'proc delete
+			threadsup=i
+			thread(threadsup).plt=0
+			thread(threadsup).pe=0
+			If thread(i).sv<>-1 Then
+				'delete thread item and child
+				'proc delete
 				For j As Integer = procrnb To 2 Step -1 'always keep procr(1)=main
 					If procr(j).thid=thid Then
 						proc_del(j)
 					EndIf
 				Next
-		EndIf
-	   End If
+				DeleteTreeViewItem(GTVIEWTHD,thread(i).tv)
+				thread(i).tv=0
+			EndIf
+	    End If
 	Next
 
 	threadnb-=1
 	If threadsup<>threadold Then Exit Sub 'if deleted thread was the current, replace by first thread
 
-	If runtype=RTAUTO AndAlso threadaut>1 Then 'searching next thread
-		threadaut-=1
-		k=threadcur
-		Do
-			k+=1:If k>threadnb Then k=0
-		Loop Until thread(k).exc
-		thread_change(k)
-		thread_resume()
-	Else
-		threadcur=0 'first thread
-		threadprv=0 'no change
-		threadsel=0
-		threadhs=thread(0).hd
-		thread_text(0)
-		runtype=RTSTEP
-		dsp_change(thread(0).sv)
-	EndIf
+	threadcur=0 'first thread
+	threadsel=0
+	threadhs=thread(0).hd
+	'runtype=RTSTEP
+	dsp_change(thread(0).sv)
+
 End Sub
 '======================================================================
 ''releases the scintilla docs except the one attached to the window
 '======================================================================
-private sub release_doc
-	var ptrdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
-	for isrc as integer =0 to sourcenb
-		if sourceptr(isrc)<>ptrdoc then
-			send_sci(SCI_RELEASEDOCUMENT,0,sourceptr(isrc))
-		end if
-	next
+private sub release_doc(typ as INTEGER=1)
+	if typ=1 then
+		var ptrdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
+		for isrc as integer =0 to sourcenb
+			if sourceptr(isrc)<>ptrdoc then
+				send_sci(SCI_RELEASEDOCUMENT,0,sourceptr(isrc))
+			end if
+		next
+	else
+		oldscintilla=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
+		for isrc as integer =0 to sourcenb
+			if sourceptr(isrc)<>0 and sourceptr(isrc)<>oldscintilla then
+				send_sci(SCI_RELEASEDOCUMENT,0,sourceptr(isrc))
+			end if
+		next
+		if oldscintilla then
+			Send_sci(SCI_SetText, 0, @"No source found or at least not all")
+			currentdoc=oldscintilla
+		EndIf
+	end if
 end sub
 '==============================
 '' Reinitialisation
@@ -3181,6 +2818,7 @@ private sub reinit()
 	prun=FALSE
 	runtype=RTOFF
 	stopcode=0
+	firsttime=0
 	flagmain=true
 	compilerversion=""
 	if flagrestart=-1 then
@@ -3204,7 +2842,6 @@ private sub reinit()
 	flagattach=FALSE
 	flagkill=FALSE
 	shwexp.free=true
-	threadprv=0
 	threadsel=0
 	for ith as integer =0 to threadnb
 		thread(ith).plt=0
@@ -3275,13 +2912,13 @@ private function check_bitness(fullname as string) as integer
 end function
 '===============================================================================
 private sub close_all()
-	print "destroy mutex and condvar"
+	'print "destroy mutex and condvar"
 	mutexdestroy blocker
 	#ifndef __fb_win32__
 		condsignal(condid)
 		conddestroy(condid)
 	#endif
-	print "release doc"
+	'print "release doc"
 	release_doc ''releases scintilla docs
 	''todo free all the objects menus, etc
 	If sourcenb<>-1 Then
@@ -3302,6 +2939,7 @@ private sub process_terminated()
 	but_enable()
 	menu_enable()
 	shortcut_enable()
+
 	#ifdef __fb_win32__
 		messbox("","END OF DEBUGGED PROCESS",MB_SYSTEMMODAL)
 		mutexunlock blocker
@@ -3340,10 +2978,10 @@ private function kill_process(text As String) As Integer
 				#endif
 				While prun:Sleep 500:Wend
 			#else
-				print "Killing process=";pid
+				'print "Killing process=";pid
 				if runtype=RTSTEP then ''waiting
 					mutexlock blocker
-					msgcmd=KPT_EXIT
+					msgcmd=KPT_KILL
 					bool2=true
 					condsignal(condid)
 					while bool1<>true
@@ -3354,7 +2992,7 @@ private function kill_process(text As String) As Integer
 				else ''running
 					linux_kill(thread(0).id,9)
 				end if
-				print"end of cmd exit"
+				'print"end of cmd exit"
 			#endif
 			Return TRUE
 		Else
@@ -3412,32 +3050,34 @@ End sub
 ''n=0 for the first loading
 ''=====================================================================
 private sub sources_load(n As integer,exedate as double)
-	dim As integer flgt,fnum
+	dim As integer flgt,fnum,msgnofile
 	dim as any ptr ptrdoc
-	print "loading sources nb,n=";sourcenb,n,"flagrestart=";flagrestart
+	'print "loading sources nb,n=";sourcenb,n,"flagrestart=";flagrestart
 	if flagrestart=-1 Then
 		statusbar_text(KSTBSTS,"Loading sources")
 
 	   	for isrc As Integer=n To sourcenb ' main index =0
-			print "loading =";isrc,source(isrc)
+			'print "loading =";isrc,source(isrc)
 		   	if FileExists(source(isrc))=0 Then
-		   		messbox("Loading Source error","File : "+source(isrc)+" not found")
-		   		continue For
-		   	end if
-		   	clear(sourcebuf(0),0,SRCSIZEMAX)
-			fnum = FreeFile
-			open source(isrc) For Binary As #fnum
-			flgt=Lof(fnum)
-			if flgt>SRCSIZEMAX Then
-				messbox("Loading Source error","File : "+source(isrc)+" too large ("+Str(flgt)+">"+Str(SRCSIZEMAX)+") not loaded")
-			else
-				Get #fnum,,sourcebuf() 'get source
-			end If
-			Close #fnum
-
+				if msgnofile=0 then
+					messbox("Loading Source error","File : "+source(isrc)+" not found"+chr(10)+chr(10)+"This message appears only one time even if many files are missing")
+					msgnofile=1
+				end if
+				print "Loading Source error","File : ";source(isrc);" not found"
+				sourcebuf(0)=asc("N"):sourcebuf(1)=asc("o"):sourcebuf(2)=asc(" "):sourcebuf(3)=asc("F"):sourcebuf(4)=asc("i"):sourcebuf(5)=asc("l"):sourcebuf(6)=asc("e"):sourcebuf(7)=0
+		   	else
+				clear(sourcebuf(0),0,SRCSIZEMAX)
+				fnum = FreeFile
+				open source(isrc) For Binary As #fnum
+				flgt=Lof(fnum)
+				if flgt>SRCSIZEMAX Then
+					messbox("Loading Source error","File : "+source(isrc)+" too large ("+Str(flgt)+">"+Str(SRCSIZEMAX)+") not loaded")
+				else
+					Get #fnum,,sourcebuf() 'get source
+				end If
+				Close #fnum
+			end if
 			AddPanelGadgetItem(GSRCTAB,isrc,source_name(source(isrc)))
-			''todo later sort the files to get them in alphabetic order
-			AddComboBoxItem(GFILELIST,source_name(source(isrc)),-1)
 
 			''unicode
 			'If buf(0)=&hEF AndAlso buf(1)=&hBB AndAlso buf(2)=&hBF Then 'UTF8
@@ -3513,7 +3153,7 @@ private sub main_line()
 				If rline(iline).ad>temp Then 'found first line of main
 					proc(iproc).nu=rline(iline).nu
 					rlineprev=iline
-					print "first line of main="+str(iline)
+					'print "first line of main="+str(iline)
 					Exit For,For
 				EndIf
 			Next
@@ -3682,7 +3322,7 @@ private sub closes_debugger()
 		#ifndef __fb_win32__
 			afterkilled=KENDALL
 		#endif
-		if kill_process("Closing debugger")=true then 
+		if kill_process("Closing debugger")=true then
 			close_all
 		EndIf
 	else
@@ -3702,11 +3342,11 @@ private sub closes_debugger2()
 	EndIf
 	if messbox("Quit Fbdebugger",text+"Are you sure ?",MB_YESNO)=IDYES then
 		If prun Then
-			print "closing so sending sigkill"
+			'print "closing so sending sigkill"
 			'linux_kill(thread(0).id,9)
 			'sleep 500
 		end if
-		print "destroy mutex"
+		'print "destroy mutex"
 		mutexunlock blocker
 		mutexdestroy blocker
 		#ifndef __fb_win32__
@@ -3745,14 +3385,24 @@ End Sub
 '===================================================
 private sub init_debuggee(srcstart as integer)
 	''end of extraction ''todo add that for linux when the exe is running
+	'print "in init_debuggee"
+	dim as INTEGER listidx
 	globals_load()
-
 	If procrnb=0 Then
 	   If flagwtch=0 AndAlso wtchexe(0,0)<>"" Then watch_check(wtchexe())
 	   flagwtch=0
 	EndIf
-	''list_all() ''list all the debug data
-	#Ifdef __fb_win32__	
+	'list_all() ''list all the debug data
+
+	listidx=srclistfirst
+	while listidx<>-1
+		AddComboBoxItem(GFILELIST,srcname(listidx-1),-1)
+		'print srcname(listidx-1)
+		listidx=srclist(listidx).child
+	Wend
+
+
+	#Ifdef __fb_win32__
 		put_breakcpu()
 	#endif
 	''srcstart contains the index for starting the loading of source codes
@@ -3821,41 +3471,69 @@ end sub
 '' handles the debug events  (triggered by timer)
 '===================================================
 private function debug_event() as INTEGER
-	dim as integer dbgevent=debugevent,srcstart
+	dim as integer dbgevent=debugevent
+	static as INTEGER thprev
 	debugevent=KDBGNOTHING
 	if dbgevent = KDBGNOTHING then return true
-	print "************ debug_event ";time;" ";dbgevent;" ";debugdata;" stopcode=";stopcode
+	'print "************ debug_event ";time;" ";dbgevent;" ";hex(debugdata);" stopcode=";stoplibel(stopcode)
 	select case as const dbgevent
 		Case KDBGRKPOINT
-		print "KDBGRKPOINT=";stopcode,"csline=";CSLINE,debugdata',brkol(debugdata).index
-			if stopcode=CSSTEP orelse stopcode=CSMEM orelse stopcode=CSVAR orelse stopcode=CSUSER then
+
+			'print "KDBGRKPOINT=";stopcode,"csline=";CSLINE,hex(debugdata)
+			if stopcode=CSSTEP orelse stopcode=CSMEM orelse stopcode=CSVAR orelse stopcode=CSUSER orelse stopcode=CSNEWTHRD then
 				gest_brk(debugdata)
 			else
 				gest_brk(brkol(debugdata).ad,brkol(debugdata).index) ''address and line index
 			end if
 
-		Case KDBGCREATEPROC
+		Case KDBGCREATEPROCESS
 			srcstart=sourcenb+1
 			#Ifdef __fb_win32__
 				if debug_extract(debugdata,exename)=0 then ''otherwise there is a problem (no debug data or when reading debuggee memory)
 					init_debuggee(srcstart)
 				EndIf
 			#else
-				if elf_extract(exename) then
-					init_debuggee(srcstart) ''as the data has been retrieved before unlike on Windows
-				end if
+				elf_extract(exename)
+
 				mutexlock blocker
 				bool2=true
 				condsignal(condid)
 				mutexunlock blocker
 			#endif
-		''Case KDBGCREATETHREAD not used
 
-		Case KDBGEXITPROC
+		Case KDBGCREATETHREAD
+			#Ifdef __fb_linux__
+			''Linux creation fo a new thread
+			var ret=messbox("New Thread","Thread created = "+Str(thread(threadnb).id)+" / current = "+Str(thread(threadcur).id) _
+				+Chr(10)+Chr(13)+" Continue with new one or with current ?" ,MB_YESNO)
+			if ret=IDYES Then
+				msgdata=1
+				'thread_change(threadnb)
+			Elseif ret=IDNO then
+				msgdata=0
+				threadsel=threadcur
+			else
+				msgdata=2
+				threadsel=threadcur
+			EndIf
+			mutexlock blocker
+			bool2=true
+			condsignal(condid)
+			mutexunlock blocker
+			#endif
+
+		Case KDBGEXITPROCESS
 			process_terminated()
 
 		Case KDBGEXITTHREAD
 			thread_del(debugdata)
+			#Ifdef __fb_linux__
+			msgcmd=0 ''no action
+			mutexlock blocker
+			bool2=true
+			condsignal(condid)
+			mutexunlock blocker
+			#endif
 
 		Case KDBGDLL
 		#Ifdef __fb_win32__
@@ -3965,11 +3643,13 @@ private sub restart(byval idx as integer=0)
 			afterkilled=KRESTART+idx
 		#EndIf
 		if kill_process("Trying to launch but debuggee still running")=FALSE then
+			print "in restart false ?????"
 			exit sub
 		end if
-	else
-		restart_exe(idx)
+	'else
+		'restart_exe(idx)
 	EndIf
+	restart_exe(idx)
 end	sub
 '--------------------------------------------------------
 '' Debuggee provided by jitdebugger
@@ -3991,7 +3671,7 @@ end sub
 '==================================================================================
 private sub exec_mod() 'execution from cursor
 	#Ifdef __fb_win32__
-		dim as integer dummy ''used to align vcontext on 16bit
+		dim as integer dummy ''used to align vcontext on 16 bytes
 		Dim vcontext As CONTEXT
 		vcontext.contextflags=CONTEXT_CONTROL
 	#endif
@@ -3999,9 +3679,9 @@ private sub exec_mod() 'execution from cursor
 
 	cln=line_cursor() 'get line
 	rln=line_exec(cln,"Changing next executed line not possible, select an executable line")
-	print "cln rln=";cln,rln,rline(rln).nu
+	'print "cln rln=";cln,rln,rline(rln).nu
 	if rln=-1 then exit sub
-	
+
 	'If rline(rln+1).nu=cln+1 And rline(rln+1).sx=srcdisplayed Then rln+=1 ''weird case : first line main proc
 
 	if rln=rlinecur then exit sub ''same line
@@ -4029,7 +3709,7 @@ private sub exec_mod() 'execution from cursor
 		vcontext.regip=rline(rln).ad
 		SetThreadContext(threadhs,@vcontext)
 	#else
-	print "changing exec=";hex(rline(rln).ad),rline(rln).nu
+	'print "changing exec=";hex(rline(rln).ad),rline(rln).nu
 		mutexlock blocker
 		msgad=rline(rln).ad
 		msgcmd=KPT_XIP

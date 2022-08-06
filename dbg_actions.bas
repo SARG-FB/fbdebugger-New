@@ -23,21 +23,6 @@ private sub menu_action(poption as integer)
         case MNSETTINGS
 			hidewindow(hsettings,KSHOW)
 
-        case MNTHRDAUT '' multi thread auto
-		    var threadaut=0
-			For ithd As Integer =0 To threadnb
-				If thread(ithd).exc Then
-					threadaut+=1
-				EndIf
-			Next
-			If threadaut<2 Then
-				messbox("Automatic execution","Not enough selected thread so normal auto")
-			EndIf
-			runtype=RTAUTO
-			but_enable()
-			hidewindow(hcchainbx,KHIDE)
-			thread_resume()
-
 		case MNEXEFILE0 to MNEXEFILE9
 			restart(poption-MNEXEFILE0)
 
@@ -101,7 +86,7 @@ private sub menu_action(poption as integer)
 		Case MNPRCRADR 'information about running proc
 			thread_procloc(5)
 
-		Case MNTHRDCHG 'change next executed thread
+		Case MNTHRDCHG 'change thread
 			thread_change()
 
 		Case MNTHRDKLL 'kill a thread
@@ -149,7 +134,7 @@ private sub menu_action(poption as integer)
 			brk_set(5)
 
 		Case MNMNGBRK
-			brk_manage()
+			brk_manage("Breakpoint management")
 
 		Case MNSHWVAR
 			messbox("Feature not yet implemented","var_tip(PROCVAR)")
@@ -280,10 +265,10 @@ private sub menu_action(poption as integer)
 			messbox("Feature not yet implemented","dissassemble(KSPROC)")
 			'dissassemble(KSPROC)
 
-		Case MNEXCLINE 'show line
-			thread_execline(1)
+		Case MNTHRDBLK ''block thread
+			thread_block()
 
-		Case MNCREATHR 'show line creating thread
+		Case MNCREATHR ''show line creating thread
 			thread_execline(2)
 
 		Case MNTHRDLST
@@ -468,7 +453,17 @@ private sub gadget_action(igadget as LONG)
 			dump_extract()
 
 		''adds to newadr,watched, break on mem, shw/exp based on first address
-		'case GDUMPNEW
+		case GDUMPNEW
+			if dumptyp>=7 and dumptyp<=10 then
+				var value=vallng(GetTextItemListView(GDUMPMEM,0,1))
+				'print "value=";value
+				if value>0 then
+					dumpadr=value
+					dump_sh()
+					SetGadgetText(GDUMPADR,str(dumpadr))
+				EndIf
+			end if
+
 		'case GDUMPWCH
 		'case GDUMPBRK
 		'case GDUMPSHW
@@ -507,7 +502,7 @@ private sub gadget_action(igadget as LONG)
 
 
 		case GFILESEL
-			MessBox("Jumping to file step 00="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
+			'MessBox("Jumping to file step 00="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
         	if GetItemComboBox(GFILELIST)<>-1 then
         		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
 	        		PanelGadgetSetCursel(GSRCTAB,GetItemComboBox(GFILELIST))
@@ -624,6 +619,10 @@ private sub gadget_action(igadget as LONG)
 		case GLOGCONT
 			logtyp=KLOGCONT
 			hidewindow(hlogbx,KSHOW)
+
+		case GASCII
+			flagascii=1-flagascii
+			dump_sh
 
 		case GVERBOSE
 			flagverbose=1-flagverbose
@@ -960,7 +959,7 @@ private sub select_file()
 	else
 		exename=selfile
 		'messbox("File selection","File selected = "+exename)
-		print "File selected = "+exename
+		'print "File selected = "+exename
 	end if
 
 	if check_bitness(exename)=0 then exit sub ''bitness of debuggee and fbdebugger not corresponding
@@ -976,9 +975,9 @@ private sub select_file()
 			messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
 		endif
 	#else
-		print "before thread create"
+		'print "before thread create"
 		If ThreadCreate(@start_pgm)=0 Then
-			print "timer killed"
+			'print "timer killed"
 			KillTimer(hmain,GTIMER001)
 			messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
 		endif
@@ -993,6 +992,14 @@ private sub button_action(button as integer)
 		case IDBUTSTEP 'STEP
 			stopcode=0
 			hidewindow(hcchainbx,KHIDE)
+			#ifdef __fb_WIN32__
+
+			#else
+				if ccstate=KCC_NONE then
+					msgdata=1 ''CC everywhere
+					exec_order(KPT_CCALL)
+				end if
+			#EndIf
 			thread_resume()
 
 		case IDBUTSTEPOVER 'STEP+ over
@@ -1004,6 +1011,15 @@ private sub button_action(button as integer)
 			runtype=RTAUTO
 			but_enable()
 			hidewindow(hcchainbx,KHIDE)
+			'print "STARTING AUTO"
+			#ifdef __fb_WIN32__
+
+			#else
+				if ccstate=KCC_NONE then
+					msgdata=1 ''CC everywhere
+					exec_order(KPT_CCALL)
+				end if
+			#EndIf
 			thread_resume()
 
 		case IDBUTRUNEXIT
@@ -1020,19 +1036,10 @@ private sub button_action(button as integer)
 					Next
 				#else
 					sigusr_send()
-					'print "sigusr1 sent with return code=";syscall(sys_tgkill,dbgpid,thread2,SIGUSR1)
-					'print "err=";errno
-					'mutexlock blocker
-					'msgcmd=KPT_RESTALL
-					'bool2=true
-					'condsignal(condid)
-					'while bool1<>true
-						'condwait(condid,blocker)
-					'wend
-					'bool1=false
-					'mutexunlock blocker
 				#endif
 			Else
+				'print "halting all"
+				flaghalt=true
 				runtype=RTSTEP
 			EndIf
 			Stopcode=CSUSER
@@ -1064,11 +1071,12 @@ private sub button_action(button as integer)
 			restart()
 
 		case IDBUTATTCH
-		sigusr_send()
 			messbox("feature not implemented","button = IDBUTATTACH")
-			
+
 		case IDBUTKILL
+			#ifdef __fb_linux__
 			afterkilled=KDONOTHING
+			#endif
 			kill_process("Terminate immediatly no saved data, other option Release")
 
 		case IDBUTLASTEXE
