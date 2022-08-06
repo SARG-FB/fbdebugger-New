@@ -295,7 +295,7 @@ private sub parse_udt(readl As String)
 	else
 	   p+=2 'skip :T  GCC
 	endif
-
+	'print "parse_udt=";readl
 	q=InStr(readl,"=")
 
 	udtidx=Val(Mid(readl,p,q-p))
@@ -417,19 +417,13 @@ private sub parse_var(gv As String,ad As UInteger, dlldelta As Integer=0)
 	Dim p As Integer
 	Static defaulttype As Integer
 	Dim As String vname
-	'If gengcc Then todo remove
-	'	If InStr(gv,"long double:t")<>0 OrElse InStr(gv,"FBSTRING:t")<>0 Then
-	'	      defaulttype=0
-	'	ElseIf Left(gv,5)="int:t" OrElse InStr(gv,"_Decimal32:t")<>0 Then
-	'	      defaulttype=1
-	'	EndIf
-	'Else
-		If instr(gv,"va_list:t") orelse instr(gv,"boolean:t") Orelse InStr(gv,"pchar:t") Then 'last default type
-		      defaulttype=0
-		ElseIf InStr(gv,"integer:t") Then
-		      defaulttype=1
-		EndIf
-	'EndIf todo remove
+
+	If instr(gv,"va_list:t") Then 'last default type
+		  defaulttype=0
+	ElseIf InStr(gv,"integer:t") Then
+		  defaulttype=1
+	EndIf
+
 	If defaulttype Then Exit sub
 
 	'=====================================================
@@ -454,7 +448,7 @@ private sub parse_var(gv As String,ad As UInteger, dlldelta As Integer=0)
 		elseIf Left(vname,3)="Lt_" Then 'Lt_xxxx used with extern and array
 			Exit Sub
 		EndIf
-
+		'print "parse_var=";gv
 	Else '$ in the string
 		If InStr(p+1,vname,"$") <>0 AndAlso InStr(vname,"$fb_Object")=0 then
 			Exit Sub 'don't keep TMP$xx$xx:
@@ -549,14 +543,20 @@ private function parse_typeope(vchar As long) As String
 	Else
 		'l=long/m=unsigned long/n=__int128/o=unsigned __int128/e=long double, __float80
 		Select Case As Const vchar
-			Case Asc("i"),Asc("l")
+			Case Asc("i")
 				typ=1
+			Case Asc("l")
+			#Ifdef __FB_64BIT__
+				typ=9
+			#else
+				typ=1
+			#endif
 			Case Asc("a")
 				typ=2
 			Case Asc("h")
 				typ=3
-			'Case Asc("") 'Zstring
-			'	typ=4
+			Case Asc("c") 'Zstring
+				typ=4
 			Case Asc("s")
 				typ=5
 			Case Asc("t")
@@ -575,8 +575,8 @@ private function parse_typeope(vchar As long) As String
 				typ=12
 		    case Asc("b")
 				typ=16
-			'Case Asc("")'String
-			'	typ=13
+			Case Asc("w") ''wString
+				return "wstring"
 			'Case Asc("")'Fstring
 			'	typ=14
 			Case Else
@@ -698,7 +698,7 @@ Case "dl"
 Case "da"
     Function = "del[]?"
 Case "de"
-    Function = "."
+    Function = "operator *"
 Case "pt"
     Function = "->"
 Case "ad"
@@ -729,7 +729,7 @@ private function parse_proc(fullname As String) As String
     If lg=0 Then lg=InStr(fullname,":")
     strg=Left(fullname,lg-1)
 
-	If InStr(strg,"_Z")=0 Then Return strg
+	If left(strg,2)<>"_Z" and left(strg,3)<>"__Z" Then Return strg
 
 	If strg[2]=Asc("Z") Then p+=1 'add 1 case _ _ Z
 	If strg[p-1]=Asc("N") Then 'nested waiting "E"
@@ -821,7 +821,10 @@ private function parse_proc(fullname As String) As String
             names(namecpt)=strg3'mainname
 			p+=1+lg
 		elseIf strg[p-1]=Asc("R") Then
-			If Right(strg2,1)<>"(" AndAlso Right(strg2,1)<>"," Then strg2+=","
+			If Right(strg2,1)<>"(" AndAlso Right(strg2,1)<>"," Then
+				strg2+=","
+			EndIf
+			strg2+="@"
 			p+=1
 		elseIf strg[p-1]=Asc("N") Then
 			If Right(strg2,1)<>"(" AndAlso Right(strg2,1)<>"," Then strg2+=","
@@ -836,14 +839,24 @@ private function parse_proc(fullname As String) As String
 			p+=1
 		elseIf strg[p-1]=Asc("E") then
 			p+=1
-		ElseIf strg[p-1]=Asc("S") Then 'S0_ -->	'repeating the previous type
-    		If Right(strg2,1)<>"(" AndAlso Right(strg2,1)<>"," Then strg2+=",":mainname=""
+		ElseIf strg[p-1]=Asc("S") Then 'S_ = 1 S0_=2 S1_=3 -->	'repeating a previous type
+    		If Right(strg2,1)<>"(" AndAlso Right(strg2,1)<>"," AndAlso Right(strg2,2)<>"* " Then
+    			strg2+=",":mainname=""
+    		EndIf
 			p+=1
 			If strg[p-1]=asc("_") Then
 				strg3=names(1)
+				if strg[p-3]=Asc("P") then
+					namecpt+=1
+					names(namecpt)="* "+strg3
+				EndIf
 				p+=1
 			Else
-				strg3=names(strg[p-1]-48)
+				strg3=names(strg[p-1]-46)
+				if strg[p-3]=Asc("P") then
+					namecpt+=1
+					names(namecpt)=strg3
+				EndIf
 				p+=2
 			endif
 	        if mainname="" Then
@@ -851,7 +864,13 @@ private function parse_proc(fullname As String) As String
 	        else
        			strg2+="."+strg3
 	        endif
-
+		elseIf strg[p-1]=Asc("P") then ''pointer followed by datatype
+			p+=1
+			If Right(strg2,1)="(" Then
+				strg2+="* "
+			else
+				strg2+=",* "
+			end if
 	    elseif strg[p-1]=Asc("u") then  ''extended type ex : u7INTEGER
 			p+=1
 	        lg=ValInt(Mid(strg,p,2))
@@ -866,14 +885,21 @@ private function parse_proc(fullname As String) As String
 				strg2+="."+strg3
 			EndIf
 			namecpt+=1
-            names(namecpt)=strg3'mainname
+            names(namecpt)=strg3
 			p+=1+lg
 		else
-			If Right(strg2,1)="(" Then
-				strg2+=parse_typeope(Asc(Mid(strg,p,1)))
-			Else
-				strg2+=","+parse_typeope(Asc(Mid(strg,p,1)))
-			EndIf
+			strg3=parse_typeope(Asc(Mid(strg,p,1)))
+			if strg[p-2]=Asc("P") then
+				namecpt+=1
+				names(namecpt)="* "+strg3
+				strg2+=strg3
+			else
+				If Right(strg2,1)="(" Then
+					strg2+=strg3
+				Else
+					strg2+=","+strg3
+				EndIf
+			end if
 			p+=1
 		EndIf
 	Wend
@@ -901,7 +927,7 @@ private sub dbg_file(strg as string,value as integer)
 	dim as string fullname
 	if strg="" then ''end of main ?
 		udtcpt=udtmax-TYPESTD
-		print "---------------- end of current debug data -------------------"
+		'print "---------------- end of current debug data -------------------"
 	else
 		if right(strg,4)<>".bas" and right(strg,3)<>".bi" then
 			path=strg
@@ -912,14 +938,17 @@ private sub dbg_file(strg as string,value as integer)
 				fullname=path+strg ''file names are sensitive on linux
 			#endif
 			path=""
-			print "full source name=";fullname
+
+			'print "full source name=";fullname
 			if check_source(fullname)=-1 then ''useful check_source ???
 				sourcenb+=1
 				source(sourcenb)=fullname
+				srcname(sourcenb)=source_name(source(sourcenb))
+				list_insert(srclist(),strptr(srcname(sourcenb)),sourcenb+1,srclistfirst) ''zero based so add 1
 				sourceix=sourcenb
-				print "new source=";fullname
+				'print "new source=";fullname
 			else
-				print "keep current source with code 100 check that =";strg
+				'print "keep current source with code 100 check that =";strg
 			end if
 		end if
 	end if
@@ -935,15 +964,18 @@ private sub dbg_include(strg as string)
 	#ifdef __fb_win32__
 		strg=lcase(strg) ''only WDS file names are sensitive on LNX
 	#endif
+
 	temp=check_source(strg)
 	if temp=-1 Then
 		sourcenb+=1
 		source(sourcenb)=strg
 		sourceix=sourcenb
-		print "new source=";strg
+		srcname(sourcenb)=source_name(source(sourcenb))
+		list_insert(srclist(),strptr(srcname(sourcenb)),sourcenb+1,srclistfirst) ''zero based so add 1
+		'print "new source=";sourcenb,strg
 	else
 	  	sourceix=temp
-	  	print "keep current source=";strg
+	  	'print "keep current source=";sourceix,strg
 	end if
 end sub
 '' -----------------------
@@ -951,13 +983,16 @@ end sub
 '' -----------------------
 private sub dbg_line(linenum as integer,ofset as integer)
 	if linenum then
+
+
 		if ofset+proc(procnb).db<>rline(linenb).ad Then ''checking to avoid asm with just comment line
 			linenb+=1
 		endif
 		rline(linenb).ad=ofset+proc(procnb).db
 		rLine(linenb).nu=linenum
 		rLine(linenb).px=procnb
-		if procnew <> procnb then ''find the address for first fbc line
+
+		if procnew <> procnb then ''find the address for first fbc line of the proc
 			if ofset<>0 then
 				procnew=procnb
 				proc(procnb).first=rline(linenb).ad
@@ -965,6 +1000,7 @@ private sub dbg_line(linenum as integer,ofset as integer)
 		EndIf
 		''to be checked maybe fixed so useless
 		rline(linenb).sx=sourceix ''for line in include and not in a proc
+		'print "linenum=";linenum,hex(rline(linenb).ad)
 	else
 		'print "line number=0"
 	end if
@@ -977,6 +1013,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 	if linenum then
 		procnodll=false
 		procname=parse_proc(strg)
+
 		'procname=left(strg,instr(strg,":")-1)
 		if procname<>"" and (flagmain=true or procname<>"main") then
 			'If InStr(procname,".LT")=0 then  ''to be checked if useful
@@ -984,13 +1021,16 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 				procmain=procnb+1
 		 		flagmain=false
 		 		'flagstabd=TRUE'first main ok but not the others
-				print "main found=";procnb+1
+				'print "main found=";procnb+1
 		 	endif
 			procnodll=true
 
 			procnb+=1
+			'print "in proc=";procname,procnb,sourceix
 			proc(procnb).sr=sourceix
 			proc(procnb).nm=procname
+			list_insert(proclist(),strptr(proc(procnb).nm),procnb,proclistfirst)
+
 			proc(procnb).db=adr'+exebase-baseimg 'only when <> exebase and baseimg (DLL)
 			''to be added
 			parse_retval(procnb,Mid(strg,InStr(strg,":")+2,99)) 'return value .rv + pointer .pt
@@ -1005,22 +1045,31 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 	else
 		proc(procnb).ed=proc(procnb).db+adr
 		'print "end of proc=";proc(procnb).ed,hex(proc(procnb).ed)
-
+		proc(procnb).sr=sourceix
 		if proc(procnb).fn>procfn Then procfn=proc(procnb).fn+1 ' just to be sure to be above see gest_brk
 
 		''todo be checked ??????
 		'for proc added by fbc (constructor, operator, ...) ''adding >2 to avoid case only one line ...
-		If proc(procnb).nu=rline(linenb).nu AndAlso linenb>2 then
+		'print "Checking procedure added by compiler =";proc(procnb).nm,proc(procnb).nu,rline(linenb).nu,hex(proc(procnb).db),hex(proc(procnb).fn)
+		'If proc(procnb).nu=rline(linenb).nu AndAlso linenb>2 then
+		If rline(linenb).nu=1 then
+
 			proc(procnb).nu=-1
+			linenb-=1
+			print "Procedure added by compiler (constructor, etc) =";proc(procnb).nm
            	'For i As Integer =1 To linenb
            		'dbg_prt2("Proc db/fn inside for stab="+Hex(proc(procnb).db)+" "+Hex(proc(procnb).fn))
            		'dbg_prt2("Line Adr="+Hex(rline(i).ad)+" "+Str(rline(i).ad))
            		'If rline(i).ad>=proc(procnb).db AndAlso rline(i).ad<=proc(procnb).fn Then
-           			'dbg_prt2("Cancel breakpoint adr="+Hex(rline(i).ad)+" "+Str(rline(i).ad))
-           			'WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@rLine(i).sv,1,0)
-           			'nota rline(linenb).nu=-1
+           			'#Ifdef __fb_win32__
+						'print "Cancel breakpoint adr="+Hex(rline(i).ad)+" "+Str(rline(i).ad))
+						'WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@rLine(i).sv,1,0)
+           			'#else
+						'print "Procedure added by compiler (constructor, etc) line number should be -1=";proc(procnb).nm,rline(i).nu
+           			'#endif
+           			''nota rline(linenb).nu=-1
            		'EndIf
-           '	next
+           	'next
 		end if
 
         ''removing {modlevel empty just prolog and epilog
@@ -1034,7 +1083,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
                    Exit For
                 EndIf
             next
-            print "remove modlevel in"+source(proc(procnb).sr)
+            'print "remove modlevel in"+source(proc(procnb).sr)
             procnb-=1 ''removing proc
         end if
 
@@ -1046,10 +1095,11 @@ end sub
 private sub dbg_epilog(ofset as integer)
 	proc(procnb).fn=proc(procnb).db+ofset
 	if proc(procnb).fn<>rline(linenb).ad then
-		if proc(procnb).nm<>"main" then
+		if proc(procnb).nm<>"main" and proc(procnb).nm<>"{MODLEVEL}" then
 		'' this test is useless as for sub it is ok  .fn = .ad  --> mov rsp, rbp
 		'' for function the last line ('end function' is not given by 224)
 		'' so forcing it except for main
+		'print "EPILOG=";hex(rline(linenb).ad),hex(proc(procnb).fn),"##";proc(procnb).nm;"##"
 			rline(linenb).ad=proc(procnb).fn ''KEEP this line even if test is removed
 		'else
 			'proc(procnb).fn=rline(linenb).ad
@@ -1065,19 +1115,21 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 	dim as string strg
 	ofstr+=1 ''1 based
 	dim as longint buf(1) ''16 bytes
-
+	dim as integer ofsmax,ofstemp
 
 	for ibuf as integer =1 to size/16
 		get #1,ofset+1,buf()
 		'print ibuf;" "; hex(buf(0));" --> ";
 		stab.full=buf(0)
 		'print "C="+str(stab.cod)+" D="+str(stab.desc)+" O="+str(stab.offst);" ";
-
-		strg=space(400)
+		strg=space(2000)
 		get #1,ofstr+stab.offst,strg
 		strg=""+*strptr(strg)
-		'print strg;" ";
-
+		ofstemp=ofstr+stab.offst+len(strg)+1
+		if ofstemp>ofsmax then
+			ofsmax=ofstemp
+		EndIf
+		'print strg,ofstr,stab.offst,ofsmax
 		value=buf(1)
 		'print "D="+str(value)+" H="+hex(value)
 
@@ -1085,10 +1137,11 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 			case 100 '' file name
 				dbg_file(strg,value)
 			case 255 ''not as standard stab freebasic version and maybe other information
-				print "compiled with=";strg
+				'print "compiled with=";strg
 			Case 32,38,40,128,160 'init common/ var / uninit var / local / parameter
                	parse_var(strg,value)',exebase-baseimg) ''todo
 			case 132 '' file name
+				'print "dbg include=";strg
 				dbg_include(strg)
 			case 36 ''procedure
 				dbg_proc(strg,stab.desc,value)
@@ -1098,6 +1151,10 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 				dbg_epilog(value)
 			case 42 ''main entry point
 				'not used
+			case 0
+				if ofsmax<>ofstr+7 then
+					ofstr=ofsmax
+				end if
 			case else
 				print "Unknow stab cod=";stab.cod
 		end select
@@ -1159,14 +1216,16 @@ private function elf_extract(filename as string) as integer
 		sect_name=space(40)
 		get #1,ofset+1,sect_name
 		sect_name=""+*strptr(sect_name)
-		print "name=";sect_name
+		'print "name=";sect_name
 
 		ofset=walk_section+of_offset_infile
 		get #1,ofset+1,ulgt
 		'print "offset in file= ";hex(ulgt);" ";
 		if sect_name=".dbgdat" then
+			'print "name=";sect_name
 			dbg_dat_of=ulgt
 		elseif sect_name=".dbgstr" then
+			'print "name=";sect_name
 			dbg_str_of=ulgt
 			exit for ''not anymore section to retrieve
 		end if
@@ -1323,7 +1382,7 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 				case 42 ''main entry point
 					'not used
 				case else
-					print "Unknow stab cod=";recupstab.code
+					'print "Unknow stab cod=";recupstab.code
 			end select
 	'=========================================
 			basestab+=sizeof(udtstab)

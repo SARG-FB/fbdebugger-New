@@ -269,7 +269,7 @@ End Sub
 private sub dump_set()
     Dim tmp As String
 	dim as integer lg,delta,combo
-	For icol as integer=1 to dumpnbcol
+	For icol as integer=1 to dumpnbcol+1
 		DeleteListViewColumn(GDUMPMEM,1) ''delete each time column 1 keep address/ascii
 	Next
 	if dumptyp>=100 then ''change number of bytes
@@ -306,9 +306,10 @@ private sub dump_set()
 	EndIf
 	delta=16/dumpnbcol
 	For icol as integer =1 To dumpnbcol 'nb columns except address and ascii
-		tmp="+"+Right("0"+Str(delta*(icol-1)),2)
+		tmp=Right("0"+Str(delta*(icol-1)),2)
 		AddListViewColumn(GDUMPMEM,tmp,icol,icol,lg)
 	Next
+	AddListViewColumn(GDUMPMEM,"Ascii",dumpnbcol+1 ,dumpnbcol+1 ,150)
 	SetItemListBox(GDUMPSIZE,combo)
 	SetGadgetText(GDUMPADR,str(dumpadr))
 	setgadgettext(GDUMPTYPE,"Current type="+udt(dumptyp).nm)
@@ -316,16 +317,32 @@ End Sub
 '================================================================================
 '' Changes size gadgets when main window is resized
 '===================================================
-private sub size_changed()
-	'messbox("resizing",str(SizeX)+" "+str(SizeY))
-	if sizey>250 then
-		#ifdef __fb_win32__
-			ResizeWindow(hscint,0,83,,WindowClientHeight(hmain)-105)
-		#else
-			'messbox("Function not coded under linux","so size remains inchanged")
-			gtk_widget_set_size_request(wsci, 450, WindowClientHeight(hmain)-105)
-		#endif
-	end if
+Private Sub size_changed()
+	Dim As Integer sourcesize,rightsize, gsize
+	Static As Long iwprev,ihprev
+	Dim As Long iwlast=Windowclientwidth(hmain),ihlast=Windowclientheight(hmain)
+	If iwlast = iwprev And ihlast = ihprev Then
+		Exit Sub
+	Endif
+	iwprev=iwlast
+	ihprev=ihlast
+
+	#ifdef __fb_win32__
+		Resizewindow(hscint,0,83,550,ihlast-105)
+	#else
+		gtk_widget_set_size_request(wsci, 550, ihlast-105)
+	#endif
+
+	rightsize = iwlast - 552
+	sourcesize = ihlast - 70
+	gsize = sourcesize-5
+
+	Resizegadget(GRIGHTTABS,552,,rightsize,sourcesize)
+	Resizegadget(GTVIEWVAR,,,rightsize,gsize)
+	Resizegadget(GTVIEWPRC,,,rightsize,gsize)
+	Resizegadget(GTVIEWWCH,,,rightsize,gsize)
+	Resizegadget(GTVIEWTHD,,,rightsize,gsize)
+	Resizegadget(GDUMPMEM,,,rightsize,gsize)
 end sub
 '================================
 ''Loading of buttons from files
@@ -495,10 +512,10 @@ End function
 '' creates the window for editing variable/memory
 '==============================================================================
 private sub create_editbx()
-	heditbx=create_window("Edit variable",10,10,700,145)
+	heditbx=create_window("Edit value",10,10,700,145)
 
 	textgadget(GEDTVAR,15,10,445,30,"Fb_myvar <Byval param / **Zstring>=37415896")
-	stringgadget(GEDTVALUE,450,10,185,30,"3741589637415896")
+	stringgadget(GEDTVALUE,450,10,210,30,"3741589637415896")
 	buttongadget(GEDTOK,420,70,75,30,"Apply")
 	buttongadget(GEDTCANCEL,500,70,75,30,"Cancel")
 
@@ -648,40 +665,40 @@ end sub
 '' creates the window for handling parameters of dump memory
 '=============================================================
 private sub create_dumpbx()
-	hdumpbx=create_window("Handling dump parameters",10,10,370,450)
+	hdumpbx=create_window("Dump Settings",10,10,500,480)
 
 	'load_button(IDBUTENLRMEM,@"memory.bmp",300,5,@"Reduce the window",,0)
 
 	ButtonGadget(GDUMPAPPLY,12,5,110,30,"Apply address : ")
-	stringgadget(GDUMPADR,130,5,95,30,"12345678901")
+	stringgadget(GDUMPADR,130,5,160,30,"12345678901")
 
-	ButtonGadget(GDUMPEDIT,230,5,120,30,"Edit top/left cell")
-	ButtonGadget(GDUMPCLIP,210,40,140,30,"Copy all to clipboard")
+	ButtonGadget(GDUMPEDIT,300,5,170,30,"Edit top/left cell")
+	ButtonGadget(GDUMPCLIP,300,40,170,30,"Copy all to clipboard")
 
-	textgadget(GDUMPTSIZE,12,40,105,30,"Size of column : ",0)
-	ListBoxGadget(GDUMPSIZE,130,40,75,70)
+	textgadget(GDUMPTSIZE,12,40,110,30,"Size of column",0)
+	ListBoxGadget(GDUMPSIZE,130,40,90,105)
 	AddListBoxItem(GDUMPSIZE,"1 byte")
 	AddListBoxItem(GDUMPSIZE,"2 bytes")
 	AddListBoxItem(GDUMPSIZE,"4 bytes")
 	AddListBoxItem(GDUMPSIZE,"8 bytes")
 
-	ButtonGadget(GDUMPBASEADR,12,120,100,30,"Dec/Hex adr")
-	ButtonGadget(GDUMPDECHEX,130,120,100,30,">Hex data")
-	ButtonGadget(GDUMPSIGNED,248,120,100,30,"U/Signed")
+	ButtonGadget(GDUMPBASEADR,12,150,105,30,"Dec/Hex adr")
+	ButtonGadget(GDUMPDECHEX,132,150,105,30,">Hex data")
+	ButtonGadget(GDUMPSIGNED,252,150,105,30,"U/Signed")
 
-	groupgadget(GDUMPMOVEGRP,10,190,205,60,"Move by Cell / Line / Page")
-	ButtonGadget(GDUMPCL,12, 214, 30, 30,  "C-")
-	ButtonGadget(GDUMPCP,44, 214, 30, 30,  "C+")
-	ButtonGadget(GDUMPLL,80, 214, 30, 30,  "L-")
-	ButtonGadget(GDUMPLP,112, 214, 30, 30,  "L+")
-	ButtonGadget(GDUMPPL,148, 214, 30, 30,  "P-")
-	ButtonGadget(GDUMPPP,180, 214, 30, 30,  "P+")
+	groupgadget(GDUMPMOVEGRP,10,190,245,60," Move by Cell / Line / Page ")
+	ButtonGadget(GDUMPCL,20, 214, 30, 30,  "C-")
+	ButtonGadget(GDUMPCP,55, 214, 30, 30,  "C+")
+	ButtonGadget(GDUMPLL,100, 214, 30, 30,  "L-")
+	ButtonGadget(GDUMPLP,135, 214, 30, 30,  "L+")
+	ButtonGadget(GDUMPPL,180, 214, 30, 30,  "P-")
+	ButtonGadget(GDUMPPP,215, 214, 30, 30,  "P+")
 
-	groupgadget(GDUMUSEGRP,10,260,338,115,"Use cell value for")
-	ButtonGadget(GDUMPNEW,12,282,80,30,"NEW ADR")
-	ButtonGadget(GDUMPWCH,95,282,80,30,  "WATCHED")
-	ButtonGadget(GDUMPBRK,178,282,80,30,  "BREAK ON")
-	ButtonGadget(GDUMPSHW,260,282,80,30,  "SHW/EXP")
+	groupgadget(GDUMUSEGRP,10,260,400,115," Use cell value for ")
+	ButtonGadget(GDUMPNEW,15,282,90,30,"NEW ADR")
+	ButtonGadget(GDUMPWCH,110,282,90,30,  "WATCHED")
+	ButtonGadget(GDUMPBRK,205,282,90,30,  "BREAK ON")
+	ButtonGadget(GDUMPSHW,300,282,90,30,  "SHW/EXP")
 
 	groupgadget(GDUMPPTRGRP,15,313,250,55,"Use value as pointer")
 	optiongadget(GDUMPPTRNO,20,335,80,30,"No ptr")
@@ -689,7 +706,8 @@ private sub create_dumpbx()
 	optiongadget(GDUMPPTR2,180,335,50,30,"x 2")
 	SetGadgetState(GDUMPPTRNO,1)
 
-	textgadget(GDUMPTYPE,12,380,200,30,"Type",0)
+	textgadget(GDUMPTYPE,12,375,200,30,"Type",0)
+	textgadget(GDUMPCTRL,12,410,400,30,"CTRL + click on a cell, its address --> top address",0)
 end sub
 
 '============================
@@ -815,20 +833,21 @@ end sub
 private sub create_settingsbx()
 	hsettings=create_window("Settings",10,10,500,500)
 
-	groupgadget(LOGGROUP,10,10,450,95," Log  (shown on demand or continuously visible)")
+	groupgadget(LOGGROUP,10,10,425,55," Log  (shown on demand or continuously visible) ")
 	optiongadget(GLOGOFF,12,32,80,30,"Off")
 	SetGadgetState(GLOGOFF,1) ''set on overriden by read_ini
 	optiongadget(GLOGON,102,32,80,30,"On")
-	optiongadget(GLOGCONT,192,32,90,30,"Continuous")
+	optiongadget(GLOGCONT,192,32,110,30,"Continuous")
 	CheckBoxGadget(GTRACEPROC,12,70,220,30,"Trace on for proc")
 	CheckBoxGadget(GTRACELINE,232,70,220,30,"Trace on for line")
-	CheckBoxGadget(GVERBOSE,12,120,220,30,"Verbose Mode On for proc/var")
-	textgadget(GTEXTDELAY,12,155,200,30,"50< delay auto (ms) <10000",0)
-	stringgadget(GAUTODELAY,210,155,50,30,str(autostep))
+	CheckBoxGadget(GASCII,12,95,270,30,"Only Ascii value<127 in dump")
+	CheckBoxGadget(GVERBOSE,12,120,270,30,"Verbose Mode On for proc/var")
+	textgadget(GTEXTDELAY,12,155,240,30,"50< delay auto (ms) <10000",0)
+	stringgadget(GAUTODELAY,255,155,60,30,str(autostep))
 	textgadget(GTEXTCMDLP,12,195,110,30,"Command line",0)
 	stringgadget(GCMDLPARAM,130,195,360,30,cmdexe(0))
 
-	groupgadget(FONTGROUP,10,240,450,125,"Font for source code")
+	groupgadget(FONTGROUP,10,240,450,125," Font for source code ")
 	textgadget(GTEXTFTYPE,12,260,200,30,"type",0)
 	textgadget(GTEXTFSIZE,12,295,200,30,"size",0)
 	textgadget(GTEXTFCOLOR,12,330,200,30,"color",0)
@@ -869,8 +888,8 @@ private sub but_enable()
 				statusbar_text(KSTBTHD,"Thread "+Str(thread(threadcur).id))
 				statusbar_text(KSTBUID,"")
 			#else
-				statusbar_text(KSTBTHD,"Thread "+Str(thread(0).id))
-				statusbar_text(KSTBUID,"Thread "+Str(thread(threadcur).id))
+				statusbar_text(KSTBTHD,"Pid "+Str(thread(0).id))
+				statusbar_text(KSTBUID,"Tid "+Str(thread(threadcur).id))
 			#endif
 			statusbar_text(KSTBSRC,source_name(source(proc(procsv).sr)))
 			statusbar_text(KSTBPRC,proc(procsv).nm)
@@ -1038,7 +1057,7 @@ private sub menu_enable()
 
 	SetStateMenu(HMenuthd,MNTHRDCHG,flag)
 	SetStateMenu(HMenuthd,MNTHRDKLL,flag)
-	SetStateMenu(HMenuthd,MNEXCLINE,flag)
+	SetStateMenu(HMenuthd,MNTHRDBLK,flag)
 	SetStateMenu(HMenuthd,MNCREATHR,flag)
 	SetStateMenu(HMenuthd,MNTHRDEXP,flag)
 	SetStateMenu(HMenuthd,MNTHRDCOL,flag)
@@ -1182,8 +1201,8 @@ private sub menu_set()
 
 ''menu thread
 	HMenuthd=CreatePopMenu()
-	MenuItem(MNTHRDCHG,HMenuthd, "Select next thread to be executed")
-	MenuItem(MNEXCLINE,HMenuthd, "Show next executed line (source)")
+	MenuItem(MNTHRDCHG,HMenuthd, "Select thread")
+	MenuItem(MNTHRDBLK,HMenuthd, "Un/Block thread (only if stopped)")
 	MenuItem(MNCREATHR,HMenuthd, "Show line creating thread (source)")
 	MenuItem(MNLOCPRC,HMenuthd,  "Show first proc of thread (source)")
 	MenuItem(MNSHWPROC,HMenuthd, "Show proc (proc/var)")
@@ -1218,7 +1237,7 @@ End Sub
 private sub gui_init()
 
 	''main windows
-	hmain=OpenWindow("",10,10,1150,600)
+	hmain=OpenWindow("",10,10,1155,600)
 	settitle()
 
 	''buttons
@@ -1263,15 +1282,15 @@ private sub gui_init()
 	textGadget(GCURRENTLINE,2,30,450,30,"Next exec line : ",SS_NOTIFY )
 	GadgetToolTip(GCURRENTLINE,"next executed line"+chr(13)+"Click on me to reach the line",GCURLINETTIP)
 
-	PanelGadget(GSRCTAB,2,52,450,20)
+	PanelGadget(GSRCTAB,2,52,550,20)
     SetGadgetFont(GSRCTAB,CINT(LoadFont("Courier New",11)))
-    
+
 	''file combo/button
 	ComboBoxGadget(GFILELIST,790,0,200,HCOMBO)
 	ButtonGadget(GFILESEL,992,0,35,30,"Go")
-	
+
 	''scintilla gadget
-	create_scibx(GSCINTILLA,0,83,450,WindowClientHeight(hmain)-105,)
+	create_scibx(GSCINTILLA,0,83,550,WindowClientHeight(hmain)-105,)
 
 	''status bar
 	StatusBarGadget(GSTATUSBAR,"",SBT_TOOLTIPS)
@@ -1287,25 +1306,27 @@ private sub gui_init()
 		var icon=loadimage(0,@"fbdebugger.ico",IMAGE_ICON,0,0,LR_LOADFROMFILE or LR_DEFAULTSIZE)
 		sendmessage(hmain,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
 	#endif
+
 	''right panels
-	PanelGadget(GRIGHTTABS,500,30,599,410)
-	SetGadgetFont(GRIGHTTABS,CINT(LoadFont("Courier New",11)))
+	'=============
+	PanelGadget(GRIGHTTABS,550,30,600,WindowClientHeight(hmain)-65)
+	SetGadgetFont(GRIGHTTABS,CINT(LoadFont("Courier New",10)))
 
 	''treeview proc/var
 	var htabvar=AddPanelGadgetItem(GRIGHTTABS,TABIDXVAR,"Proc/var",,1)
-	htviewvar=treeviewgadget(GTVIEWVAR,0,0,599,365,KTRRESTYLE)
+	htviewvar=treeviewgadget(GTVIEWVAR,0,0,600,WindowClientHeight(hmain)-100,KTRRESTYLE)
 
 	''treeview procs
 	var htabprc=AddPanelGadgetItem(GRIGHTTABS,TABIDXPRC,"Procs",,1)
-	htviewprc=treeviewgadget(GTVIEWPRC,0,0,599,365,KTRRESTYLE)
+	htviewprc=treeviewgadget(GTVIEWPRC,0,0,600,WindowClientHeight(hmain)-100,KTRRESTYLE)
 
 	''treeview threads
 	var htabthd=AddPanelGadgetItem(GRIGHTTABS,TABIDXTHD,"Threads",,1)
-	htviewthd=treeviewgadget(GTVIEWTHD,0,0,599,365,KTRRESTYLE)
+	htviewthd=treeviewgadget(GTVIEWTHD,0,0,600,WindowClientHeight(hmain)-100,KTRRESTYLE)
 
 	''treeview watched
 	var htabwch=AddPanelGadgetItem(GRIGHTTABS,TABIDXWCH,"Watched",,1)
-	htviewwch=treeviewgadget(GTVIEWWCH,0,0,599,365,KTRRESTYLE)
+	htviewwch=treeviewgadget(GTVIEWWCH,0,0,600,WindowClientHeight(hmain)-100,KTRRESTYLE)
 
 	''dump memory
 	var htabmem=AddPanelGadgetItem(GRIGHTTABS,TABIDXDMP,"Memory",,1)
@@ -1314,16 +1335,21 @@ private sub gui_init()
 	#Else
 		Var Style=LVS_EX_GRIDLINES
 	#EndIf
-	hlviewdmp=ListViewGadget(GDUMPMEM,0,0,599,380,style)
-	AddListViewColumn(GDUMPMEM, "Address",0,0,100)
-	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,100)
+	hlviewdmp=ListViewGadget(GDUMPMEM,0,0,600,WindowClientHeight(hmain)-100,style)
+	AddListViewColumn(GDUMPMEM, "Address / delta",0,0,150)
+	AddListViewColumn(GDUMPMEM, "Ascii value",5,5,150)
 	SetGadgetFont(GDUMPMEM,CINT(LoadFont("Courier New",10)))
-	
+
 	''for log display
 	hlogbx=create_window("Log file",10,10,450,550)
 	EditorGadget(GLOG,10,10,400,500,"Your log file if any")
 	ReadOnlyEditor(GLOG,1)
 	hidewindow(hlogbx,KHIDE)
+	''for miscellanous display
+	heditorbx=create_window("Show string",10,10,450,550)
+	EditorGadget(GEDITOR,10,10,400,500,"Any string")
+	ReadOnlyEditor(GEDITOR,1)
+	hidewindow(heditorbx,KHIDE)
 
 	create_shwexpbx()
 	create_settingsbx()
@@ -1349,18 +1375,18 @@ end sub
 sub context_menu()
 	dim as integer mx=globalMouseX-windowx(hmain),my=globalMousey-windowy(hmain)-20
     dim as long iCaption , iBorder
- 
+
     #ifdef __fb_win32__
 		iCaption=GetSystemMetrics(SM_CYCAPTION)
     #else
-		GetWindowsCaptionBorderSize(hmain , @iCaption, @iBorder) 
+		GetWindowsCaptionBorderSize(hmain , @iCaption, @iBorder)
     #EndIf
 
 	'print globalMouseX,windowx(hmain),globalMouseX-windowx(hmain)
-	'print mx,gadgetx(GSRCTAB),gadgetwidth(GSRCTAB),gadgetx(GSRCTAB)+gadgetwidth(GSRCTAB) 
+	'print mx,gadgetx(GSRCTAB),gadgetwidth(GSRCTAB),gadgetx(GSRCTAB)+gadgetwidth(GSRCTAB)
 	if mx>=gadgetx(GSRCTAB) and mx<=gadgetx(GSRCTAB)+gadgetwidth(GSRCTAB)-iCaption  then
 		'print globalMousey,windowy(hmain),globalMousey-windowy(hmain)-20
-		'print windowy(gadgetid(GSRCTAB)),WindowClientHeight(hmain),windowy(gadgetid(GSRCTAB))+WindowClientHeight(hmain)-95 
+		'print windowy(gadgetid(GSRCTAB)),WindowClientHeight(hmain),windowy(gadgetid(GSRCTAB))+WindowClientHeight(hmain)-95
 		if my>=gadgety(GSRCTAB)+30 and my<=gadgety(GSRCTAB)+WindowClientHeight(hmain)-85 then
 			DisplayPopupMenu(HMenusource, GlobalMouseX,GlobalMouseY)
 		End If

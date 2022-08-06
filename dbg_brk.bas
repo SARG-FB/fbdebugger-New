@@ -257,7 +257,7 @@ For i As Integer =1 To BRKMAX
 
 Next
 If f Then
-	'todo windowhide(hbrk_bx,0) fb_MDialog(@brk_manage,"Restart debuggee, managing breakpoints",windmain,500,8,330,170)
+	brk_manage("Restart debuggee, managing breakpoints")
 	SetStateMenu(HMenusource,MNMNGBRK,0)
 EndIf
 End Sub
@@ -302,7 +302,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 	Dim As Integer flag=0
 	'dim as integer recup(20)
 	dim as valeurs recup1,recup2
-print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
+'print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
 		'If brkv.arr Then 'watching dyn array element ?
 			'adr=vrr(brkv.ivr).ini
 			'ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,4,0)
@@ -319,7 +319,7 @@ print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
 	''26 --> <> or < or <=
 	''35 --> = or >= or <=
 	''16 --> <>
-	
+
 	#Ifdef __fb_win32__
 		ReadProcessMemory(dbghand,Cast(LPCVOID,adr1),@recup1,8,0)
 	#else
@@ -334,7 +334,7 @@ print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
 	else
 		recup2=data2
 	EndIf
-print "recup1,recup2=";recup1.vlongint,recup2.vlongint ''todo remove me
+'print "recup1,recup2=";recup1.vlongint,recup2.vlongint ''todo remove me
 	Select Case datatype
 		Case 2 'byte
 			if recup2.vbyte>recup1.vbyte then
@@ -514,9 +514,27 @@ private sub brk_unset(ubpon as integer=false)
 		  WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@breakcpu,1,0)
 		Next
 	else
-		For j As Integer = 1 To linenb 'restore all instructions
-		  WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@rLine(j).sv,1,0)
-		Next
+	'print "in brk_unset restoring all instructions"
+
+		#ifdef __fb_WIN32__
+			For j As Integer = 1 To linenb 'restore all instructions
+			'If proc(rline(j).px).nu=-1 Then print "brk_unset =-1"
+			'If proc(rline(j).px).nm="main" or proc(rline(j).px).nm="MAIN" then
+				'print "set only main=";hex(rline(j).ad)
+				WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@rLine(j).sv,1,0)
+				'sleep 500
+			'EndIf
+
+			Next
+		#else
+			if ccstate=KCC_ALL then
+				msgdata=0 ''restore sv everywhere
+				exec_order(KPT_CCALL)
+			end if
+		#EndIf
+
+
+
 
 		For jbrk As Integer = 1 To brknb ''restore if needed the UBP
 			If brkol(jbrk).typ<50 Then
@@ -529,7 +547,7 @@ private sub brk_unset(ubpon as integer=false)
 			end if
 		Next
 		if brkol(0).typ<>0 then
-			print "put CC on line ad=";hex(brkol(0).ad)
+			'print "put CC on line ad=";hex(brkol(0).ad)
 			WriteProcessMemory(dbghand,Cast(LPVOID,brkol(0).ad),@breakcpu,1,0)
 		EndIf
 	end if
@@ -644,6 +662,7 @@ select case t
 		brkol(0).ad=rline(rln).ad
 		brkol(0).typ=9
 		brkol(0).index=rln
+		brkol(0).isrc=srcdisplayed
 		runtype=RTRUN
 		but_enable()
 		brkol(0).nline=cln
@@ -664,11 +683,12 @@ select case t
 		rln+=1
 		brkol(0).ad=rline(rln).ad ''address of next line
 		brkol(0).index=rln
+		brkol(0).isrc=srcdisplayed
 		brkol(0).typ=10
 		runtype=RTRUN
 		but_enable()
 		brkol(0).nline=rline(rln).nu
-		print "skipping line=";rline(rln).nu,rline(rln).ad
+		'print "skipping line=";rline(rln).nu,rline(rln).ad
 		brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP or disable them ?
 		thread_resume()
@@ -681,6 +701,7 @@ select case t
 			If rline(rln).ad=brkol(0).ad Then Exit For ''find correponding line
 		Next
 		brkol(0).index=rln
+		brkol(0).isrc=srcdisplayed
 		brkol(0).typ=11
 		runtype=RTRUN
 		but_enable()
@@ -701,8 +722,13 @@ select case t
 		'brkol(0).nline=rline(rln).nu
 		'brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP
-		'thread_resume()
-		resume_exec()
+		#ifdef __fb_linux__
+			'print "run to XOP=";hex(brkol(0).ad)
+			resume_exec()
+		#else
+			thread_resume() ''TODO resume_exec() maybe also on Windows
+
+		#endif
 	case else
 		rln=line_exec(cln,"Break point Not possible")
 		if rln=-1 then exit sub
@@ -751,7 +777,7 @@ select case t
 					inputval=input_bx("breakpoint with a counter","Set value counter for a breakpoint","0",7)
 					brkol(brknb).counter=ValUInt(inputval)
 					brkol(brknb).cntrsav=brkol(brknb).counter
-					print "counter=";brknb,brkol(brknb).counter
+					'print "counter=";brknb,brkol(brknb).counter
 			End select
 		Else 'still put
 			If t=7 Then 'change value counter
@@ -792,7 +818,7 @@ End Sub
 '========================================================
 '' displays the breakpoint data
 '========================================================
-private sub brk_manage()
+private sub brk_manage(title as string)
 	dim as string text
 	dim as integer srcprev=srcdisplayed,typ,cpt
 
@@ -840,5 +866,6 @@ private sub brk_manage()
 		hidegadget(GBRKDSB01+ibrk-1,KHIDE)
 		hidegadget(GBRKDEL01+ibrk-1,KHIDE)
 	next
+	SetWindowText(hbrkbx,strptr(title))
 	hidewindow(hbrkbx,KSHOW)
 end sub

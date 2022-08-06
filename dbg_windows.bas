@@ -288,12 +288,12 @@ private sub debugstring_read(debugev As debug_event)
 		ReadProcessMemory(dbghand,Cast(LPCVOID,debugev.u.debugstring.lpDebugStringData),_
 		@wstrg,leng,0)
 		'messagebox(0,wstrg,WStr("debug wstring"),MB_OK or MB_SYSTEMMODAL)
-		print "debugstring=";wstrg
+		'print "debugstring=";wstrg
 	else
 		ReadProcessMemory(dbghand,Cast(LPCVOID,debugev.u.debugstring.lpDebugStringData),_
 		@sstrg,leng,0)
 		'messagebox(0,sstrg,@"debug string",MB_OK or MB_SYSTEMMODAL)
-		print "debugstring=";sstrg
+		'print "debugstring=";sstrg
 	endif
 
 End Sub
@@ -389,11 +389,11 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		rln=i
 	end if
 	rlinecur=rln
-	print "rlinecur=";rlinecur
+	'print "rlinecur=";rlinecur
 '' ========================= move in step/stepauto ???
 	''restore CC previous line
 	If thread(threadcur).sv<>-1 Then
-		print "restoring CC "
+		'print "restoring CC "
 		WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0)
 	EndIf
    ''thread changed by threadcreate or by mutexunlock
@@ -416,7 +416,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	''get registers
 	GetThreadContext(threadcontext,@vcontext)
 
-	print "test proccurad=proc(procsv).db",proccurad,proc(procsv).db
+	'print "test proccurad=proc(procsv).db",proccurad,proc(procsv).db
 	If proccurad=proc(procsv).db Then 'is first proc instruction
 
 		If rline(rln).sv=85 Then'check if the first instruction is push ebp opcode=85 / push rbp opcode=&h55=85dec
@@ -449,11 +449,11 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		EndIf
 		proc_end():thread(threadcur).pe=FALSE
 	EndIf
-	
+
 	If proccurad=proc(procsv).db Then 'is first proc instruction
 		thread_resume():Exit Sub
 	end if
-	
+
 	If proccurad=proc(procsv).first Then 'is first fbc instruction ?
 		proc_new
 		'thread_resume():Exit Sub
@@ -497,18 +497,18 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		'NOTA If rline(i).nu=-1 Then
 			'fb_message("No line for this proc","Code added by compiler (constructor,...)")
 		'Else
-		print "before dsp"
+		'print "before dsp"
 		dsp_change(rln)
 		'EndIf
 		If runtype=RTAUTO Then
 			Sleep(autostep)
-			If threadaut>1 Then 'at least 2 threads
+			'If threadaut>1 Then 'at least 2 threads
 				Dim As Integer c=threadcur
 				Do
 					c+=1:If c>threadnb Then c=0
 				Loop Until thread(c).exc
 				thread_change(c)
-			EndIf
+			'EndIf
 			thread_resume()
 		EndIf
 		If threadsel<>threadcur AndAlso messbox("New Thread","Previous thread "+Str(thread(threadsel).id)+" changed by "+Str(thread(threadcur).id) _
@@ -543,7 +543,7 @@ While 1
 
 			firstchance=DebugEv.u.Exception.dwfirstchance
 			adr=cast(integer,DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
-			PRINT "DEBUG EVENT EXCEPTION adr=";adr,DebugEv.u.Exception.ExceptionRecord.ExceptionCode
+			'PRINT "DEBUG EVENT EXCEPTION adr=";adr,DebugEv.u.Exception.ExceptionRecord.ExceptionCode
 			'dbg_prt("firstchance="+Str(firstchance))'25/01/2015
 			If firstchance=0 Then 'second try
 				If flagsecond=0 Then
@@ -599,8 +599,8 @@ While 1
 					Case EXCEPTION_BREAKPOINT
 					'=========================
 						while 1
-							print "------------------------------------------------------------------------------------------"
-							print "EXCEPTION_BREAKPOINT",adr
+							'print "------------------------------------------------------------------------------------------"
+							'print "EXCEPTION_BREAKPOINT",adr
 							dim as integer bpidx=-1
 							if runtype=RTCRASH then
 								''don't stop as running until a crash
@@ -714,7 +714,7 @@ While 1
 
 							libelexception=excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode)+Chr(13)+Chr(10) 'need chr(10) to dbg_prt otherwise bad print
 							If DebugEv.u.Exception.ExceptionRecord.ExceptionCode=EXCEPTION_ACCESS_VIOLATION Then
-								print "info=";.ExceptionInformation(0),.ExceptionInformation(1),Hex(.ExceptionInformation(1))
+								'print "info=";.ExceptionInformation(0),.ExceptionInformation(1),Hex(.ExceptionInformation(1))
 								libelexception+=Accviolstr(.ExceptionInformation(0))+" AT ADR (dec/hex) : "+Str(.ExceptionInformation(1))+" / "+Hex(.ExceptionInformation(1))+Chr(13)+Chr(10)
 							EndIf
 
@@ -815,7 +815,7 @@ While 1
 					'show_context
 				#EndIf
 				debugdata=Cast(Integer,.lpBaseOfImage)
-				debugevent=KDBGCREATEPROC
+				debugevent=KDBGCREATEPROCESS
 				mutexlock blocker ''waiting the Go from main thread
 				mutexunlock blocker
 				''''''''''''''''' new way debug_extract(Cast(UInteger,.lpBaseOfImage),exename)
@@ -850,7 +850,7 @@ While 1
 				closehandle dlldata(i).hdl ''closes all the dll handles
 			Next
 			debugdata=debugev.u.exitprocess.dwexitcode
-			debugevent=KDBGEXITPROC
+			debugevent=KDBGEXITPROCESS
 			mutexlock blocker
 			mutexunlock blocker
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
@@ -941,4 +941,5 @@ private sub process_list()
 		CloseHandle (snap)
 	End If
 	SetGadgetText(GEDITOR,text)
+	hidewindow(heditorbx,KSHOW)
 end sub
