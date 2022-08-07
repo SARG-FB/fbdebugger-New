@@ -114,7 +114,7 @@
 	#define dbg_prt(txt) output_wds(txt)
 	declare sub output_wds(as string)
 
-	#define HCOMBO 80
+	#define HCOMBO 500
 
 	''on Windows the function can return zero even an item is selected so replaced by the API
 	#undef getitemtreeview
@@ -352,7 +352,6 @@ Const   SRCMAX=1000		   ''max source file
 enum
 	GSRCTAB=500       ''panel
 	GFILELIST    ''file combo
-	GFILESEL	   ''button for selecting a file
 
 	GSCINTILLA
 
@@ -1358,7 +1357,6 @@ enumdef(GDUMPWCH)="GDUMPWCH"
 enumdef(GDUMUSEGRP)="GDUMUSEGRP"
 enumdef(GFILELIST)="GFILELIST"
 enumdef(GLOGCONT)="GLOGCONT"
-enumdef(GFILESEL)="GFILESEL"
 enumdef(GIDXAPPLY)="GIDXAPPLY"
 enumdef(GIDXAUTO)="GIDXAUTO"
 enumdef(GIDXBLKL)="GIDXBLKL"
