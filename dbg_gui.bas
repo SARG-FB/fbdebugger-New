@@ -390,7 +390,15 @@ private sub source_change(numb as integer)
 	Send_sci(SCI_SETDOCPOINTER,0,sourceptr(numb))
 	srcdisplayed=numb
 	PanelGadgetSetCursel(GSRCTAB,numb)
-	SetItemComboBox(GFILELIST,srcdisplayed)
+	var cpt=0
+	var idx=srclistfirst
+	do until idx=numb+1
+		idx=srclist(idx).child
+		cpt+=1
+		if cpt>sourcenb then exit do
+	Loop
+	SetItemComboBox(GFILELIST,cpt)
+	srccombocur=cpt
 end sub
 '=======================================================================================
 '' return line where is the cursor  scintilla first line=0 --> rline=1 so 1 is added
