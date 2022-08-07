@@ -394,6 +394,25 @@ private sub gadget_action(igadget as LONG)
 		case GTVIEWVAR
 		case GTVIEWWCH
 
+		case GFILELIST
+			dim as integer idx,searched,cpt
+			searched=GetItemComboBox(GFILELIST)
+			if srccombocur<>searched then
+				srccombocur=searched
+				searched+=1
+				cpt=1
+				idx=srclistfirst
+				do until cpt=searched
+					idx=srclist(idx).child
+					cpt+=1
+				loop
+
+				if	idx-1<>srcdisplayed then  ''test useless as item in combo changed ?????
+					PanelGadgetSetCursel(GSRCTAB,idx-1)
+					source_change(idx-1)
+				end if
+			EndIf
+
 		''Dump memory
 		case GDUMPADR
 		''not used messbox("changing memory address","need to remove me")
@@ -540,8 +559,6 @@ private sub gadget_action(igadget as LONG)
 
 		case GTVIEWPRC
 		case GTVIEWTHD
-
-		case GFILELIST ''nothing to execute with file combo
 
 		Case GBRKCLOSE
 	   		hidewindow(hbrkbx,KHIDE)

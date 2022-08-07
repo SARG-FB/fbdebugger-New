@@ -31,6 +31,7 @@ dim Shared as String  source(SRCMAX)        ''source names with path
 dim Shared as String  srcname(SRCMAX)       ''source names without path
 dim Shared as tlist   srclist(SRCMAX)       ''to sort
 dim shared as integer srclistfirst          ''first sorted element
+dim shared as integer srccombocur           ''current combo choice
 dim shared as any ptr sourceptr(SRCMAX)     ''pointer doc scintilla
 dim shared as any ptr oldscintilla          ''last pointer for scintilla
 dim Shared As UByte   sourcebuf(SRCSIZEMAX) ''buffer for loading source file

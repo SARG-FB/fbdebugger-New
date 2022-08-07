@@ -2828,9 +2828,13 @@ private sub reinit()
 			for isrc As Integer=0 To sourcenb
 				DeleteItemPanelGadget(GSRCTAB,isrc)
 			next
-			ResetAllComboBox(GFILELIST)
 		end if
 	EndIf
+	ResetAllComboBox(GFILELIST)
+	srccombocur=-1
+	if sourcenb<>-1 then
+		brk_del(0) ''no break on cursor/etc
+	end if
 	sourcenb=-1:dllnb=0
 	vrrnb=0:procnb=0:procrnb=0:linenb=0:cudtnb=0:arrnb=0:procr(1).vr=1
 	procfn=0
@@ -2850,7 +2854,6 @@ private sub reinit()
 	threadnb=-1
 	dumpadr=0
 	brkv_set(0) ''no break on var
-	brk_del(0) ''no break on cursor/etc
 	brknb=0
 	'for ibrk as integer = 1 to brknb
 		'if brkol(ibrk).typ<>1 and brkol(ibrk).typ<>4 and brkol(ibrk).typ<>6 and brkol(ibrk).typ<>51 and brkol(ibrk).typ<>54 and brkol(ibrk).typ<>56 then ''keep only perm/temp/counter BP
@@ -3129,7 +3132,6 @@ private sub sources_load(n As integer,exedate as double)
 				send_sci(SCI_RELEASEDOCUMENT,0,oldscintilla)
 			EndIf
 		end if
-		SetItemComboBox(GFILELIST,1)
 		''todo
 		'EnableMenuItem(menutools,IDHIDLOG,MF_GRAYED) 'log file tab canceled so option menu grayed
 	else 'restart with same exe, only the main files are not loaded, dll sources are removed
@@ -3397,7 +3399,6 @@ private sub init_debuggee(srcstart as integer)
 	listidx=srclistfirst
 	while listidx<>-1
 		AddComboBoxItem(GFILELIST,srcname(listidx-1),-1)
-		'print srcname(listidx-1)
 		listidx=srclist(listidx).child
 	Wend
 
