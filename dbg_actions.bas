@@ -519,20 +519,6 @@ private sub gadget_action(igadget as LONG)
 		case GBRKVCOND
 		case GBRKVALUE
 
-
-		case GFILESEL
-			'MessBox("Jumping to file step 00="+str(GetItemComboBox(GFILELIST)),source(GetItemComboBox(GFILELIST)))
-        	if GetItemComboBox(GFILELIST)<>-1 then
-        		if GetItemComboBox(GFILELIST)<>PanelGadgetGetCursel(GSRCTAB) then
-	        		PanelGadgetSetCursel(GSRCTAB,GetItemComboBox(GFILELIST))
-        			source_change(GetItemComboBox(GFILELIST))
-        		else
-					''MessBox("File already displayed",source(GetItemComboBox(GFILELIST)))
-        		endif
-        	else
-        		messbox("Select a file", "before clicking on the button")
-        	endif
-
 		case GSRCTAB
 			source_change(PanelGadgetGetCursel(GSRCTAB))
 

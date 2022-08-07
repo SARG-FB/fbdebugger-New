@@ -1295,7 +1295,6 @@ private sub gui_init()
 
 	''file combo/button
 	ComboBoxGadget(GFILELIST,790,0,200,HCOMBO)
-	ButtonGadget(GFILESEL,992,0,35,30,"Go")
 
 	''scintilla gadget
 	create_scibx(GSCINTILLA,0,83,550,WindowClientHeight(hmain)-105,)
