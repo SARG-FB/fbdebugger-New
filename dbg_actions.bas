@@ -408,10 +408,11 @@ private sub gadget_action(igadget as LONG)
 				loop
 
 				if	idx-1<>srcdisplayed then  ''test useless as item in combo changed ?????
-					PanelGadgetSetCursel(GSRCTAB,idx-1)
 					source_change(idx-1)
 				end if
 			EndIf
+		case GSRCCurrent
+			messbox(srcname(srcdisplayed),source(srcdisplayed)+chr(13)+"date="+chr(13)+"size=")
 
 		''Dump memory
 		case GDUMPADR
@@ -518,9 +519,6 @@ private sub gadget_action(igadget as LONG)
 
 		case GBRKVCOND
 		case GBRKVALUE
-
-		case GSRCTAB
-			source_change(PanelGadgetGetCursel(GSRCTAB))
 
 		case GRIGHTTABS
 			hidewindow(hdumpbx,KHIDE) ''hidding by default
@@ -1096,7 +1094,6 @@ private sub button_action(button as integer)
 			DisplayPopupMenu(HMenuexe, GlobalMouseX,GlobalMouseY)
 
 		case IDBUTCURSOR  ''run to cursor line
-			'messbox("Running to cursor","Source="+source(PanelGadgetGetCursel(GSRCTAB))+" line="+str(line_cursor))
 			brk_set(9)
 			hidewindow(hcchainbx,KHIDE)
 

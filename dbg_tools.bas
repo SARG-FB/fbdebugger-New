@@ -2825,9 +2825,6 @@ private sub reinit()
 		if currentdoc then ''removes all previous docs
 			release_doc()
 			oldscintilla=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0)) ''keep for release later
-			for isrc As Integer=0 To sourcenb
-				DeleteItemPanelGadget(GSRCTAB,isrc)
-			next
 		end if
 	EndIf
 	ResetAllComboBox(GFILELIST)
@@ -3080,7 +3077,6 @@ private sub sources_load(n As integer,exedate as double)
 				end If
 				Close #fnum
 			end if
-			AddPanelGadgetItem(GSRCTAB,isrc,source_name(source(isrc)))
 
 			''unicode
 			'If buf(0)=&hEF AndAlso buf(1)=&hBB AndAlso buf(2)=&hBF Then 'UTF8
