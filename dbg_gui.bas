@@ -389,7 +389,7 @@ private sub source_change(numb as integer)
 	Send_sci(SCI_ADDREFDOCUMENT,0,ptrdoc)
 	Send_sci(SCI_SETDOCPOINTER,0,sourceptr(numb))
 	srcdisplayed=numb
-	PanelGadgetSetCursel(GSRCTAB,numb)
+	SetGadgetText(GSRCCURRENT,">> "+srcname(srcdisplayed))
 	var cpt=0
 	var idx=srclistfirst
 	do until idx=numb+1
@@ -1287,11 +1287,12 @@ private sub gui_init()
 	'D:"+slash+"telechargements"+slash+"win9"+slash+"tmp"+slash+"
 
 	''current line
-	textGadget(GCURRENTLINE,2,30,450,30,"Next exec line : ",SS_NOTIFY )
+	textGadget(GCURRENTLINE,2,30,550,30,"Next exec line : ",SS_NOTIFY )
 	GadgetToolTip(GCURRENTLINE,"next executed line"+chr(13)+"Click on me to reach the line",GCURLINETTIP)
 
-	PanelGadget(GSRCTAB,2,52,550,20)
-    SetGadgetFont(GSRCTAB,CINT(LoadFont("Courier New",11)))
+	textGadget(GSRCCURRENT,2,61,550,30,"Source",SS_NOTIFY or SS_LEFT)
+	SetGadgetFont(GSRCCURRENT,CINT(LoadFont("Courier New",11)))
+	GadgetToolTip(GSRCCURRENT,"Click on me to get info about the file")
 
 	''file combo/button
 	ComboBoxGadget(GFILELIST,790,0,200,HCOMBO)
@@ -1390,11 +1391,11 @@ sub context_menu()
     #EndIf
 
 	'print globalMouseX,windowx(hmain),globalMouseX-windowx(hmain)
-	'print mx,gadgetx(GSRCTAB),gadgetwidth(GSRCTAB),gadgetx(GSRCTAB)+gadgetwidth(GSRCTAB)
-	if mx>=gadgetx(GSRCTAB) and mx<=gadgetx(GSRCTAB)+gadgetwidth(GSRCTAB)-iCaption  then
+	'print mx,gadgetx(GSRCCURRENT),gadgetwidth(GSRCCURRENT),gadgetx(GSRCCURRENT)+gadgetwidth(GSRCCURRENT)
+	if mx>=gadgetx(GSRCCURRENT) and mx<=gadgetx(GSRCCURRENT)+gadgetwidth(GSRCCURRENT)-iCaption  then
 		'print globalMousey,windowy(hmain),globalMousey-windowy(hmain)-20
-		'print windowy(gadgetid(GSRCTAB)),WindowClientHeight(hmain),windowy(gadgetid(GSRCTAB))+WindowClientHeight(hmain)-95
-		if my>=gadgety(GSRCTAB)+30 and my<=gadgety(GSRCTAB)+WindowClientHeight(hmain)-85 then
+		'print windowy(gadgetid(GSRCCURRENT)),WindowClientHeight(hmain),windowy(gadgetid(GSRCCURRENT))+WindowClientHeight(hmain)-95
+		if my>=gadgety(GSRCCURRENT)+30 and my<=gadgety(GSRCCURRENT)+WindowClientHeight(hmain)-85 then
 			DisplayPopupMenu(HMenusource, GlobalMouseX,GlobalMouseY)
 		End If
 	elseif mx>=gadgetx(GRIGHTTABS) and mx<=gadgetx(GRIGHTTABS)+gadgetwidth(GRIGHTTABS) then

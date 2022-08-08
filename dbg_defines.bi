@@ -350,8 +350,8 @@ End Enum
 Const   SRCMAX=1000		   ''max source file
 
 enum
-	GSRCTAB=500       ''panel
-	GFILELIST    ''file combo
+	GSRCCURRENT=500 ''current source
+	GFILELIST       ''file combo
 
 	GSCINTILLA
 
@@ -1395,7 +1395,6 @@ enumdef(GSHWSET)="GSHWSET"
 enumdef(GSHWSTR)="GSHWSTR"
 enumdef(GSHWUPD)="GSHWUPD"
 enumdef(GSHWWCH)="GSHWWCH"
-enumdef(GSRCTAB)="GSRCTAB"
 enumdef(GTEXTCMDLP)="GTEXTCMDLP"
 enumdef(GTEXTDELAY)="GTEXTDELAY"
 enumdef(GTEXTFCOLOR)="GTEXTFCOLOR"
