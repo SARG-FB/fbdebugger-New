@@ -77,6 +77,7 @@ private sub dll_load()
 		If (linenb-linenbprev)=0 Then 'not debugged so not taking in account
 			dllnb-=1
 		Else
+			ResetAllComboBox(GFILELIST) ''as combobox completely refilled in init_debuggee
 			init_debuggee(srcstart)
 
 			dlldata(dllnb).fnm=dllfn
@@ -428,7 +429,8 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 				procsk=vcontext.regsp
 			    thread(threadcur).nk=procsk
 			Else
-				procsk=vcontext.regsp-20  'if gcc>3 for main prologue is different
+				messbox("Main procedure problem","No standard prologue --> random behaviour")			
+				procsk=vcontext.regsp-SizeOf(Integer)
 			EndIf
 		End If
 	else
