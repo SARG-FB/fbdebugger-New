@@ -2056,7 +2056,6 @@ private function var_sh1(i As Integer) As String
 				adr=vrr(i).ini+SizeOf(Integer)  'ptr not data
 				ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,SizeOf(Integer),0)
 			EndIf
-			'print "vrr ini=";vrr(i).ini,adr,arradr
 			If adr Then 'sized ?
 				text+="[ Dyn "
 				temp2=vrr(i).ini+4*SizeOf(Integer) ''adr nb dim
@@ -2078,7 +2077,6 @@ private function var_sh1(i As Integer) As String
 					temp2+=2*SizeOf(Integer) ' 'lbound
 					ReadProcessMemory(dbghand,Cast(LPCVOID,temp2),@temp1,SizeOf(Integer),0)
 					If vrr(i).ad=0 Then 'init index lbound
-						print "i k temp3 temp2 temp1=";i,k,temp3,temp2,temp1
 						vrr(i).ix(k)=temp1
 					Else
 						If vrr(i).ix(k)<temp1 Then vrr(i).ix(k)=temp1 'index can't be <lbound

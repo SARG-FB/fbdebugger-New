@@ -1325,7 +1325,8 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 				procsk=regs.xsp
 			   thread(threadcur).nk=procsk
 			Else
-				procsk=regs.xsp-20 ''todo check value 20 should not be correct if 64bit
+				messbox("Main procedure problem","No standard prologue --> random behaviour")			
+				procsk=vcontext.regsp-SizeOf(Integer)
 			EndIf
 		End If
 	else
