@@ -786,10 +786,11 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 	send_sci(SCI_MARKERSETBACK,3,KPURPLE)
 	send_sci(SCI_MARKERSETFORE,4,KBLUE)
 	send_sci(SCI_MARKERSETBACK,4,KBLUE)
-	send_sci(SCI_MARKERSETFORE,5,KGREY)
-	send_sci(SCI_MARKERSETBACK,5,KGREY)
-	send_sci(SCI_MARKERSETFORE,6,KORANGE)
-	send_sci(SCI_MARKERSETBACK,6,KORANGE)
+	send_sci(SCI_MARKERSETFORE,5,KORANGE)
+	send_sci(SCI_MARKERSETBACK,5,KORANGE)
+	send_sci(SCI_MARKERSETFORE,6,KGREY)
+	send_sci(SCI_MARKERSETBACK,6,KGREY)
+
 	send_sci(SCI_MARKERSETFORE,7,KRED)
 	send_sci(SCI_MARKERSETBACK,7,KRED)
 
@@ -877,6 +878,8 @@ end sub
 '' enables or disables buttons according the status and updates status
 '=========================================================================
 private sub but_enable()
+	dim flag As Integer
+
  	select Case runtype
     	Case RTSTEP 'wait
 			DisableGadget(IDBUTSTEP,0)
@@ -960,6 +963,24 @@ private sub but_enable()
 			DisableGadget(IDBUTEXECMOD,1)
     	  	If runtype=RTEND Then statusbar_text(KSTBSTS,"Terminated")
    	End Select
+
+	if prun then
+		flag=0
+	else
+		flag=1
+	EndIf
+	DisableGadget(IDBUTBRKP,flag)
+	DisableGadget(IDBUTBRKC,flag)
+	DisableGadget(IDBUTBRKT,flag)
+	DisableGadget(IDBUTBRKN,flag)
+	DisableGadget(IDBUTBRKD,flag)
+	If brknb then
+		flag=0
+	else
+		flag=1
+	EndIf
+	DisableGadget(IDBUTBRKB,flag)
+
 End Sub
 '=============================================================
 '' enables or disables shortcuts according the status
@@ -1261,15 +1282,22 @@ private sub gui_init()
 	load_button2(IDBUTCRASH,332,,butRUNCRASH,@"Run to crash in [L]ibrary, stopped by [H]alt")
 	load_button2(IDBUTFREE,368,,butFREE,@"[F]ree debugged prgm")
 
-	load_button2(IDBUTRERUN,440,,butRERUN,@"Restart debugging (exe)",TTRERUN,1)
-	load_button2(IDBUTLASTEXE,476,,butLASTEXE,@"Last 10 exe(s)",,0)
-	load_button2(IDBUTATTCH,512,,butATTCH,@"Attach running program",,0)
-	load_button2(IDBUTFILE,548,,butFILE,@"Select EXE",,0)
-	load_button2(IDBUTTOOL,610,,butTOOL,@"Some usefull....Tools",,0)
-	load_button2(IDBUTUPDATE,646,,butUPDATE,@"Update On /Update off : variables, dump",,0)
-	load_button2(IDBUTENLRSRC,685,,butENLRSRC,@"Enlarge/reduce source")
-	load_button2(IDBUTENLRVAR,721,,butENLRVAR,@"Enlarge/reduce proc/var")
-	load_button2(IDBUTENLRMEM,757,,butENLRMEM,@ "Enlarge/reduce dump memory")
+	load_button2(IDBUTRERUN,900,,butRERUN,@"Restart debugging (exe)",TTRERUN,1)
+	load_button2(IDBUTLASTEXE,936,,butLASTEXE,@"Last 10 exe(s)",,0)
+	load_button2(IDBUTATTCH,972,,butATTCH,@"Attach running program",,0)
+	load_button2(IDBUTFILE,1008,,butFILE,@"Select EXE",,0)
+
+	load_button2(IDBUTBRKP,410,,butBRKP,@"Permanent breakpoint")
+	load_button2(IDBUTBRKC,446,,butBRKC,@"Conditionnal breakpoint")
+	load_button2(IDBUTBRKT,482,,butBRKT,@"Temporary breakpoint")
+	load_button2(IDBUTBRKN,518,,butBRKN,@"Counter breakpoint")
+	load_button2(IDBUTBRKD,554,,butBRKD,@"Disablebreakpoint")
+	'load_button2(MNSETBRKD,590,,butBRKD,@"Disablebreakpoint")
+	ButtonGadget(IDBUTBRKB,590,0,35,30,"BP")
+	DisableGadget(IDBUTBRKB,1)
+
+	load_button2(IDBUTTOOL,1050,,butTOOL,@"Some usefull....Tools",,0)
+	load_button2(IDBUTUPDATE,1086,,butUPDATE,@"Update On /Update off : variables, dump",,0)
 
 	''bmb(25)=Loadbitmap(fb_hinstance,Cast(LPSTR,MAKEINTRESOURCE(1025))) 'if toogle noupdate
 	''no sure to implement this one
@@ -1295,7 +1323,7 @@ private sub gui_init()
 	GadgetToolTip(GSRCCURRENT,"Click on me to get info about the file")
 
 	''file combo/button
-	ComboBoxGadget(GFILELIST,790,0,200,HCOMBO)
+	ComboBoxGadget(GFILELIST,630,0,250,HCOMBO)
 
 	''scintilla gadget
 	create_scibx(GSCINTILLA,0,83,550,WindowClientHeight(hmain)-105,)

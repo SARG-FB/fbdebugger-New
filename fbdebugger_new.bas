@@ -390,11 +390,6 @@ includebinary("buttons/tools.bmp",butTOOL)
 includebinary("buttons/update.bmp",butUPDATE)
 includebinary("buttons/noupdate.bmp",butNOUPDATE)
 
-includebinary("buttons/source.bmp",butENLRSRC)
-includebinary("buttons/varproc.bmp",butENLRVAR)
-includebinary("buttons/memory.bmp",butENLRMEM)
-
-
 #include "dbg_gui.bas"
 #include "dbg_tools.bas"
 #include "dbg_brk.bas"

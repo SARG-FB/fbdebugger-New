@@ -5,7 +5,7 @@ sub brk_marker(brkidx as integer)
 	dim as integer src,lline=brkol(brkidx).nline-1,typ
 
 	if brkol(brkidx).typ>50 then
-		typ=5 ''disabled --> grey marker
+		typ=6 ''disabled --> grey marker
 	else
 		if brkidx=0 then
 			if brkol(brkidx).typ<>0 then
@@ -259,6 +259,7 @@ Next
 If f Then
 	brk_manage("Restart debuggee, managing breakpoints")
 	SetStateMenu(HMenusource,MNMNGBRK,0)
+	DisableGadget(IDBUTBRKB,0)
 EndIf
 End Sub
 '============================================
@@ -288,7 +289,10 @@ End Sub
 	For i As Integer =n To brknb
 		brkol(i)=brkol(i+1)
 	Next
-   If brknb=0 Then SetStateMenu(HMenusource,MNMNGBRK,1)
+	If brknb=0 Then
+		SetStateMenu(HMenusource,MNMNGBRK,1)
+		DisableGadget(IDBUTBRKB,1)
+	EndIf
 End Sub
 '================================================================================
 '' tests the values for breakpoint on var/mem or conditionnal
@@ -636,7 +640,7 @@ private sub brc_check()
 End Sub
 '=======================================================================
 '' t 1=permanent breakpoint / 2(var/const)-3(var-var)=conditionnal (on a line + condition) / 4=breakpoint with counter /
-''   5=disable-enable / 6=tempo / 7=change value counter / 8 reset to initial value / 9=cursor line / over =10 / 11=end of proc / 12=end of prog
+''   5=tempo / 6=disable-enable / 7=change value counter / 8 reset to initial value / 9=cursor line / over =10 / 11=end of proc / 12=end of prog
 '=======================================================================
 Private sub brk_set(t As Integer)
 	Dim As Integer cln,rln,ibrk
@@ -738,7 +742,7 @@ select case t
 		Next
 		If ibrk>brknb Then 'not put
 			If brknb=BRKMAX Then messbox("Max of brk reached ("+Str(BRKMAX)+")","Delete one and retry"):Exit Sub
-			if t=5 then exit sub
+			if t=6 then exit sub
 			brknb+=1
 			brkol(brknb).nline=cln
 			brkol(brknb).typ=t
@@ -794,7 +798,7 @@ select case t
 				Else
 					messbox("Reset counter","No counter for this breakpoint")
 				EndIf
-			ElseIf t=5 Then 'toggle enabled/disabled
+			ElseIf t=6 Then 'toggle enabled/disabled
 				If brkol(ibrk).typ>50 Then
 					brkol(ibrk).typ-=50
 				Else
@@ -811,7 +815,10 @@ select case t
 
 		brk_marker(ibrk)
 
-	   If brknb=1 Then SetStateMenu(HMenusource,MNMNGBRK,0)
+	   If brknb=1 Then
+			SetStateMenu(HMenusource,MNMNGBRK,0)
+			DisableGadget(IDBUTBRKB,0)
+	   EndIf
 	'End If
 	end select
 End Sub
