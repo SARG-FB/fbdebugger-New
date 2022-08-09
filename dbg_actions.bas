@@ -119,7 +119,7 @@ private sub menu_action(poption as integer)
 			EndIf
 
 		Case MNSETBRKT 'set tempo brkp
-			brk_set(6)
+			brk_set(5)
 
 		Case MNSETBRKN 'set brkp with counter
 			brk_set(4)
@@ -131,7 +131,7 @@ private sub menu_action(poption as integer)
 			brk_set(8)
 
 		Case MNSETBRKD 'enable/disable brkp
-			brk_set(5)
+			brk_set(6)
 
 		Case MNMNGBRK
 			brk_manage("Breakpoint management")
@@ -584,7 +584,7 @@ private sub gadget_action(igadget as LONG)
 
 	   	Case GBRKDISABLE ''disable all
 	      	For ibrk As integer =1 To brknb
-				If brkol(ibrk).typ<3 Then
+				If brkol(ibrk).typ<6 Then
 					brkol(ibrk).typ+=50
 					brk_marker(ibrk)
 					SetGadgetText(GBRKDSB01+ibrk-1,"ENB")
@@ -593,7 +593,7 @@ private sub gadget_action(igadget as LONG)
 
 	   	Case GBRKENABLE ''enable all
 			For ibrk As integer =1 To brknb
-				If brkol(ibrk).typ>2 Then
+				If brkol(ibrk).typ>50 Then
 					brkol(ibrk).typ-=50
 					brk_marker(ibrk)
 					SetGadgetText(GBRKDSB01+ibrk-1,"DSB")
@@ -1118,14 +1118,31 @@ private sub button_action(button as integer)
 				dump_sh()
 			end if
 
-		case IDBUTENLRSRC
-			messbox("feature not implemented","button = IDBUTENLRSRC" )
+		Case IDBUTBRKP 'set breakpoint
+			brk_set(1)
 
-		case IDBUTENLRVAR
-			messbox("feature not implemented","button = IDBUTENLRVAR" )
+		Case IDBUTBRKC 'set breakpoint conditionnal
+			if brktyp=KBRCMEMMEM then
+				if brkidx1=0 or brkidx2=0 then
+					messbox("Set BP conditional","Need variables for the condition")
+				else
+					brk_set(3)
+				EndIf
+			else
+				brc_choice()
+			EndIf
 
-		case IDBUTENLRMEM
-			messbox("feature not implemented","button = IDBUTENLRMEM" )
+		Case IDBUTBRKT 'set tempo brkp
+			brk_set(5)
+
+		Case IDBUTBRKN 'set brkp with counter
+			brk_set(4)
+
+		Case IDBUTBRKD 'enable/disable brkp
+			brk_set(6)
+
+		Case MNMNGBRK,IDBUTBRKB
+			brk_manage("Breakpoint management")
 
 		case else
 			'''todo for now used after gadget_action after remove gadget_action when tests are done for the range values
