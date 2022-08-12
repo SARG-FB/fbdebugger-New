@@ -810,7 +810,7 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
     'send_sci(SCI_STYLESETFONT, STYLE_DEFAULT , cast(lparam,@"Courier New"))
     'send_sci( SCI_STYLESETSIZE,STYLE_DEFAULT,11)
     send_sci(SCI_STYLECLEARALL, 0, 0)
-    'send_sci( SCI_SETCODEPAGE, SC_CP_UTF8 ,0)
+    send_sci( SCI_SETCODEPAGE, SC_CP_UTF8 ,0)
     send_sci(SCI_SETKEYWORDS,0, Cast(integer,@"sub function operator constructor destructor property"))
     'send_sci(SCI_STYLESETFORE, SCE_B_COMMENT, &hff)
     send_sci(SCI_STYLESETFORE, SCE_B_KEYWORD, &h000000ff)
