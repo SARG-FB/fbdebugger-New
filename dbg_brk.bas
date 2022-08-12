@@ -764,7 +764,7 @@ select case t
 					brkol(brknb).ttb=brkttb
 					brkol(brknb).datatype=brkdatatype
 					brktyp=0
-					modify_menu(MNSETBRKC,HMenusource,"Set/Clear [C]onditionnal Breakpoint")
+					modify_menu(MNSETBRKC,HMenusource,"Set/Clear [Ctrl + C]onditionnal Breakpoint")
 					brkidx1=0
 				case 3
 					brkol(brknb).adrvar1=brkadr1
@@ -774,19 +774,28 @@ select case t
 					brkol(brknb).ttb=brkttb
 					brkol(brknb).datatype=brkdatatype
 					brktyp=0
-					modify_menu(MNSETBRKC,HMenusource,"Set/Clear [C]onditionnal Breakpoint")
+					modify_menu(MNSETBRKC,HMenusource,"Set/Clear [Ctrl + C]onditionnal Breakpoint")
 					brkidx1=0
-				case 4 'change value counter
+				case 4 'define value counter
 					inputval=input_bx("breakpoint with a counter","Set value counter for a breakpoint","0",7)
 					brkol(brknb).counter=ValUInt(inputval)
+					if brkol(brknb).counter=0 then
+						messbox("Counter BP","Value = zero --> not created")
+						brknb-=1
+						exit sub
+					EndIf
 					brkol(brknb).cntrsav=brkol(brknb).counter
-					'print "counter=";brknb,brkol(brknb).counter
 			End select
 		Else 'still put
 			If t=7 Then 'change value counter
 				if  brkol(ibrk).cntrsav Then
 					inputval=input_bx("Change value counter, remaining = "+Str(brkol(ibrk).counter)," initial = "+Str(brkol(ibrk).cntrsav),,7)
 					brkol(ibrk).counter=ValUInt(inputval)
+					if brkol(brknb).counter=0 then
+						brkol(ibrk).counter=brkol(ibrk).cntrsav
+						messbox("Change counter","Value = zero, enter another value or delete BP")
+						exit sub
+					EndIf
 					brkol(ibrk).cntrsav=brkol(ibrk).counter
 				else
 					messbox("Change counter","No counter for this breakpoint")
@@ -835,6 +844,11 @@ private sub brk_manage(title as string)
 		text=" "+source_name(source(brkol(ibrk).isrc))+" ["+Str(brkol(ibrk).nline)+"]"
 		if brkol(ibrk).typ=4 then
 			text+=" cntr="+Str(brkol(ibrk).counter)+"/"+Str(brkol(ibrk).cntrsav)
+			hidegadget(GBRKRST01+ibrk-1,KSHOW)
+			hidegadget(GBRKCHG01+ibrk-1,KSHOW)
+		else
+			hidegadget(GBRKRST01+ibrk-1,KHIDE)
+			hidegadget(GBRKCHG01+ibrk-1,KHIDE)
 		end if
 		text+=" >> "+Left(Trim(line_text(brkol(ibrk).nline-1),Any Chr(9)+" "),65)
 		cpt+=1
@@ -860,7 +874,7 @@ private sub brk_manage(title as string)
 				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKC))
 			Case 4
 				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKN))
-			Case 6
+			Case 5
 				SetImageGadget(GBRKIMG01+ibrk-1,catch_image(butBRKT))
 		End Select
 		hidegadget(GBRKIMG01+ibrk-1,KSHOW)
@@ -871,6 +885,8 @@ private sub brk_manage(title as string)
 		hidegadget(GBRKLINE01+ibrk-1,KHIDE)
 		hidegadget(GBRKDSB01+ibrk-1,KHIDE)
 		hidegadget(GBRKDEL01+ibrk-1,KHIDE)
+		hidegadget(GBRKRST01+ibrk-1,KHIDE)
+		hidegadget(GBRKCHG01+ibrk-1,KHIDE)
 	next
 	SetWindowText(hbrkbx,strptr(title))
 	hidewindow(hbrkbx,KSHOW)

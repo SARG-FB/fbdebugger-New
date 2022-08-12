@@ -577,17 +577,16 @@ end sub
 '========================================================
 private sub create_brkbx()
 	dim as integer ypos
-	hbrkbx=create_window("Breakpoint management",10,10,850,420)
+	hbrkbx=create_window("Breakpoint management",10,10,900,420)
 
 	For ibrk as integer =0 To 9
 		ypos=5+32*ibrk
 		buttongadget(GBRKDEL01+ibrk,30,ypos,40,30,"DEL")
 		imagegadget(GBRKIMG01+ibrk,4,ypos+5,23,19,0)
-		'hidegadget(GBRKDEL01+ibrk,1)
 		buttongadget(GBRKDSB01+ibrk,75,ypos,40,30,"DSB")
-		'hidegadget(GBRKDSB01+ibrk,1)
-		textgadget(GBRKLINE01+ibrk,120,ypos+5,740,30,"Test lenght of line could be greater",SS_NOTIFY or SS_LEFT)
-		'hidegadget(GBRKLINE01+ibrk,1)
+		buttongadget(GBRKRST01+ibrk,120,ypos,30,30,"R")
+		buttongadget(GBRKCHG01+ibrk,155,ypos,30,30,"C")
+		textgadget(GBRKLINE01+ibrk,190,ypos+5,740,30,"Test lenght of line could be greater",SS_NOTIFY or SS_LEFT)
 	next
 
 	buttongadget(GBRKCLOSE,10,ypos+40,80,30,"Close")
