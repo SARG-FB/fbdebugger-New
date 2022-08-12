@@ -1326,7 +1326,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			   thread(threadcur).nk=procsk
 			Else
 				messbox("Main procedure problem","No standard prologue --> random behaviour")			
-				procsk=vcontext.regsp-SizeOf(Integer)
+				procsk=regs.xsp-SizeOf(Integer)
 			EndIf
 		End If
 	else
