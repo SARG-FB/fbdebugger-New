@@ -215,7 +215,7 @@
 	Declare function linux_kill alias "kill"(as long,as long) as long
 	declare sub sigusr_send()
 	declare function signal_pending() as integer
-
+	declare sub exec_order(order as integer)
 	Extern "C"
 		Declare Function wait_ Alias "wait" (wiStatus As long Ptr) As pid_t
 		'Declare Function gettid Alias "gettid" () As pid_t
