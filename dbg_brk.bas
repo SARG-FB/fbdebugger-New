@@ -653,7 +653,6 @@ select case t
 	case 9 ''to cursor
 		rln=line_exec(cln,"Run to cursor not possible, select an executable line")
 		if rln=-1 then exit sub
-		''messbox("Run to cursor",str(cln)+" "+str(rln)+" "+str(rline(rln).ad)+" "+hex(rline(rln).ad))
 		for ibrk as INTEGER	=1 to brknb
 			if rline(rln).ad=brkol(ibrk).ad then
 				messbox("Run to cursor","Impossible as a breakpoint is already set on this line")
@@ -835,7 +834,7 @@ private sub brk_manage(title as string)
 
 		text=" "+source_name(source(brkol(ibrk).isrc))+" ["+Str(brkol(ibrk).nline)+"]"
 		if brkol(ibrk).typ=4 then
-			text+=" cntr="+Str(brkol(ibrk).counter)
+			text+=" cntr="+Str(brkol(ibrk).counter)+"/"+Str(brkol(ibrk).cntrsav)
 		end if
 		text+=" >> "+Left(Trim(line_text(brkol(ibrk).nline-1),Any Chr(9)+" "),65)
 		cpt+=1
