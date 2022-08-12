@@ -576,6 +576,27 @@ private sub gadget_action(igadget as LONG)
 			EndIf
 			brk_marker(igadget-GBRKDSB01+1)
 
+		Case GBRKRST01 to GBRKRST10 ''reset
+			var ibrk=igadget-GBRKRST01+1
+			var text=getGadgetText(GBRKLINE01+igadget-GBRKRST01)
+			brkol(ibrk).counter=brkol(ibrk).cntrsav
+			text=left(text,instr(text,"="))+Str(brkol(ibrk).counter)+mid(text,instrrev(text,"/")) '+"/"+Str(brkol(ibrk).cntrsav)
+			SetGadgetText(GBRKLINE01+igadget-GBRKRST01,text)
+
+		Case GBRKCHG01 to GBRKCHG10 ''change value counter BP
+			var ibrk=igadget-GBRKCHG01+1
+			var text=getGadgetText(GBRKLINE01+igadget-GBRKCHG01)
+			var inputval=input_bx("Change value counter, remaining = "+Str(brkol(ibrk).counter)," initial = "+Str(brkol(ibrk).cntrsav),,7)
+			brkol(ibrk).counter=ValUInt(inputval)
+			if brkol(brknb).counter=0 then
+				brkol(ibrk).counter=brkol(ibrk).cntrsav
+				messbox("Change counter","Value = zero, enter another value or delete BP")
+			else
+				brkol(ibrk).cntrsav=brkol(ibrk).counter
+				text=left(text,instr(text,"="))+Str(brkol(ibrk).counter)+"/"+Str(brkol(ibrk).cntrsav)+mid(text,instrrev(text,">")-2)			
+				SetGadgetText(GBRKLINE01+igadget-GBRKCHG01,text)
+			EndIf
+
 	   	Case GBRKDELALL    ''Delete all
 	        	For ibrk As Byte=1 To brknb
 					brk_del(1)
