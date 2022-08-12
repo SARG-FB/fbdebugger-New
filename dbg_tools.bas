@@ -2868,6 +2868,7 @@ private sub reinit()
 	''todo 'array_tracking_remove
 	source_change(-1) ''reinit to avoid a potential problem
 	menu_enable()
+	proclistfirst=-1
 end sub
 '================================================================
 '' check if exe bitness if not wrong 32bit<>64bit windows only
