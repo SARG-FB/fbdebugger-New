@@ -266,7 +266,7 @@ End Sub
 Private sub brk_sav()
 	For i As Integer =1 To BRKMAX
 		If i<=brknb Then
-			if brkol(i).typ=1 or brkol(i).typ=6 or brkol(i).typ=4 or brkol(i).typ=51 or brkol(i).typ=56 or brkol(i).typ=54 then ''only permanent/tempo/counter
+			if brkol(i).typ=1 or brkol(i).typ=5 or brkol(i).typ=4 or brkol(i).typ=51 or brkol(i).typ=55 or brkol(i).typ=54 then ''only permanent/tempo/counter
 				brkexe(0,i)=source_name(source(brkol(i).isrc))+","+Str(brkol(i).nline)+","+Str(brkol(i).cntrsav)+","+Str(brkol(i).typ)
 			else
 				brkol(i).typ=0

@@ -1389,7 +1389,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		elseif stopcode=CSBRKPT then
 			for ibrk as INTEGER	= 1 to brknb
 				if brkol(ibrk).index=rln then
-					if brkol(ibrk).typ=6 then
+					if brkol(ibrk).typ=5 then
 						brk_del(ibrk) ''remove tempo BP
 						exit for
 					EndIf
