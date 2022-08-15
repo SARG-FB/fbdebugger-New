@@ -3644,6 +3644,7 @@ private sub restart(byval idx as integer=0)
 		end if
 	'else
 		'restart_exe(idx)
+		brk_sav()
 	EndIf
 	restart_exe(idx)
 end	sub
