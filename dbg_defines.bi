@@ -5,7 +5,20 @@
 
 ''menu : 1000+
 
-#Define fbdebuggerversion "V 3.00 BETA 32-64bit"
+'define data 64bit/32bit
+#Ifdef __FB_64BIT__
+	#Define regip rip
+	#Define regbp rbp
+	#Define regsp rsp
+	#define ver3264 "(64bit) "
+#Else
+	#Define regip eip
+	#Define regbp ebp
+	#Define regsp esp
+	#define ver3264 "(32bit) "
+#endif
+
+#Define fbdebuggerversion "V 3.00 BETA d "+ver3264
 
 '#define fulldbg_prt 'uncomment to get more information
 #Define dbg_prt2 rem 'dbg_prt 'used temporary for debugging fbdebugger, change rem by dbg_prt
@@ -27,26 +40,7 @@
 	#define KAMPERSAND "&"
 #EndIf
 
-'define data 64bit/32bit
-#Ifdef __FB_64BIT__
-   #Define regip rip
-   #Define regbp rbp
-   #Define regsp rsp
-   #if __FB_VERSION__ >= "1.08"
-   		#define ver3264 "(1.08-64bit) "
-   #else
-   		#define ver3264 "(1.07-64bit) "
-   #endif
-#Else
-   #Define regip eip
-   #Define regbp ebp
-   #Define regsp esp
-   #if __FB_VERSION__ >= "1.08"
-   		#define ver3264 "(1.08-32bit) "
-   #else
-   		#define ver3264 "(1.07-32bit) "
-   #endif
-#endif
+
 
 ''to handle new added field in array descriptor structure
 #if __FB_VERSION__ >= "1.08"
