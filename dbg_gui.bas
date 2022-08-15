@@ -832,7 +832,7 @@ End sub
 ''set the title of main window
 '===========================================================
 private sub settitle()
-	dim as string title="Fbdebugger "+ver3264+exename
+	dim as string title="Fbdebugger "+fbdebuggerversion+exename
 	setwindowtext(hmain,strptr(title))
 end sub
 '=============================================
@@ -861,17 +861,17 @@ private sub create_settingsbx()
 	textgadget(GTEXTFCOLOR,12,330,200,30,"color",0)
 
 	groupgadget(BUTGROUP,10,380,450,60,"Click on a button for setting/removing")
-	load_button2(SETBUTSTEP,12,400,butSTEP,@"[S]tep/line by line",,0)
-	load_button2(SETBUTSTEPOVER,48,400,butSTEPOVER,@"Step [O]ver line",,0)
-	load_button2(SETBUTAUTO,84,400,butAUTO,@"Step [A]utomatically, stopped by [H]alt",,0)
-	load_button2(SETBUTSTOP,120,400,butSTOP,@"[H]alt running pgm",,0)
-	load_button2(SETBUTCURSOR,156,400,butCURSOR,@"[R]un to cursor, stopped by [H]alt",,0)
-	load_button2(SETBUTRUNEND,192,400,butRUNEND,@"[E]nd current proc, stopped by [H]alt",,0)
-	load_button2(SETBUTRUNEXIT,228,400,butRUNEXIT,@"Run to e[X]it of prog, stopped by [H]alt",,0)
-	load_button2(SETBUTKILL,264,400,butKILL,@"CAUTION [K]ill process",,0)
-	load_button2(SETBUTEXECMOD,300,400,butEXEMOD,@"[M]odify execution, continue with line under cursor",,0)
-	load_button2(SETBUTCRASH,336,400,butRUNCRASH,@"Run to crash in [L]ibrary, stopped by [H]alt",,0)
-	load_button2(SETBUTFREE,372,400,butFREE,@"[F]ree debugged prgm",,0)
+	load_button2(SETBUTSTEP,12,400,butSTEP,@"Step/line by line",,0)
+	load_button2(SETBUTSTEPOVER,48,400,butSTEPOVER,@"Step Over line",,0)
+	load_button2(SETBUTAUTO,84,400,butAUTO,@"Step Automatically, stopped by Halt",,0)
+	load_button2(SETBUTSTOP,120,400,butSTOP,@"Halt running pgm",,0)
+	load_button2(SETBUTCURSOR,156,400,butCURSOR,@"Run to cursor, stopped by Halt",,0)
+	load_button2(SETBUTRUNEND,192,400,butRUNEND,@"Run to the end of the current proc, stopped by Halt",,0)
+	load_button2(SETBUTRUNEXIT,228,400,butRUNEXIT,@"Run to the end of the program, stopped by Halt",,0)
+	load_button2(SETBUTKILL,264,400,butKILL,@"CAUTION Kill process",,0)
+	load_button2(SETBUTEXECMOD,300,400,butEXEMOD,@"Modify execution, continue with line under cursor",,0)
+	load_button2(SETBUTCRASH,336,400,butRUNCRASH,@"Run until a crash in Library, stopped by Halt",,0)
+	load_button2(SETBUTFREE,372,400,butFREE,@"Free debugged prgm",,0)
 end sub
 '=========================================================================
 '' enables or disables buttons according the status and updates status
@@ -1272,12 +1272,12 @@ private sub gui_init()
 	load_button2(IDBUTAUTO,80,,butAUTO,@"Step automatically [F4], stopped by Halt [F5]")
 	load_button2(IDBUTSTOP,116,,butSTOP,@"Halt running pgm [F5]")
 	load_button2(IDBUTCURSOR,152,,butCURSOR,@"Run to cursor [F6], stopped by Halt [F5]")
-	load_button2(IDBUTRUNEND,188,,butRUNEND,@"Run to End current proc [F7], stopped by Halt [F5]")
-	load_button2(IDBUTRUNEXIT,224,,butRUNEXIT,@"Run to exit of prog [F8], stopped by Halt [F5]")
+	load_button2(IDBUTRUNEND,188,,butRUNEND,@"Run to the end of the current proc [F7], stopped by Halt [F5]")
+	load_button2(IDBUTRUNEXIT,224,,butRUNEXIT,@"Run to the end of the program [F8], stopped by any breakpoints or by [F5]")
 	load_button2(IDBUTEXECMOD,296,,butEXEMOD,@"Modify execution [F9], continue with line under cursor")
 	load_button2(IDBUTKILL,260,,butKILL,@"CAUTION Kill process [F10]")
 
-	load_button2(IDBUTCRASH,332,,butRUNCRASH,@"Run to crash in Library, stopped by Halt [F5]")
+	load_button2(IDBUTCRASH,332,,butRUNCRASH,@"Run until a crash in Library, stopped by Halt [F5]")
 	load_button2(IDBUTFREE,368,,butFREE,@"Free debugged prgm")
 
 	load_button2(IDBUTRERUN,900,,butRERUN,@"Restart debugging (exe)",TTRERUN,1)
