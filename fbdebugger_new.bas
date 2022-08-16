@@ -361,7 +361,7 @@ Dim Shared cmdexe(9) As String 'last 10 exe
 dim shared as string exename
 Dim Shared exedate As Double 'serial date
 dim shared as string compilerversion ''compiler version retrieved stabs code = 255
-
+dim shared as string cmdlimmediat
 ''============================
 includebinary("buttons/step.bmp",butSTEP)
 includebinary("buttons/stepover.bmp",butSTEPOVER)
@@ -428,7 +428,7 @@ do
 			closes_debugger()
 		else
 			HideWindow(EventHwnd,KHIDE)
-			if EventHwnd=hsettings then ''settings box
+			if EventHwnd=hsettings then ''closing settings box
 				settings_update()
 			elseif EventHwnd=hshwexpbx then ''releases shwewp
 				shwexp.free=true
