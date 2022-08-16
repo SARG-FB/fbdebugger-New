@@ -500,9 +500,10 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			flagattach=FALSE
 		else
 			If proccurad=proc(procsv).first Then 'is first fbc instruction ?
-				if procsk<>thread(threadcur).stack then ''check if not in the current proc ????
+				''check if not in the current proc, if used set 0 to .stack() when creation of thread????
+				'if procsk<>thread(threadcur).stack then
 					proc_new()
-				EndIf
+				'EndIf
 				'thread_resume():Exit Sub
 			ElseIf proccurad=proc(procsv).fn Then
 				thread(threadcur).pe=TRUE        'is last instruction ?
