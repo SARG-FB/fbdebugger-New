@@ -292,6 +292,7 @@ End Sub
 	If brknb=0 Then
 		SetStateMenu(HMenusource,MNMNGBRK,1)
 		DisableGadget(IDBUTBRKB,1)
+		hidewindow(hbrkbx,KHIDE) ''even if not show
 	EndIf
 End Sub
 '================================================================================
