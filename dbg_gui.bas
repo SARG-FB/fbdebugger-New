@@ -328,9 +328,9 @@ Private Sub size_changed()
 	ihprev=ihlast
 
 	#ifdef __fb_win32__
-		Resizewindow(hscint,0,83,550,ihlast-105)
+		Resizewindow(hscint,0,93,550,ihlast-115)
 	#else
-		gtk_widget_set_size_request(wsci, 550, ihlast-105)
+		gtk_widget_set_size_request(wsci, 550, ihlast-115)
 	#endif
 
 	rightsize = iwlast - 552
@@ -1323,7 +1323,7 @@ private sub gui_init()
 	ComboBoxGadget(GFILELIST,630,0,250,HCOMBO)
 
 	''scintilla gadget
-	create_scibx(GSCINTILLA,0,83,550,WindowClientHeight(hmain)-105,)
+	create_scibx(GSCINTILLA,0,93,550,WindowClientHeight(hmain)-115,)
 
 	''status bar
 	StatusBarGadget(GSTATUSBAR,"",SBT_TOOLTIPS)
