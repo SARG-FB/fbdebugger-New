@@ -329,6 +329,18 @@ private sub singlestep_on(tid as integer,rln as integer,running as integer =1)
 		End If
 	Next
 End Sub
+'=====================================
+private sub resume_exec()
+	For jbrk As Integer = 1 To brknb ''restore if needed the UBP
+		If brkol(jbrk).typ<50 Then
+			if rlinecur=brkol(jbrk).index then ''if current line is a BP (permanent/cond/counter)
+				singlestep_on(thread(threadcur).id,rlinecur,0)
+				exit for
+			EndIf
+		end if
+	Next
+	thread_resume()
+end sub
 '====================================================================
 private sub thread_search(tid as integer,bptype as integer,ddata as integer)
 	For i As Integer =0 To threadnb
@@ -391,23 +403,6 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	end if
 	rlinecur=rln
 	'print "rlinecur=";rlinecur
-'' ========================= move in step/stepauto ???
-	''restore CC previous line
-	If thread(threadcur).sv<>-1 Then
-		'print "restoring CC "
-		WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0)
-	EndIf
-   ''thread changed by threadcreate or by mutexunlock
-	If threadcur<>threadprv Then
-		If thread(threadprv).sv<>i Then 'don't do it if same line otherwise all is blocked.....not sure it's usefull
-			WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadprv).sv).ad),@breakcpu,1,0) 'restore CC
-		EndIf
-		stopcode=CSNEWTHRD  'status HALT NEW THREAD
-		runtype=RTSTEP
-		thread_text(threadprv) 'not next executed
-		thread_text(threadcur) 'next executed
-		threadprv=threadcur
-	EndIf
 
 	thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=rln
 	procsv=rline(rln).px
@@ -429,7 +424,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 				procsk=vcontext.regsp
 			    thread(threadcur).nk=procsk
 			Else
-				messbox("Main procedure problem","No standard prologue --> random behaviour")			
+				messbox("Main procedure problem","No standard prologue --> random behaviour")
 				procsk=vcontext.regsp-SizeOf(Integer)
 			EndIf
 		End If
@@ -453,24 +448,26 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	EndIf
 
 	If proccurad=proc(procsv).db Then 'is first proc instruction
-		thread_resume():Exit Sub
+		'''from Linux useful ?
+		'''if threadnewid<>0 then
+			'''print "new thread beginning of proc"
+			'''threadnewidcount-=1
+		'''EndIf
+		thread_resume()
+		Exit Sub
 	end if
 
-	If proccurad=proc(procsv).first Then 'is first fbc instruction ?
-		proc_new
-		'thread_resume():Exit Sub
-	ElseIf proccurad=proc(procsv).fn Then
-		thread(threadcur).pe=TRUE        'is last instruction ?
-	EndIf
-''=========== end of code to move ========================================================
 	If runtype=RTRUN Then
    		fasttimer=Timer-fasttimer
-		''==== useful ?? ===============
-	  	For i As Integer = 1 To linenb 'restore CC
-   			WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
-	  	Next
-		''==== end of code ===============
-		WriteProcessMemory(dbghand,Cast(LPVOID,rLine(rln).ad),@rLine(rln).sv,1,0) 'restore old value for execution
+
+		''''''''''''==== useful ?? ===============
+		''''''''''For i As Integer = 1 To linenb 'restore CC
+			''''''''''WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
+		''''''''''Next
+		''''''''''''==== end of code ===============
+		''''''''''WriteProcessMemory(dbghand,Cast(LPVOID,rLine(rln).ad),@rLine(rln).sv,1,0) 'restore old value for execution
+
+
 		'if rln<>rLine(brkol(0).index then ''case BP cond/etc and run to cursor/EOP/XOP
 			'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(brkol(0).index).ad),@rLine(brkol(0).index).sv,1,0) 'restore old value for execution
 		'end if
@@ -480,7 +477,9 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			proc_runnew   'creating running proc tree
 		end if
    		var_sh			'updating information about variables
-   		runtype=RTSTEP
+
+	runtype=RTSTEP ''could be done later if aother threads also running ????
+
    		dsp_change(rln)
 		if stopcode=CSLINE then
 			brk_del(0)
@@ -494,14 +493,34 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 				EndIf
 			Next
 		EndIf
+
    Else 'RTSTEP or RTAUTO
-		If flagattach Then proc_runnew:flagattach=FALSE
+		If flagattach Then
+			proc_runnew
+			flagattach=FALSE
+		else
+			If proccurad=proc(procsv).first Then 'is first fbc instruction ?
+				if procsk<>thread(threadcur).stack then ''check if not in the current proc ????
+					proc_new()
+				EndIf
+				'thread_resume():Exit Sub
+			ElseIf proccurad=proc(procsv).fn Then
+				thread(threadcur).pe=TRUE        'is last instruction ?
+			EndIf
+
+		EndIf
 		'NOTA If rline(i).nu=-1 Then
 			'fb_message("No line for this proc","Code added by compiler (constructor,...)")
 		'Else
 		'print "before dsp"
 		dsp_change(rln)
 		'EndIf
+
+		''restore CC previous line
+		If thread(threadcur).od<>-1 Then
+			WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).od).ad),@breakcpu,1,0)
+		End If
+
 		If runtype=RTAUTO Then
 			Sleep(autostep)
 			'If threadaut>1 Then 'at least 2 threads
@@ -520,6 +539,26 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			threadsel=threadcur
 		EndIf
    End If
+
+   '================
+   ''' ========================= move in step/stepauto ???
+	'''restore CC previous line
+	'If thread(threadcur).sv<>-1 Then
+		''print "restoring CC "
+		'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0)
+	'EndIf
+   '''thread changed by threadcreate or by mutexunlock
+	'If threadcur<>threadprv Then
+		'If thread(threadprv).sv<>i Then 'don't do it if same line otherwise all is blocked.....not sure it's usefull
+			'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadprv).sv).ad),@breakcpu,1,0) 'restore CC
+		'EndIf
+		'stopcode=CSNEWTHRD  'status HALT NEW THREAD
+		'runtype=RTSTEP
+		'thread_text(threadprv) 'not next executed
+		'thread_text(threadcur) 'next executed
+		'threadprv=threadcur
+	'EndIf
+	'================
 End Sub
 '========================================================
 private function wait_debug() As Integer

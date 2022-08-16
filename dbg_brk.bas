@@ -223,7 +223,7 @@ For i As Integer =1 To BRKMAX
 
 	If brkexe(0,i)<>"" Then 'not empty
 		brks=brkexe(0,i)
-		p=InStr(brks,",")'parsing
+		p=InStr(brks,",") 'parsing
 		fn=Left(brks,p-1) 'file name
 		p2=p+1
 		p=InStr(p2,brks,",")
@@ -671,7 +671,7 @@ select case t
 		brkol(0).nline=cln
 		brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP or disable them ?
-		thread_resume()
+		resume_exec()
 
 	case 10 ''Skip current line / step over
 		'rln=line_exec(cln,"Run to cursor not possible, select an executable line")
@@ -694,7 +694,7 @@ select case t
 		'print "skipping line=";rline(rln).nu,rline(rln).ad
 		brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP or disable them ?
-		thread_resume()
+		resume_exec()
 
 	case 11 '' run until end of proc  = EOP
 		''todo add test if proc is disabled then messbox("End of proc","procedure disabled":exit sub
@@ -711,7 +711,7 @@ select case t
 		brkol(0).nline=rline(rln).nu
 		brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP or disable them ?
-		thread_resume()
+		resume_exec()
 
 	case 12 '' run until exit of prog  = XOP
 		brkol(0).ad=proc(procmain).ed-1 ''BP on ret instruction but doesn't stop ????
@@ -725,13 +725,8 @@ select case t
 		'brkol(0).nline=rline(rln).nu
 		'brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP
-		#ifdef __fb_linux__
-			'print "run to XOP=";hex(brkol(0).ad)
-			resume_exec()
-		#else
-			thread_resume() ''TODO resume_exec() maybe also on Windows
+		resume_exec() ''prepare single step then resume
 
-		#endif
 	case else
 		rln=line_exec(cln,"Break point Not possible")
 		if rln=-1 then exit sub
