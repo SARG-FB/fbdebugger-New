@@ -663,6 +663,9 @@ select case t
 		If linecur=cln And srcdisplayed=srccur Then
 			If messbox("Run to cursor","Same line, continue ?",MB_YESNO)=IDNO Then Exit Sub
 		End If
+		if brkol(0).typ<>0 then ''cancel previous run to xxx (eg run to cursor stopped by a BPP then run to end of prog)
+			brk_del(0)
+		EndIf
 		brkol(0).ad=rline(rln).ad
 		brkol(0).typ=9
 		brkol(0).index=rln
@@ -675,7 +678,6 @@ select case t
 		resume_exec()
 
 	case 10 ''Skip current line / step over
-		'rln=line_exec(cln,"Run to cursor not possible, select an executable line")
 		rln=rlinecur
 		For j As Integer =1 To procnb
 			If rline(rln).ad=proc(j).fn Then
@@ -683,7 +685,9 @@ select case t
 				Exit Sub
 			end if
 		Next
-
+		if brkol(0).typ<>0 then
+			brk_del(0)
+		End If
 		rln+=1
 		brkol(0).ad=rline(rln).ad ''address of next line
 		brkol(0).index=rln
@@ -699,6 +703,9 @@ select case t
 
 	case 11 '' run until end of proc  = EOP
 		''todo add test if proc is disabled then messbox("End of proc","procedure disabled":exit sub
+		if brkol(0).typ<>0 then
+			brk_del(0)
+		End If
 		rln=rlinecur
 		brkol(0).ad=proc(rline(rln).px).fn ''last executable line of proc
 		For rln=1 To linenb
@@ -715,16 +722,13 @@ select case t
 		resume_exec()
 
 	case 12 '' run until exit of prog  = XOP
+		if brkol(0).typ<>0 then
+			brk_del(0)
+		End If
 		brkol(0).ad=proc(procmain).ed-1 ''BP on ret instruction but doesn't stop ????
-		'For rln=1 To linenb
-			'If rline(rln).ad=brkol(0).ad Then Exit For ''find nline
-		'Next
-		'brkol(0).index=rln
 		brkol(0).typ=12
 		runtype=RTRUN
 		but_enable()
-		'brkol(0).nline=rline(rln).nu
-		'brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP
 		resume_exec() ''prepare single step then resume
 
