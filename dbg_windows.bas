@@ -14,7 +14,14 @@ private sub start_pgm(p As Any Ptr)
 		   st=InStr(st+1,exename,"\")
 		Wend
 		workdir=Left(exename,st)
-		cmdl=""""+exename+""" "+cmdexe(0)
+
+		if cmdlimmediat<>"" then
+			cmdl=""""+exename+""" "+cmdlimmediat
+			cmdlimmediat=""
+		else
+			cmdl=""""+exename+""" "+cmdexe(0)
+		end if
+
 		#Ifdef fulldbg_prt
 			dbg_prt (Date+" "+Time+"Start Debug with "+cmdl)
 		#EndIf

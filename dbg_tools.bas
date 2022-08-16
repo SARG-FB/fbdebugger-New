@@ -755,7 +755,12 @@ end sub
 '' updates settings when settings box is closed
 '==============================================
 private sub settings_update()
-	cmdexe(0)=GetGadgetText(GCMDLPARAM)
+	if GetGadgetState(GCMDLKEEP)=1 then ''checked
+		cmdexe(0)=GetGadgetText(GCMDLPARAM)
+		SetGadgetstate(GCMDLKEEP,0)
+	else
+		cmdlimmediat=GetGadgetText(GCMDLPARAM)
+	end if
 	autostep=valint(GetGadgetText(GAUTODELAY))
 	if autostep<50 then
 		autostep=50
@@ -2610,6 +2615,7 @@ private sub watch_trace(t As Integer=WTCHALL)
 			Else
 				If flaglog=0 Then
 					If MESSBOX("Tracing var/mem","No log output defined"+Chr(13)+"Open settings ?",MB_YESNO)=IDYES Then
+						setgadgettext(GCMDLPARAM,cmdexe(0))
 						hidewindow(hsettings,KSHOW) ''can be changed here
 					EndIf
 					If flaglog=0 Then

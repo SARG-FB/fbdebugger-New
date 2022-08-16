@@ -839,7 +839,7 @@ end sub
 '' settings window
 '=============================================
 private sub create_settingsbx()
-	hsettings=create_window("Settings",10,10,500,500)
+	hsettings=create_window("Settings",10,10,550,550)
 
 	groupgadget(LOGGROUP,10,10,425,55," Log  (shown on demand or continuously visible) ")
 	optiongadget(GLOGOFF,12,32,80,30,"Off")
@@ -854,24 +854,25 @@ private sub create_settingsbx()
 	stringgadget(GAUTODELAY,255,155,60,30,str(autostep))
 	textgadget(GTEXTCMDLP,12,195,110,30,"Command line",0)
 	stringgadget(GCMDLPARAM,130,195,360,30,cmdexe(0))
+	CheckBoxGadget(GCMDLKEEP,12,230,190,30,"Keep cmdl")
 
-	groupgadget(FONTGROUP,10,240,450,125," Font for source code ")
-	textgadget(GTEXTFTYPE,12,260,200,30,"type",0)
-	textgadget(GTEXTFSIZE,12,295,200,30,"size",0)
-	textgadget(GTEXTFCOLOR,12,330,200,30,"color",0)
+	groupgadget(FONTGROUP,10,280,450,125," Font for source code ")
+	textgadget(GTEXTFTYPE,12,300,200,30,"type",0)
+	textgadget(GTEXTFSIZE,12,335,200,30,"size",0)
+	textgadget(GTEXTFCOLOR,12,370,200,30,"color",0)
 
-	groupgadget(BUTGROUP,10,380,450,60,"Click on a button for setting/removing")
-	load_button2(SETBUTSTEP,12,400,butSTEP,@"Step/line by line",,0)
-	load_button2(SETBUTSTEPOVER,48,400,butSTEPOVER,@"Step Over line",,0)
-	load_button2(SETBUTAUTO,84,400,butAUTO,@"Step Automatically, stopped by Halt",,0)
-	load_button2(SETBUTSTOP,120,400,butSTOP,@"Halt running pgm",,0)
-	load_button2(SETBUTCURSOR,156,400,butCURSOR,@"Run to cursor, stopped by Halt",,0)
-	load_button2(SETBUTRUNEND,192,400,butRUNEND,@"Run to the end of the current proc, stopped by Halt",,0)
-	load_button2(SETBUTRUNEXIT,228,400,butRUNEXIT,@"Run to the end of the program, stopped by Halt",,0)
-	load_button2(SETBUTKILL,264,400,butKILL,@"CAUTION Kill process",,0)
-	load_button2(SETBUTEXECMOD,300,400,butEXEMOD,@"Modify execution, continue with line under cursor",,0)
-	load_button2(SETBUTCRASH,336,400,butRUNCRASH,@"Run until a crash in Library, stopped by Halt",,0)
-	load_button2(SETBUTFREE,372,400,butFREE,@"Free debugged prgm",,0)
+	groupgadget(BUTGROUP,10,420,450,60,"Click on a button for setting/removing")
+	load_button2(SETBUTSTEP,12,440,butSTEP,@"Step/line by line",,0)
+	load_button2(SETBUTSTEPOVER,48,440,butSTEPOVER,@"Step Over line",,0)
+	load_button2(SETBUTAUTO,84,440,butAUTO,@"Step Automatically, stopped by Halt",,0)
+	load_button2(SETBUTSTOP,120,440,butSTOP,@"Halt running pgm",,0)
+	load_button2(SETBUTCURSOR,156,440,butCURSOR,@"Run to cursor, stopped by Halt",,0)
+	load_button2(SETBUTRUNEND,192,440,butRUNEND,@"Run to the end of the current proc, stopped by Halt",,0)
+	load_button2(SETBUTRUNEXIT,228,440,butRUNEXIT,@"Run to the end of the program, stopped by Halt",,0)
+	load_button2(SETBUTKILL,264,440,butKILL,@"CAUTION Kill process",,0)
+	load_button2(SETBUTEXECMOD,300,440,butEXEMOD,@"Modify execution, continue with line under cursor",,0)
+	load_button2(SETBUTCRASH,336,440,butRUNCRASH,@"Run until a crash in Library, stopped by Halt",,0)
+	load_button2(SETBUTFREE,372,440,butFREE,@"Free debugged prgm",,0)
 end sub
 '=========================================================================
 '' enables or disables buttons according the status and updates status
@@ -1342,7 +1343,7 @@ private sub gui_init()
 
 	''right panels
 	'=============
-	PanelGadget(GRIGHTTABS,550,30,600,WindowClientHeight(hmain)-65)
+	PanelGadget(GRIGHTTABS,552,30,600,WindowClientHeight(hmain)-65)
 	SetGadgetFont(GRIGHTTABS,CINT(LoadFont("Courier New",10)))
 
 	''treeview proc/var

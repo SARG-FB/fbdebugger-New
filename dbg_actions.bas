@@ -21,6 +21,7 @@ private sub menu_action(poption as integer)
 			EndIf
 
         case MNSETTINGS
+			setgadgettext(GCMDLPARAM,cmdexe(0))
 			hidewindow(hsettings,KSHOW)
 
 		case MNEXEFILE0 to MNEXEFILE9
@@ -652,6 +653,8 @@ private sub gadget_action(igadget as LONG)
 			proc_sh()
 
 		case GAUTODELAY
+
+		case GCMDLKEEP
 
 		case GCMDLPARAM ''data used when closing settings box
 
