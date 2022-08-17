@@ -1316,10 +1316,11 @@ private sub gui_init()
 	textGadget(GCURRENTLINE,2,30,550,30,"Next exec line : ",SS_NOTIFY )
 	GadgetToolTip(GCURRENTLINE,"next executed line"+chr(13)+"Click on me to reach the line",GCURLINETTIP)
 
-	textGadget(GSRCCURRENT,2,61,550,30,"Source",SS_NOTIFY or SS_LEFT)
+	textGadget(GSRCCURRENT,2,61,515,30,"Source",SS_NOTIFY or SS_LEFT)
 	SetGadgetFont(GSRCCURRENT,CINT(LoadFont("Courier New",11)))
 	GadgetToolTip(GSRCCURRENT,"Click on me to get info about the file")
-
+	ButtonGadget(GBUTSHOWVAR,520,61,30,30,">")
+	GadgetToolTip(GBUTSHOWVAR,"Click on a variable or a field in source code"+chr(10)+"then on his button"+chr(10)+"to show the item in proc/var tab")
 	''file combo/button
 	ComboBoxGadget(GFILELIST,630,0,250,HCOMBO)
 
@@ -1403,7 +1404,7 @@ end sub
 private sub freegadgets()
 	messbox("Feature to be coded","freegadgets()")
 end sub
-'========================  SM_CYBORDER
+'========================
 ''contextual menu
 '========================
 sub context_menu()
@@ -1421,7 +1422,7 @@ sub context_menu()
 	if mx>=gadgetx(GSRCCURRENT) and mx<=gadgetx(GSRCCURRENT)+gadgetwidth(GSRCCURRENT)-iCaption  then
 		'print globalMousey,windowy(hmain),globalMousey-windowy(hmain)-20
 		'print windowy(gadgetid(GSRCCURRENT)),WindowClientHeight(hmain),windowy(gadgetid(GSRCCURRENT))+WindowClientHeight(hmain)-95
-		if my>=gadgety(GSRCCURRENT)+30 and my<=gadgety(GSRCCURRENT)+WindowClientHeight(hmain)-85 then
+		if my>=gadgety(GSRCCURRENT)+45 and my<=gadgety(GSRCCURRENT)+WindowClientHeight(hmain)-85 then
 			DisplayPopupMenu(HMenusource, GlobalMouseX,GlobalMouseY)
 		End If
 	elseif mx>=gadgetx(GRIGHTTABS) and mx<=gadgetx(GRIGHTTABS)+gadgetwidth(GRIGHTTABS) then

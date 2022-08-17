@@ -2,8 +2,6 @@
 '===== DEBUGGER FOR FREEBASIC === (C) 2006-2022 Laurent GRAS =====
 '=================================================================
 
-dim shared as string defarray(99999) ''remove me when all runs finely
-
 #include once "dbg_defines.bi"
 
 ''mutex for blocking second thread before continue
@@ -446,7 +444,6 @@ do
 
 	If event=EventMenu then
 		menu_action(EventNumber)
-
 	'' contextual menu
 	Elseif Event=iEventRightClick Then
 		context_menu()
@@ -454,7 +451,7 @@ do
 		If EventNumberListView=GIDXTABLE Then
 			index_cell()
 		elseIf EventNumberTreeView=GTVIEWBRC Then
-				brc_check()
+			brc_check()
 		EndIf
 	elseif event=eventgadget then
 		button_action(eventnumber())

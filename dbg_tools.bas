@@ -3728,3 +3728,106 @@ private sub exec_mod() 'execution from cursor
 	linecur_change(rln)
 	rlinecur=rln
 End Sub
+'=========================================================================
+'' display variable, field in treeviewvar based on word under the cursor
+'=========================================================================
+private sub var_tip()
+    dim as integer i,j,l,d,p
+    dim as string text
+    'text=line_text(linecursor()) ''get the text where is the cursor
+    text=space(201)
+	dim as integer pcursor=Send_sci(SCI_GETCURLINE,200,strptr(text))
+    print "text1=";text,"pcursor=";pcursor
+    'select only var name characters
+    For i =pcursor-1 To 1 Step-1
+        Dim c As Integer
+        c=Asc(text,i)
+        If ( c>=Asc("0") And c<=Asc("9") ) OrElse ( c>=Asc("a") And c<=Asc("z") ) OrElse ( c>=Asc("A") And c<=Asc("Z") ) OrElse c=Asc("_") OrElse c=Asc(".") Then Continue For
+        Exit For
+    Next
+    i+=1
+   For j=pcursor To Len(text)
+        Dim c As Integer
+        c=Asc(text,j)
+        If ( c>=Asc("0") And c<=Asc("9") ) OrElse ( c>=Asc("a") And c<=Asc("z") ) OrElse ( c>=Asc("A") And c<=Asc("Z") ) OrElse c=Asc("_") OrElse c=Asc(".") Then Continue For
+        Exit For
+   Next
+
+   If Asc(text,j)<>Asc("(") Then j-=1 'if last character is  a '(' take it in account (case array)
+
+
+   If i>j Then
+      text=""
+   Else
+      text=Mid(text,i,j-i+1) 'extract from text
+   End If
+
+    If text="" Or Left(text,1)="." Then
+        messbox("Selection variable error",""""+text+""" : Empty string or incomplete name (udt components)")
+        Exit Sub
+    EndIf
+    text=ucase(text)
+print "text2=";text
+'parsing
+    Dim vname(10) As String,varray As Integer,vnb As Integer =0
+    text+=".":l=Len(text):d=1
+
+    While d<l
+        vnb+=1
+        p=InStr(d,text,".")
+        vname(vnb)=Mid(text,d,p-d)
+        If Right(vname(vnb),1)="(" Then
+            varray=1:vname(vnb)=Mid(text,d,p-d-1):d=p+2 'array
+        Else
+            varray=0:d=p+1
+        End If
+    Wend
+    print "vnb=";vnb,vname(1)
+    dim as integer nline=line_cursor()+1,lclproc=0,lclprocr=0,idx=-1
+
+	For i As Integer =1 To linenb
+		If rline(i).nu=nline AndAlso rline(i).sx=srcdisplayed Then 'is executable (known) line ?
+			lclproc=rline(i).px
+			Exit For ' with known line we know also the proc...
+		EndIf
+	Next
+print "lclproc=";lclproc
+    'search inside
+    'if no lclproc --> should be in main
+    If lclproc Then
+	    For i As Integer =procrnb To 1 Step -1
+	        If procr(i).idx=lclproc Then
+				lclprocr=i
+				Exit For ' proc running
+	        EndIf
+	    Next
+		'search the variable taking in account name and array or not
+        If lclprocr Then
+			idx=var_search(lclprocr,vname(),vnb,varray) 'inside proc ?
+        EndIf
+    End If
+    print "searching in main"
+    If idx=-1 Then
+        idx=var_search(1,vname(),vnb,varray) 'inside main ?
+		print "namespace ?"
+		If idx=-1 Then
+			'namespace ?
+			If vnb>1 Then
+				vname(1)+="."+vname(2)
+				vnb-=1
+				For i As Long =2 To vnb
+					vname(i)=vname(i+1)
+				Next
+				idx=var_search(1,vname(),vnb,varray)
+			EndIf
+			If idx=-1 Then
+				messbox("Selection variable error",""""+Left(text,Len(text)-1)+""" is not a running variable")
+				Exit Sub
+			EndIf
+		EndIf
+    End If
+    print "found=";idx
+	PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)
+	SetSelectTreeViewItem(GTVIEWVAR,vrr(idx).tv)
+	'ExpandTreeViewItem( GTVIEWVAR , vrr(idx).tv , 0)
+end sub
