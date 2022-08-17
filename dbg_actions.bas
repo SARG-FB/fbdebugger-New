@@ -138,8 +138,7 @@ private sub menu_action(poption as integer)
 			brk_manage("Breakpoint management")
 
 		Case MNSHWVAR
-			messbox("Feature not yet implemented","var_tip(PROCVAR)")
-			'var_tip(PROCVAR)
+			var_tip()
 
 		Case MNSETWVAR
 			messbox("Feature not yet implemented","var_tip(WATCHED)")
@@ -962,7 +961,7 @@ private sub gadget_action(igadget as LONG)
 		case GBRCVALUE ''nothing to do
 
 		case else
-			messbox("Gadget/menu/button feature not implemented","sorry option="+str(igadget)+" --> enum="+enumdef(igadget))
+			messbox("Gadget/menu/button feature not implemented","sorry option="+str(igadget))
 	End Select
 end sub
 '==============================================
@@ -1014,6 +1013,7 @@ end sub
 private sub button_action(button as integer)
 	static as Hmenu HMenuexe
 	select case button
+
 		case IDBUTSTEP 'STEP
 			stopcode=0
 			hidewindow(hcchainbx,KHIDE)
@@ -1167,6 +1167,9 @@ private sub button_action(button as integer)
 
 		Case MNMNGBRK,IDBUTBRKB
 			brk_manage("Breakpoint management")
+
+		case GBUTSHOWVAR
+			var_tip()
 
 		case else
 			'''todo for now used after gadget_action after remove gadget_action when tests are done for the range values
