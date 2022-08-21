@@ -992,3 +992,69 @@ private sub process_list()
 	SetGadgetText(GEDITOR,text)
 	hidewindow(heditorbx,KSHOW)
 end sub
+'======================================
+''show all the registers
+'======================================
+private sub show_regs()
+	dim as integer dummy ''used to align vcontext on 16bit
+	Dim vcontext As CONTEXT
+	Dim As String reg_values(),text
+	vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER ' 64 bit rbp is gotten with CONTEXT_INTEGER , instead in x86 CONTEXT_CONTROL
+	For ith As Integer=0 To threadnb
+		if thread(ith).tv=0 then
+			continue for
+		end if
+
+		GetThreadContext(thread(ith).hd,@vcontext)
+		If thread(ith).hd=threadcontext Then
+		   text+="Current Thread Id="+Str(thread(ith).id)+" / "+Hex(thread(ith).id)+chr(13)
+		   text+="Current Thread Hd="+Str(thread(ith).hd)+" / "+Hex(thread(ith).hd)
+
+		Else
+		   text+="Other   Thread Id="+Str(thread(ith).id)+" / "+Hex(thread(ith).id)+chr(13)
+		   text+="Other   Thread Hd="+Str(thread(ith).hd)+" / "+Hex(thread(ith).hd)
+		EndIf
+
+		#Ifdef __FB_64BIT__
+			redim reg_values(15)
+			reg_values(0)="Rax="+fmt(Str(vcontext.rax),20)+"/ "+Hex(vcontext.rax)
+			reg_values(1)="Rcx="+fmt(Str(vcontext.rcx),20)+"/ "+Hex(vcontext.rcx)
+			reg_values(2)="Rdx="+fmt(Str(vcontext.rdx),20)+"/ "+Hex(vcontext.rdx)
+			reg_values(3)="Rbx="+fmt(Str(vcontext.rbx),20)+"/ "+Hex(vcontext.rbx)
+			reg_values(4)="Rsp="+fmt(Str(vcontext.rsp),20)+"/ "+Hex(vcontext.rsp)
+			reg_values(5)="Rbp="+fmt(Str(vcontext.rbp),20)+"/ "+Hex(vcontext.rbp)
+			reg_values(6)="Rsi="+fmt(Str(vcontext.rsi),20)+"/ "+Hex(vcontext.rsi)
+			reg_values(7)="R8 ="+fmt(Str(vcontext.r8),20) +"/ "+Hex(vcontext.r8)
+			reg_values(8)="R9 ="+fmt(Str(vcontext.r9),20) +"/ "+Hex(vcontext.r9)
+			reg_values(9)="R10="+fmt(Str(vcontext.r10),20)+"/ "+Hex(vcontext.r10)
+			reg_values(10)="R11="+fmt(Str(vcontext.r11),20)+"/ "+Hex(vcontext.r11)
+			reg_values(11)="R12="+fmt(Str(vcontext.r12),20)+"/ "+Hex(vcontext.r12)
+			reg_values(12)="R13="+fmt(Str(vcontext.r13),20)+"/ "+Hex(vcontext.r13)
+			reg_values(13)="R14="+fmt(Str(vcontext.r14),20)+"/ "+Hex(vcontext.r14)
+			reg_values(14)="R15="+fmt(Str(vcontext.r15),20)+"/ "+Hex(vcontext.r15)
+			reg_values(15)="Rip="+fmt(Str(vcontext.rip),20)+"/ "+Hex(vcontext.rip)
+
+			For i As Long =0 To 15
+		#Else
+			redim reg_values(8)
+			reg_values(0)="Edi="+fmt(Str(vcontext.edi),11)+"/ "+Hex(vcontext.edi)
+			reg_values(1)="Esi="+fmt(Str(vcontext.esi),11)+"/ "+Hex(vcontext.esi)
+			reg_values(2)="Ebx="+fmt(Str(vcontext.ebx),11)+"/ "+Hex(vcontext.ebx)
+			reg_values(3)="Edx="+fmt(Str(vcontext.edx),11)+"/ "+Hex(vcontext.edx)
+			reg_values(4)="Ecx="+fmt(Str(vcontext.ecx),11)+"/ "+Hex(vcontext.ecx)
+			reg_values(5)="Eax="+fmt(Str(vcontext.eax),11)+"/ "+Hex(vcontext.eax)
+			reg_values(6)="Ebp="+fmt(Str(vcontext.ebp),11)+"/ "+Hex(vcontext.ebp)
+			reg_values(7)="Eip="+fmt(Str(vcontext.eip),11)+"/ "+Hex(vcontext.eip)
+			reg_values(8)="Esp="+fmt(Str(vcontext.esp),11)+"/ "+Hex(vcontext.esp)
+
+			For i As Long =0 To 8
+		#EndIf
+				text+=chr(13)+reg_values(i)
+			Next
+			text+=chr(13)+chr(13)
+	Next
+	readonlyeditor(GEDITOR,0)
+	setgadgettext(GEDITOR,text)
+	readonlyeditor(GEDITOR,1)
+	hidewindow(heditorbx,KSHOW)
+End Sub
