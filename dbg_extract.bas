@@ -163,10 +163,7 @@ private sub parse_retval(prcnb As Integer,gv2 As String)
 	If c=15 Then c=16
 	'========================================================
 
-	''todo remove
-	''If c=udt(15).index Then c=15
-
-	If c>TYPESTD Then c+=udtcpt '20/08/2015
+	If c>TYPESTD Then c+=udtcpt
 	proc(prcnb).pt=p
 	proc(prcnb).rv=c
 End sub
@@ -212,7 +209,7 @@ private function parse_scope(gv As Byte, ad As UInteger,dlldelta As Integer=0) A
 	End select
 End function
 '--------------------------------------------
-'' parse ???? cutup_2
+'' parse
 '--------------------------------------------
 private sub parse_var2(gv As String,f As Byte)
 Dim p As Integer=1,c As Integer,e As Integer,gv2 As String,pp As Integer
@@ -223,9 +220,6 @@ If InStr(gv,"=")=0 Then
 	'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
 	If c=15 Then c=16
 	'==================================
-
-	''todo remove
-	''If c=udt(15).index Then c=15
 
 	If c>TYPESTD Then c+=udtcpt 'udt type so adding the decal
 	pp=0
@@ -267,9 +261,6 @@ Else
 	If c=15 Then c=16
 	'========================================================
 
-	''todo remove
-	''If c=udt(15).index Then c=15
-	'print "in var2=>";gv;" ";gv2;" ";c
 		If c>TYPESTD Then c+=udtcpt 'udt type so adding the decal 20/08/2015
 		If f=TYUDT Then
 			cudt(cudtnb).pt=pp
@@ -300,9 +291,6 @@ private sub parse_udt(readl As String)
 
 	udtidx=Val(Mid(readl,p,q-p))
 
-	''todo remove
-	'If tnm="OBJECT" OrElse tnm="$fb_Object" Then udt(15).index=udtidx:Exit sub
-
 	udtidx+=udtcpt:If udtidx>udtmax Then udtmax=udtidx
 	If udtmax > TYPEMAX-1 Then hard_closing("Storing UDT limit reached "+Str(TYPEMAX))
 	udt(udtidx).nm=tnm
@@ -328,8 +316,8 @@ private sub parse_udt(readl As String)
 
 		parse_var2(Mid(readl,p,q-p),TYUDT) 'variable type
 
-		'11/05/2014 'new way for redim
-		If Left(udt(cudt(cudtnb).typ).nm,7)="FBARRAY" Then 'new way for redim array
+		''new way for redim
+		If Left(udt(cudt(cudtnb).typ).nm,7)="FBARRAY" Then
 
 		'.stabs "__FBARRAY1:Tt25=s32DATA:26=*1,0,32;PTR:27=*7,32,32;SIZE:1,64,32;ELEMENT_LEN:1,96,32;DIMENSIONS:1,128,32;DIMTB:28=ar1;0;0;29,160,96;;",128,0,0,0
 		'.stabs "TTEST2:Tt23=s40VVV:24=ar1;0;1;2,0,16;XXX:1,32,32;ZZZ:25,64,256;;",128,0,0,0

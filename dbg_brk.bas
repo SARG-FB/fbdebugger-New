@@ -339,7 +339,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 	else
 		recup2=data2
 	EndIf
-'print "recup1,recup2=";recup1.vlongint,recup2.vlongint ''todo remove me
+
 	Select Case datatype
 		Case 2 'byte
 			if recup2.vbyte>recup1.vbyte then

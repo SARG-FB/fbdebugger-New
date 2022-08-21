@@ -485,7 +485,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		end if
    		var_sh			'updating information about variables
 
-	runtype=RTSTEP ''could be done later if aother threads also running ????
+	runtype=RTSTEP ''could be done later if another threads also running ????
 
    		dsp_change(rln)
 		if stopcode=CSLINE then

@@ -160,7 +160,6 @@ private sub proc_sh()
 			If flagverbose Then libel+=" ["+Str(.db)+"/"+hex(.db)+"]"
 
 			.tv=AddTreeViewItem(GTVIEWPRC,libel,cast (hicon, 0),0,TVI_LAST,0)
-			'print libel,.tv
 			listidx=proclist(listidx).child
 		end with
 	Wend
