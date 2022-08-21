@@ -48,15 +48,7 @@
 #endif
 
 #ifdef __fb_win32__
-	#Include Once "windows.bi"
-	#Include Once "win\commctrl.bi"
-	#Include Once "win\commdlg.bi"
-	#Include Once "win\wingdi.bi"
-	#Include Once "win\richedit.bi"
-	#Include Once "win\tlhelp32.bi"
-	#Include Once "win\shellapi.bi"
 	#Include Once "win\psapi.bi"
-
 
 	'' if they are not already defined
 	#Ifndef EXCEPTION_DEBUG_EVENT
@@ -561,12 +553,6 @@ enum
 	MNEXEFILE9
 end enum
 
-''for find text
-enum
-	MNFNDTXUP=1400
-	MNFNDTXDW
-end enum
-
 ''for scintilla
 #define KRED    &hFF
 #define KBLUE   &hEBA200
@@ -756,7 +742,7 @@ end enum
 ''miscellaneous
 enum
 ''procedure tracking
-	GCCHAIN=1000
+	GCCHAIN=1400
 '' timer
 	GTIMER001
 end enum
@@ -785,7 +771,7 @@ end enum
 #define KEDITTOP  6
 
 enum
-	GEDTVAR=1100
+	GEDTVAR=1500
 	GEDTVALUE
 	GEDTOK
 	GEDTCANCEL

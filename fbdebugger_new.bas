@@ -35,7 +35,7 @@ dim shared as any ptr oldscintilla          ''last pointer for scintilla
 dim Shared As UByte   sourcebuf(SRCSIZEMAX) ''buffer for loading source file
 dim Shared as Integer sourcenb =-1          ''number of src, 0 based
 dim Shared As integer sourceix              ''source index when loading data
-dim shared as any ptr currentdoc            ''current doc pointer  todo set local in source_load ?
+dim shared as any ptr currentdoc            ''current doc pointer
 
 dim Shared As integer srcdisplayed			''index displayed source
 
@@ -327,9 +327,6 @@ udt(4).nm="Zstring":udt(4).lg=Len(Integer)
 udt(5).nm="Short":udt(5).lg=Len(Short)
 udt(6).nm="Ushort":udt(6).lg=Len(UShort)
 udt(7).nm="Void":udt(7).lg=Len(Integer)
-
-''todo remove
-'udt(7).index=7'dwarf
 
 #Ifdef __FB_64BIT__
    udt(8).nm="Ulong":udt(8).lg=Len(ULong)

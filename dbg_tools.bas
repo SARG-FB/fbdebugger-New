@@ -3083,25 +3083,7 @@ private sub sources_load(n As integer,exedate as double)
 				Close #fnum
 			end if
 
-			''unicode
-			'If buf(0)=&hEF AndAlso buf(1)=&hBB AndAlso buf(2)=&hBF Then 'UTF8
-			'	'fb_message("","UTF8 "+hex(buf(0))+" "+hex(buf(1))+" "+hex(buf(2)))
-			'	srcunicode(i)=1
-			'	'setWindowTextW(richedit(i),CPtr(UShort ptr,@buf(3)))
-			'ElseIf (buf(0)=&hFE AndAlso buf(1)=&hFF) OrElse (buf(0)=&hFF AndAlso buf(1)=&hFE) Then 'UTF16 FE or
-			'	srcunicode(i)=1
-			'	'setWindowTextW(richedit(i),CPtr(UShort ptr,@buf(2)))
-			'ElseIf (buf(0)=&h00 AndAlso buf(1)=&h00 andalso buf(2)=&hFE AndAlso buf(3)=&hFF) _
-			'OrElse (buf(0)=&hFF AndAlso buf(1)=&hFE AndAlso buf(2)=&h00 AndAlso buf(3)=&h00) Then 'UTF32
-			'	srcunicode(i)=1
-			'	'setWindowTextW(richedit(i),CPtr(UShort ptr,@buf(4)))
-			'Else 'ascii
-			'	srcunicode(i)=0
-			'	'setWindowText(richedit(i),@buf(0))
-			'EndIf
 			if (sourcebuf(0)=&hFF AndAlso sourcebuf(1)=&hFE) then
-				''todo
-				''setWindowTextW(richedit(i),@sourcebuf(2))
 				messbox("Maybe something to do","the source code contains a BOM code so --> unicode")
 			else
 

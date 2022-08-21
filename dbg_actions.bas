@@ -277,14 +277,6 @@ private sub menu_action(poption as integer)
 		Case MNTHRDLST
 			thread_list()
 
-		Case MNFNDTXUP
-			messbox("feature not yet implemented","fb_find(0,sfind)")
-			'fb_find(0,sfind)
-
-		Case MNFNDTXDW
-			messbox("feature not yet implemented","fb_find(1,sfind)")
-			'fb_find(1,sfind)
-
 		case MNBRKVC,MNBRKV1,MNBRCV1,MNBRKV2,MNBRCV2
 			ivar=var_find()
 			if ivar=0 then exit sub
