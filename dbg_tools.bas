@@ -3109,6 +3109,7 @@ private sub sources_load(n As integer,exedate as double)
 					''first file
 					currentdoc=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
 					sourceptr(0)=currentdoc
+					Send_sci(SCI_SETREADONLY,0,0)
 					Send_sci(SCI_SetText, 0, @sourcebuf(0))
 					Send_sci(SCI_SETREADONLY,1,0)
 				else
@@ -3117,6 +3118,7 @@ private sub sources_load(n As integer,exedate as double)
 					''new document
 					Send_sci(SCI_SETDOCPOINTER,0,0)
 					sourceptr(isrc)=cast(any ptr,Send_sci(SCI_GETDOCPOINTER,0,0))
+					Send_sci(SCI_SETREADONLY,0,0)
 					Send_sci(SCI_SetText, 0, @sourcebuf(0))
 					Send_sci(SCI_SETREADONLY,1,0)
 				end if
@@ -3737,7 +3739,7 @@ private sub var_tip()
     'text=line_text(linecursor()) ''get the text where is the cursor
     text=space(201)
 	dim as integer pcursor=Send_sci(SCI_GETCURLINE,200,strptr(text))
-    print "text1=";text,"pcursor=";pcursor
+
     'select only var name characters
     For i =pcursor-1 To 1 Step-1
         Dim c As Integer
@@ -3767,7 +3769,7 @@ private sub var_tip()
         Exit Sub
     EndIf
     text=ucase(text)
-print "text2=";text
+
 'parsing
     Dim vname(10) As String,varray As Integer,vnb As Integer =0
     text+=".":l=Len(text):d=1
@@ -3782,7 +3784,7 @@ print "text2=";text
             varray=0:d=p+1
         End If
     Wend
-    print "vnb=";vnb,vname(1)
+
     dim as integer nline=line_cursor()+1,lclproc=0,lclprocr=0,idx=-1
 
 	For i As Integer =1 To linenb
@@ -3791,7 +3793,7 @@ print "text2=";text
 			Exit For ' with known line we know also the proc...
 		EndIf
 	Next
-print "lclproc=";lclproc
+
     'search inside
     'if no lclproc --> should be in main
     If lclproc Then
@@ -3806,10 +3808,10 @@ print "lclproc=";lclproc
 			idx=var_search(lclprocr,vname(),vnb,varray) 'inside proc ?
         EndIf
     End If
-    print "searching in main"
+
     If idx=-1 Then
         idx=var_search(1,vname(),vnb,varray) 'inside main ?
-		print "namespace ?"
+
 		If idx=-1 Then
 			'namespace ?
 			If vnb>1 Then
@@ -3826,7 +3828,7 @@ print "lclproc=";lclproc
 			EndIf
 		EndIf
     End If
-    print "found=";idx
+
 	PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)
 	SetSelectTreeViewItem(GTVIEWVAR,vrr(idx).tv)
 	'ExpandTreeViewItem( GTVIEWVAR , vrr(idx).tv , 0)

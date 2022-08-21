@@ -234,6 +234,10 @@ dim shared as integer cchainthid
 Dim Shared As HWND heditbx
 dim shared as tedit edit ''data when editing var or mem
 
+''find text box
+Dim Shared As HWND hfindtextbx
+dim shared as tftext ftext
+
 ''dump memory
 dim shared as hwnd hdumpbx ''window for handling dump
 Dim Shared dumplines As Integer =20 'nb lines(default 20)
