@@ -1097,6 +1097,7 @@ private sub dbg_epilog(ofset as integer)
 		for iline as integer =1 to linenb
 			if rLine(iline).px=procmain then
 				rLine(iline).nu=99999999 ''to avoid unexecutable line if first fbc line is 1 in main
+				proc(procmain).nu=rline(iline+1).nu
 				exit for
 			EndIf
 		Next

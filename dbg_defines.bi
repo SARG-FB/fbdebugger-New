@@ -1249,3 +1249,4 @@ declare function proc_retval(prcnb As Integer) As String
 declare sub proc_watch(procridx As Integer)
 declare sub brk_manage(title as string)
 declare sub var_tip()
+declare sub show_regs()

@@ -870,42 +870,43 @@ End Sub
 '' displays the call chain for the current thread or for a selected one
 '==============================================================================
 private sub call_chain(thid as integer)
-	Static As Integer procrsav(PROCRMAX),iline,first,prevpr,vproc
+	dim As Integer iline,first,prevpr,vproc
 	dim as string txt
 	dim as integer srcprev=srcdisplayed ''save now for restoring at the end of the table filling
 	DeleteListViewItemsAll(GCCHAIN)
-	txt="Calling line               [ThID="+ Str(thid)+"]"
+	txt="Procedure                 [ThID="+ Str(thid)+"]"
 	SetTextColumnListView(GCCHAIN,0,txt)
 	for iprocr as integer = procrnb to 1 step -1
 		If procr(iprocr).thid=thid Then
-			procrsav(iline)=iprocr ''to make easier the location
 			if first=0 then
 				first=1
 				AddListViewItem(GCCHAIN,proc(procr(iprocr).idx).nm,0,0,0)
 
-				thread_execline(1,thid)
-				txt=space(31)
-				Send_sci(SCI_GETCURLINE,30,strptr(txt))
+				'thread_execline(1,thid)
+				txt=line_text(rline(thread(thread_select(thid)).sv).nu-1)
+				print "line=";thread(thid).sv,rline(thread(thid).sv).nu
+				txt="next exec="+left(txt,30)
 				AddListViewItem(GCCHAIN,txt,0,0,1)
 
 				txt=Right("______"+Str(linecur),6)
 				AddListViewItem(GCCHAIN,txt,0,0,2)
-				AddListViewItem(GCCHAIN,source(srccur),0,0,3)
+				AddListViewItem(GCCHAIN,srcname(srccur),0,0,3)
 				prevpr=iprocr
 			else
 				iline+=1
 				vproc=procr(iprocr).idx
 				AddListViewItem(GCCHAIN,proc(vproc).nm,0,iline,0)
 
-				source_change(proc(vproc).sr)
-				txt=line_text(rline(procr(iprocr).cl).nu-1) ''calling line
+				source_change(proc(prevpr).sr)
+				txt=line_text(rline(procr(prevpr).cl).nu-1) ''calling line
 				AddListViewItem(GCCHAIN,txt,0,iline,1)
 
 				txt=Right("______"+Str(rline(procr(prevpr).cl).nu),6)
 				AddListViewItem(GCCHAIN,txt,0,iline,2)
 
-				txt=source_name(source(proc(vproc).sr))
+				txt=srcname(proc(vproc).sr)
 				AddListViewItem(GCCHAIN,txt,0,iline,3)
+				procrsav(iline)=prevpr ''to make easier the location
 				prevpr=iprocr
 			end if
 		end if
@@ -1680,8 +1681,8 @@ private sub thread_procloc(t As Integer)
 		cpt=1
 	EndIf
 
-	GetTextTreeView(GTVIEWTHD,hitem)
-	thid=ValInt(Mid(text,10,6))
+	text=GetTextTreeView(GTVIEWTHD,hitem)
+	thid=ValInt(Mid(text,13,6))
 
 	For pr =1 To procrnb ''finding proc index
 		If procr(pr).thid=thid Then
@@ -1695,11 +1696,11 @@ private sub thread_procloc(t As Integer)
 		SetSelectTreeViewItem(GTVIEWVAR,procr(pr).tv)
 	ElseIf t=2 Then'proc in source
 		source_change(proc(procr(pr).idx).sr) ''display source
-		line_display(proc(procr(pr).idx).nu-1) ''Select Line
+		line_display(proc(procr(pr).idx).nu,1) ''Select Line
 	Else 'info about running proc
-		messbox("Proc : "+proc(procr(pr).idx).nm,"Start address ="+Str(proc(procr(pr).idx).db)+"/&h"+Hex(proc(procr(pr).idx).db)+Chr(10)_
-												   +"End   address ="+Str(proc(procr(pr).idx).fn)+"/&h"+Hex(proc(procr(pr).idx).fn)+Chr(10)_
-												   +"Stack address ="+Str(procr(pr).sk)+"/&h"+Hex(procr(pr).sk))
+		messbox("Proc : "+proc(procr(pr).idx).nm,"Start address ="+Str(proc(procr(pr).idx).db)+" / &h"+Hex(proc(procr(pr).idx).db)+Chr(10)_
+												   +"End   address ="+Str(proc(procr(pr).idx).fn)+" / &h"+Hex(proc(procr(pr).idx).fn)+Chr(10)_
+												   +"Stack address ="+Str(procr(pr).sk)+" / &h"+Hex(procr(pr).sk))
 	End If
 End Sub
 '===========================================
@@ -3435,7 +3436,7 @@ private sub exception_handle(adr as INTEGER)
 	'gest_brk(rline(thread(threadcur).sv).ad)
 	gest_brk(adr)
 	source_change(rline(thread(threadcur).sv).sx) 'display source
-	line_display(rline(thread(threadcur).sv).nu-1)
+	line_display(rline(thread(threadcur).sv).nu)
 	linetext=line_text(rline(thread(threadcur).sv).nu-1)
 	'case error inside proc initialisation (e.g. stack over flow)
 	If adr>rline(thread(threadcur).sv).ad And _

@@ -1389,9 +1389,11 @@ private sub gui_init()
 	EditorGadget(GLOG,10,10,400,500,"Your log file if any")
 	ReadOnlyEditor(GLOG,1)
 	hidewindow(hlogbx,KHIDE)
+
 	''for miscellanous display
 	heditorbx=create_window("Show string",10,10,450,550)
 	EditorGadget(GEDITOR,10,10,400,500,"Any string")
+	SetGadgetFont(GEDITOR,CINT(LoadFont("Courier New",9)))
 	ReadOnlyEditor(GEDITOR,1)
 	hidewindow(heditorbx,KHIDE)
 

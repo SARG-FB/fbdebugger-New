@@ -163,8 +163,7 @@ private sub menu_action(poption as integer)
 			'dissassemble(KSPROC)
 
 		Case MNASMREGS 'show processor registers for current thread
-			messbox("Feature not yet implemented","show_regs()")
-			'show_regs()
+			show_regs()
 
 		case MNCLBVARA 'copy  to clipboard  all procs/vars
 			var_list(2)
@@ -559,7 +558,7 @@ private sub gadget_action(igadget as LONG)
 
 		Case GBRKLINE01 to GBRKLINE10 ''click on text
 			source_change(brkol(igadget-GBRKLINE01+1).isrc)
-	        line_display(brkol(igadget-GBRKLINE01+1).nline-1)
+	        line_display(brkol(igadget-GBRKLINE01+1).nline)
 
 		Case GBRKDSB01 to GBRKDSB10 ''enable/disable
 			If brkol(igadget-GBRKDSB01+1).typ>50 Then
@@ -867,7 +866,7 @@ private sub gadget_action(igadget as LONG)
 			else
 				if GetTextItemListView(GCCHAIN,iline,0)<>"" then
 					source_change(proc(procr(procrsav(iline)).idx).sr)
-					line_display(rline(procr(procrsav(iline)).cl).nu-1,1)
+					line_display(rline(procr(procrsav(iline)).cl).nu,1)
 				end if
 			end if
 
