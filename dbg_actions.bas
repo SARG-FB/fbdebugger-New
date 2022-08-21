@@ -82,7 +82,7 @@ private sub menu_action(poption as integer)
 			thread_procloc(2)
 
 		Case MNTCHNING ''call chain (from thread)
-			call_chain(ValInt(Mid(GetTextTreeView(GTVIEWTHD,thread_find()),10,6)))
+			call_chain(ValInt(Mid(GetTextTreeView(GTVIEWTHD,thread_find()),13,6)))
 
 		Case MNPRCRADR 'information about running proc
 			thread_procloc(5)
@@ -145,11 +145,14 @@ private sub menu_action(poption as integer)
 			'var_tip(WATCHED)
 
 		Case MNFNDTXT
-			messbox("Feature not yet implemented","findtext ")
-				'If hfindbx=0 Then 'findtext not active ?
-					'stext=wtext() 'selected text or ascii text near cursor
-					'fb_Dialog(@find_box,"Findtext (Circular)",windmain,283,25,100,25)
-				'End If
+			if sourcenb<>-1 then
+				ftext.tpos=-1
+				hidewindow(hfindtextbx,KSHOW)
+				SetFocus(Gadgetid(GFINDTEXT))
+				#ifdef __fb_linux__
+					UpdateInfoXserver()
+				#endif
+			end if
 
 		Case MNASMLINE 'dissassembly line in source
 			messbox("Feature not yet implemented","dissassemble(KLINE)")
@@ -593,7 +596,7 @@ private sub gadget_action(igadget as LONG)
 				messbox("Change counter","Value = zero, enter another value or delete BP")
 			else
 				brkol(ibrk).cntrsav=brkol(ibrk).counter
-				text=left(text,instr(text,"="))+Str(brkol(ibrk).counter)+"/"+Str(brkol(ibrk).cntrsav)+mid(text,instrrev(text,">")-2)			
+				text=left(text,instr(text,"="))+Str(brkol(ibrk).counter)+"/"+Str(brkol(ibrk).cntrsav)+mid(text,instrrev(text,">")-2)
 				SetGadgetText(GBRKLINE01+igadget-GBRKCHG01,text)
 			EndIf
 
@@ -953,6 +956,14 @@ private sub gadget_action(igadget as LONG)
 			elseif brkol(brkidx).typ=4 then
 				messbox("BP counter ","Current="+str(brkol(brknb).counter)+chr(10)+"Initial="+str(brkol(brknb).cntrsav))
 			EndIf
+
+		case GFINDTEXT
+
+		case GFINDTEXTN
+			find_text(1)
+
+		case GFINDTEXTP
+			find_text(0)
 
 		case GLOG ''nothing to do
 		case GEDITOR ''nothing to do

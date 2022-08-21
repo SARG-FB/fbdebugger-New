@@ -1,4 +1,4 @@
-''gui for fbdebuuger_new
+''gui for fbdebugger_new
 ''dbg_gui.bas
 
 /' TIPS ===============================================
@@ -490,7 +490,7 @@ end sub
 			Case WM_NOTIFY
 				dim as SCNotification ptr pSn = cast(SCNotification ptr , lparam) 'SCNotification ->https://www.scintilla.org/scintillaDoc.html#Notifications
 				if pSn->nmhdr.code = SCN_CHARADDED then
-					? pSn->ch ' press keys and look in the console/terminal
+					'print pSn->ch ' press keys and look in the console/terminal
 				EndIf
 				'? pSn->nmhdr.idFrom ' number gadget
 				'? pSn->nmhdr.hwndFrom ' hwnd sciHWND
@@ -501,7 +501,7 @@ end sub
 	private sub getMessages cdecl(w as hwnd, p as gint, notification as SCNotification ptr, userData as gpointer )
 		dim as SCNotification ptr pSn = cast(SCNotification ptr , notification)
 		if pSn->nmhdr.code = SCN_CHARADDED then
-			? pSn->ch ' press keys and look in the console/terminal
+			'print pSn->ch ' press keys and look in the console/terminal
 		EndIf
 		'? pSn->nmhdr.idFrom ' number gadget
 		'? pSn->nmhdr.hwndFrom ' hwnd sciHWND
@@ -531,6 +531,15 @@ private sub create_editbx()
 	textgadget(GEDTPTD,15,35,85,30,"458785")
 	textgadget(GEDTPTDVAL,105,35,200,30,"String pointed")
 	buttongadget(GEDTPTDEDT,150,70,90,30,"Edit pointed")
+end sub
+'=========================================
+'' creates the window for find text box
+'=========================================
+private sub create_findbox()
+	hfindtextbx=create_window("Find text",10,10,450,145)
+	stringgadget(GFINDTEXT,15,10,350,30,"")
+	buttongadget(GFINDTEXTP,20,70,100,30,"Prev")
+	buttongadget(GFINDTEXTN,130,70,100,30,"Next")
 end sub
 '==============================================================================
 '' creates the window for showing z/w/string
@@ -751,7 +760,7 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 		wsci=editor
 	#endif
 	hscint=hsci ''need to be done as used in send_sci
-
+	Send_sci(SCI_SETREADONLY,1,0)
 	send_sci(SCI_SETMARGINTYPEN,0,SC_MARGIN_NUMBER )
 	send_sci(SCI_SETMARGINWIDTHN,0,40)
 	send_sci(SCI_SETMARGINTYPEN,1,SC_MARGIN_SYMBOL )
@@ -1326,7 +1335,7 @@ private sub gui_init()
 
 	''scintilla gadget
 	create_scibx(GSCINTILLA,0,93,550,WindowClientHeight(hmain)-115,)
-
+	AddKeyboardShortcut(hmain,FCONTROL,VK_F,MNFNDTXT)
 	''status bar
 	StatusBarGadget(GSTATUSBAR,"",SBT_TOOLTIPS)
 	statusbar_text(KSTBSTS,"Initialization")
@@ -1395,6 +1404,7 @@ private sub gui_init()
 	create_cchainbx()
 	create_brkvbx
 	create_editbx()
+	create_findbox()
 	menu_set()
 
 end sub
@@ -1442,3 +1452,87 @@ sub context_menu()
 		end if
 	end if
 End Sub
+'=================================================================
+private sub find_text(direct as integer)
+	static as integer tlen,lend,start,first,lentarget
+	static as string text
+	static as any ptr tptr
+
+	if ftext.tpos=-1 then ''init
+		text=getgadgettext(GFINDTEXT)
+		tlen = len(text)
+		if tlen=0 then
+			hidewindow(hfindtextbx,KHIDE)
+			messbox("Find text","No text to be found")
+			exit sub
+		EndIf
+		first = 1
+		tptr = strptr(text)
+		lentarget = send_sci(SCI_GETTEXTLENGTH, 0, 0)
+		start= send_sci(SCI_GETCURRENTPOS,0,0)
+		if direct = 1 then ''down
+			lend = lentarget
+		else ''up
+			lend = 0
+		end if
+		print "inside find_text1=";text,tlen,tptr,"tpos=";ftext.tpos,start;" end=";lend
+	end if
+
+	while 1
+		if first=0 then
+			if direct = 1 then ''down
+				start = ftext.tpos+tlen
+				lend = lentarget
+				if start >= lend then
+					start = 0
+				EndIf
+			else
+				start = ftext.tpos - 1
+				lend = 0
+				if ftext.tpos - tlen < 0 then
+					start = lentarget
+				end if
+			end if
+		end if
+print "inside find_text2=";text,tlen,tptr,"tpos=";ftext.tpos,start;" end=";lend
+		Send_sci(SCI_SETTARGETSTART, start , 0)
+		Send_sci(SCI_SETTARGETEND, lend, 0)
+		ftext.tpos = send_sci(SCI_SEARCHINTARGET, tlen, tptr)
+
+		if ftext.tpos = -1 then
+			if first=0 then
+				print "boucle"
+				if direct = 1 then ''down
+					start = 0
+					lend = lentarget
+				else
+					start =lentarget
+					lend = 0
+				EndIf
+				continue while
+			else
+				Send_sci(SCI_SETTARGETEND, start, 0)
+				if direct = 1 then''down
+					''not found so searching from top of target
+					Send_sci(SCI_SETTARGETSTART, 0 , 0)
+				else
+					''not found so searching from end of target
+					send_sci(SCI_SETTARGETSTART,lentarget,0)
+				end if
+				ftext.tpos = send_sci(SCI_SEARCHINTARGET, tlen, tptr)
+				if ftext.tpos = -1 then
+					hidewindow(hfindtextbx,KHIDE)
+					messbox("Find text",text+" not found")
+					exit sub
+				EndIf
+			end if
+		EndIf
+		first = 0
+		''found so show text in source
+		print "found=";ftext.tpos
+		send_sci(SCI_GOTOPOS,ftext.tpos,0)
+		send_sci(SCI_SETSELECTIONSTART,ftext.tpos,0)
+		send_sci(SCI_SETSELECTIONEND,ftext.tpos+tlen,0)
+		exit sub
+	wend
+end sub

@@ -792,6 +792,10 @@ enum
 	GEDTPTD
 	GEDTPTDEDT
 	GEDTPTDVAL
+
+	GFINDTEXT
+	GFINDTEXTP
+	GFINDTEXTN
 end enum
 
 type tedit
@@ -801,6 +805,10 @@ type tedit
 	ptdadr	as integer
 	ptdval as STRING
 	src as INTEGER
+End Type
+
+type tftext
+	tpos as INTEGER
 End Type
 
 #Ifdef __fb_win32__
