@@ -147,6 +147,11 @@ private sub menu_action(poption as integer)
 		Case MNFNDTXT
 			if sourcenb<>-1 then
 				ftext.tpos=-1
+				if send_sci(SCI_GETSELECTIONEND,0,0) - send_sci(SCI_GETSELECTIONSTART,0,0) <> 0 then
+					var text=space(1 + send_sci(SCI_GETSELTEXT,0, NULL))
+					send_sci(SCI_GETSELTEXT,0,strptr(text))
+					setgadgettext(GFINDTEXT,text)
+				end if
 				hidewindow(hfindtextbx,KSHOW)
 				SetFocus(Gadgetid(GFINDTEXT))
 				#ifdef __fb_linux__
