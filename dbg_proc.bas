@@ -103,7 +103,9 @@ private sub proc_enable() ''enab=true-> enabled / false -> disabled
 			text[instr(text,"<E>")]=asc("D")
 			SetTextItemTreeView(GTVIEWPRC,proc(prc).tv,text)
 			For i As Integer =1 To linenb
-				If rline(i).px=prc Then  WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@rline(i).sv,1,0)
+				If rline(i).px=prc Then
+					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@rline(i).sv,1,0)
+				EndIf
 			Next
         End If
     Else
