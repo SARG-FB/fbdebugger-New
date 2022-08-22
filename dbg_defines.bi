@@ -439,8 +439,6 @@ enum
 	MNFNDTXT
 	MNGOTO
 	MNLINEADR
-	MNASMLINE
-	MNASMPRCL
 	MNASMREGS
 	MNACCLINE
 end enum
@@ -468,7 +466,6 @@ enum
 	MNLSTVARA 'copy  to log  all procs/vars
 	MNLSTVARS 'copy  to log selectedvar
 	MNPTDUMP  'dump  deferenced data
-	MNFNDVAR  'find  proc or var in proc/var
 	MNVARCOLI 'collapse item
 	MNVAREXPI 'expand item
 	MNVARCOLA 'collapse all
@@ -490,7 +487,6 @@ end enum
 enum
 	MNENBPRC=1150  ''enable/disable
 	MNSORTPRC ''toggle sortby module name/  procname
-	MNASMPRC  ''listing of asm code of a  proc
 end enum
 
 '' thread menu
