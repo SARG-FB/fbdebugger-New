@@ -159,14 +159,6 @@ private sub menu_action(poption as integer)
 				#endif
 			end if
 
-		Case MNASMLINE 'dissassembly line in source
-			messbox("Feature not yet implemented","dissassemble(KLINE)")
-			'dissassemble(KLINE)
-
-		Case MNASMPRCL 'dissassembly proc from line in source
-			messbox("Feature not yet implemented","dissassemble(KSPROC)")
-			'dissassemble(KSPROC)
-
 		Case MNASMREGS 'show processor registers for current thread
 			show_regs()
 
@@ -184,12 +176,6 @@ private sub menu_action(poption as integer)
 
 		Case MNPTDUMP 'dump pointed data
 			var_dump(htviewvar,1)
-
-		Case MNFNDVAR 'find text proc or var in proc/var tree
-			messbox("Feature not yet implemented","procvar_find()")
-			'If hfindbx=0 Then 'findtext not active ? also used in source
-				''procvar_find()
-			'End If
 
 		Case MNSELIDX 'select index in proc/var
 			index_sel()
@@ -267,10 +253,6 @@ private sub menu_action(poption as integer)
 		Case MNSORTPRC
 			procsort=1-procsort
 			proc_sh() 'toggle type of sort and update display
-
-		Case MNASMPRC
-			messbox("Feature not yet implemented","dissassemble(KSPROC)")
-			'dissassemble(KSPROC)
 
 		Case MNTHRDBLK ''block thread
 			thread_block()
