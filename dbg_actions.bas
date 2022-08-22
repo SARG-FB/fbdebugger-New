@@ -1018,9 +1018,10 @@ private sub button_action(button as integer)
 
 		case IDBUTSTEP 'STEP
 			stopcode=0
+			runtype=RTSTEP
 			hidewindow(hcchainbx,KHIDE)
 			#ifdef __fb_WIN32__
-
+				set_cc()
 			#else
 				if ccstate=KCC_NONE then
 					msgdata=1 ''CC everywhere
@@ -1038,9 +1039,8 @@ private sub button_action(button as integer)
 			runtype=RTAUTO
 			but_enable()
 			hidewindow(hcchainbx,KHIDE)
-			'print "STARTING AUTO"
 			#ifdef __fb_WIN32__
-
+				set_cc()
 			#else
 				if ccstate=KCC_NONE then
 					msgdata=1 ''CC everywhere
@@ -1058,9 +1058,7 @@ private sub button_action(button as integer)
 			If runtype=RTFREE Or runtype=RTRUN Then
 				runtype=RTRUN 'to treat free as run
 				#Ifdef __fb_win32__
-					For i As Integer = 1 To linenb 'restore every breakpoint
-						WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
-					Next
+					set_cc()
 				#else
 					sigusr_send()
 				#endif
@@ -1076,6 +1074,7 @@ private sub button_action(button as integer)
 				For i As Integer = 1 To linenb 'restore old instructions
 					WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@rLine(i).sv,1,0)
 				Next
+				ccstate=KCC_NONE
 				runtype=RTFREE
 				but_enable()
 				thread_resume()

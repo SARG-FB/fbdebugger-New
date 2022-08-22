@@ -1641,8 +1641,8 @@ end sub
 Private sub thread_resume()
 	#ifdef __fb_win32__
 		''todo move to dbg_windows.bas
-		'print "resume begin";str(rLine(thread(threadcur).sv).ad),"value="+str(rLine(thread(threadcur).sv).sv)
-		writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution
+		''restore old value for execution
+		writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0)
 		resumethread(threadhs)
 	#else
 		''LINUX, maybe moved in dbg_linux.bas
@@ -1748,6 +1748,8 @@ private sub thread_text(th As Integer=-1)
 			'EndIf
 		#endif
 		SetTextItemTreeView(GTVIEWTHD,thread(ith).tv,libel)
+		'CollapseTreeViewItem(GTVIEWTHD , thread(ith).tv)
+		ExpandTreeViewItem(GTVIEWTHD , thread(ith).tv, 1)
 	Next
 End Sub
 '=======================================================================================
@@ -3367,6 +3369,7 @@ private sub put_breakcpu(beginline as integer=1)
 		ReadProcessMemory(dbghand,Cast(LPCVOID,rline(iline).ad),@rLine(iline).sv,1,0) 'sav 1 byte before writing breakcpu
 		WriteProcessMemory(dbghand,Cast(LPVOID,rline(iline).ad),@breakcpu,1,0)
 	Next
+	ccstate=KCC_ALL
 End Sub
 '===================================================
 '' initializes for the current debuggee
