@@ -365,6 +365,17 @@ private sub thread_search(tid as integer,bptype as integer,ddata as integer)
 		End If
 	Next
 end sub
+'=====================================
+'' Set breakpoint (CC) for every line
+'=====================================
+private sub set_cc()
+	if ccstate=KCC_NONE then ''only done if needed
+		For i As Integer = 1 To linenb
+			WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
+		Next
+		ccstate=KCC_ALL
+	endif
+End Sub
 '========================================================
 ''  handles breakpoints
 '========================================================
@@ -467,19 +478,6 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	If runtype=RTRUN Then
    		fasttimer=Timer-fasttimer
 
-		''''''''''''==== useful ?? ===============
-		''''''''''For i As Integer = 1 To linenb 'restore CC
-			''''''''''WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
-		''''''''''Next
-		''''''''''''==== end of code ===============
-		''''''''''WriteProcessMemory(dbghand,Cast(LPVOID,rLine(rln).ad),@rLine(rln).sv,1,0) 'restore old value for execution
-
-
-		'if rln<>rLine(brkol(0).index then ''case BP cond/etc and run to cursor/EOP/XOP
-			'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(brkol(0).index).ad),@rLine(brkol(0).index).sv,1,0) 'restore old value for execution
-		'end if
-   	''?????	brk_test(proccurad) ' cancel breakpoint on line, if command halt not really used
-
 		if brkol(0).typ<>10 then ''for skip over always in same proc, if different thread ???
 			proc_runnew   'creating running proc tree
 		end if
@@ -531,13 +529,13 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 
 		If runtype=RTAUTO Then
 			Sleep(autostep)
-			'If threadaut>1 Then 'at least 2 threads
+			If 0>1 Then 'at least 2 threads
 				Dim As Integer c=threadcur
 				Do
 					c+=1:If c>threadnb Then c=0
 				Loop Until thread(c).exc
 				thread_change(c)
-			'EndIf
+			EndIf
 			thread_resume()
 		EndIf
 		If threadsel<>threadcur AndAlso messbox("New Thread","Previous thread "+Str(thread(threadsel).id)+" changed by "+Str(thread(threadcur).id) _

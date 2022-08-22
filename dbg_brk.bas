@@ -515,9 +515,7 @@ end function
 '=======================================================================
 private sub brk_unset(ubpon as integer=false)
 	if brkv.adr1 then ''restore by default ABP on all line
-		For j As Integer = 1 To linenb 'restore all instructions
-		  WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@breakcpu,1,0)
-		Next
+		set_cc()
 	else
 	'print "in brk_unset restoring all instructions"
 
@@ -531,6 +529,7 @@ private sub brk_unset(ubpon as integer=false)
 			'EndIf
 
 			Next
+			ccstate=KCC_NONE
 		#else
 			if ccstate=KCC_ALL then
 				msgdata=0 ''restore sv everywhere
