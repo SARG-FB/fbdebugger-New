@@ -370,8 +370,10 @@ end sub
 '=====================================
 private sub set_cc()
 	if ccstate=KCC_NONE then ''only done if needed
-		For i As Integer = 1 To linenb
-			WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@breakcpu,1,0)
+		For iline As Integer = 1 To linenb
+			if proc(rline(iline).px).enab = true then
+				WriteProcessMemory(dbghand,Cast(LPVOID,rline(iline).ad),@breakcpu,1,0)
+			end if
 		Next
 		ccstate=KCC_ALL
 	endif

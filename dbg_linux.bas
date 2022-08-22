@@ -675,13 +675,15 @@ private sub putremove_breaks(byval pid as long,byval typ as integer=1)
 			If proc(.px).nu=-1 Then
 				'Print " never reached added by compiler"
 			Else
-				dta = ptrace(PTRACE_PEEKTEXT,pid,cast(any ptr,.ad),null)
-				dta = (dta and FIRSTBYTE ) or &hCC
-				if ptrace(PTRACE_POKETEXT,pid,cast(any ptr,.ad),cast(any ptr,dta))=-1 then
-					print "impossible to poketext, errno=";errorlibel(errno)
-					exit for
-				EndIf
-			EndIf
+				if proc(.px).enab = true then
+					dta = ptrace(PTRACE_PEEKTEXT,pid,cast(any ptr,.ad),null)
+					dta = (dta and FIRSTBYTE ) or &hCC
+					if ptrace(PTRACE_POKETEXT,pid,cast(any ptr,.ad),cast(any ptr,dta))=-1 then
+						print "impossible to poketext, errno=";errorlibel(errno)
+						exit for
+					End If
+				end if
+			End If
 			End With
 		Next
 		ccstate=KCC_ALL
