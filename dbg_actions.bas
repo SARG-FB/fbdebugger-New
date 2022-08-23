@@ -948,7 +948,7 @@ private sub gadget_action(igadget as LONG)
 		case GTVIEWBRC ''nothing to do
 		'print  "GTVIEWBRC clicked on"
 		case GBRCVALUE ''nothing to do
-
+		case GATTCHID
 		case else
 			messbox("Gadget/menu/button feature not implemented","sorry option="+str(igadget))
 	End Select
@@ -1085,6 +1085,7 @@ private sub button_action(button as integer)
 
 		case IDBUTATTCH
 			messbox("feature not implemented","button = IDBUTATTACH")
+			attach_gui()
 
 		case IDBUTKILL
 			#ifdef __fb_linux__
@@ -1158,6 +1159,9 @@ private sub button_action(button as integer)
 
 		case GBUTSHOWVAR
 			var_tip()
+
+		case GATTCHOK
+			attach_ok()
 
 		case else
 			'''todo for now used after gadget_action after remove gadget_action when tests are done for the range values

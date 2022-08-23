@@ -515,7 +515,14 @@ end function
 '=======================================================================
 private sub brk_unset(ubpon as integer=false)
 	if brkv.adr1 then ''restore by default ABP on all line
-		set_cc()
+		#ifdef __fb_WIN32__
+			set_cc()
+		#else
+			if ccstate=KCC_NONE then
+				msgdata=1 ''restore breakcpu everywhere
+				exec_order(KPT_CCALL)
+			end if
+		#endif
 	else
 	'print "in brk_unset restoring all instructions"
 
@@ -724,7 +731,8 @@ select case t
 		if brkol(0).typ<>0 then
 			brk_del(0)
 		End If
-		brkol(0).ad=proc(procmain).ed-1 ''BP on ret instruction but doesn't stop ????
+		 ''BP on ret never reached as there is call to fb_end that doesn't return (a call to Exit)
+		brkol(0).ad=proc(procmain).ed-1
 		brkol(0).typ=12
 		runtype=RTRUN
 		but_enable()

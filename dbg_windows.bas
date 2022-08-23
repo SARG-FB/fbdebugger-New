@@ -1058,3 +1058,48 @@ private sub show_regs()
 	readonlyeditor(GEDITOR,1)
 	hidewindow(heditorbx,KSHOW)
 End Sub
+'====================================================
+'' 3 subs for attaching application already running
+'====================================================
+private sub attach_debuggee(p As Any Ptr)
+	Dim As ZString *150 zsrtg=Space(149)
+	reinit
+	dbghand=openprocess(PROCESS_ALL_ACCESS,FALSE,dbgprocid)
+	If dbghand=0 Then messbox("Attach error open","error : "+ Str(GetLastError)):Exit Sub
+	If debugactiveprocess(dbgprocid)=0 Then messbox("Attachment error","error : "+ Str(GetLastError)):Exit Sub
+	prun=TRUE
+	#Ifdef fulldbg_prt
+		dbg_prt ("hand "+Str(dbghand)+" Pid "+Str(dbgprocid))
+	#EndIf
+	runtype=RTSTEP
+	flagattach=TRUE
+	but_enable()
+	menu_enable()
+	getmodulefilenameex(dbghand,0,@zsrtg,Len(zsrtg))'executable name
+	exename=zsrtg
+	'no needed --> exedate=FileDateTime (exename) 'exec date for test with sources date
+	exe_sav(exename,"")
+	settitle()
+	wait_debug
+End Sub
+
+'==============================================================================
+'' creates the window to enter ID for attachment
+'==============================================================================
+private sub attach_gui()
+	attachbx=create_window("Attach id ?",10,10,700,145)
+	textgadget(GATTCHTXT,15,10,200,30,"Enter thread id")
+	stringgadget(GATTCHID,225,10,210,30,"")
+	buttongadget(GATTCHOK,150,70,90,30,"Attach")
+	hidewindow(attachbx,KSHOW)
+end sub
+
+private sub attach_ok()
+	if valint(getgadgettext(GATTCHID))<>0 then
+		ThreadCreate(@attach_debuggee)
+	end if
+	freegadget(GATTCHTXT)
+	freegadget(GATTCHID)
+	freegadget(GATTCHOK)
+	close_window(attachbx)
+end sub
