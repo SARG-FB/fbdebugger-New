@@ -535,7 +535,51 @@ end function
 ''show all the registers
 '======================================
 private sub show_regs()
-	messbox("Show registers","Not yet implemented for linux")
+	Dim As String reg_values(),text
+	exec_order(KPT_GETREGS)
+	text+="Current Thread Id="+Str(thread(threadcur).id)+" / "+Hex(thread(threadcur).id)+chr(13)
+	#Ifdef __FB_64BIT__
+		redim reg_values(15)
+		reg_values(0)="Rax="+fmt(Str(regs.rax),20)+"/ "+Hex(regs.rax)
+		reg_values(1)="Rcx="+fmt(Str(regs.rcx),20)+"/ "+Hex(regs.rcx)
+		reg_values(2)="Rdx="+fmt(Str(regs.rdx),20)+"/ "+Hex(regs.rdx)
+		reg_values(3)="Rbx="+fmt(Str(regs.rbx),20)+"/ "+Hex(regs.rbx)
+		reg_values(4)="Rsp="+fmt(Str(regs.rsp),20)+"/ "+Hex(regs.rsp)
+		reg_values(5)="Rbp="+fmt(Str(regs.rbp),20)+"/ "+Hex(regs.rbp)
+		reg_values(6)="Rsi="+fmt(Str(regs.rsi),20)+"/ "+Hex(regs.rsi)
+		reg_values(7)="R8 ="+fmt(Str(regs.r8),20) +"/ "+Hex(regs.r8)
+		reg_values(8)="R9 ="+fmt(Str(regs.r9),20) +"/ "+Hex(regs.r9)
+		reg_values(9)="R10="+fmt(Str(regs.r10),20)+"/ "+Hex(regs.r10)
+		reg_values(10)="R11="+fmt(Str(regs.r11),20)+"/ "+Hex(regs.r11)
+		reg_values(11)="R12="+fmt(Str(regs.r12),20)+"/ "+Hex(regs.r12)
+		reg_values(12)="R13="+fmt(Str(regs.r13),20)+"/ "+Hex(regs.r13)
+		reg_values(13)="R14="+fmt(Str(regs.r14),20)+"/ "+Hex(regs.r14)
+		reg_values(14)="R15="+fmt(Str(regs.r15),20)+"/ "+Hex(regs.r15)
+		reg_values(15)="Rip="+fmt(Str(regs.rip),20)+"/ "+Hex(regs.rip)
+
+		For i As Long =0 To 15
+	#Else
+		redim reg_values(8)
+		reg_values(0)="Edi="+fmt(Str(regs.edi),11)+"/ "+Hex(regs.edi)
+		reg_values(1)="Esi="+fmt(Str(regs.esi),11)+"/ "+Hex(regs.esi)
+		reg_values(2)="Ebx="+fmt(Str(regs.ebx),11)+"/ "+Hex(regs.ebx)
+		reg_values(3)="Edx="+fmt(Str(regs.edx),11)+"/ "+Hex(regs.edx)
+		reg_values(4)="Ecx="+fmt(Str(regs.ecx),11)+"/ "+Hex(regs.ecx)
+		reg_values(5)="Eax="+fmt(Str(regs.eax),11)+"/ "+Hex(regs.eax)
+		reg_values(6)="Ebp="+fmt(Str(regs.ebp),11)+"/ "+Hex(regs.ebp)
+		reg_values(7)="Eip="+fmt(Str(regs.eip),11)+"/ "+Hex(regs.eip)
+		reg_values(8)="Esp="+fmt(Str(regs.esp),11)+"/ "+Hex(regs.esp)
+
+		For i As Long =0 To 8
+	#EndIf
+			text+=chr(13)+reg_values(i)
+		Next
+		text+=chr(13)+chr(13)
+	Next
+	readonlyeditor(GEDITOR,0)
+	setgadgettext(GEDITOR,text)
+	readonlyeditor(GEDITOR,1)
+	hidewindow(heditorbx,KSHOW)
 End Sub
 '=================================================================
 '' Executes order from first thread in second thread using ptrace
