@@ -531,6 +531,12 @@ private function findadr() as integer
 	print "line not found"
 	return -1
 end function
+'======================================
+''show all the registers
+'======================================
+private sub show_regs()
+	messbox("Show registers","Not yet implemented for linux")
+End Sub
 '=================================================================
 '' Executes order from first thread in second thread using ptrace
 '=================================================================

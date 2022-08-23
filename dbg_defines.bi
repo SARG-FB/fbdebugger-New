@@ -99,6 +99,8 @@
 	'' Output information
 	#define dbg_prt(txt) output_wds(txt)
 	declare sub output_wds(as string)
+	declare sub attach_gui()
+	declare sub attach_ok()
 
 	#define HCOMBO 500
 
@@ -741,6 +743,10 @@ enum
 	GCCHAIN=1400
 '' timer
 	GTIMER001
+'' attaching
+	GATTCHTXT
+	GATTCHID
+	GATTCHOK
 end enum
 
 '' debug events
