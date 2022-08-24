@@ -120,7 +120,7 @@ dim shared as integer afterkilled ''what doing after debuggee killed
 	Dim Shared As Integer dllnb
 
 	''attach running exe
-	Dim Shared hattach As HANDLE    'handle to signal attchement done
+	'Dim Shared hattach As HANDLE    'handle to signal attachment done JIT
 	Dim Shared as HWND attachbx
 
 	'print "MutexLock00"

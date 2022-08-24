@@ -576,7 +576,7 @@ Dim As Integer firstchance,flagsecond,bptyp,cpt,adr
 Dim As String Accviolstr(1)={"TRYING TO READ","TRYING TO WRITE"}
 ' Wait for a debugging event to occur. The second parameter indicates
 ' that the function does not return until a debugging event occurs.
-If hattach Then setevent(hattach):hattach=0
+'If hattach Then setevent(hattach):hattach=0 JIT
 While 1
 	If WaitForDebugEvent(@DebugEv, infinite)=0 Then 'INFINITE ou null ou x
 		ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
@@ -663,7 +663,7 @@ While 1
 								exit while
 							end if
 
-							if runtype=RTRUN then
+							if runtype=RTRUN or runtype=RTAUTO then
 								if brkv.adr1<>0 then
 									if brk_test(brkv.adr1,brkv.adr2,brkv.typ,brkv.val,brkv.ttb) then
 										if brkv.ivr1=0 then
@@ -687,6 +687,7 @@ While 1
 									If brkol(ibrk).typ>50 Then Continue For 'disabled
 									if brkol(ibrk).ad=adr then
 										bpidx=ibrk
+										runtype=RTRUN ''forcing by default RTRUN usefull only if RTAUTO
 										exit for
 									EndIf
 								Next
@@ -721,10 +722,11 @@ While 1
 										exit while
 									end if
 								else
+									thread_search(DebugEv.dwThreadId,CSSTEP,adr)
 									exit while
 								end if
 
-							else ''RTSTEP/RTAUTO
+							else ''RTSTEP
 								if stopcode=CSUSER then ''CSUSER
 									thread_search(DebugEv.dwThreadId,stopcode,adr)
 								else
@@ -868,7 +870,6 @@ While 1
 				mutexlock blocker ''waiting the Go from main thread
 				mutexunlock blocker
 				''''''''''''''''' new way debug_extract(Cast(UInteger,.lpBaseOfImage),exename)
-
 			End With
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 		'=========================
@@ -989,6 +990,7 @@ private sub process_list()
 		End If
 		CloseHandle (snap)
 	End If
+	SetWindowText(heditorbx,"Process list")
 	SetGadgetText(GEDITOR,text)
 	hidewindow(heditorbx,KSHOW)
 end sub
@@ -1080,6 +1082,7 @@ private sub attach_debuggee(p As Any Ptr)
 	'no needed --> exedate=FileDateTime (exename) 'exec date for test with sources date
 	exe_sav(exename,"")
 	settitle()
+	SetTimer(hmain,GTIMER001,100,Cast(Any Ptr,@debug_event))
 	wait_debug
 End Sub
 
@@ -1087,15 +1090,17 @@ End Sub
 '' creates the window to enter ID for attachment
 '==============================================================================
 private sub attach_gui()
-	attachbx=create_window("Attach id ?",10,10,700,145)
-	textgadget(GATTCHTXT,15,10,200,30,"Enter thread id")
+	if kill_process("Trying to attach a running process but debuggee still running")=FALSE then exit sub
+	attachbx=create_window("Attach a running process",10,10,550,145)
+	textgadget(GATTCHTXT,15,10,200,30,"Enter thread ID  (use process list in Tools to find ID)")
 	stringgadget(GATTCHID,225,10,210,30,"")
 	buttongadget(GATTCHOK,150,70,90,30,"Attach")
 	hidewindow(attachbx,KSHOW)
 end sub
 
 private sub attach_ok()
-	if valint(getgadgettext(GATTCHID))<>0 then
+	dbgprocid=valint(getgadgettext(GATTCHID))
+	if dbgprocid<>0 then
 		ThreadCreate(@attach_debuggee)
 	end if
 	freegadget(GATTCHTXT)

@@ -1642,7 +1642,9 @@ Private sub thread_resume()
 	#ifdef __fb_win32__
 		''todo move to dbg_windows.bas
 		''restore old value for execution
-		writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0)
+		if thread(threadcur).sv>0 then ''if attachment no saved line
+			writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0)
+		end if
 		resumethread(threadhs)
 	#else
 		''LINUX, maybe moved in dbg_linux.bas

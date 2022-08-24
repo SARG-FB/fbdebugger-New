@@ -1113,7 +1113,7 @@ private sub start_pgm(p As Any Ptr)
 											continue while
 										EndIf
 									Next
-								elseif runtype=RTRUN then
+								elseif runtype=RTRUN or runtype=RTAUTO then
 									if brkv.adr1<>0 then
 										if brk_test(brkv.adr1,brkv.adr2,brkv.typ,brkv.val,brkv.ttb) then
 											if brkv.ivr1=0 then
@@ -1140,6 +1140,7 @@ private sub start_pgm(p As Any Ptr)
 										if brkol(ibrk).ad=xip then
 											bpidx=ibrk
 											print "BP found idx=";bpidx,"typ=";brkol(ibrk).typ
+											runtype=RTRUN ''forcing only useful if RTAUTO
 											exit for
 										EndIf
 									Next
@@ -1192,14 +1193,19 @@ private sub start_pgm(p As Any Ptr)
 											'EndIf
 										'Next
 										if stopcode<>CSUSER then
-											print "STOPPED without UBP CSNEWTHRD=";thread(threadcur).id,hex(xip)
-											brp_stop(threadcur,CSNEWTHRD,xip)
+											''could be a hard case if when running auto a new thread is started
+											if runtype=RTAUTO then
+												brp_stop(threadcur,CSSTEP,xip)
+											Else
+												print "STOPPED without UBP CSNEWTHRD=";thread(threadcur).id,hex(xip)
+												brp_stop(threadcur,CSNEWTHRD,xip)
+											end if
 										else
 											brp_stop(threadcur,CSUSER,xip)
 										end if
 									end if
 
-								else ''RTSTEP/RTAUTO
+								else ''RTSTEP
 									if stopcode=CSUSER then ''CSUSER : user halts the debuggee
 										brp_stop(threadcur,stopcode,xip)
 
