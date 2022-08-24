@@ -1084,7 +1084,6 @@ private sub button_action(button as integer)
 			restart()
 
 		case IDBUTATTCH
-			messbox("feature not implemented","button = IDBUTATTACH")
 			attach_gui()
 
 		case IDBUTKILL
