@@ -434,7 +434,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 
 	'print "test proccurad=proc(procsv).db",proccurad,proc(procsv).db
 	If proccurad=proc(procsv).db Then 'is first proc instruction
-
+		thread(threadcur).cl=thread(threadcur).od ''done here to avoid a wrong assignment
 		If rline(rln).sv=85 Then'check if the first instruction is push ebp opcode=85 / push rbp opcode=&h55=85dec
 			'in this case there is a prologue
 			 'at the beginning of proc EBP not updated so use ESP

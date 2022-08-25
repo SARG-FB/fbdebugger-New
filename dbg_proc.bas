@@ -355,7 +355,7 @@ private sub proc_new()
 		thread_text() ''put text not only current but all to reset previous thread text
 		tv=TVI_LAST ''insert in last position
 	Else
-		procr(procrnb).cl=thread(threadcur).od
+		procr(procrnb).cl=thread(threadcur).cl
 		tv=thread(threadcur).plt 'insert after the last item of thread
 	EndIf
 

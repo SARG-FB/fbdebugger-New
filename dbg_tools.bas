@@ -874,7 +874,7 @@ private sub call_chain(thid as integer)
 	dim as string txt
 	dim as integer srcprev=srcdisplayed ''save now for restoring at the end of the table filling
 	DeleteListViewItemsAll(GCCHAIN)
-	txt="Procedure                 [ThID="+ Str(thid)+"]"
+	txt="Procedure  [ThID="+ Str(thid)+"]"
 	SetTextColumnListView(GCCHAIN,0,txt)
 	for iprocr as integer = procrnb to 1 step -1
 		If procr(iprocr).thid=thid Then

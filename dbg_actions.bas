@@ -353,8 +353,16 @@ private sub menu_action(poption as integer)
 						brktyp=KBRCMEMMEM
 					end if
 			end select
+
 		Case MNBRKVS
 			brkv_set(0)
+
+		case MNDBGHELP
+		#Ifdef __fb_win32__
+			shell "doc_fbdebugger.pdf"
+		#else
+			messbox("Help file","feature not implemented")
+		#endif
 	'=============================================================
         case else
 			'messbox("Menu feature not implemented","sorry option="+str(poption)+" --> enum="+enumdef(poption))

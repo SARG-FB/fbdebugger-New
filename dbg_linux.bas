@@ -1356,12 +1356,10 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		rln=i
 	end if
 	rlinecur=rln
-	print "rlinecur=";rlinecur
-
 	thread(threadcur).od=thread(threadcur).sv
 	thread(threadcur).sv=rln
 
-	print "in gest brk sv=";thread(threadcur).sv
+	'print "in gest brk sv=";thread(threadcur).sv
 
 	procsv=rline(rln).px
 	'dbg_prt2("proc ="+Str(procsv)+" "+proc(procsv).nm+" "+hex(proc(procsv).db)+" "+source(proc(procsv).sr)+" "+hex(proccurad))
@@ -1373,7 +1371,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 
 	print "test proccurad=proc(procsv).db",hex(proccurad),hex(proc(procsv).db)
 	If proccurad=proc(procsv).db Then 'is first proc instruction
-
+		thread(threadcur).cl=thread(threadcur).od ''done here to avoid a wrong assignment
 		If rline(rln).sv=85 Then'check if the first instruction is push ebp opcode=85 / push rbp opcode=&h55=85dec
 			'in this case there is a prologue
 			 'at the beginning of proc EBP not updated so use ESP
