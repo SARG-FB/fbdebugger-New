@@ -652,9 +652,10 @@ private sub create_cchainbx()
 		Var Style=LVS_EX_GRIDLINES
 	#EndIf
 	hlviewcchain=ListViewGadget(GCCHAIN,0,0,850,600,style)
-	AddListViewColumn(GCCHAIN, "Procedure           Thread=12345",0,0,200)
+	setgadgetfont(GCCHAIN,CINT(LoadFont("Courier New",10)))
+	AddListViewColumn(GCCHAIN, "Procedure Thread=12345",0,0,210)
 	AddListViewColumn(GCCHAIN, "Calling Line",1,1,200)
-	AddListViewColumn(GCCHAIN, "L. Nbr.",2,2,50)
+	AddListViewColumn(GCCHAIN, "L. Nbr.",2,2,70)
 	AddListViewColumn(GCCHAIN, "File",3,3,200)
 end sub
 '========================================================
@@ -1337,6 +1338,8 @@ private sub gui_init()
 	statusbar_text(KSTBPRC,"Current proc")
 	statusbar_text(KSTBBPM,"")
 	statusbar_text(KSTBFRT,"Fast time ?")
+
+	AddKeyboardShortcut(hmain,FVIRTKEY,VK_F1,MNDBGHELP)
 
 	#ifdef __fb_win32__
 		var icon=loadimage(0,@"fbdebugger.ico",IMAGE_ICON,0,0,LR_LOADFROMFILE or LR_DEFAULTSIZE)

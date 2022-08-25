@@ -18,7 +18,7 @@
 	#define ver3264 "(32bit) "
 #endif
 
-#Define fbdebuggerversion "V 3.00 BETA e "+ver3264
+#Define fbdebuggerversion "V 3.00 BETA f "+ver3264
 
 '#define fulldbg_prt 'uncomment to get more information
 #Define dbg_prt2 rem 'dbg_prt 'used temporary for debugging fbdebugger, change rem by dbg_prt
@@ -1155,6 +1155,7 @@ Type tthread
  pe  As Integer   'flag if true indicates proc end
  sv  As Integer   'sav line
  od  As Integer   'previous line
+ cl  as integer   'calling line, assigned when begin of proc is reached then -->proc().cl
  nk  As UInteger  'for naked proc, stack and used as flag
  st  As Integer   'to keep starting line
  tv  As integer 'to keep handle of thread item
