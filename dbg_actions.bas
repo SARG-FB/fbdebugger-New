@@ -1084,7 +1084,12 @@ private sub button_action(button as integer)
 			restart()
 
 		case IDBUTATTCH
-			attach_gui()
+			#Ifdef __fb_win32__
+				attach_gui()
+			#else
+				messbox("Attach running debuggee","Not yet implemented")
+			#endif
+
 
 		case IDBUTKILL
 			#ifdef __fb_linux__
@@ -1160,7 +1165,12 @@ private sub button_action(button as integer)
 			var_tip()
 
 		case GATTCHOK
-			attach_ok()
+			#Ifdef __fb_win32__
+				attach_ok()
+			#else
+				messbox("Attach running debuggee","Not yet implemented")
+			#endif
+
 
 		case else
 			'''todo for now used after gadget_action after remove gadget_action when tests are done for the range values

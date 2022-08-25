@@ -544,8 +544,8 @@ private sub show_regs()
 		reg_values(1)="Rcx="+fmt(Str(regs.rcx),20)+"/ "+Hex(regs.rcx)
 		reg_values(2)="Rdx="+fmt(Str(regs.rdx),20)+"/ "+Hex(regs.rdx)
 		reg_values(3)="Rbx="+fmt(Str(regs.rbx),20)+"/ "+Hex(regs.rbx)
-		reg_values(4)="Rsp="+fmt(Str(regs.rsp),20)+"/ "+Hex(regs.rsp)
-		reg_values(5)="Rbp="+fmt(Str(regs.rbp),20)+"/ "+Hex(regs.rbp)
+		reg_values(4)="Rsp="+fmt(Str(regs.xsp),20)+"/ "+Hex(regs.xsp)
+		reg_values(5)="Rbp="+fmt(Str(regs.xbp),20)+"/ "+Hex(regs.xbp)
 		reg_values(6)="Rsi="+fmt(Str(regs.rsi),20)+"/ "+Hex(regs.rsi)
 		reg_values(7)="R8 ="+fmt(Str(regs.r8),20) +"/ "+Hex(regs.r8)
 		reg_values(8)="R9 ="+fmt(Str(regs.r9),20) +"/ "+Hex(regs.r9)
@@ -555,7 +555,7 @@ private sub show_regs()
 		reg_values(12)="R13="+fmt(Str(regs.r13),20)+"/ "+Hex(regs.r13)
 		reg_values(13)="R14="+fmt(Str(regs.r14),20)+"/ "+Hex(regs.r14)
 		reg_values(14)="R15="+fmt(Str(regs.r15),20)+"/ "+Hex(regs.r15)
-		reg_values(15)="Rip="+fmt(Str(regs.rip),20)+"/ "+Hex(regs.rip)
+		reg_values(15)="Rip="+fmt(Str(regs.xip),20)+"/ "+Hex(regs.xip)
 
 		For i As Long =0 To 15
 	#Else
@@ -566,16 +566,16 @@ private sub show_regs()
 		reg_values(3)="Edx="+fmt(Str(regs.edx),11)+"/ "+Hex(regs.edx)
 		reg_values(4)="Ecx="+fmt(Str(regs.ecx),11)+"/ "+Hex(regs.ecx)
 		reg_values(5)="Eax="+fmt(Str(regs.eax),11)+"/ "+Hex(regs.eax)
-		reg_values(6)="Ebp="+fmt(Str(regs.ebp),11)+"/ "+Hex(regs.ebp)
-		reg_values(7)="Eip="+fmt(Str(regs.eip),11)+"/ "+Hex(regs.eip)
-		reg_values(8)="Esp="+fmt(Str(regs.esp),11)+"/ "+Hex(regs.esp)
+		reg_values(6)="Ebp="+fmt(Str(regs.xbp),11)+"/ "+Hex(regs.xbp)
+		reg_values(7)="Eip="+fmt(Str(regs.xip),11)+"/ "+Hex(regs.xip)
+		reg_values(8)="Esp="+fmt(Str(regs.xsp),11)+"/ "+Hex(regs.xsp)
 
 		For i As Long =0 To 8
 	#EndIf
 			text+=chr(13)+reg_values(i)
 		Next
 		text+=chr(13)+chr(13)
-	Next
+
 	readonlyeditor(GEDITOR,0)
 	setgadgettext(GEDITOR,text)
 	readonlyeditor(GEDITOR,1)
