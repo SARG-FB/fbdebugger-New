@@ -1101,6 +1101,20 @@ private sub dbg_epilog(ofset as integer)
 				exit for
 			EndIf
 		Next
+		''in case there are procedures after the last line of main
+		for iline as integer = linenb to 1 step -1
+			if rLine(iline).px=procmain then
+				for iproc as integer = 1 to procnb
+					if proc(iproc).nu=rLine(iline).nu then
+						if proc(iproc).sr=proc(procmain).sr then
+							linenb-=1
+							exit for,for
+						EndIf
+					EndIf
+				Next
+				exit for
+			EndIf
+		Next
 	end if
 end sub
 '' -------------------------------
