@@ -121,7 +121,7 @@ dim shared as integer afterkilled ''what doing after debuggee killed
 
 	''attach running exe
 	'Dim Shared hattach As HANDLE    'handle to signal attachment done JIT
-	Dim Shared as HWND attachbx
+	Dim Shared as HWND hattachbx
 
 	'print "MutexLock00"
 	MutexLock blocker
@@ -432,6 +432,12 @@ do
 				settings_update()
 			elseif EventHwnd=hshwexpbx then ''releases shwewp
 				shwexp.free=true
+			elseif EventHwnd=hattachbx then
+				freegadget(GATTCHEDIT)
+				freegadget(GATTCHTXT)
+				freegadget(GATTCHGET)
+				freegadget(GATTCHOK)
+				close_window(hattachbx)
 			end if
 		end if
 		continue do

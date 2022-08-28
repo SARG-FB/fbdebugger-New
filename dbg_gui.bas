@@ -1533,3 +1533,65 @@ print "inside find_text2=";text,tlen,tptr,"tpos=";ftext.tpos,start;" end=";lend
 		exit sub
 	wend
 end sub
+
+'==============================================================================
+'' creates the window to enter ID for attachment
+'==============================================================================
+private sub attach_gui()
+	Dim As String ln,process
+
+	if kill_process("Trying to attach a running process but debuggee still running")=FALSE then exit sub	
+
+	#ifdef __FB_linux__
+	Const TEST_COMMAND = "ps -o pid,comm"
+	#else
+	Const TEST_COMMAND = "tasklist"
+	#endif
+
+	Open Pipe TEST_COMMAND For Input As #1
+	Do Until EOF(1)
+		Line Input #1, ln
+		#ifdef __FB_linux__
+			if len(process)<>0 then process+=chr(10)
+			process+=left(ln,6)+mid(ln,7)
+		#else
+			if len(ln)>0 then
+				if ln[35]=asc("C") then ''take only Console not Services
+					if len(process)<>0 then process+=chr(10)
+					process+=mid(ln,30,6)+mid(ln,1,29)
+				end if
+			end if
+		#EndIf
+	Loop
+	Close #1
+
+	hattachbx=OpenWindow("Attach a running process",300,10,650,500)
+	EditorGadget(GATTCHEDIT,10,10,600,300, process)
+	ReadOnlyEditor(GATTCHEDIT,1)
+	SetGadgetFont(GATTCHEDIT,CINT(LoadFont("Courier New",9)))
+	ButtonGadget(GATTCHGET,10,320,60,30,"Get ID")
+	TextGadget(GATTCHTXT,90,320,450,60,"Click on a line then click on 'Get ID' button"+chr(10)+"(CAUTION if debuggee is waiting (using sleep) free it after attaching otherwise all will seem frozen)")
+	ButtonGadget(GATTCHOK,10,400,120,30,"Attach")
+End Sub
+
+private sub attach_getid()
+	dim as string text = GetLineTextEditor(GATTCHEDIT,LineFromCharEditor(GATTCHEDIT,GetCurrentIndexCharEditor(GATTCHEDIT)))
+	if valint(left(text,6))=0 then
+		messbox("Get Process ID","Error no value or null ID")
+	Else
+		setgadgettext(GATTCHTXT,"Exe : "+mid(text,7))
+		setgadgettext(GATTCHOK,"Attach "+left(text,6))
+		dbgprocid=valint(left(text,6))
+	end if
+end sub
+
+private sub attach_ok()
+	if dbgprocid<>0 then
+		ThreadCreate(@attach_debuggee)
+	end if
+	freegadget(GATTCHEDIT)
+	freegadget(GATTCHTXT)
+	freegadget(GATTCHGET)
+	freegadget(GATTCHOK)
+	close_window(hattachbx)
+end sub

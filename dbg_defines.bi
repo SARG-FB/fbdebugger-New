@@ -99,8 +99,6 @@
 	'' Output information
 	#define dbg_prt(txt) output_wds(txt)
 	declare sub output_wds(as string)
-	declare sub attach_gui()
-	declare sub attach_ok()
 
 	#define HCOMBO 500
 
@@ -744,8 +742,9 @@ enum
 '' timer
 	GTIMER001
 '' attaching
+	GATTCHEDIT
 	GATTCHTXT
-	GATTCHID
+	GATTCHGET
 	GATTCHOK
 end enum
 
@@ -1254,3 +1253,6 @@ declare sub brk_manage(title as string)
 declare sub var_tip()
 declare sub show_regs()
 declare sub set_cc()
+declare function kill_process(text As String) As Integer
+declare sub attach_ok()
+declare sub attach_debuggee(p As Any Ptr)
