@@ -1061,7 +1061,7 @@ private sub show_regs()
 	hidewindow(heditorbx,KSHOW)
 End Sub
 '====================================================
-'' 3 subs for attaching application already running
+'' for attaching application already running
 '====================================================
 private sub attach_debuggee(p As Any Ptr)
 	Dim As ZString *150 zsrtg=Space(149)
@@ -1086,25 +1086,3 @@ private sub attach_debuggee(p As Any Ptr)
 	wait_debug
 End Sub
 
-'==============================================================================
-'' creates the window to enter ID for attachment
-'==============================================================================
-private sub attach_gui()
-	if kill_process("Trying to attach a running process but debuggee still running")=FALSE then exit sub
-	attachbx=create_window("Attach a running process",10,10,550,145)
-	textgadget(GATTCHTXT,15,10,200,30,"Enter thread ID  (use process list in Tools to find ID)")
-	stringgadget(GATTCHID,225,10,210,30,"")
-	buttongadget(GATTCHOK,150,70,90,30,"Attach")
-	hidewindow(attachbx,KSHOW)
-end sub
-
-private sub attach_ok()
-	dbgprocid=valint(getgadgettext(GATTCHID))
-	if dbgprocid<>0 then
-		ThreadCreate(@attach_debuggee)
-	end if
-	freegadget(GATTCHTXT)
-	freegadget(GATTCHID)
-	freegadget(GATTCHOK)
-	close_window(attachbx)
-end sub
