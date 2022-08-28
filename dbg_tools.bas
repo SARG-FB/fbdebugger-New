@@ -478,7 +478,7 @@ private sub shwexp_new(gtview as integer)
 			Exit Sub
 		end if
 		If pt Then 'pointer : type doesn't matter
-			addr-=4 ''todo check 8 ???
+			addr-=sizeof(integer) ''todo check 4 replaced by sizeof(integer) ???
 		Else
 			If typ=13 Then 'string
 				addr-=12
