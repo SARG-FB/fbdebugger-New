@@ -784,6 +784,7 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 	send_sci(SCI_MarkerDefine, 5,SC_MARK_FULLRECT)
 	send_sci(SCI_MarkerDefine, 6,SC_MARK_FULLRECT)
 	send_sci(SCI_MarkerDefine, 7,SC_MARK_CIRCLE)
+	send_sci(SCI_MarkerDefine, 8,SC_MARK_ARROW)
 	''color markers
 	send_sci(SCI_MARKERSETFORE,0,KRED)
 	send_sci(SCI_MARKERSETBACK,0,KWHITE)
@@ -802,6 +803,8 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 
 	send_sci(SCI_MARKERSETFORE,7,KRED)
 	send_sci(SCI_MARKERSETBACK,7,KRED)
+	send_sci(SCI_MARKERSETFORE,8,KGREEN)
+	send_sci(SCI_MARKERSETBACK,8,KGREEN)
 
 	send_sci(SCI_StyleSetFore, KSTYLECUR, KRED)    ''style #50 FG set to red
 	send_sci(SCI_StyleSetBack, KSTYLECUR, KYELLOW) ''style #50 BB set to green
@@ -1149,7 +1152,7 @@ private sub menu_set()
 	MenuItem(MNCHGBRKN,HMenusource1,"Change counter value [Alt + N]")
 	MenuItem(MNMNGBRK ,HMenusource1,"Manage [Ctrl + B]reakpoints")
 	MenuBar(HMenusource)
-	MenuItem(MNACCLINE,HMenusource,"Mark not executable lines")
+	MenuItem(MNACCLINE,HMenusource,"Mark executable lines")
 	MenuItem(MNTHRDAUT,HMenusource,"Step auto multi threads")
 	MenuBar(HMenusource)
 	MenuItem(MNSHWVAR,HMenusource,"Show var"+Chr(9)+"Ctrl+Left click")
@@ -1595,3 +1598,37 @@ private sub attach_ok()
 	freegadget(GATTCHOK)
 	close_window(hattachbx)
 end sub
+'=========================================
+''mark with agreen arrow executable lines
+'=========================================
+private sub mark_exec()
+	dim as INTEGER procfound=1
+	for iline as integer = 1 to linenb
+		if rline(iline).sx=srcdisplayed then
+			send_sci(SCI_MARKERDELETE, rline(iline).nu-1, -1)
+			send_sci(SCI_MARKERADD, rline(iline).nu-1, 8)
+			procfound=1
+		else
+			if procfound=1 then
+				exit for
+			EndIf
+		EndIf
+	Next
+	messbox("Executable lines marked","Ok to return normal view")
+	procfound=0
+	for iline as integer = 1 to linenb
+		if rline(iline).sx=srcdisplayed then
+			send_sci(SCI_MARKERDELETE, rline(iline).nu-1, -1)
+			procfound=1
+		else
+			if procfound=1 then
+				exit for
+			EndIf
+		EndIf
+	Next
+	for ibrk as INTEGER	= 1 to brknb
+		if 	brkol(ibrk).isrc=srcdisplayed then
+			brk_marker(ibrk)
+		EndIf
+	Next
+End Sub
