@@ -1256,3 +1256,4 @@ declare sub set_cc()
 declare function kill_process(text As String) As Integer
 declare sub attach_ok()
 declare sub attach_debuggee(p As Any Ptr)
+declare sub brk_marker(brkidx as integer)

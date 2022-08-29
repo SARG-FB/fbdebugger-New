@@ -1,7 +1,11 @@
+
+
+
+
 '===================================================
 '' set/unset breakpoint markers
 '===================================================
-sub brk_marker(brkidx as integer)
+private sub brk_marker(brkidx as integer)
 	dim as integer src,lline=brkol(brkidx).nline-1,typ
 
 	if brkol(brkidx).typ>50 then

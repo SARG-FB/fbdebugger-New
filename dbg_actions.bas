@@ -363,6 +363,10 @@ private sub menu_action(poption as integer)
 		#else
 			messbox("Help file","feature not implemented")
 		#endif
+
+		case MNACCLINE
+			mark_exec()
+
 	'=============================================================
         case else
 			'messbox("Menu feature not implemented","sorry option="+str(poption)+" --> enum="+enumdef(poption))
