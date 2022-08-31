@@ -1252,29 +1252,31 @@ private sub start_pgm(p As Any Ptr)
 	thread2=syscall(SYS_GETTID)
 	if thread2=-1 then print "errno=";errno
 	print "current pid=";thread2
-	dim as pid_t pid=fork()
+	dim as pid_t lpid=fork()
 
-	print "pid=";pid,"size=";sizeof(pid_t)
+	print "lpid=";lpid
 
-	Select Case pid
+	Select Case lpid
 		case -1 'error child not created
 			Print "error child not created"'"errno = ";errno 'use perror("fork") ?
 			exit sub
 
 		Case 0 'child created now the debuggee is going to be started
 			debugpid=getpid
-			Print "Debuggee pid = ",debugpid,syscall(SYS_GETTID)
+			Print "Debuggee pid = ";debugpid,syscall(SYS_GETTID)
+			pid=debugpid
 			if ptrace(PTRACE_TRACEME, 0, 0,0) then
 				Print "error traceme"'"errno = ";errno 'use perror("ptrace")
 	    		exit sub
 			EndIf
-			print "name", exename
+			print "name=";exename
 			if execv(strptr(exename),NULL) then
 				print "error on starting debuggee=";errno ' argv, envp)=-1
 				exit sub
 			EndIf
 
-		Case Else
+		Case Else ''parent
+			pid=lpid
 			wait_signal()
 	End Select
 end sub
@@ -1282,14 +1284,21 @@ end sub
 '' attachs debuggee for linux
 '================================================
 private sub attach_debuggee(p As Any Ptr)
+	dim as string textcommand
 	pid=dbgprocid
 	if ptrace(PTRACE_ATTACH, pid, 0,0) then
 		Print "error attach"'"errno = ";errno 'use perror("ptrace")
 		exit sub
 	EndIf
+	''retrieve the full name of exe
+	textcommand="readlink /proc/"+ltrim(str(pid))+"/exe -v"
+	Open Pipe textcommand For Input As #1
+		Line Input #1, exename
+	close #1
+
+	exe_sav(exename,"")
 	runtype=RTSTEP
 	flagattach=TRUE
-	print "pid=";pid,"size=";sizeof(pid_t)
 	wait_signal()
 end sub
 '==================================
@@ -1404,7 +1413,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 				procsk=regs.xsp
 			   thread(threadcur).nk=procsk
 			Else
-				messbox("Main procedure problem","No standard prologue --> random behaviour")			
+				messbox("Main procedure problem","No standard prologue --> random behaviour")
 				procsk=regs.xsp-SizeOf(Integer)
 			EndIf
 		End If
@@ -1458,9 +1467,9 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			print "in gest_brk runnew"
 			proc_runnew   'creating running proc tree
 		end if
-   		var_sh			'updating information about variables
+		var_sh			'updating information about variables
 
-   		''2022/02/15 runtype=RTSTEP   now done when there is not anymore signal
+		runtype=RTSTEP   'now done when there is not anymore signal
 
    		dsp_change(rln)
 		if stopcode=CSLINE then
