@@ -3587,18 +3587,11 @@ private sub external_launch()
 	exename=debuggee
 	exe_sav(exename,cmdline)
 	SetTimer(hmain,GTIMER001,100,Cast(Any Ptr,@debug_event))
-	#Ifdef __fb_win32__
-		If ThreadCreate(@start_pgm)=0 Then
-			KillTimer(hmain,GTIMER001)
-			messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
 
-		endif
-	#else
-		If ThreadCreate(@start_pgm)=0 Then
-			KillTimer(hmain,GTIMER001)
-			messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
-		endif
-	#endif
+	If ThreadCreate(@start_pgm)=0 Then
+		KillTimer(hmain,GTIMER001)
+		messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
+	endif
 end sub
 '===================================================================================
 ''real restart after killing debuggee if needed
@@ -3628,17 +3621,11 @@ private sub restart_exe(byval idx as integer)
 
 	SetTimer(hmain,GTIMER001,100,Cast(Any Ptr,@debug_event))
 
-	#Ifdef __fb_win32__
-		If ThreadCreate(@start_pgm)=0 Then
-			KillTimer(hmain,GTIMER001)
-			messbox("ERROR unable to start the thread managing the debuggee","Debuggee not running")
-		endif
-	#else
-		If ThreadCreate(@start_pgm)=0 Then
-			KillTimer(hmain,GTIMER001)
-			messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
-		endif
-	#endif
+	If ThreadCreate(@start_pgm)=0 Then
+		KillTimer(hmain,GTIMER001)
+		messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
+	endif
+
 end sub
 '==================================================================================
 '' Debuggee restarted, last debugged (using IDBUTRERUN) or one of the 9/10 others

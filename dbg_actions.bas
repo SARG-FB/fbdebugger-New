@@ -998,19 +998,11 @@ private sub select_file()
 	flagrestart=-1
     exe_sav(exename,"")
 	SetTimer(hmain,GTIMER001,500,Cast(Any Ptr,@debug_event))
-	#Ifdef __fb_win32__
-		If ThreadCreate(@start_pgm)=0 Then
-			KillTimer(hmain,GTIMER001)
-			messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
-		endif
-	#else
-		'print "before thread create"
-		If ThreadCreate(@start_pgm)=0 Then
-			'print "timer killed"
-			KillTimer(hmain,GTIMER001)
-			messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
-		endif
-	#endif
+
+	If ThreadCreate(@start_pgm)=0 Then
+		KillTimer(hmain,GTIMER001)
+		messbox("Debuggee not running","ERROR unable to start the thread managing the debuggee")
+	endif
 end sub
 '==============================================================
 '' handles actions for each button
