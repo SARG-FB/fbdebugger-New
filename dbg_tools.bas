@@ -3198,7 +3198,6 @@ private sub ini_write()
 	'Print #fileout,"[CTB]="+Str(clrtmpbrk) 'color tempo breakpoint
 	'Print #fileout,"[CPB]="+Str(clrperbrk) 'color perm breakpoint
 	'print #fileout,"[DPO]="+Str(dspofs)
-	'If jitprev<>"" Then Print #fileout,"[JIT]="+jitprev
 	'Print #fileout,"[PST]="+Str(procsort) 'type of procs sort
 
 	close fileout
@@ -3285,8 +3284,6 @@ private sub ini_read()
 		'		clrtmpbrk=ValInt(RTrim(Mid(lineread,7)))
 		'ElseIf Left(lineread,6)="[CPB]=" Then	'color perm breakpoint
 		'		clrperbrk=ValInt(RTrim(Mid(lineread,7)))
-		'ElseIf Left(lineread,6)="[JIT]=" Then
-		'	jitprev=RTrim(Mid(lineread,7))
 		'ElseIf Left(lineread,6)="[DPO]=" Then
 		'	dspofs=ValInt(RTrim(Mid(lineread,7)))
 
@@ -3552,6 +3549,23 @@ private function debug_event() as INTEGER
 	#endif
 	return true
 end function
+'==================================================================
+private sub attach_ok()
+	if dbgprocid<>0 then
+		reinit()
+		SetTimer(hmain,GTIMER001,100,Cast(Any Ptr,@debug_event))
+		ThreadCreate(@attach_debuggee)
+	end if
+	print "free in attach_ok 00"
+	freegadget(GATTCHEDIT)
+	freegadget(GATTCHTXT)
+	freegadget(GATTCHGET)
+	freegadget(GATTCHOK)
+	print "free in attach_ok 01 ";hattachbx
+	'close_window(hattachbx)
+	hidewindow(hattachbx,KHIDE)
+	print "free in attach_ok 02"
+end sub
 '===================================================
 ''launch by command line
 '===================================================
@@ -3644,21 +3658,6 @@ private sub restart(byval idx as integer=0)
 	EndIf
 	restart_exe(idx)
 end	sub
-'--------------------------------------------------------
-'' Debuggee provided by jitdebugger
-'--------------------------------------------------------
-private sub jitdbg()
-	messbox("feature to be coded","attach")
-	'p=instr(Command,"-p")
-	'	If p<>0 And InStr(Command,"-e")<>0 And InStr(Command,"-g")<>0 Then 'started by
-	'	dbgprocid=ValInt(Mid(Command,P+3))
-	'	p=InStr(p+3,Command,"-e")
-	'	p=ValInt(Mid(Command,P+3))
-	'	hattach=Cast(HANDLE,p)
-	'	ThreadCreate(@dbg_attach)
-	'	Exit Sub
-	'EndIf
-end sub
 '=================================================================================
 '' changes address of execution (forward or backward) only in the same procedure
 '==================================================================================

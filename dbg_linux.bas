@@ -963,20 +963,299 @@ private sub first_sigtrap()
 	ptrace(PTRACE_SETOPTIONS, thread(threadcur).id, 0, Cast(Any Ptr,(PTRACE_O_TRACECLONE)))
 	ptrace(PTRACE_CONT,thread(threadcur).id,0,0)
 End Sub
+'===============================
+'' wait and handle all signals
+'===============================
+private sub wait_signal()
+	dim as long threadSig
+	static as long newpid
+	dim as long status
+	dim as INTEGER dta,bptyp
+
+	sig_init()
+	debugpid=pid
+	threadnb=0
+	thread(threadcur).id=pid
+	thread(threadcur).sv=-1
+	print "debugpid in scope debugger =";pid
+	Print "Debugger pid (+thread) = ";getpid,syscall(SYS_GETTID)
+	wait(0)
+
+	first_sigtrap()
+
+	print "entering in loop"
+	while 1
+		''waiting loop, exit when debuggee terminated
+		if statussaved then
+			status=statussaved
+			threadsig=threadsaved
+			statussaved=0
+			threadsaved=0
+			print "Using saved data thread=";threadsig,"status=";hex(status)
+		else
+			threadSig=waitpid(-1,@status,__WALL)
+		EndIf
+		print "======================================== pid=";threadSig;" ======== status=";hex(status)
+		if threadsig=-1 then
+			print "thread =-1 so errno=";errno
+		EndIf
+		''handle status
+		if WIFEXITED(status) then
+			if threadSig=debugpid then
+				print "normal exit with status=";WEXITSTATUS(status)
+				prun=false
+				afterkilled=KDONOTHING
+				debugdata=WEXITSTATUS(status)
+				debugevent=KDBGEXITPROCESS
+				exit while
+			else
+				print "thread=";threadSig;" exit with status=";WEXITSTATUS(status)
+				brp_stop(0,0,threadSig,KDBGEXITTHREAD) ''for waiting command
+			end if
+
+		elseif WIFSIGNALED(status) then
+			prun=false
+			print "Killed by=";WTERMSIG(status)
+			debugdata=WTERMSIG(status)
+			debugevent=KDBGEXITPROCESS
+			exit while
+
+		elseif WIFSTOPPED(status) then
+			print "signal stop=";WSTOPSIG(status)
+
+			if threadsig<>thread(threadcur).id then ''other thread than the current ?
+				print "Thread signal <> current thread=";threadcur," sig=";threadSig
+				if WSTOPSIG(status)<>SIGSTOP then ''maybe SIGSTOP for new thread so DON'T change threadcur
+					for ith as integer = 0 to threadnb
+						if threadsig=thread(ith).id then
+							threadcur=ith
+							print "thread changed index, pid=",threadcur,threadSig
+							exit for
+						EndIf
+					Next
+				end if
+			EndIf
+
+			select case WSTOPSIG(status)
+
+				case SIGTRAP
+
+					if (((status shr 16) and &hffff) = PTRACE_EVENT_CLONE) then  ''checks new thread ?
+						dim as integer eventmsg
+						ptrace(PTRACE_GETEVENTMSG,thread(threadcur).id,null,@eventmsg)
+						ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
+						newpid=eventmsg
+						''to handle cases where 3057F arrives after 137F
+						for ithd as integer =0 to threadnb
+							if thread(ithd).id=eventmsg then
+								newpid=0
+								print "NEW thread already created current xip=";eventmsg
+								exit for
+							EndIf
+						next
+						if newpid then
+							print "NEW thread created current xip=";newpid
+							thread_new(newpid)
+						end if
+						ptrace(PTRACE_CONT,thread(threadcur).id,0,0)
+						continue while
+					end if
+
+					print "-------------  EXCEPTION_BREAKPOINT   ------------------------------"
+					if ssadr<>0 then ''a single step has been executed
+						print "handling single step=";hex(ssadr),threadcur,thread(threadcur).id
+						dta = ptrace(PTRACE_PEEKTEXT,thread(threadcur).id,cast(any ptr,ssadr),null)
+						'print "data read=";hex(dta),hex((dta and FIRSTBYTE )),hex(msgdata)
+						dta = (dta and FIRSTBYTE ) or &hCC
+						ptrace(PTRACE_POKETEXT,thread(threadcur).id,cast(any ptr,ssadr),cast(any ptr,dta))
+						ssadr=0
+						ptrace(PTRACE_CONT,thread(threadcur).id,0,0)
+					else
+						dim as integer xip, bpidx=-1
+						ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
+						''address where really stopped, current was pointed to next instruction
+						'if findadr() <> -1 then
+							xip=regs.xip-1
+						'end if
+						print "xip=";hex(xip),"runtype=";runtype,"RTRUN=";RTRUN,"RTSTEP=";RTSTEP
+						if runtype=RTCRASH then
+							''don't stop as running until a crash
+							breakadr=xip
+							for irln as integer =1 to linenb
+								if rline(irln).ad=xip then ''need to find where we are
+									singlestep_on(thread(threadcur).id,irln)
+									'ptrace(PTRACE_SINGLESTEP, thread(threadcur).id, NULL, NULL)
+									'exit for
+									continue while
+								EndIf
+							Next
+						elseif runtype=RTRUN or runtype=RTAUTO then
+							if brkv.adr1<>0 then
+								if brk_test(brkv.adr1,brkv.adr2,brkv.typ,brkv.val,brkv.ttb) then
+									if brkv.ivr1=0 then
+										brp_stop(threadcur,CSMEM,xip)
+									else
+										brp_stop(threadcur,CSVAR,xip)
+									end if
+									continue while
+								else
+									for irln as integer =1 to linenb
+										if rline(irln).ad=xip then ''need to find where we are
+											singlestep_on(thread(threadcur).id,irln)
+											'ptrace(PTRACE_SINGLESTEP, thread(threadcur).id, NULL, NULL)
+											'exit for
+											continue while
+										EndIf
+									Next
+								end if
+
+							end if
+							''retrieves BP corresponding at address (loop) -->bpidx
+							For ibrk as integer =0 To brknb
+								If brkol(ibrk).typ>50 Then Continue For ''BP disabled
+								if brkol(ibrk).ad=xip then
+									bpidx=ibrk
+									print "BP found idx=";bpidx,"typ=";brkol(ibrk).typ
+									runtype=RTRUN ''forcing only useful if RTAUTO
+									exit for
+								EndIf
+							Next
+							if bpidx<>-1 then
+								if bpidx=0 then ''BP on LINE (line, cursor, over,eop,xop)
+									print "BP on line"
+									brp_stop(threadcur,CSLINE,bpidx)
+									continue while
+								end if
+								bptyp=brkol(bpidx).typ
+								if bptyp=2 or bptyp=3 then  ''BP conditional
+									if brk_test(brkol(bpidx).adrvar1,brkol(bpidx).adrvar2,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
+										brp_stop(threadcur,CSCOND,bpidx)
+									else
+										singlestep_on(thread(threadcur).id,brkol(bpidx).index)
+										'ptrace(PTRACE_SINGLESTEP, thread(threadcur).id, NULL, NULL)
+									end if
+									continue while
+								elseif bptyp=4 then ''BP counter
+									print "counter=";bpidx,brkol(bpidx).counter
+									If brkol(bpidx).counter>0 Then
+										brkol(bpidx).counter-=1'decrement counter
+										print "decrement counter=";brkol(bpidx).counter
+										singlestep_on(thread(threadcur).id,brkol(bpidx).index)
+										'ptrace(PTRACE_SINGLESTEP, thread(threadcur).id, NULL, NULL)
+									else
+										brp_stop(threadcur,CSCOUNT,bpidx)
+									end if
+									continue while
+								else
+									''simple BP (perm/tempo)
+									brp_stop(threadcur,CSBRKPT,bpidx)
+									continue while
+								end if
+								if stopcode=CSUSER then
+									brp_stop(threadcur,stopcode,xip)
+									continue while
+								end if
+							else
+								''case halt by user so no breakpoint and stopcode should be CSUSER
+								''continue waiting to a normal breakpoint
+								'ptrace(PTRACE_CONT,thread(threadcur).id,0,0)
+								'for irln as integer =1 to linenb
+									'if rline(irln).ad=xip then ''need to find where we are
+										'print "Breakpoint not a User BP, line found, executing single step on ";hex(xip)
+										'singlestep_on(thread(threadcur).id,irln)
+										'runtype=RTSTEP
+										'
+										'continue while
+									'EndIf
+								'Next
+								if stopcode<>CSUSER then
+									''could be a hard case if when running auto a new thread is started
+									if runtype=RTAUTO then
+										brp_stop(threadcur,CSSTEP,xip)
+									Else
+										print "STOPPED without UBP CSNEWTHRD=";thread(threadcur).id,hex(xip)
+										brp_stop(threadcur,CSNEWTHRD,xip)
+									end if
+								else
+									brp_stop(threadcur,CSUSER,xip)
+								end if
+							end if
+
+						else ''RTSTEP
+							if stopcode=CSUSER then ''CSUSER : user halts the debuggee
+								brp_stop(threadcur,stopcode,xip)
+
+							else
+								print "CSSTEP"
+								brp_stop(threadcur,CSSTEP,xip)
+							end if
+							continue while
+						end if
+					end if
+
+				case SIGSEGV
+					ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
+					print "sigsegv=";hex(regs.xip)
+					dim as tsiginfo siginfo
+					ptrace(PTRACE_GETSIGINFO, thread(threadcur).id, NULL, @siginfo)
+					print "siginfo=";siginfo.si_signo, siginfo.si_code, siginfo.si_errno,hex(siginfo.si_addr)
+
+				case SIGILL
+					ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
+					print "sigill=";hex(regs.xip)
+					dim as tsiginfo siginfo
+					ptrace(PTRACE_GETSIGINFO, thread(threadcur).id, NULL, @siginfo)
+					print "siginfo=";siginfo.si_signo, siginfo.si_code, siginfo.si_errno,hex(siginfo.si_addr)
+
+				case SIGCHLD
+					ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
+					print "sigchld=";hex(regs.xip)
+					dim as tsiginfo siginfo
+					ptrace(PTRACE_GETSIGINFO, thread(threadcur).id, NULL, @siginfo)
+					print "siginfo=";siginfo.si_signo, siginfo.si_code, siginfo.si_errno,hex(siginfo.si_addr),siginfo.dummy(0),siginfo.dummy(1)
+					ptrace(PTRACE_CONT,thread(threadcur).id,0,0)
+				case else
+
+					'print "other Signals=";WSTOPSIG(status)
+					if WSTOPSIG(status)=SIGSTOP then
+						print "SIGSTOP"
+					elseIf WSTOPSIG(status)=SIGCONT then
+						print "SIGCONT"
+					End If
+
+					if thread(threadcur).id <> threadSig then ''new thread ready to start
+						print "threadcur, id, sig=";threadcur,thread(threadcur).id , threadSig
+						print "ptrace get bis regs=";thread(threadnb).id,ptrace(PTRACE_GETREGS, thread(threadnb).id, NULL, @regs)
+						print "xip=";hex(regs.xip)
+						if newpid=0 then ''special case signal 3057F missing so only 137F for new thread
+							print "executing thread_new as signal 3057F missing for =";threadSig
+							thread_new(threadSig)
+						else
+							newpid=0
+						EndIf
+						threadnewid=threadsig
+						threadnewidcount=2
+						putremove_breaks(thread(threadnb).id)
+						ptrace(PTRACE_CONT,thread(threadnb).id,0,0)
+					end if
+			end select
+		else
+			print "Status not handled=";status
+		end if
+	wend
+end sub
 '================================================
 '' starts debuggee for linux
 '================================================
 private sub start_pgm(p As Any Ptr)
-	dim as long threadSig
-	static as long newpid
+
 	thread2=syscall(SYS_GETTID)
 	if thread2=-1 then print "errno=";errno
 	print "current pid=";thread2
 	dim as pid_t pid=fork()
 
 	print "pid=";pid,"size=";sizeof(pid_t)
-	dim as long status
-	dim as INTEGER	dta,bptyp
+
 	Select Case pid
 		case -1 'error child not created
 			Print "error child not created"'"errno = ";errno 'use perror("fork") ?
@@ -996,278 +1275,22 @@ private sub start_pgm(p As Any Ptr)
 			EndIf
 
 		Case Else
-			sig_init()
-			debugpid=pid
-			threadnb=0
-			thread(threadcur).id=pid
-			thread(threadcur).sv=-1
-			print "debugpid in scope debugger =";pid
-			Print "Debugger pid (+thread) = ";getpid,syscall(SYS_GETTID)
-			wait(0)
-
-			first_sigtrap()
-
-			print "entering in loop"
-			while 1
-				''waiting loop, exit when debuggee terminated
-				if statussaved then
-					status=statussaved
-					threadsig=threadsaved
-					statussaved=0
-					threadsaved=0
-					print "Using saved data thread=";threadsig,"status=";hex(status)
-				else
-					threadSig=waitpid(-1,@status,__WALL)
-				EndIf
-				print "======================================== pid=";threadSig;" ======== status=";hex(status)
-				if threadsig=-1 then
-					print "thread =-1 so errno=";errno
-				EndIf
-				''handle status
-				if WIFEXITED(status) then
-					if threadSig=debugpid then
-						print "normal exit with status=";WEXITSTATUS(status)
-						prun=false
-						afterkilled=KDONOTHING
-						debugdata=WEXITSTATUS(status)
-						debugevent=KDBGEXITPROCESS
-						exit while
-					else
-						print "thread=";threadSig;" exit with status=";WEXITSTATUS(status)
-						brp_stop(0,0,threadSig,KDBGEXITTHREAD) ''for waiting command
-					end if
-
-				elseif WIFSIGNALED(status) then
-					prun=false
-					print "Killed by=";WTERMSIG(status)
-					debugdata=WTERMSIG(status)
-					debugevent=KDBGEXITPROCESS
-					exit while
-
-				elseif WIFSTOPPED(status) then
-					print "signal stop=";WSTOPSIG(status)
-
-					if threadsig<>thread(threadcur).id then ''other thread than the current ?
-						print "Thread signal <> current thread=";threadcur," sig=";threadSig
-						if WSTOPSIG(status)<>SIGSTOP then ''maybe SIGSTOP for new thread so DON'T change threadcur
-							for ith as integer = 0 to threadnb
-								if threadsig=thread(ith).id then
-									threadcur=ith
-									print "thread changed index, pid=",threadcur,threadSig
-									exit for
-								EndIf
-							Next
-						end if
-					EndIf
-
-					select case WSTOPSIG(status)
-
-						case SIGTRAP
-
-							if (((status shr 16) and &hffff) = PTRACE_EVENT_CLONE) then  ''checks new thread ?
-								dim as integer eventmsg
-								ptrace(PTRACE_GETEVENTMSG,thread(threadcur).id,null,@eventmsg)
-								ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
-								newpid=eventmsg
-								''to handle cases where 3057F arrives after 137F
-								for ithd as integer =0 to threadnb
-									if thread(ithd).id=eventmsg then
-										newpid=0
-										print "NEW thread already created current xip=";eventmsg
-										exit for
-									EndIf
-								next
-								if newpid then
-									print "NEW thread created current xip=";newpid
-									thread_new(newpid)
-								end if
-								ptrace(PTRACE_CONT,thread(threadcur).id,0,0)
-								continue while
-							end if
-
-							print "-------------  EXCEPTION_BREAKPOINT   ------------------------------"
-							if ssadr<>0 then ''a single step has been executed
-								print "handling single step=";hex(ssadr),threadcur,thread(threadcur).id
-								dta = ptrace(PTRACE_PEEKTEXT,thread(threadcur).id,cast(any ptr,ssadr),null)
-								'print "data read=";hex(dta),hex((dta and FIRSTBYTE )),hex(msgdata)
-								dta = (dta and FIRSTBYTE ) or &hCC
-								ptrace(PTRACE_POKETEXT,thread(threadcur).id,cast(any ptr,ssadr),cast(any ptr,dta))
-								ssadr=0
-								ptrace(PTRACE_CONT,thread(threadcur).id,0,0)
-							else
-								dim as integer xip, bpidx=-1
-								ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
-								''address where really stopped, current was pointed to next instruction
-								'if findadr() <> -1 then
-									xip=regs.xip-1
-								'end if
-								print "xip=";hex(xip),"runtype=";runtype,"RTRUN=";RTRUN,"RTSTEP=";RTSTEP
-								if runtype=RTCRASH then
-									''don't stop as running until a crash
-									breakadr=xip
-									for irln as integer =1 to linenb
-										if rline(irln).ad=xip then ''need to find where we are
-											singlestep_on(thread(threadcur).id,irln)
-											'ptrace(PTRACE_SINGLESTEP, thread(threadcur).id, NULL, NULL)
-											'exit for
-											continue while
-										EndIf
-									Next
-								elseif runtype=RTRUN or runtype=RTAUTO then
-									if brkv.adr1<>0 then
-										if brk_test(brkv.adr1,brkv.adr2,brkv.typ,brkv.val,brkv.ttb) then
-											if brkv.ivr1=0 then
-												brp_stop(threadcur,CSMEM,xip)
-											else
-												brp_stop(threadcur,CSVAR,xip)
-											end if
-											continue while
-										else
-											for irln as integer =1 to linenb
-												if rline(irln).ad=xip then ''need to find where we are
-													singlestep_on(thread(threadcur).id,irln)
-													'ptrace(PTRACE_SINGLESTEP, thread(threadcur).id, NULL, NULL)
-													'exit for
-													continue while
-												EndIf
-											Next
-										end if
-
-									end if
-									''retrieves BP corresponding at address (loop) -->bpidx
-									For ibrk as integer =0 To brknb
-										If brkol(ibrk).typ>50 Then Continue For ''BP disabled
-										if brkol(ibrk).ad=xip then
-											bpidx=ibrk
-											print "BP found idx=";bpidx,"typ=";brkol(ibrk).typ
-											runtype=RTRUN ''forcing only useful if RTAUTO
-											exit for
-										EndIf
-									Next
-									if bpidx<>-1 then
-										if bpidx=0 then ''BP on LINE (line, cursor, over,eop,xop)
-											print "BP on line"
-											brp_stop(threadcur,CSLINE,bpidx)
-											continue while
-										end if
-										bptyp=brkol(bpidx).typ
-										if bptyp=2 or bptyp=3 then  ''BP conditional
-											if brk_test(brkol(bpidx).adrvar1,brkol(bpidx).adrvar2,brkol(bpidx).datatype,brkol(bpidx).val,brkol(bpidx).ttb) then
-												brp_stop(threadcur,CSCOND,bpidx)
-											else
-												singlestep_on(thread(threadcur).id,brkol(bpidx).index)
-												'ptrace(PTRACE_SINGLESTEP, thread(threadcur).id, NULL, NULL)
-											end if
-											continue while
-										elseif bptyp=4 then ''BP counter
-											print "counter=";bpidx,brkol(bpidx).counter
-											If brkol(bpidx).counter>0 Then
-												brkol(bpidx).counter-=1'decrement counter
-												print "decrement counter=";brkol(bpidx).counter
-												singlestep_on(thread(threadcur).id,brkol(bpidx).index)
-												'ptrace(PTRACE_SINGLESTEP, thread(threadcur).id, NULL, NULL)
-											else
-												brp_stop(threadcur,CSCOUNT,bpidx)
-											end if
-											continue while
-										else
-											''simple BP (perm/tempo)
-											brp_stop(threadcur,CSBRKPT,bpidx)
-											continue while
-										end if
-										if stopcode=CSUSER then
-											brp_stop(threadcur,stopcode,xip)
-											continue while
-										end if
-									else
-										''case halt by user so no breakpoint and stopcode should be CSUSER
-										''continue waiting to a normal breakpoint
-										'ptrace(PTRACE_CONT,thread(threadcur).id,0,0)
-										'for irln as integer =1 to linenb
-											'if rline(irln).ad=xip then ''need to find where we are
-												'print "Breakpoint not a User BP, line found, executing single step on ";hex(xip)
-												'singlestep_on(thread(threadcur).id,irln)
-												'runtype=RTSTEP
-												'
-												'continue while
-											'EndIf
-										'Next
-										if stopcode<>CSUSER then
-											''could be a hard case if when running auto a new thread is started
-											if runtype=RTAUTO then
-												brp_stop(threadcur,CSSTEP,xip)
-											Else
-												print "STOPPED without UBP CSNEWTHRD=";thread(threadcur).id,hex(xip)
-												brp_stop(threadcur,CSNEWTHRD,xip)
-											end if
-										else
-											brp_stop(threadcur,CSUSER,xip)
-										end if
-									end if
-
-								else ''RTSTEP
-									if stopcode=CSUSER then ''CSUSER : user halts the debuggee
-										brp_stop(threadcur,stopcode,xip)
-
-									else
-										print "CSSTEP"
-										brp_stop(threadcur,CSSTEP,xip)
-									end if
-									continue while
-								end if
-							end if
-
-						case SIGSEGV
-							ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
-							print "sigsegv=";hex(regs.xip)
-							dim as tsiginfo siginfo
-							ptrace(PTRACE_GETSIGINFO, thread(threadcur).id, NULL, @siginfo)
-							print "siginfo=";siginfo.si_signo, siginfo.si_code, siginfo.si_errno,hex(siginfo.si_addr)
-
-						case SIGILL
-							ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
-							print "sigill=";hex(regs.xip)
-							dim as tsiginfo siginfo
-							ptrace(PTRACE_GETSIGINFO, thread(threadcur).id, NULL, @siginfo)
-							print "siginfo=";siginfo.si_signo, siginfo.si_code, siginfo.si_errno,hex(siginfo.si_addr)
-
-						case SIGCHLD
-							ptrace(PTRACE_GETREGS, thread(threadcur).id, NULL, @regs)
-							print "sigchld=";hex(regs.xip)
-							dim as tsiginfo siginfo
-							ptrace(PTRACE_GETSIGINFO, thread(threadcur).id, NULL, @siginfo)
-							print "siginfo=";siginfo.si_signo, siginfo.si_code, siginfo.si_errno,hex(siginfo.si_addr),siginfo.dummy(0),siginfo.dummy(1)
-							ptrace(PTRACE_CONT,thread(threadcur).id,0,0)
-						case else
-
-							'print "other Signals=";WSTOPSIG(status)
-							if WSTOPSIG(status)=SIGSTOP then
-								print "SIGSTOP"
-							elseIf WSTOPSIG(status)=SIGCONT then
-								print "SIGCONT"
-							End If
-
-							if thread(threadcur).id <> threadSig then ''new thread ready to start
-								print "threadcur, id, sig=";threadcur,thread(threadcur).id , threadSig
-								print "ptrace get bis regs=";thread(threadnb).id,ptrace(PTRACE_GETREGS, thread(threadnb).id, NULL, @regs)
-								print "xip=";hex(regs.xip)
-								if newpid=0 then ''special case signal 3057F missing so only 137F for new thread
-									print "executing thread_new as signal 3057F missing for =";threadSig
-									thread_new(threadSig)
-								else
-									newpid=0
-								EndIf
-								threadnewid=threadsig
-								threadnewidcount=2
-								putremove_breaks(thread(threadnb).id)
-								ptrace(PTRACE_CONT,thread(threadnb).id,0,0)
-							end if
-					end select
-				else
-					print "Status not handled=";status
-				end if
-			wend
+			wait_signal()
 	End Select
+end sub
+'================================================
+'' attachs debuggee for linux
+'================================================
+private sub attach_debuggee(p As Any Ptr)
+	pid=dbgprocid
+	if ptrace(PTRACE_ATTACH, pid, 0,0) then
+		Print "error attach"'"errno = ";errno 'use perror("ptrace")
+		exit sub
+	EndIf
+	runtype=RTSTEP
+	flagattach=TRUE
+	print "pid=";pid,"size=";sizeof(pid_t)
+	wait_signal()
 end sub
 '==================================
 '' lists all the processes
