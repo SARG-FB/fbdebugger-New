@@ -3556,15 +3556,11 @@ private sub attach_ok()
 		SetTimer(hmain,GTIMER001,100,Cast(Any Ptr,@debug_event))
 		ThreadCreate(@attach_debuggee)
 	end if
-	print "free in attach_ok 00"
 	freegadget(GATTCHEDIT)
 	freegadget(GATTCHTXT)
 	freegadget(GATTCHGET)
 	freegadget(GATTCHOK)
-	print "free in attach_ok 01 ";hattachbx
-	'close_window(hattachbx)
-	hidewindow(hattachbx,KHIDE)
-	print "free in attach_ok 02"
+	close_window(hattachbx)
 end sub
 '===================================================
 ''launch by command line
