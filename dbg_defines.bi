@@ -519,7 +519,6 @@ enum
 	MNWINMSG
 	MNSHWBDH
 	MNFRTIMER
-	MNJITDBG
 end enum
 
 '' watched menu

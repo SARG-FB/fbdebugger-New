@@ -1260,7 +1260,6 @@ private sub menu_set()
 	MenuItem(MNWINMSG,HMenutools, "Translate Win Message")
 	MenuItem(MNSHWBDH,HMenutools, "Bin/Dec/Hex")
 	MenuItem(MNFRTIMER,HMenutools,"Show fast run timer")
-	MenuItem(MNJITDBG,HMenutools, "Set JIT Debugger")
 End Sub
 
 '===========================================
@@ -1288,7 +1287,7 @@ private sub gui_init()
 
 	load_button2(IDBUTRERUN,900,,butRERUN,@"Restart debugging (exe)",TTRERUN,1)
 	load_button2(IDBUTLASTEXE,936,,butLASTEXE,@"Last 10 exe(s)",,0)
-	load_button2(IDBUTATTCH,972,,butATTCH,@"Attach running program",,0)
+	load_button2(IDBUTATTCH,972,,butATTCH,@"Attach running program WARNING if debug not possible the debugger will be closed",,0)
 	load_button2(IDBUTFILE,1008,,butFILE,@"Select EXE",,0)
 
 	load_button2(IDBUTBRKP,410,,butBRKP,@"Permanent breakpoint")
@@ -1546,7 +1545,7 @@ private sub attach_gui()
 	if kill_process("Trying to attach a running process but debuggee still running")=FALSE then exit sub	
 
 	#ifdef __FB_linux__
-	Const TEST_COMMAND = "ps -o pid,comm"
+	Const TEST_COMMAND = "ps f"
 	#else
 	Const TEST_COMMAND = "tasklist"
 	#endif
@@ -1554,15 +1553,18 @@ private sub attach_gui()
 	Open Pipe TEST_COMMAND For Input As #1
 	Do Until EOF(1)
 		Line Input #1, ln
+		'print ln
 		#ifdef __FB_linux__
-			if len(process)<>0 then process+=chr(10)
-			process+=left(ln,6)+mid(ln,7)
+			if instrrev(ln,"/")>15 then
+				if len(process)<>0 then process+=chr(10)
+				process+=left(ln,6)+mid(ln,instrrev(ln,"/")+1)
+			EndIf
 		#else
 			if len(ln)>0 then
 				if ln[35]=asc("C") then ''take only Console not Services
 					if len(process)<>0 then process+=chr(10)
 					process+=mid(ln,30,6)+mid(ln,1,29)
-				end if
+				End If
 			end if
 		#EndIf
 	Loop
@@ -1573,8 +1575,8 @@ private sub attach_gui()
 	ReadOnlyEditor(GATTCHEDIT,1)
 	SetGadgetFont(GATTCHEDIT,CINT(LoadFont("Courier New",9)))
 	ButtonGadget(GATTCHGET,10,320,60,30,"Get ID")
-	TextGadget(GATTCHTXT,90,320,450,60,"Click on a line then click on 'Get ID' button"+chr(10)+"(CAUTION if debuggee is waiting (using sleep) free it after attaching otherwise all will seem frozen)")
-	ButtonGadget(GATTCHOK,10,400,120,30,"Attach")
+	TextGadget(GATTCHTXT,90,320,450,90,"Click on a line then click on 'Get ID' button"+chr(10)+"(CAUTION if debuggee is waiting (using sleep) free it after attaching otherwise all will seem frozen)")
+	ButtonGadget(GATTCHOK,10,435,120,30,"Attach")
 End Sub
 
 private sub attach_getid()
@@ -1586,17 +1588,6 @@ private sub attach_getid()
 		setgadgettext(GATTCHOK,"Attach "+left(text,6))
 		dbgprocid=valint(left(text,6))
 	end if
-end sub
-
-private sub attach_ok()
-	if dbgprocid<>0 then
-		ThreadCreate(@attach_debuggee)
-	end if
-	freegadget(GATTCHEDIT)
-	freegadget(GATTCHTXT)
-	freegadget(GATTCHGET)
-	freegadget(GATTCHOK)
-	close_window(hattachbx)
 end sub
 '=========================================
 ''mark with agreen arrow executable lines

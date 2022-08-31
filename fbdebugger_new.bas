@@ -98,6 +98,8 @@ dim SHARED as integer logtyp
 
 dim shared as hwnd heditorbx
 dim shared as integer afterkilled ''what doing after debuggee killed
+''attach running exe
+Dim Shared as HWND hattachbx
 
 #ifdef __fb_win32__
 	''Threads
@@ -119,13 +121,10 @@ dim shared as integer afterkilled ''what doing after debuggee killed
 	Dim Shared As tdll dlldata(DLLMAX) ''base 1
 	Dim Shared As Integer dllnb
 
-	''attach running exe
-	'Dim Shared hattach As HANDLE    'handle to signal attachment done JIT
-	Dim Shared as HWND hattachbx
-
 	'print "MutexLock00"
 	MutexLock blocker
 #else ''linux
+	Dim Shared dbgprocid As long
 	dim shared as long dbgpid '' debugger pid
 	dim shared as long pid '' in code defined dgbhand
 	dim shared as long thread2 ''second thread

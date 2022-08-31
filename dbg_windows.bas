@@ -576,7 +576,6 @@ Dim As Integer firstchance,flagsecond,bptyp,cpt,adr
 Dim As String Accviolstr(1)={"TRYING TO READ","TRYING TO WRITE"}
 ' Wait for a debugging event to occur. The second parameter indicates
 ' that the function does not return until a debugging event occurs.
-'If hattach Then setevent(hattach):hattach=0 JIT
 While 1
 	If WaitForDebugEvent(@DebugEv, infinite)=0 Then 'INFINITE ou null ou x
 		ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
@@ -1065,7 +1064,6 @@ End Sub
 '====================================================
 private sub attach_debuggee(p As Any Ptr)
 	Dim As ZString *150 zsrtg=Space(149)
-	reinit
 	dbghand=openprocess(PROCESS_ALL_ACCESS,FALSE,dbgprocid)
 	If dbghand=0 Then messbox("Attach error open","error : "+ Str(GetLastError)):Exit Sub
 	If debugactiveprocess(dbgprocid)=0 Then messbox("Attachment error","error : "+ Str(GetLastError)):Exit Sub
@@ -1075,14 +1073,12 @@ private sub attach_debuggee(p As Any Ptr)
 	#EndIf
 	runtype=RTSTEP
 	flagattach=TRUE
-	but_enable()
-	menu_enable()
-	getmodulefilenameex(dbghand,0,@zsrtg,Len(zsrtg))'executable name
+	'but_enable()
+	'menu_enable()
+	getmodulefilenameex(dbghand,0,@zsrtg,Len(zsrtg)) 'executable name
 	exename=zsrtg
 	'no needed --> exedate=FileDateTime (exename) 'exec date for test with sources date
 	exe_sav(exename,"")
-	settitle()
-	SetTimer(hmain,GTIMER001,100,Cast(Any Ptr,@debug_event))
 	wait_debug
 End Sub
 
