@@ -1287,7 +1287,8 @@ private sub attach_debuggee(p As Any Ptr)
 	dim as string textcommand
 	pid=dbgprocid
 	if ptrace(PTRACE_ATTACH, pid, 0,0) then
-		Print "error attach"'"errno = ";errno 'use perror("ptrace")
+		Print "error attach =";errno
+		perror("Attachment error = ") ''text error
 		exit sub
 	EndIf
 	''retrieve the full name of exe
