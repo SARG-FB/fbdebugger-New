@@ -1056,8 +1056,7 @@ private sub menu_enable()
 	SetStateMenu(HMenusource,MNSHWVAR,  flag)
 	SetStateMenu(HMenusource,MNSETWVAR, flag)
 	SetStateMenu(HMenusource,MNLINEADR, flag)
-	SetStateMenu(HMenusource2,MNLINEADR,flag)
-	SetStateMenu(HMenusource2,MNASMREGS,flag)
+	SetStateMenu(HMenusource,MNLINEADR,flag)
 	SetStateMenu(HMenusource,MNACCLINE,flag)
 
 	SetStateMenu(HMenuvar1,MNSETWTCH,   flag)
@@ -1104,6 +1103,7 @@ private sub menu_enable()
 	SetStateMenu(HMenuthd,MNSHPRSRC,flag)
 	SetStateMenu(HMenuthd,MNPRCRADR,flag)
 	SetStateMenu(HMenuthd,MNTHRDLST,flag)
+	SetStateMenu(HMenuthd,MNASMREGS,flag)
 
 	SetStateMenu(HMenutools,MNLISTDLL, flag)
 
@@ -1160,10 +1160,7 @@ private sub menu_set()
 	MenuBar(HMenusource)
 	MenuItem(MNFNDTXT,HMenusource,"Find text / Ctrl+F")
 	MenuItem(MNGOTO,HMenusource,"Goto Line")
-	HMenusource2=OpenSubMenu(HMenusource,"ASM data")
-	MenuItem(MNLINEADR,HMenusource2,"Line Address")
-	MenuItem(MNASMREGS,HMenusource2,"Show registers for current thread)")
-
+	MenuItem(MNLINEADR,HMenusource,"Line Address")
 
 ''menu proc/var
 	HMenuvar=CreatePopMenu()
@@ -1245,6 +1242,7 @@ private sub menu_set()
 	MenuItem(MNTHRDEXP,HMenuthd, "Expand one thread")
 	MenuItem(MNTHRDCOL,HMenuthd, "Collapse all threads")
 	MenuItem(MNTHRDLST,HMenuthd, "List all threads")
+	MenuItem(MNASMREGS,HMenuthd, "Show registers for current thread)")
 
 ''menu tools
 	HMenutools=CreatePopMenu()
@@ -1542,7 +1540,7 @@ end sub
 private sub attach_gui()
 	Dim As String ln,process
 
-	if kill_process("Trying to attach a running process but debuggee still running")=FALSE then exit sub	
+	if kill_process("Trying to attach a running process but debuggee still running")=FALSE then exit sub
 
 	#ifdef __FB_linux__
 	Const TEST_COMMAND = "ps f"
