@@ -1255,7 +1255,7 @@ private sub menu_set()
 	MenuItem(MNLISTENUM,HMenutools,  "List enum")
 	MenuItem(MNLISTPROCESS,HMenutools,  "Process list")
 	MenuItem(MNLISTDLL,HMenutools, "Dlls list")
-	MenuItem(MNWINMSG,HMenutools, "Translate Win Message")
+	MenuItem(MNWINMSG,HMenutools, "Translate Win Message/Linux error")
 	MenuItem(MNSHWBDH,HMenutools, "Bin/Dec/Hex")
 	MenuItem(MNFRTIMER,HMenutools,"Show fast run timer")
 End Sub

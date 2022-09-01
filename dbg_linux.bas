@@ -1308,6 +1308,18 @@ end sub
 private sub process_list()
   	messbox("For Linux","Process list not yet implemented")
 End Sub
+'======================================
+'' translates code error to the text
+'======================================
+private sub linmsg()
+	dim as integer code
+	code=valint(input_bx("Linux error text","Enter the code",,5))
+	If code<>0 and code<=ubound(errorlibel) Then
+		messbox("Linux message","Code :"+str(code)+Chr(10)+"Text : "+errorlibel(code))
+	else
+		messbox("Linux error code","Sorry unkown in fbdebugger list")
+	End If
+End Sub
 '==================================
 private function dll_name(FileHandle As HANDLE,t As Integer =1 )As String ' t=1 --> full name, t=2 --> short name
 	return "name of dll..."
