@@ -281,10 +281,6 @@ Dim Shared As tvrp vrp(VRPMAX)
 
 dim shared as HMENU HMenusource
 dim shared as HMENU HMenusource1
-dim shared as HMENU HMenusource2
-dim shared as HMENU HMenusource3
-dim shared as HMENU HMenusource4
-dim shared as HMENU HMenusource5
 dim shared as HMENU HMenuvar
 dim shared as HMENU HMenuvar1
 dim shared as HMENU HMenuvar2
