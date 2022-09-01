@@ -41,8 +41,9 @@ private sub menu_action(poption as integer)
 			#ifdef __fb_win32__
 				winmsg()
 			#else
-				messbox("Display text for Linux error","feature not yet implemented (procedure linmsg)")
+				linmsg()
 			#endif
+
         Case MNSHWBDH
             dechexbin()
 

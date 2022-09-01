@@ -995,11 +995,13 @@ End Sub
 '===============================
 private sub line_goto()
 	Dim linegoto As Integer
-	var inputval=input_bx("Goto line","Enter a value between 1 to "+str(send_sci(SCI_GETLINECOUNT,0,0)),,99)
-	Linegoto=ValInt(inputval)
-	If linenb>=0 Then
-	   line_display(linegoto,1)
-	End If
+	if send_sci(SCI_GETLINECOUNT,0,0)>10 then
+		var inputval=input_bx("Goto line","Enter a value between 1 to "+str(send_sci(SCI_GETLINECOUNT,0,0)),,99)
+		Linegoto=ValInt(inputval)
+		If linenb>=0 Then
+		   line_display(linegoto,1)
+		End If
+	end if
 End Sub
 '============================================
 '' splits a string in parts of 2 characters
