@@ -217,10 +217,6 @@ private sub menu_action(poption as integer)
 			messbox("Feature not yet implemented","char_sh(htviewvar)")
 			'char_sh(htviewvar)
 
-		Case MNCHGZSTR
-			messbox("Feature not yet implemented","zstringbyte_exchange()")
-			'zstringbyte_exchange()
-
 		Case MNVAREDT  ''edit var value
 			ivar=var_find()
 			if ivar>0 then
@@ -667,7 +663,7 @@ private sub gadget_action(igadget as LONG)
 
 		case GIDXINC
 			For k As Integer = indexdata.nbdim-1 To 0 Step -1
-				If indexdata.vubound(k)<>vrr(indexdata.indexvar).ix(k) Then
+				If indexdata.vubound(k)>vrr(indexdata.indexvar).ix(k) Then
 					setGadgetState(GIDXUP1+k,vrr(indexdata.indexvar).ix(k)+1) ''increase next dimension
 					For j As Integer = k+1 To indexdata.nbdim-1
 						setGadgetState(GIDXUP1+j,indexdata.vlbound(j)) ''init dimension
@@ -683,7 +679,7 @@ private sub gadget_action(igadget as LONG)
 
 	    case GIDXDEC
 			For k As Integer = indexdata.nbdim-1 To 0 Step -1
-				If indexdata.vubound(k)<>vrr(indexdata.indexvar).ix(k) Then
+				If indexdata.vlbound(k)<vrr(indexdata.indexvar).ix(k) Then
 					setGadgetState(GIDXUP1+k,vrr(indexdata.indexvar).ix(k)-1) ''decrease next dimension
 					For j As Integer = k+1 To indexdata.nbdim-1
 						setGadgetState(GIDXUP1+j,indexdata.vlbound(j)) ''init dimension
@@ -778,6 +774,8 @@ private sub gadget_action(igadget as LONG)
 				index_update()
 			end if
 
+		Case GIDXUPD
+			index_fullupdate()
 
 		Case GIDXAUTO
 			if getgadgetstate(GIDXAUTO)=1 then

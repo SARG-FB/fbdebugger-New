@@ -458,7 +458,6 @@ enum
 	MNSHWEXP
 	MNSETWTCH
 	MNSETWTTR
-	MNCHGZSTR
 	MNCALLINE
 	MNSHCHAR  'show  character  in a  string at a  selected position
 	MNCLBVARA 'copy  to clipboard  all procs/vars

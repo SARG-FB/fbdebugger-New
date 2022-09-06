@@ -1634,6 +1634,7 @@ private sub thread_list()
 		End If
 		text+=Chr(13)
 	Next
+	SetWindowText(heditorbx,"Thread list")
 	SetGadgetText(GEDITOR,text)
 	hidewindow(heditorbx,KSHOW)
 end sub
