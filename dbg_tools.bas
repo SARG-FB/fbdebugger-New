@@ -2390,13 +2390,11 @@ If wtch(i).ivr=0 Then ''watched memory so adapt dumpmemory to the type
 	dumptyp=wtch(i).typ
 	dump_set()
 	dump_sh
-	If hdumpbx=0 Then
-		''todo displays hdumpbx fb_Dialog(@dump_box,"Manage dump",windmain,283,25,120,150)
-	End If
+	hidewindow(hdumpbx,KSHOW)
 Else
 	If vrr(wtch(i).ivr).ad=wtch(i).adr Then
-		''todo select an item in treeview prc/var for displaying it
-		''SendMessage(tviewvar,TVM_SELECTITEM,TVGN_CARET,Cast(LPARAM,vrr(wtch(i).ivr).tv))
+		PanelGadgetSetCursel(GRIGHTTABS,TABIDXVAR)
+		SetSelectTreeViewItem(GTVIEWVAR,vrr(wtch(i).ivr).tv)
 	Else
 		messbox("Select watched variable","Not possible : changed index (different address)")
 	End If

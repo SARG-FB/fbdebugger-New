@@ -18,7 +18,7 @@
 	#define ver3264 "(32bit) "
 #endif
 
-#Define fbdebuggerversion "V 3.00 BETA g "+ver3264
+#Define fbdebuggerversion "V 3.00 BETA h "+ver3264
 
 '#define fulldbg_prt 'uncomment to get more information
 #Define dbg_prt2 rem 'dbg_prt 'used temporary for debugging fbdebugger, change rem by dbg_prt
@@ -202,6 +202,7 @@
 	declare sub sigusr_send()
 	declare function signal_pending() as integer
 	declare sub exec_order(order as integer)
+	declare sub linmsg()
 	Extern "C"
 		Declare Function wait_ Alias "wait" (wiStatus As long Ptr) As pid_t
 		'Declare Function gettid Alias "gettid" () As pid_t

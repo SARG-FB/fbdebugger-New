@@ -192,10 +192,8 @@ private sub menu_action(poption as integer)
 			'shwexp_new(htviewwch)
 
 		Case MNWCHEDT'edit from watched
-			messbox("Feature not yet implemented","edit_box")
-			'If var_find2(GTVIEWWCH)<>-1 Then 'not local non-existent
-			edit.src=KEDITWCH
-			'edit_fill()
+			watch_sel(watch_find()) ''find the watched in proc/var
+			menu_action(MNVAREDT) ''simulate call edit
 
 		Case MNSETWTCH 'set watched first free slot
 			If var_find2(htviewvar)<>-1 Then watch_set()
