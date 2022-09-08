@@ -288,12 +288,15 @@ private sub dump_set()
 				dumpbase=0
 				SetGadgettext(GDUMPDECHEX,">Hex")
 			Case 12 'double
-				dumpnbcol=2 :lg=180:combo=3
+				dumpnbcol=2 :lg=200:combo=3
 				dumpbase=0
 				SetGadgettext(GDUMPDECHEX,">Hex")
 		End Select
 	EndIf
 	delta=16/dumpnbcol
+	if dumpbase=50 then
+		lg*=1.25 ''increase size if hex
+	EndIf
 	For icol as integer =1 To dumpnbcol 'nb columns except address and ascii
 		tmp=Right("0"+Str(delta*(icol-1)),2)
 		AddListViewColumn(GDUMPMEM,tmp,icol,icol,lg)

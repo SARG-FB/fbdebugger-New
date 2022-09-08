@@ -493,6 +493,7 @@ private sub gadget_action(igadget as LONG)
 				dumpbase=50
 				setgadgettext(GDUMPDECHEX,">Dec")
 			end if
+			dump_set()
 			dump_sh()
 
 		case GDUMPSIGNED
