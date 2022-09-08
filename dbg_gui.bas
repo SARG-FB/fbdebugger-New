@@ -1,17 +1,6 @@
 ''gui for fbdebugger_new
 ''dbg_gui.bas
 
-/' TIPS ===============================================
-''todo Sous Windows, il s'agit de InvalidateRect, sous Linux gtk_widget_queue_draw_area ou gdk_window_invalidate_rect ou gdk_window_invalidate_region
-'hwnd=OpenWindow("1",30,30,200,200 , WS_OVERLAPPEDWINDOW) ' style without ws_visible
-'UpdateInfoXServer ' only for Linux
-'CenterWindow(hwnd)
-'hidewindow(hwnd , 0)
-
-Var hwnd = OpenWindow ("", 10,10,100,100)
-gdk_window_set_functions (gtk_widget_get_window (hwnd), GDK_FUNC_CLOSE or GDK_FUNC_MOVE)
-'======================================================= '/
-
 '==================================================================================
 '' checks the current value in a spingadget (replace the control normally done)
 '==================================================================================

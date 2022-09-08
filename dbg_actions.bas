@@ -194,6 +194,7 @@ private sub menu_action(poption as integer)
 		Case MNWCHEDT'edit from watched
 			watch_sel(watch_find()) ''find the watched in proc/var
 			menu_action(MNVAREDT) ''simulate call edit
+			PanelGadgetSetCursel(GRIGHTTABS,TABIDXWCH) ''redisplay watched
 
 		Case MNSETWTCH 'set watched first free slot
 			If var_find2(htviewvar)<>-1 Then watch_set()
@@ -547,7 +548,7 @@ private sub gadget_action(igadget as LONG)
 			hidegadget(igadget-GBRKDEL01+GBRKLINE01,KHIDE)
 			hidegadget(igadget-GBRKDEL01+GBRKIMG01,KHIDE)
 			If brknb=0 Then
-				hidewindow(hbrkbx,1) ''no more breakpoint so close the window
+				hidewindow(hbrkbx,KHIDE) ''no more breakpoint so close the window
 			EndIf
 
 		Case GBRKLINE01 to GBRKLINE10 ''click on text
@@ -589,7 +590,7 @@ private sub gadget_action(igadget as LONG)
 	        	For ibrk As Byte=1 To brknb
 					brk_del(1)
 	        	Next
-	        	hidewindow(hbrkbx,1)
+				hidewindow(hbrkbx,KHIDE)
 
 	   	Case GBRKDISABLE ''disable all
 	      	For ibrk As integer =1 To brknb
