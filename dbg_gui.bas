@@ -725,8 +725,8 @@ end sub
 private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as Long  , Exstyle as integer = 0)
 	dim as HWND hsci
 	#ifdef __fb_win32__
-		if dylibload("SciLexer.dll")=0 then
-			hard_closing("SciLexer.dll not found")
+		if dylibload("scintilla.dll")=0 then
+			hard_closing("scintilla.dll not found")
 		end if
 		hsci = CreateWindowEx(Exstyle,"scintilla","", WS_CHILD Or WS_VISIBLE Or WS_CLIPCHILDREN,x,y,w,h,Cast(HWND,win9GetCurrent()), Cast(HMENU,CInt(gadget)), 0, 0)
 		win9AddNewGadget(gadget,hsci)

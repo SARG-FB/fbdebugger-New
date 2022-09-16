@@ -483,8 +483,8 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		if brkol(0).typ<>10 then ''for skip over always in same proc, if different thread ???
 			proc_runnew   'creating running proc tree
 		end if
-   		var_sh			'updating information about variables
 
+			var_sh			'updating information about variables
 	runtype=RTSTEP ''could be done later if another threads also running ????
 
    		dsp_change(rln)
@@ -546,6 +546,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		Else
 			threadsel=threadcur
 		EndIf
+
    End If
 
    '================
