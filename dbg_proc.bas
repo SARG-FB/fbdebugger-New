@@ -390,9 +390,9 @@ private sub proc_runnew()
 		dim as integer dummy
 		Dim vcontext As CONTEXT
 
-		if cast(integer,@vcontext) mod 16 <>0 then
-			messbox("PRBM","Context not 16byte aligned")
-		EndIf
+		'if cast(integer,@vcontext) mod 16 <>0 then
+			'messbox("PRBM","Context not 16byte aligned")
+		'EndIf
 		vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER
 	#endif
 	Dim libel As String
