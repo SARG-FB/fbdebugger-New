@@ -1648,9 +1648,11 @@ Private sub thread_resume()
 		if thread(threadcur).sv>0 then ''if attachment no saved line
 			writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0)
 		end if
+		thread(threadcur).sts=KTHD_RUN
 		resumethread(threadhs)
 	#else
 		''LINUX, maybe moved in dbg_linux.bas
+		'thread(threadcur).sts=KTHD_RUN
 		thread_rsm()
 	#endif
 End sub

@@ -18,7 +18,7 @@
 	#define ver3264 "(32bit) "
 #endif
 
-#Define fbdebuggerversion "V 3.00 BETA h "+ver3264
+#Define fbdebuggerversion "V 3.00 BETA i "+ver3264
 
 '#define fulldbg_prt 'uncomment to get more information
 #Define dbg_prt2 rem 'dbg_prt 'used temporary for debugging fbdebugger, change rem by dbg_prt
@@ -270,8 +270,8 @@
 	   As Uinteger es
 	   As Uinteger fs
 	   As Uinteger gs
-	end type
 	#endif
+	end type
 	#define	EPERM		 1
 	#define	ENOENT		 2
 	#define	ESRCH		 3
@@ -1162,6 +1162,7 @@ Type tthread
  exc As Integer   'to indicate execution in case of auto 1=yes, 0=no
  sts as integer ''status running /stopped /init /out of scop debugger (library)
  stack as integer ''stack of last proc
+ runtyp as integer ''what was the runtype when running as global runtype could be different
 End Type
 
 ''variable find

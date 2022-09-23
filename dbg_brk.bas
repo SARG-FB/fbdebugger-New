@@ -25,6 +25,10 @@ private sub brk_marker(brkidx as integer)
 	if typ then
 		send_sci(SCI_MARKERDELETE, lline, -1)
 		send_sci(SCI_MARKERADD, lline, typ)
+		if bpbox=true then
+			hidewindow(hbrkbx,KHIDE)
+			brk_manage("Breakpoint management")
+		end if
 	else
 		send_sci(SCI_MARKERDELETE, lline, -1)
 	end if
@@ -296,6 +300,12 @@ End Sub
 		SetStateMenu(HMenusource,MNMNGBRK,1)
 		DisableGadget(IDBUTBRKB,1)
 		hidewindow(hbrkbx,KHIDE) ''even if not show
+		bpbox=false
+	else
+		if bpbox=true then
+			hidewindow(hbrkbx,KHIDE)
+			brk_manage("Breakpoint management")
+		end if
 	EndIf
 End Sub
 '================================================================================
@@ -900,4 +910,5 @@ private sub brk_manage(title as string)
 	next
 	SetWindowText(hbrkbx,strptr(title))
 	hidewindow(hbrkbx,KSHOW)
+	bpbox=true
 end sub

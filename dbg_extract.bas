@@ -13,13 +13,13 @@
 		#define of_offset_infile &h18
 		#define of_size_infile &h20
 	#else
-		#define of_section &h20
-		#define of_section_size &h2E
-		#define of_section_num &h30
-		#define of_section_str &h32
-		#define sect_size &h28
-		#define of_offset_infile &h10
-		#define of_size_infile &h14
+		#define of_section &h20 ''section header table
+		#define of_section_size &h2E ''size of a section header table entry
+		#define of_section_num &h30 ''number of entries in SHT
+		#define of_section_str &h32 ''
+		#define sect_size &h28  '' size of section header
+		#define of_offset_infile &h10 ''offset of the section in file image
+		#define of_size_infile &h14 ''size in bytes
 	#endif
 '#endif
 union ustab

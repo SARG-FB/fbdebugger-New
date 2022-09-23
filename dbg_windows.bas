@@ -395,6 +395,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 
 	dbg_prt2("")
 	dbg_prt2("AD gest brk="+hex(ad)+" th="+Str(threadcur))
+	'LOLO print "AD gest brk="+hex(ad)+" th="+Str(threadcur)," thid="+Str(thread(threadcur).id)
 	'show_context
 
 	proccurad=ad
@@ -477,6 +478,8 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		Exit Sub
 	end if
 
+	thread(threadcur).sts=KTHD_STOP
+
 	If runtype=RTRUN Then
    		fasttimer=Timer-fasttimer
 
@@ -540,12 +543,16 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			EndIf
 			thread_resume()
 		EndIf
-		If threadsel<>threadcur AndAlso messbox("New Thread","Previous thread "+Str(thread(threadsel).id)+" changed by "+Str(thread(threadcur).id) _
-				+Chr(10)+Chr(13)+" Keep new one ?",MB_YESNO)=IDNO Then
-				thread_change(threadsel)
-		Else
-			threadsel=threadcur
-		EndIf
+		If threadsel<>threadcur then
+			print "cur=";threadcur,thread(threadcur).id,"replaced by new=";threadsel,thread(threadsel).id
+			thread_change(threadsel)
+		end if
+		'If threadsel<>threadcur AndAlso messbox("New Thread","Previous thread "+Str(thread(threadsel).id)+" changed by "+Str(thread(threadcur).id) _
+				'+Chr(10)+Chr(13)+" Keep new one ?",MB_YESNO)=IDNO Then
+				'thread_change(threadsel)
+		'Else
+			'threadsel=threadcur
+		'EndIf
 
    End If
 
@@ -823,8 +830,11 @@ While 1
 		         	dbg_prt ("DebugEv.dwThreadId "+Str(DebugEv.dwThreadId))
 		         	dbg_prt ("hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress))
 	         	#EndIf
+					'LOLO print "DebugEv.dwThreadId "+Str(DebugEv.dwThreadId)
+		         	'LOLO print "hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress)
 					If threadnb<THREADMAX Then
 					      threadnb+=1 :thread(threadnb).hd=.hthread:thread(threadnb).id=DebugEv.dwThreadId
+					      'print "DebugEv.dwThreadId ";threadnb,Str(DebugEv.dwThreadId)
 					      threadcontext=.hthread
 					      thread(threadnb).pe=FALSE
 					      thread(threadnb).sv=-1 'used for thread not debugged
@@ -832,6 +842,7 @@ While 1
 					      thread(threadnb).st=thread(threadcur).od 'used to keep line origin
 					      thread(threadnb).tv=0
 					      thread(threadnb).exc=0 'no exec auto
+					      thread(threadnb).sts=KTHD_RUN
 					Else
 				      	hard_closing("Number of threads ("+Str(THREADMAX+1)+") exceeded , change the THREADMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY" )
 					EndIf
