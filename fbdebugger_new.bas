@@ -207,6 +207,7 @@ dim Shared as tbrkol brkol(BRKMAX)
 dim shared as integer brknb
 dim Shared as String brkexe(9,BRKMAX) 'to save breakpoints by session
 dim shared as hwnd hbrkbx ''window for managing breakpoints
+dim shared as boolean bpbox
 dim shared as integer brkidx1 ''index for BP mem or cond
 dim shared as integer brkidx2
 dim shared as integer brkadr1 ''address for BP mem or cond

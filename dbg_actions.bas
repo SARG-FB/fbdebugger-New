@@ -536,6 +536,7 @@ private sub gadget_action(igadget as LONG)
 
 		Case GBRKCLOSE
 	   		hidewindow(hbrkbx,KHIDE)
+			bpbox=false
 
 	   	Case GBRKDEL01 to GBRKDEL10 ''delete one breakpoint
 			for ibrk as INTEGER = 1 to brknb
@@ -550,6 +551,7 @@ private sub gadget_action(igadget as LONG)
 			hidegadget(igadget-GBRKDEL01+GBRKIMG01,KHIDE)
 			If brknb=0 Then
 				hidewindow(hbrkbx,KHIDE) ''no more breakpoint so close the window
+				bpbox=false
 			EndIf
 
 		Case GBRKLINE01 to GBRKLINE10 ''click on text
@@ -592,6 +594,7 @@ private sub gadget_action(igadget as LONG)
 					brk_del(1)
 	        	Next
 				hidewindow(hbrkbx,KHIDE)
+				bpbox=false
 
 	   	Case GBRKDISABLE ''disable all
 	      	For ibrk As integer =1 To brknb
@@ -1049,19 +1052,27 @@ private sub button_action(button as integer)
 			'thread_resume()
 
 		case IDBUTSTOP
-			If runtype=RTFREE Or runtype=RTRUN Then
-				runtype=RTRUN 'to treat free as run
-				#Ifdef __fb_win32__
-					set_cc()
-				#else
-					sigusr_send()
-				#endif
-			Else
-				'print "halting all"
-				flaghalt=true
-				runtype=RTSTEP
-			EndIf
-			Stopcode=CSUSER
+			for ith as integer = 1 to threadnb
+				'' at least one thread running
+				if thread(ith).sts=KTHD_RUN then
+					#Ifdef __fb_win32__
+						set_cc()
+					#else
+						sigusr_send()
+					#endif
+					Stopcode=CSUSER
+					flaghalt=true '?????
+					exit for
+				end if
+			next
+				'If runtype=RTFREE Or runtype=RTRUN Then
+					'runtype=RTRUN 'to treat free as run
+'
+				'Else
+					''print "halting all"
+					'flaghalt=true
+					'runtype=RTSTEP
+				'EndIf
 
 		case IDBUTFREE
 		   If messbox("FREE","Release debugged prgm",MB_YESNO)=IDYES Then
