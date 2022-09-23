@@ -649,13 +649,14 @@ private function readmemlongint(child As long,addrdbge As integer)as longint
 	#ifdef __FB_64BIT__
 		return ptrace(PTRACE_PEEKDATA,child, cast(any ptr,addrdbge),NULL)
 	#else
-		dim as longint lgint
+		dim as longint lgint,lgint2
 		dim as integer value
 		value=ptrace(PTRACE_PEEKDATA,child, cast(any ptr,addrdbge),NULL)
 		lgint=value
 		addrdbge+=sizeof(integer)
 		value=ptrace(PTRACE_PEEKDATA,child, cast(any ptr,addrdbge),NULL)
-		lgint+=value shl 32
+		lgint2=value
+		lgint+=lgint2 shl 32
 		return lgint
 	#endif
 End Function
