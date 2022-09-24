@@ -2,9 +2,8 @@
 ''dbg_extract.bas
 
 '#ifdef  __fb_linux__
-	#define K64BIT
 	#define of_entry &h18
-	#ifdef K64BIT
+	#ifdef __FB_64BIT__
 		#define of_section &h28
 		#define of_section_size &h3A
 		#define of_section_num &h3C
@@ -12,6 +11,14 @@
 		#define sect_size &h40
 		#define of_offset_infile &h18
 		#define of_size_infile &h20
+		union ustab
+			full as longint
+			type
+				offst as long
+				cod as short
+				desc as short
+			end type
+		end union
 	#else
 		#define of_section &h20 ''section header table
 		#define of_section_size &h2E ''size of a section header table entry
@@ -20,16 +27,13 @@
 		#define sect_size &h28  '' size of section header
 		#define of_offset_infile &h10 ''offset of the section in file image
 		#define of_size_infile &h14 ''size in bytes
+		type ustab
+			offst as long
+			cod as short
+			desc as short
+		end type
 	#endif
 '#endif
-union ustab
-	full as longint
-	type
-		offst as long
-		cod as short
-		desc as short
-	end type
-end union
 '--------------------------------------
 '' check if local var already stored
 '--------------------------------------
@@ -971,8 +975,14 @@ end sub
 '' -----------------------
 private sub dbg_line(linenum as integer,ofset as integer)
 	if linenum then
-
-
+		#Ifndef __FB_64BIT__
+		''to skip stabd
+		if linenum<rline(linenb).nu then
+			if procnb=rLine(linenb).px then
+				exit sub
+			end if
+		end if
+		#endif
 		if ofset+proc(procnb).db<>rline(linenb).ad Then ''checking to avoid asm with just comment line
 			linenb+=1
 		endif
@@ -1122,16 +1132,28 @@ end sub
 '' -------------------------------
 private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as integer)
 	dim as ustab stab
-	dim as longint value
+	dim as integer value
 	dim as string strg
 	ofstr+=1 ''1 based
-	dim as longint buf(1) ''16 bytes
+	#Ifdef __FB_64BIT__
+		dim as longint buf(1) ''16 bytes
+	#else
+		dim as long buf(2) ''12 bytes
+	#endif
 	dim as integer ofsmax,ofstemp
-
+	#Ifdef __FB_64BIT__
 	for ibuf as integer =1 to size/16
+	#else
+	for ibuf as integer =1 to size/12
+	#endif
 		get #1,ofset+1,buf()
-		'print ibuf;" "; hex(buf(0));" --> ";
+		#Ifdef __FB_64BIT__
 		stab.full=buf(0)
+		#else
+		stab.offst=buf(0)
+		stab.cod=buf(1)  and &hffff
+		stab.desc=buf(1) shr 16
+		#endif
 		'print "C="+str(stab.cod)+" D="+str(stab.desc)+" O="+str(stab.offst);" ";
 		strg=space(2000)
 		get #1,ofstr+stab.offst,strg
@@ -1141,7 +1163,11 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 			ofsmax=ofstemp
 		EndIf
 		'print strg,ofstr,stab.offst,ofsmax
-		value=buf(1)
+		#Ifdef __FB_64BIT__
+			value=buf(1)
+		#else
+			value=buf(2)
+		#endif
 		'print "D="+str(value)+" H="+hex(value)
 
 		select case as const stab.cod
@@ -1163,13 +1189,19 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 			case 42 ''main entry point
 				'not used
 			case 0
+				#Ifdef __FB_64BIT__
 				if ofsmax<>ofstr+7 then
 					ofstr=ofsmax
 				end if
+				#endif
 			case else
 				print "Unknow stab cod=";stab.cod
 		end select
+		#Ifdef __FB_64BIT__
 		ofset+=16
+		#else
+		ofset+=12
+		#endif
 	next
 	'print
 end sub
@@ -1208,8 +1240,7 @@ private function elf_extract(filename as string) as integer
 	ofset=of_section_str
 	get #1,ofset+1,usht
 	'print "section string=";usht
-
-	ofset=start_section+(usht)*&h40+&h18 '(&h28 si 32bit)
+	ofset=start_section+(usht)*sect_size+of_offset_infile
 	get #1,ofset+1,ulgt
 	'print "start offset string=";hex(ulgt)
 	str_section=ulgt
@@ -1232,10 +1263,18 @@ private function elf_extract(filename as string) as integer
 		ofset=walk_section+of_offset_infile
 		get #1,ofset+1,ulgt
 		'print "offset in file= ";hex(ulgt);" ";
-		if sect_name=".dbgdat" then
+		#Ifdef __FB_64BIT__
+		If sect_name=".dbgdat" Then
+		#else
+		If sect_name=".stab" Then
+		#endif
 			'print "name=";sect_name
 			dbg_dat_of=ulgt
-		elseif sect_name=".dbgstr" then
+		#Ifdef __FB_64BIT__
+		ElseIf sect_name=".dbgstr" Then
+		#else
+		ElseIf sect_name=".stabstr" Then
+		#endif
 			'print "name=";sect_name
 			dbg_str_of=ulgt
 			exit for ''not anymore section to retrieve
@@ -1244,7 +1283,11 @@ private function elf_extract(filename as string) as integer
 		ofset=walk_section+of_size_infile
 		get #1,ofset+1,ulgt
 		'print "size= ";hex(ulgt);" ";ulgt
-		if sect_name=".dbgdat" then
+		#Ifdef __FB_64BIT__
+		If sect_name=".dbgdat" Then
+		#else
+		If sect_name=".stab" Then
+		#endif
 			dbg_dat_size=ulgt
 		endif
 
