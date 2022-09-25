@@ -434,6 +434,8 @@ do
 				freegadget(GATTCHGET)
 				freegadget(GATTCHOK)
 				close_window(hattachbx)
+			elseif EventHwnd=hbrkbx then
+				bpbox=false
 			end if
 		end if
 		continue do

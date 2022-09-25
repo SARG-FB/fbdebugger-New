@@ -1052,7 +1052,7 @@ private sub button_action(button as integer)
 			'thread_resume()
 
 		case IDBUTSTOP
-			for ith as integer = 1 to threadnb
+			for ith as integer = 0 to threadnb
 				'' at least one thread running
 				if thread(ith).sts=KTHD_RUN then
 					#Ifdef __fb_win32__

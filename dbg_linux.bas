@@ -871,6 +871,7 @@ private sub brp_stop(tidx as integer,bptype as integer,ddata as integer,dbgevent
 				bool1=true
 				condsignal(condid)
 				mutexunlock blocker
+				thread(threadcur).sts=KTHD_RUN
 				ptrace(PTRACE_SINGLESTEP, thread(threadcur).id, NULL, NULL)
 				exit while
 
@@ -999,6 +1000,8 @@ private sub wait_signal()
 		print "======================================== pid=";threadSig;" ======== status=";hex(status)
 		if threadsig=-1 then
 			print "thread =-1 so errno=";errno
+			ptrace(PTRACE_CONT,thread(threadcur).id,0,0)
+			continue while
 		EndIf
 		''handle status
 		if WIFEXITED(status) then

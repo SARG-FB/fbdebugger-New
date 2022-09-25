@@ -1652,7 +1652,6 @@ Private sub thread_resume()
 		resumethread(threadhs)
 	#else
 		''LINUX, maybe moved in dbg_linux.bas
-		'thread(threadcur).sts=KTHD_RUN
 		thread_rsm()
 	#endif
 End sub
