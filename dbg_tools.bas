@@ -884,7 +884,7 @@ private sub call_chain(thid as integer)
 
 				'thread_execline(1,thid)
 				txt=line_text(rline(thread(thread_select(thid)).sv).nu-1)
-				print "line=";thread(thid).sv,rline(thread(thid).sv).nu
+				dbg_prt2 "line=";thread(thid).sv,rline(thread(thid).sv).nu
 				txt="next exec="+left(txt,30)
 				AddListViewItem(GCCHAIN,txt,0,0,1)
 
@@ -2707,9 +2707,9 @@ private sub globals_load(d As Integer=0)
 	If vrbgblprev<>vrbgbl Then 'need to do ?
 		If vrbgblprev=0 Then
 			procr(procrnb).tv=AddTreeViewItem(GTVIEWVAR,"Globals (shared/common) in : main ",cast (hicon, 0),0,0,0) 'only first time
-			'print "var ini in globals_load 00"
+			'dbg_prt2 "var ini in globals_load 00"
 			var_ini(procrnb,1,vrbgbl) ''add vrbgblprev instead 1
-			'print "var ini in globals_load 01"
+			'dbg_prt2 "var ini in globals_load 01"
 			'dbg_prt2("procrnb="+Str(procrnb))
 			procr(procrnb+1).vr=vrrnb+1 ''to avoid removal of global vars when the first executed proc is not the main one
 		Else
@@ -2758,7 +2758,7 @@ End Sub
 '=====================================================
 private sub thread_del(thid As UInteger)
 	Dim As Integer k=1,threadsup,threadold=threadcur
-	'print "in thread_del thid=";thid
+	'dbg_prt2 "in thread_del thid=";thid
 
 	For i As Integer =1 To threadnb
 		If thid<>thread(i).id Then
@@ -2924,13 +2924,13 @@ private function check_bitness(fullname as string) as integer
 end function
 '===============================================================================
 private sub close_all()
-	'print "destroy mutex and condvar"
+	'dbg_prt2 "destroy mutex and condvar"
 	mutexdestroy blocker
 	#ifndef __fb_win32__
 		condsignal(condid)
 		conddestroy(condid)
 	#endif
-	'print "release doc"
+	'dbg_prt2 "release doc"
 	release_doc ''releases scintilla docs
 	''todo free all the objects menus, etc
 	If sourcenb<>-1 Then
@@ -2990,7 +2990,7 @@ private function kill_process(text As String) As Integer
 				#endif
 				While prun:Sleep 500:Wend
 			#else
-				'print "Killing process=";pid
+				'dbg_prt2 "Killing process=";pid
 				if runtype=RTSTEP then ''waiting
 					mutexlock blocker
 					msgcmd=KPT_KILL
@@ -3004,7 +3004,7 @@ private function kill_process(text As String) As Integer
 				else ''running
 					linux_kill(thread(0).id,9)
 				end if
-				'print"end of cmd exit"
+				'dbg_prt2"end of cmd exit"
 			#endif
 			Return TRUE
 		Else
@@ -3064,18 +3064,18 @@ End sub
 private sub sources_load(n As integer,exedate as double)
 	dim As integer flgt,fnum,msgnofile
 	dim as any ptr ptrdoc
-	'print "loading sources nb,n=";sourcenb,n,"flagrestart=";flagrestart
+	'dbg_prt2 "loading sources nb,n=";sourcenb,n,"flagrestart=";flagrestart
 	if flagrestart=-1 Then
 		statusbar_text(KSTBSTS,"Loading sources")
 
 	   	for isrc As Integer=n To sourcenb ' main index =0
-			'print "loading =";isrc,source(isrc)
+			'dbg_prt2 "loading =";isrc,source(isrc)
 		   	if FileExists(source(isrc))=0 Then
 				if msgnofile=0 then
 					messbox("Loading Source error","File : "+source(isrc)+" not found"+chr(10)+chr(10)+"This message appears only one time even if many files are missing")
 					msgnofile=1
 				end if
-				print "Loading Source error","File : ";source(isrc);" not found"
+				dbg_prt2 "Loading Source error","File : ";source(isrc);" not found"
 				sourcebuf(0)=asc("N"):sourcebuf(1)=asc("o"):sourcebuf(2)=asc(" "):sourcebuf(3)=asc("F"):sourcebuf(4)=asc("i"):sourcebuf(5)=asc("l"):sourcebuf(6)=asc("e"):sourcebuf(7)=0
 		   	else
 				clear(sourcebuf(0),0,SRCSIZEMAX)
@@ -3147,7 +3147,7 @@ private sub main_line()
 				If rline(iline).ad>temp Then 'found first line of main
 					proc(iproc).nu=rline(iline).nu
 					rlineprev=iline
-					'print "first line of main="+str(iline)
+					'dbg_prt2 "first line of main="+str(iline)
 					Exit For,For
 				EndIf
 			Next
@@ -3167,11 +3167,11 @@ private sub ini_write()
 	Open ExePath+slash+"fbdebugger.ini" For Output As fileout
 	For i As Integer = 0 To 9
 		If savexe(i)<>"" Then
-			Print #fileout,"[EXE]="+savexe(i)
-			If cmdexe(i)<>"" Then Print #fileout,"[CMD]="+cmdexe(i)
+			print #fileout,"[EXE]="+savexe(i)
+			If cmdexe(i)<>"" Then print #fileout,"[CMD]="+cmdexe(i)
 			For j As Integer =0 To WTCHMAX
 				If wtchexe(i,j)<>"" Then
-					Print #fileout,"[WTC]="+wtchexe(i,j)
+					print #fileout,"[WTC]="+wtchexe(i,j)
 				Else
 					Exit For
 				EndIf
@@ -3179,28 +3179,28 @@ private sub ini_write()
 
 			For j As Integer =1 To BRKMAX
 				If brkexe(i,j)<>"" Then
-					Print #fileout,"[BRK]="+brkexe(i,j)
+					print #fileout,"[BRK]="+brkexe(i,j)
 				EndIf
 			Next
 		End If
 	Next
-	Print #fileout,"[FTN]="+fontname
-	Print #fileout,"[FTS]="+Str(fontsize)
-	Print #fileout,"[FTC]="+Str(fontcolor)
-	Print #fileout,"[LOG]="+Str(flaglog) 'type of log
-	Print #fileout,"[TRC]="+Str(flagtrace) 'type of trace
+	print #fileout,"[FTN]="+fontname
+	print #fileout,"[FTS]="+Str(fontsize)
+	print #fileout,"[FTC]="+Str(fontcolor)
+	print #fileout,"[LOG]="+Str(flaglog) 'type of log
+	print #fileout,"[TRC]="+Str(flagtrace) 'type of trace
 
-	Print #fileout,"[WDX]="+Str(WindowX(hmain))
-	Print #fileout,"[WDY]="+Str(WindowY(hmain))
-	Print #fileout,"[WDW]="+str(WindowWidth(hmain))
-	Print #fileout,"[WDH]="+str(WindowHeight(hmain))
-	Print #fileout,"[BUT]="+str(setbuttons)
-	'Print #fileout,"[CHK]="+Str(clrkeyword) 'color highlighted keywords
-	'Print #fileout,"[CCL]="+Str(clrcurline) 'color current line
-	'Print #fileout,"[CTB]="+Str(clrtmpbrk) 'color tempo breakpoint
-	'Print #fileout,"[CPB]="+Str(clrperbrk) 'color perm breakpoint
+	print #fileout,"[WDX]="+Str(WindowX(hmain))
+	print #fileout,"[WDY]="+Str(WindowY(hmain))
+	print #fileout,"[WDW]="+str(WindowWidth(hmain))
+	print #fileout,"[WDH]="+str(WindowHeight(hmain))
+	print #fileout,"[BUT]="+str(setbuttons)
+	'print #fileout,"[CHK]="+Str(clrkeyword) 'color highlighted keywords
+	'print #fileout,"[CCL]="+Str(clrcurline) 'color current line
+	'print #fileout,"[CTB]="+Str(clrtmpbrk) 'color tempo breakpoint
+	'print #fileout,"[CPB]="+Str(clrperbrk) 'color perm breakpoint
 	'print #fileout,"[DPO]="+Str(dspofs)
-	'Print #fileout,"[PST]="+Str(procsort) 'type of procs sort
+	'print #fileout,"[PST]="+Str(procsort) 'type of procs sort
 
 	close fileout
 End sub
@@ -3210,7 +3210,10 @@ End sub
 private sub ini_read()
 
 	Dim filein As Integer,lineread As String, c As Integer=-1,w As Integer,b As Integer
-	Dim As Long lft,top,rgt,bot,p,q
+	Dim As Integer restorefontcolor
+	Dim As String  restorefontname
+	Dim as Integer restorex,restorey,restorew,restoreh
+
 	If Dir(ExePath+slash+"fbdebugger.ini")="" Then
 	   'fb_message("Init Error","fbdebugger.ini doesn't exist"+chr(10)+"compilation impossible")
 	   Exit Sub
@@ -3238,7 +3241,9 @@ private sub ini_read()
 		ElseIf Left(lineread,6)="[FTN]=" Then
 				restorefontname=RTrim(Mid(lineread,7))
 		ElseIf Left(lineread,6)="[FTS]=" Then
-				restorefontsize=ValInt(RTrim(Mid(lineread,7)))
+				fontsize=ValInt(RTrim(Mid(lineread,7)))
+				send_sci( SCI_STYLESETSIZE,STYLE_DEFAULT,fontsize)
+				send_sci(SCI_STYLECLEARALL, 0, 0)
 		ElseIf Left(lineread,6)="[FTC]=" Then 'color
 				restorefontcolor=ValInt(RTrim(Mid(lineread,7)))
 			''todo set color for source font
@@ -3262,33 +3267,8 @@ private sub ini_read()
 				restorew=valint(RTrim(Mid(lineread,7)))
 		ElseIf Left(lineread,6)="[WDH]=" Then ''for restoring position/size of main window
 				restoreh=valint(RTrim(Mid(lineread,7)))
-
-			'' and modify values to avoid issue with display if erroneus values (negative)
-			'If lft<GetSystemMetrics(SM_XVIRTUALSCREEN) Or lft>(GetSystemMetrics(SM_XVIRTUALSCREEN)+GetSystemMetrics(SM_CXVIRTUALSCREEN)) Then lft=GetSystemMetrics(SM_XVIRTUALSCREEN)
-			'If (rgt-lft)<700 Then rgt=700+lft
-			'
-			'If top<GetSystemMetrics(SM_YVIRTUALSCREEN) Or top>(GetSystemMetrics(SM_YVIRTUALSCREEN)+GetSystemMetrics(SM_CYVIRTUALSCREEN)) Then top=GetSystemMetrics(SM_yVIRTUALSCREEN)
-			'If (bot-top)<500 Then bot=500+top
-
-		   'SetWindowPos(windmain,HWND_NOTOPMOST,lft,top,rgt-lft,bot-top,SWP_NOACTIVATE Or SWP_FRAMECHANGED)
-		   'dsptyp=0
-		   'dsp_size
-		   'SetWindowPos(windmain,HWND_NOTOPMOST,lft,top,rgt-lft,bot-top,SWP_NOACTIVATE Or SWP_FRAMECHANGED)
-
 		ElseIf Left(lineread,6)="[BUT]=" Then ''buttons set/unset
 				setbuttons=ValInt(RTrim(Mid(lineread,7)))
-
-		'elseif Left(lineread,6)="[CRK]=" Then	'color highlighted keywords
-		'		clrkeyword=ValInt(RTrim(Mid(lineread,7)))
-		'ElseIf Left(lineread,6)="[CCL]=" Then	'color current line
-		'		clrcurline=ValInt(RTrim(Mid(lineread,7)))
-		'ElseIf Left(lineread,6)="[CTB]=" Then	'color tempo breakpoint
-		'		clrtmpbrk=ValInt(RTrim(Mid(lineread,7)))
-		'ElseIf Left(lineread,6)="[CPB]=" Then	'color perm breakpoint
-		'		clrperbrk=ValInt(RTrim(Mid(lineread,7)))
-		'ElseIf Left(lineread,6)="[DPO]=" Then
-		'	dspofs=ValInt(RTrim(Mid(lineread,7)))
-
 		End If
 	Loop
 	Close #Filein
@@ -3305,6 +3285,10 @@ private sub ini_read()
 			End if
 		next
 	end if
+
+	If restorew<>0 then
+		resizewindow(hmain,restorex,restorey,restorew,restoreh)
+	EndIf
 End sub
 
 '===============================================================================
@@ -3333,11 +3317,11 @@ private sub closes_debugger2()
 	EndIf
 	if messbox("Quit Fbdebugger",text+"Are you sure ?",MB_YESNO)=IDYES then
 		If prun Then
-			'print "closing so sending sigkill"
+			'dbg_prt2 "closing so sending sigkill"
 			'linux_kill(thread(0).id,9)
 			'sleep 500
 		end if
-		'print "destroy mutex"
+		'dbg_prt2 "destroy mutex"
 		mutexunlock blocker
 		mutexdestroy blocker
 		#ifndef __fb_win32__
@@ -3377,7 +3361,7 @@ End Sub
 '===================================================
 private sub init_debuggee(srcstart as integer)
 	''end of extraction ''todo add that for linux when the exe is running
-	'print "in init_debuggee"
+	'dbg_prt2 "in init_debuggee"
 	dim as INTEGER listidx
 	globals_load()
 	If procrnb=0 Then
@@ -3466,11 +3450,11 @@ private function debug_event() as INTEGER
 	static as INTEGER thprev
 	debugevent=KDBGNOTHING
 	if dbgevent = KDBGNOTHING then return true
-	'print "************ debug_event ";time;" ";dbgevent;" ";hex(debugdata);" stopcode=";stoplibel(stopcode)
+	'dbg_prt2 "************ debug_event ";time;" ";dbgevent;" ";hex(debugdata);" stopcode=";stoplibel(stopcode)
 	select case as const dbgevent
 		Case KDBGRKPOINT
 
-			'print "KDBGRKPOINT=";stopcode,"csline=";CSLINE,hex(debugdata)
+			'dbg_prt2 "KDBGRKPOINT=";stopcode,"csline=";CSLINE,hex(debugdata)
 			if stopcode=CSSTEP orelse stopcode=CSMEM orelse stopcode=CSVAR orelse stopcode=CSUSER orelse stopcode=CSNEWTHRD then
 				gest_brk(debugdata)
 			else
@@ -3544,9 +3528,9 @@ private function debug_event() as INTEGER
 			messbox("Handling debug event","Debug event unkown, not handled ="+str(debugevent))
 	End Select
 	#Ifdef __fb_win32__
-		'print "MutexunLock DBGEVENT"
+		'dbg_prt2 "MutexunLock DBGEVENT"
 		mutexunlock blocker ''release second thread
-		'print "MutexLock DBGEVENT"
+		'dbg_prt2 "MutexLock DBGEVENT"
 		mutexlock   blocker ''lock for next event
 	#endif
 	return true
@@ -3634,7 +3618,7 @@ private sub restart(byval idx as integer=0)
 			afterkilled=KRESTART+idx
 		#EndIf
 		if kill_process("Trying to launch but debuggee still running")=FALSE then
-			print "in restart false ?????"
+			dbg_prt2 "in restart false ?????"
 			exit sub
 		end if
 	'else
@@ -3656,7 +3640,7 @@ private sub exec_mod() 'execution from cursor
 
 	cln=line_cursor() 'get line
 	rln=line_exec(cln,"Changing next executed line not possible, select an executable line")
-	'print "cln rln=";cln,rln,rline(rln).nu
+	'dbg_prt2 "cln rln=";cln,rln,rline(rln).nu
 	if rln=-1 then exit sub
 
 	'If rline(rln+1).nu=cln+1 And rline(rln+1).sx=srcdisplayed Then rln+=1 ''weird case : first line main proc
@@ -3686,7 +3670,7 @@ private sub exec_mod() 'execution from cursor
 		vcontext.regip=rline(rln).ad
 		SetThreadContext(threadhs,@vcontext)
 	#else
-	'print "changing exec=";hex(rline(rln).ad),rline(rln).nu
+	'dbg_prt2 "changing exec=";hex(rline(rln).ad),rline(rln).nu
 		mutexlock blocker
 		msgad=rline(rln).ad
 		msgcmd=KPT_XIP

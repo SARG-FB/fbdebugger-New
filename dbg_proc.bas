@@ -64,17 +64,18 @@ private sub proc_del(j As Integer,t As Integer=1)
 	Next
 	tempo=0 ''used here as a flag if not any more procr for the thread thid
 	''find the last proc item in treeview
-	'print "before update plt=";thread(th).plt
+	'dbg_prt2 "before update plt=";thread(th).plt
 	For iprc As Integer = procrnb to 1 step -1
 		if procr(iprc).thid=thid then
 			tempo=-1
 			thread(th).plt=procr(iprc).tv
-			'print "thid=";thid," prcocrnb=";procrnb ," iprc=";iprc
+			'dbg_prt2 "thid=";thid," prcocrnb=";procrnb ," iprc=";iprc
 			exit for
 		EndIf
 	next
-	'print "tempo=";tempo
+	'dbg_prt2 "tempo=";tempo
 	if tempo=0 then
+		'DeleteTreeViewItem(GTVIEWTHD,thread(th).tv)
 		thread(th).plt=0
 	EndIf
 End Sub
@@ -195,7 +196,7 @@ Private sub proc_end()
 	''delete all elements (treeview, varr, ) until the limit
 	For j As Long =procrnb To limit Step -1
 
-	'print "procrnb=";procrnb,limit,j
+	'dbg_prt2 "procrnb=";procrnb,limit,j
 	   If procr(j).thid = thid Then
 			proc_del(j)
 		End If
@@ -345,7 +346,7 @@ private sub proc_new()
 	procr(procrnb).idx=procsv
 
 	'test if first proc of thread
-	'print "threadcur=";threadcur,thread(threadcur).plt,proc(procsv).nm
+	'dbg_prt2 "threadcur=";threadcur,thread(threadcur).plt,proc(procsv).nm
 	If thread(threadcur).plt=0 Then
 		procr(procrnb).cl=-1  ''no real calling line
 		libel="ThID="+Str(procr(procrnb).thid)+" "
@@ -406,7 +407,7 @@ private sub proc_runnew()
 	'For ithd As Integer =0 To threadnb
 		var ithd=threadcur ''2022/01/21
 
-		'print "in proc run new ithd=";ithd," plt=";thread(ithd).plt,"sv=";thread(ithd).sv
+		'dbg_prt2 "in proc run new ithd=";ithd," plt=";thread(ithd).plt,"sv=";thread(ithd).sv
 
 		'if thread(ithd).sv=-1 then continue for ''2022/01/21
 		regbpnb=0
@@ -429,13 +430,13 @@ private sub proc_runnew()
 				mutexunlock blocker
 				threadcur=threadprev
 				if regs.xip=0 then
-					'print "not stopped=";thread(ithd).id
+					'dbg_prt2 "not stopped=";thread(ithd).id
 					'continue for ''2022/01/21
 				EndIf
 
 				regbp=regs.xbp
 				regip=regs.xip
-				'print "in proc new run xip=";hex(regip),hex(regbp)
+				'dbg_prt2 "in proc new run xip=";hex(regip),hex(regbp)
 		#endif
 		While 1
 			For j =1 To procnb
@@ -451,7 +452,7 @@ private sub proc_runnew()
 			If j>procnb Then Exit While
 			ReadProcessMemory(dbghand,Cast(LPCVOID,regbp),@regbp,SizeOf(integer),0) 'previous RBP/EBP
 		Wend
-		'print "in proc new run 01 regbpnb=";regbpnb
+		'dbg_prt2 "in proc new run 01 regbpnb=";regbpnb
 		''skip still existing procedures or delete them
 		for iprc as INTEGER	=1 to procrnb
 			ReadProcessMemory(dbghand,Cast(LPCVOID,procr(iprc).sk+SizeOf(integer)),@retadr,SizeOf(Integer),0) ''current value should be return address
@@ -463,7 +464,7 @@ private sub proc_runnew()
 				EndIf
 			EndIf
 		next
-		'print "in proc new run 02 regbpnb=";regbpnb
+		'dbg_prt2 "in proc new run 02 regbpnb=";regbpnb
 		''create new procrs
 		For k As Integer =regbpnb To 1 Step -1
 			If procrnb=PROCRMAX Then
@@ -478,7 +479,7 @@ private sub proc_runnew()
 			procr(procrnb).idx=pridx(k)
 
 			'test if first proc of thread
-			'print "in proc run new 02 ithd=";ithd," plt=";thread(ithd).plt
+			'dbg_prt2 "in proc run new 02 ithd=";ithd," plt=";thread(ithd).plt
 			If thread(ithd).plt=0 Then
 				thread(ithd).tv=AddTreeViewItem(GTVIEWTHD,"test000",cast (hicon, 0),0,TVI_LAST,0)
 				thread(ithd).ptv=thread(ithd).tv 'last proc
@@ -487,7 +488,7 @@ private sub proc_runnew()
 				procr(procrnb).cl=-1  ' no real calling line
 				libel="ThID="+Str(procr(procrnb).thid)+" "
 				tv=thread(ithd).tv 'insert in last position
-				'print "in proc run new=";thread(ithd).tv
+				'dbg_prt2 "in proc run new=";thread(ithd).tv
 			Else
 				tv=thread(ithd).plt 'insert after the last item of thread
 				procr(procrnb).ret=ret(k)

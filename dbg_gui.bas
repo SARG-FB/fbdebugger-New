@@ -482,7 +482,7 @@ end sub
 			Case WM_NOTIFY
 				dim as SCNotification ptr pSn = cast(SCNotification ptr , lparam) 'SCNotification ->https://www.scintilla.org/scintillaDoc.html#Notifications
 				if pSn->nmhdr.code = SCN_CHARADDED then
-					'print pSn->ch ' press keys and look in the console/terminal
+					'dbg_prt2 pSn->ch ' press keys and look in the console/terminal
 				EndIf
 				'? pSn->nmhdr.idFrom ' number gadget
 				'? pSn->nmhdr.hwndFrom ' hwnd sciHWND
@@ -493,7 +493,7 @@ end sub
 	private sub getMessages cdecl(w as hwnd, p as gint, notification as SCNotification ptr, userData as gpointer )
 		dim as SCNotification ptr pSn = cast(SCNotification ptr , notification)
 		if pSn->nmhdr.code = SCN_CHARADDED then
-			'print pSn->ch ' press keys and look in the console/terminal
+			'dbg_prt2 pSn->ch ' press keys and look in the console/terminal
 		EndIf
 		'? pSn->nmhdr.idFrom ' number gadget
 		'? pSn->nmhdr.hwndFrom ' hwnd sciHWND
@@ -813,7 +813,7 @@ private sub create_scibx(gadget as long, x as Long, y as Long , w as Long , h as
 '===========
     send_sci(SCI_SETLEXER, SCLEX_FREEBASIC, 0 )
     'send_sci(SCI_STYLESETFONT, STYLE_DEFAULT , cast(lparam,@"Courier New"))
-    'send_sci( SCI_STYLESETSIZE,STYLE_DEFAULT,11)
+    send_sci( SCI_STYLESETSIZE,STYLE_DEFAULT,15)
     send_sci(SCI_STYLECLEARALL, 0, 0)
     send_sci( SCI_SETCODEPAGE, SC_CP_UTF8 ,0)
     send_sci(SCI_SETKEYWORDS,0, Cast(integer,@"sub function operator constructor destructor property"))
@@ -864,6 +864,7 @@ private sub create_settingsbx()
 	groupgadget(FONTGROUP,10,280,450,125," Font for source code ")
 	textgadget(GTEXTFTYPE,12,300,200,30,"type",0)
 	textgadget(GTEXTFSIZE,12,335,200,30,"size",0)
+	stringgadget(GFONTSIZE,225,335,60,30,"")
 	textgadget(GTEXTFCOLOR,12,370,200,30,"color",0)
 
 	groupgadget(BUTGROUP,10,420,450,60,"Click on a button for setting/removing")
@@ -1294,7 +1295,7 @@ private sub gui_init()
 	''icon on title bar
 	''-----> ONLY WINDOWS
 	'Var icon=LoadIcon(null,@"D:"+slash+"telechargements"+slash+"win9"+slash+"tmp"+slash+"fbdebugger.ico")
-	'print icon,getlasterror()
+	'dbg_prt2 icon,getlasterror()
 	'    'SendMessage(hwnd,WM_SETICON,ICON_BIG,Cast(Lparam,icon))
 	'    sendmessage(hwnd,WM_SETICON,ICON_SMALL,Cast(Lparam,LoadIcon(GetModuleHandle(0),@"."+slash+"fbdebugger.ico")))
 	'Var icon=LoadIcon(GetModuleHandle(0),MAKEINTRESOURCE(100))
@@ -1412,16 +1413,16 @@ sub context_menu()
 		GetWindowsCaptionBorderSize(hmain , @iCaption, @iBorder)
     #EndIf
 
-	'print globalMouseX,windowx(hmain),globalMouseX-windowx(hmain)
-	'print mx,gadgetx(GSRCCURRENT),gadgetwidth(GSRCCURRENT),gadgetx(GSRCCURRENT)+gadgetwidth(GSRCCURRENT)
+	'dbg_prt2 globalMouseX,windowx(hmain),globalMouseX-windowx(hmain)
+	'dbg_prt2 mx,gadgetx(GSRCCURRENT),gadgetwidth(GSRCCURRENT),gadgetx(GSRCCURRENT)+gadgetwidth(GSRCCURRENT)
 	if mx>=gadgetx(GSRCCURRENT) and mx<=gadgetx(GSRCCURRENT)+gadgetwidth(GSRCCURRENT)-iCaption  then
-		'print globalMousey,windowy(hmain),globalMousey-windowy(hmain)-20
-		'print windowy(gadgetid(GSRCCURRENT)),WindowClientHeight(hmain),windowy(gadgetid(GSRCCURRENT))+WindowClientHeight(hmain)-95
+		'dbg_prt2 globalMousey,windowy(hmain),globalMousey-windowy(hmain)-20
+		'dbg_prt2 windowy(gadgetid(GSRCCURRENT)),WindowClientHeight(hmain),windowy(gadgetid(GSRCCURRENT))+WindowClientHeight(hmain)-95
 		if my>=gadgety(GSRCCURRENT)+45 and my<=gadgety(GSRCCURRENT)+WindowClientHeight(hmain)-85 then
 			DisplayPopupMenu(HMenusource, GlobalMouseX,GlobalMouseY)
 		End If
 	elseif mx>=gadgetx(GRIGHTTABS) and mx<=gadgetx(GRIGHTTABS)+gadgetwidth(GRIGHTTABS) then
-		'print "my=";my,"yy right=";windowy(gadgetid(GRIGHTTABS))+30,windowy(gadgetid(GRIGHTTABS))+windowheight(gadgetid(GRIGHTTABS))
+		'dbg_prt2 "my=";my,"yy right=";windowy(gadgetid(GRIGHTTABS))+30,windowy(gadgetid(GRIGHTTABS))+windowheight(gadgetid(GRIGHTTABS))
 		if my>=gadgety(GRIGHTTABS)+30 and my<=gadgety(GRIGHTTABS)+gadgetheight(GRIGHTTABS) then
 			if PanelGadgetGetCursel(GRIGHTTABS)=TABIDXVAR then
 				DisplayPopupMenu(HMenuvar, GlobalMouseX,GlobalMouseY)
@@ -1460,7 +1461,7 @@ private sub find_text(direct as integer)
 		else ''up
 			lend = 0
 		end if
-		print "inside find_text1=";text,tlen,tptr,"tpos=";ftext.tpos,start;" end=";lend
+		dbg_prt2 "inside find_text1=";text,tlen,tptr,"tpos=";ftext.tpos,start;" end=";lend
 	end if
 
 	while 1
@@ -1479,14 +1480,14 @@ private sub find_text(direct as integer)
 				end if
 			end if
 		end if
-print "inside find_text2=";text,tlen,tptr,"tpos=";ftext.tpos,start;" end=";lend
+dbg_prt2 "inside find_text2=";text,tlen,tptr,"tpos=";ftext.tpos,start;" end=";lend
 		Send_sci(SCI_SETTARGETSTART, start , 0)
 		Send_sci(SCI_SETTARGETEND, lend, 0)
 		ftext.tpos = send_sci(SCI_SEARCHINTARGET, tlen, tptr)
 
 		if ftext.tpos = -1 then
 			if first=0 then
-				print "boucle"
+				dbg_prt2 "boucle"
 				if direct = 1 then ''down
 					start = 0
 					lend = lentarget
@@ -1514,7 +1515,7 @@ print "inside find_text2=";text,tlen,tptr,"tpos=";ftext.tpos,start;" end=";lend
 		EndIf
 		first = 0
 		''found so show text in source
-		print "found=";ftext.tpos
+		dbg_prt2 "found=";ftext.tpos
 		send_sci(SCI_GOTOPOS,ftext.tpos,0)
 		send_sci(SCI_SETSELECTIONSTART,ftext.tpos,0)
 		send_sci(SCI_SETSELECTIONEND,ftext.tpos+tlen,0)
@@ -1539,7 +1540,7 @@ private sub attach_gui()
 	Open Pipe TEST_COMMAND For Input As #1
 	Do Until EOF(1)
 		Line Input #1, ln
-		'print ln
+		'dbg_prt2 ln
 		#ifdef __FB_linux__
 			if instrrev(ln,"/")>15 then
 				if len(process)<>0 then process+=chr(10)

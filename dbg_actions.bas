@@ -22,6 +22,8 @@ private sub menu_action(poption as integer)
 
         case MNSETTINGS
 			setgadgettext(GCMDLPARAM,cmdexe(0))
+			fontsize=send_sci(SCI_STYLEGETSIZE,STYLE_DEFAULT,0)
+			setgadgettext(GFONTSIZE,str(fontsize))
 			hidewindow(hsettings,KSHOW)
 
 		case MNEXEFILE0 to MNEXEFILE9
@@ -465,7 +467,7 @@ private sub gadget_action(igadget as LONG)
 		case GDUMPNEW
 			if dumptyp>=7 and dumptyp<=10 then
 				var value=vallng(GetTextItemListView(GDUMPMEM,0,1))
-				'print "value=";value
+				'dbg_prt2 "value=";value
 				if value>0 then
 					dumpadr=value
 					dump_sh()
@@ -645,6 +647,11 @@ private sub gadget_action(igadget as LONG)
 			proc_sh()
 
 		case GAUTODELAY
+
+		case GFONTSIZE
+			fontsize=valint(GetGadgetText(GFONTSIZE))
+			send_sci( SCI_STYLESETSIZE,STYLE_DEFAULT,fontsize)
+			send_sci(SCI_STYLECLEARALL, 0, 0)
 
 		case GCMDLKEEP
 
@@ -960,7 +967,7 @@ private sub gadget_action(igadget as LONG)
 		case GLOG ''nothing to do
 		case GEDITOR ''nothing to do
 		case GTVIEWBRC ''nothing to do
-		'print  "GTVIEWBRC clicked on"
+		'dbg_prt2  "GTVIEWBRC clicked on"
 		case GBRCVALUE ''nothing to do
 
 		case GATTCHEDIT
@@ -990,7 +997,7 @@ private sub select_file()
 	else
 		exename=selfile
 		'messbox("File selection","File selected = "+exename)
-		'print "File selected = "+exename
+		'dbg_prt2 "File selected = "+exename
 	end if
 
 	if check_bitness(exename)=0 then exit sub ''bitness of debuggee and fbdebugger not corresponding
@@ -1069,7 +1076,7 @@ private sub button_action(button as integer)
 					'runtype=RTRUN 'to treat free as run
 '
 				'Else
-					''print "halting all"
+					''dbg_prt2 "halting all"
 					'flaghalt=true
 					'runtype=RTSTEP
 				'EndIf

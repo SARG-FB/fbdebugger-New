@@ -320,7 +320,7 @@ private function brk_test(adr1 as INTEGER,adr2 as integer=0,datatype as integer,
 	Dim As Integer flag=0
 	'dim as integer recup(20)
 	dim as valeurs recup1,recup2
-'print adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
+'dbg_prt2 adr1,adr2,datatype,data2.vlongint,data2.vdouble,comptype
 		'If brkv.arr Then 'watching dyn array element ?
 			'adr=vrr(brkv.ivr).ini
 			'ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@adr,4,0)
@@ -537,13 +537,13 @@ private sub brk_unset(ubpon as integer=false)
 			end if
 		#endif
 	else
-	'print "in brk_unset restoring all instructions"
+	'dbg_prt2 "in brk_unset restoring all instructions"
 
 		#ifdef __fb_WIN32__
 			For j As Integer = 1 To linenb 'restore all instructions
-			'If proc(rline(j).px).nu=-1 Then print "brk_unset =-1"
+			'If proc(rline(j).px).nu=-1 Then dbg_prt2 "brk_unset =-1"
 			'If proc(rline(j).px).nm="main" or proc(rline(j).px).nm="MAIN" then
-				'print "set only main=";hex(rline(j).ad)
+				'dbg_prt2 "set only main=";hex(rline(j).ad)
 				WriteProcessMemory(dbghand,Cast(LPVOID,rline(j).ad),@rLine(j).sv,1,0)
 				'sleep 500
 			'EndIf
@@ -571,7 +571,7 @@ private sub brk_unset(ubpon as integer=false)
 			end if
 		Next
 		if brkol(0).typ<>0 then
-			'print "put CC on line ad=";hex(brkol(0).ad)
+			'dbg_prt2 "put CC on line ad=";hex(brkol(0).ad)
 			WriteProcessMemory(dbghand,Cast(LPVOID,brkol(0).ad),@breakcpu,1,0)
 		EndIf
 	end if
@@ -715,7 +715,7 @@ select case t
 		runtype=RTRUN
 		but_enable()
 		brkol(0).nline=rline(rln).nu
-		'print "skipping line=";rline(rln).nu,rline(rln).ad
+		'dbg_prt2 "skipping line=";rline(rln).nu,rline(rln).ad
 		brk_marker(0)
 		brk_unset(true) ''remove ABP + keep UBP or disable them ?
 		resume_exec()

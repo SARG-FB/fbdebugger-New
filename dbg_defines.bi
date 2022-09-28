@@ -18,7 +18,7 @@
 	#define ver3264 "(32bit) "
 #endif
 
-#Define fbdebuggerversion "V 3.00 BETA j "+ver3264
+#Define fbdebuggerversion "V 3.00 "+ver3264
 
 '#define fulldbg_prt 'uncomment to get more information
 #Define dbg_prt2 rem 'dbg_prt 'used temporary for debugging fbdebugger, change rem by dbg_prt
@@ -649,6 +649,7 @@ enum
 	FONTGROUP
 	GTEXTFTYPE
 	GTEXTFSIZE
+	GFONTSIZE
 	GTEXTFCOLOR
 
 	BUTGROUP
@@ -870,11 +871,6 @@ vushort As UShort
 'vzstring as zstring
 'vwstring as wstring
 End union
-
-''font size
-Const KSIZE8=8
-Const KSIZE10=10
-Const KSIZE12=12
 
 '' for proc_find / thread
 Const KFIRST=1

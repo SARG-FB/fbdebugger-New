@@ -290,7 +290,7 @@ private sub parse_udt(readl As String)
 	else
 	   p+=2 'skip :T  GCC
 	endif
-	'print "parse_udt=";readl
+	'dbg_prt2 "parse_udt=";readl
 	q=InStr(readl,"=")
 
 	udtidx=Val(Mid(readl,p,q-p))
@@ -430,7 +430,7 @@ private sub parse_var(gv As String,ad As UInteger, dlldelta As Integer=0)
 		ElseIf InStr(vname,"_ZTSN")<>0  orelse InStr(vname,"_ZTVN")<>0 then
 			Exit Sub 'don't keep _ZTSN or _ZTVN (extra data for class) or with double underscore  __Z
 		EndIf
-		'print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ VNAME=";vname
+		'dbg_prt2 "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ VNAME=";vname
 		If Left(vname,3)="LT_" Then 'LT_xxxx
 			Exit Sub
 		elseif Left(vname,2)="_{" Then '_{fbdata}_<label name>
@@ -440,7 +440,7 @@ private sub parse_var(gv As String,ad As UInteger, dlldelta As Integer=0)
 		elseIf Left(vname,3)="Lt_" Then 'Lt_xxxx used with extern and array
 			Exit Sub
 		EndIf
-		'print "parse_var=";gv
+		'dbg_prt2 "parse_var=";gv
 	Else '$ in the string
 		If InStr(p+1,vname,"$") <>0 AndAlso InStr(vname,"$fb_Object")=0 then
 			Exit Sub 'don't keep TMP$xx$xx:
@@ -919,7 +919,7 @@ private sub dbg_file(strg as string,value as integer)
 	dim as string fullname
 	if strg="" then ''end of main ?
 		udtcpt=udtmax-TYPESTD
-		'print "---------------- end of current debug data -------------------"
+		'dbg_prt2 "---------------- end of current debug data -------------------"
 	else
 		if right(strg,4)<>".bas" and right(strg,3)<>".bi" then
 			path=strg
@@ -931,16 +931,16 @@ private sub dbg_file(strg as string,value as integer)
 			#endif
 			path=""
 
-			'print "full source name=";fullname
+			'dbg_prt2 "full source name=";fullname
 			if check_source(fullname)=-1 then ''useful check_source ???
 				sourcenb+=1
 				source(sourcenb)=fullname
 				srcname(sourcenb)=source_name(source(sourcenb))
 				list_insert(srclist(),strptr(srcname(sourcenb)),sourcenb+1,srclistfirst) ''zero based so add 1
 				sourceix=sourcenb
-				'print "new source=";fullname
+				'dbg_prt2 "new source=";fullname
 			else
-				'print "keep current source with code 100 check that =";strg
+				'dbg_prt2 "keep current source with code 100 check that =";strg
 			end if
 		end if
 	end if
@@ -964,10 +964,10 @@ private sub dbg_include(strg as string)
 		sourceix=sourcenb
 		srcname(sourcenb)=source_name(source(sourcenb))
 		list_insert(srclist(),strptr(srcname(sourcenb)),sourcenb+1,srclistfirst) ''zero based so add 1
-		'print "new source=";sourcenb,strg
+		'dbg_prt2 "new source=";sourcenb,strg
 	else
 	  	sourceix=temp
-	  	'print "keep current source=";sourceix,strg
+		'dbg_prt2 "keep current source=";sourceix,strg
 	end if
 end sub
 '' -----------------------
@@ -998,9 +998,9 @@ private sub dbg_line(linenum as integer,ofset as integer)
 		EndIf
 		''to be checked maybe fixed so useless
 		rline(linenb).sx=sourceix ''for line in include and not in a proc
-		'print "linenum=";linenum,hex(rline(linenb).ad)
+		'dbg_prt2 "linenum=";linenum,hex(rline(linenb).ad)
 	else
-		'print "line number=0"
+		'dbg_prt2 "line number=0"
 	end if
 end sub
 '' ---------------------------------------------
@@ -1019,12 +1019,12 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 				procmain=procnb+1
 		 		flagmain=false
 		 		'flagstabd=TRUE'first main ok but not the others
-				'print "main found=";procnb+1
+				'dbg_prt2 "main found=";procnb+1
 		 	endif
 			procnodll=true
 
 			procnb+=1
-			'print "in proc=";procname,procnb,sourceix
+			'dbg_prt2 "in proc=";procname,procnb,sourceix
 			proc(procnb).sr=sourceix
 			proc(procnb).nm=procname
 			list_insert(proclist(),strptr(proc(procnb).nm),procnb,proclistfirst)
@@ -1038,32 +1038,32 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 			proc(procnb+1).vr=proc(procnb).vr 'in case there is not param nor local var
 			proc(procnb).rvadr=0 'for now only used in gcc case
 
-			'print "proc =";proc(procnb).nm;" in source=";source(proc(procnb).sr)
+			'dbg_prt2 "proc =";proc(procnb).nm;" in source=";source(proc(procnb).sr)
 		end if
 	else
 		proc(procnb).ed=proc(procnb).db+adr
-		'print "end of proc=";proc(procnb).ed,hex(proc(procnb).ed)
+		'dbg_prt2 "end of proc=";proc(procnb).ed,hex(proc(procnb).ed)
 		proc(procnb).sr=sourceix
 		if proc(procnb).fn>procfn Then procfn=proc(procnb).fn+1 ' just to be sure to be above see gest_brk
 
 		''todo be checked ??????
 		'for proc added by fbc (constructor, operator, ...) ''adding >2 to avoid case only one line ...
-		'print "Checking procedure added by compiler =";proc(procnb).nm,proc(procnb).nu,rline(linenb).nu,hex(proc(procnb).db),hex(proc(procnb).fn)
+		'dbg_prt2 "Checking procedure added by compiler =";proc(procnb).nm,proc(procnb).nu,rline(linenb).nu,hex(proc(procnb).db),hex(proc(procnb).fn)
 		'If proc(procnb).nu=rline(linenb).nu AndAlso linenb>2 then
 		If rline(linenb).nu=1 then
 
 			proc(procnb).nu=-1
 			linenb-=1
-			print "Procedure added by compiler (constructor, etc) =";proc(procnb).nm
+			dbg_prt2 "Procedure added by compiler (constructor, etc) =";proc(procnb).nm
            	'For i As Integer =1 To linenb
            		'dbg_prt2("Proc db/fn inside for stab="+Hex(proc(procnb).db)+" "+Hex(proc(procnb).fn))
            		'dbg_prt2("Line Adr="+Hex(rline(i).ad)+" "+Str(rline(i).ad))
            		'If rline(i).ad>=proc(procnb).db AndAlso rline(i).ad<=proc(procnb).fn Then
            			'#Ifdef __fb_win32__
-						'print "Cancel breakpoint adr="+Hex(rline(i).ad)+" "+Str(rline(i).ad))
+						'dbg_prt2 "Cancel breakpoint adr="+Hex(rline(i).ad)+" "+Str(rline(i).ad))
 						'WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@rLine(i).sv,1,0)
            			'#else
-						'print "Procedure added by compiler (constructor, etc) line number should be -1=";proc(procnb).nm,rline(i).nu
+						'dbg_prt2 "Procedure added by compiler (constructor, etc) line number should be -1=";proc(procnb).nm,rline(i).nu
            			'#endif
            			''nota rline(linenb).nu=-1
            		'EndIf
@@ -1081,7 +1081,7 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
                    Exit For
                 EndIf
             next
-            'print "remove modlevel in"+source(proc(procnb).sr)
+            'dbg_prt2 "remove modlevel in"+source(proc(procnb).sr)
             procnb-=1 ''removing proc
         end if
 
@@ -1097,7 +1097,7 @@ private sub dbg_epilog(ofset as integer)
 		'' this test is useless as for sub it is ok  .fn = .ad  --> mov rsp, rbp
 		'' for function the last line ('end function' is not given by 224)
 		'' so forcing it except for main
-		'print "EPILOG=";hex(rline(linenb).ad),hex(proc(procnb).fn),"##";proc(procnb).nm;"##"
+		'dbg_prt2 "EPILOG=";hex(rline(linenb).ad),hex(proc(procnb).fn),"##";proc(procnb).nm;"##"
 			rline(linenb).ad=proc(procnb).fn ''KEEP this line even if test is removed
 		'else
 			'proc(procnb).fn=rline(linenb).ad
@@ -1154,7 +1154,7 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 		stab.cod=buf(1)  and &hffff
 		stab.desc=buf(1) shr 16
 		#endif
-		'print "C="+str(stab.cod)+" D="+str(stab.desc)+" O="+str(stab.offst);" ";
+		'dbg_prt2 "C="+str(stab.cod)+" D="+str(stab.desc)+" O="+str(stab.offst);" ";
 		strg=space(2000)
 		get #1,ofstr+stab.offst,strg
 		strg=""+*strptr(strg)
@@ -1162,23 +1162,23 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 		if ofstemp>ofsmax then
 			ofsmax=ofstemp
 		EndIf
-		'print strg,ofstr,stab.offst,ofsmax
+		'dbg_prt2 strg,ofstr,stab.offst,ofsmax
 		#Ifdef __FB_64BIT__
 			value=buf(1)
 		#else
 			value=buf(2)
 		#endif
-		'print "D="+str(value)+" H="+hex(value)
+		'dbg_prt2 "D="+str(value)+" H="+hex(value)
 
 		select case as const stab.cod
 			case 100 '' file name
 				dbg_file(strg,value)
 			case 255 ''not as standard stab freebasic version and maybe other information
-				'print "compiled with=";strg
+				'dbg_prt2 "compiled with=";strg
 			Case 32,38,40,128,160 'init common/ var / uninit var / local / parameter
                	parse_var(strg,value)',exebase-baseimg) ''todo
 			case 132 '' file name
-				'print "dbg include=";strg
+				'dbg_prt2 "dbg include=";strg
 				dbg_include(strg)
 			case 36 ''procedure
 				dbg_proc(strg,stab.desc,value)
@@ -1195,7 +1195,7 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 				end if
 				#endif
 			case else
-				print "Unknow stab cod=";stab.cod
+				dbg_prt2 "Unknow stab cod=";stab.cod
 		end select
 		#Ifdef __FB_64BIT__
 		ofset+=16
@@ -1203,7 +1203,7 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 		ofset+=12
 		#endif
 	next
-	'print
+	'dbg_prt2
 end sub
 '' ------------------------------------------------------------------------------------
 '' Retrieving sections .dbgdat (offset and size) and .dbgdat (offset) in the elf file
@@ -1216,73 +1216,73 @@ private function elf_extract(filename as string) as integer
 
 	open filename for binary as #1
 	lgf=lof(1)
-	'print "lenght=";lgf
+	'dbg_prt2 "lenght=";lgf
 
 	ofset=of_entry
 	get #1,ofset+1,ulgt
-	'print "entry=";hex(ulgt)
+	'dbg_prt2 "entry=";hex(ulgt)
 
 	ofset=of_section
 	get #1,ofset+1,ulgt
-	'print "start section header=";hex(ulgt)
+	'dbg_prt2 "start section header=";hex(ulgt)
 	start_section=ulgt
 
 	ofset=of_section_size
 	get #1,ofset+1,usht
-	'print "section size=";usht
+	'dbg_prt2 "section size=";usht
 
 
 	ofset=of_section_num
 	get #1,ofset+1,usht
-	'print "section number=";usht
+	'dbg_prt2 "section number=";usht
 	sect_num=usht
 
 	ofset=of_section_str
 	get #1,ofset+1,usht
-	'print "section string=";usht
+	'dbg_prt2 "section string=";usht
 	ofset=start_section+(usht)*sect_size+of_offset_infile
 	get #1,ofset+1,ulgt
-	'print "start offset string=";hex(ulgt)
+	'dbg_prt2 "start offset string=";hex(ulgt)
 	str_section=ulgt
 
 	''sections
 
 	walk_section=start_section
 	for isec as integer = 1 to sect_num
-		'print "section=";isec;" ";
+		'dbg_prt2 "section=";isec;" ";
 
 		ofset=walk_section
 		get #1,ofset+1,ulg ''offset in str table
-		'print "offset string=";ulg;" ";
+		'dbg_prt2 "offset string=";ulg;" ";
 		ofset=str_section+ulg
 		sect_name=space(40)
 		get #1,ofset+1,sect_name
 		sect_name=""+*strptr(sect_name)
-		'print "name=";sect_name
+		'dbg_prt2 "name=";sect_name
 
 		ofset=walk_section+of_offset_infile
 		get #1,ofset+1,ulgt
-		'print "offset in file= ";hex(ulgt);" ";
+		'dbg_prt2 "offset in file= ";hex(ulgt);" ";
 		#Ifdef __FB_64BIT__
 		If sect_name=".dbgdat" Then
 		#else
 		If sect_name=".stab" Then
 		#endif
-			'print "name=";sect_name
+			'dbg_prt2 "name=";sect_name
 			dbg_dat_of=ulgt
 		#Ifdef __FB_64BIT__
 		ElseIf sect_name=".dbgstr" Then
 		#else
 		ElseIf sect_name=".stabstr" Then
 		#endif
-			'print "name=";sect_name
+			'dbg_prt2 "name=";sect_name
 			dbg_str_of=ulgt
 			exit for ''not anymore section to retrieve
 		end if
 
 		ofset=walk_section+of_size_infile
 		get #1,ofset+1,ulgt
-		'print "size= ";hex(ulgt);" ";ulgt
+		'dbg_prt2 "size= ";hex(ulgt);" ";ulgt
 		#Ifdef __FB_64BIT__
 		If sect_name=".dbgdat" Then
 		#else
@@ -1441,7 +1441,7 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 				case 42 ''main entry point
 					'not used
 				case else
-					'print "Unknow stab cod=";recupstab.code
+					'dbg_prt2 "Unknow stab cod=";recupstab.code
 			end select
 	'=========================================
 			basestab+=sizeof(udtstab)
@@ -1453,40 +1453,40 @@ end function
 '===================================================
 private sub list_all()
 	dim scopelabel(1 to ...) as const zstring ptr={@"local",@"global",@"static",@"byref param",@"byval param",@"common"}
-	print "sources ------------------------------------------------------- ";"total=";sourcenb+1
+	dbg_prt2 "sources ------------------------------------------------------- ";"total=";sourcenb+1
 	for isrc as integer =0 to sourcenb
-		print "isrc=";isrc;" ";source(isrc)
+		dbg_prt2 "isrc=";isrc;" ";source(isrc)
 	next
-	print "procedures ------------------------------------------------------- ";procnb
+	dbg_prt2 "procedures ------------------------------------------------------- ";procnb
 	for iprc as integer =1 to procnb
-		print "iprc=";iprc;" ";source(proc(iprc).sr);" ";proc(iprc).nm;" ";proc(iprc).nu;" ";udt(proc(iprc).rv).nm
-		print "lower/upper/end ad=";hex(proc(iprc).db);" ";hex(proc(iprc).fn);" ";hex(proc(iprc).ed)
+		dbg_prt2 "iprc=";iprc;" ";source(proc(iprc).sr);" ";proc(iprc).nm;" ";proc(iprc).nu;" ";udt(proc(iprc).rv).nm
+		dbg_prt2 "lower/upper/end ad=";hex(proc(iprc).db);" ";hex(proc(iprc).fn);" ";hex(proc(iprc).ed)
 	next
-	print "Lines ---------------------------------------------------------- ";linenb
+	dbg_prt2 "Lines ---------------------------------------------------------- ";linenb
 	for iline as integer = 1 to linenb
-		print "iline=";iline;" proc=";proc(rline(iline).px).nm;" ";rline(iline).nu;" ";hex(rline(iline).ad)
+		dbg_prt2 "iline=";iline;" proc=";proc(rline(iline).px).nm;" ";rline(iline).nu;" ";hex(rline(iline).ad)
 	next
-	print
-	print "types ----------------------------------------------------------- ";udtmax
+	dbg_prt2
+	dbg_prt2 "types ----------------------------------------------------------- ";udtmax
 	for iudt as integer=1 to udtmax
 		if udt(iudt).nm<>"" then
-			print "iudt=";iudt;" ";udt(iudt).nm;" ";udt(iudt).lg
+			dbg_prt2 "iudt=";iudt;" ";udt(iudt).nm;" ";udt(iudt).lg
 			if udt(iudt).ub<>0 then
 				for icudt as integer =udt(iudt).lb to udt(iudt).ub
-					print "icudt=";cudt(icudt).nm
+					dbg_prt2 "icudt=";cudt(icudt).nm
 				next
 			end if
 		end if
 	next
-	print "global variables ---------------------------------------------------------- ";vrbgbl
+	dbg_prt2 "global variables ---------------------------------------------------------- ";vrbgbl
 	for ivrb as integer=1 to vrbgbl
-		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+		dbg_prt2 "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
 	next
-	print "local variables ----------------------------------------------------------- ";vrbloc-VGBLMAX
+	dbg_prt2 "local variables ----------------------------------------------------------- ";vrbloc-VGBLMAX
 	for ivrb as integer=VGBLMAX+1 to vrbloc
-		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+		dbg_prt2 "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
 	next
-	print "end of list all"
+	dbg_prt2 "end of list all"
 end sub
 
 
