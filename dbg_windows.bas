@@ -213,11 +213,11 @@ private sub output_wds(t As String)
 
 	If filenumber=0 And (flaglog And 2) Then
 		filenumber=FreeFile:Open ExePath+"\dbg_log_file.txt"  For Append As filenumber
-		Print #filenumber,Date,Time
+		print #filenumber,Date,Time
 	EndIf
 
 	If (flaglog And 1) Then libel=t+Chr(13)+Chr(10):WriteConsole(scrnnumber, StrPtr(libel),Len(libel),@cpt,0)
-	If (flaglog And 2) Then Print # filenumber,t
+	If (flaglog And 2) Then print # filenumber,t
 
 End Sub
 '=======================================================================
@@ -296,12 +296,12 @@ private sub debugstring_read(debugev As debug_event)
 		ReadProcessMemory(dbghand,Cast(LPCVOID,debugev.u.debugstring.lpDebugStringData),_
 		@wstrg,leng,0)
 		'messagebox(0,wstrg,WStr("debug wstring"),MB_OK or MB_SYSTEMMODAL)
-		'print "debugstring=";wstrg
+		'dbg_prt2 "debugstring=";wstrg
 	else
 		ReadProcessMemory(dbghand,Cast(LPCVOID,debugev.u.debugstring.lpDebugStringData),_
 		@sstrg,leng,0)
 		'messagebox(0,sstrg,@"debug string",MB_OK or MB_SYSTEMMODAL)
-		'print "debugstring=";sstrg
+		'dbg_prt2 "debugstring=";sstrg
 	endif
 
 End Sub
@@ -395,7 +395,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 
 	dbg_prt2("")
 	dbg_prt2("AD gest brk="+hex(ad)+" th="+Str(threadcur))
-	'LOLO print "AD gest brk="+hex(ad)+" th="+Str(threadcur)," thid="+Str(thread(threadcur).id)
+	'LOLO dbg_prt2 "AD gest brk="+hex(ad)+" th="+Str(threadcur)," thid="+Str(thread(threadcur).id)
 	'show_context
 
 	proccurad=ad
@@ -423,7 +423,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		rln=i
 	end if
 	rlinecur=rln
-	'print "rlinecur=";rlinecur
+	'dbg_prt2 "rlinecur=";rlinecur
 
 	thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=rln
 	procsv=rline(rln).px
@@ -433,7 +433,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	''get registers
 	GetThreadContext(threadcontext,@vcontext)
 
-	'print "test proccurad=proc(procsv).db",proccurad,proc(procsv).db
+	'dbg_prt2 "test proccurad=proc(procsv).db",proccurad,proc(procsv).db
 	If proccurad=proc(procsv).db Then 'is first proc instruction
 		thread(threadcur).cl=thread(threadcur).od ''done here to avoid a wrong assignment
 		If rline(rln).sv=85 Then'check if the first instruction is push ebp opcode=85 / push rbp opcode=&h55=85dec
@@ -471,7 +471,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	If proccurad=proc(procsv).db Then 'is first proc instruction
 		'''from Linux useful ?
 		'''if threadnewid<>0 then
-			'''print "new thread beginning of proc"
+			'''dbg_prt2 "new thread beginning of proc"
 			'''threadnewidcount-=1
 		'''EndIf
 		thread_resume()
@@ -523,7 +523,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		'NOTA If rline(i).nu=-1 Then
 			'fb_message("No line for this proc","Code added by compiler (constructor,...)")
 		'Else
-		'print "before dsp"
+		'dbg_prt2 "before dsp"
 		dsp_change(rln)
 		'EndIf
 
@@ -544,7 +544,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			thread_resume()
 		EndIf
 		If threadsel<>threadcur then
-			print "cur=";threadcur,thread(threadcur).id,"replaced by new=";threadsel,thread(threadsel).id
+			dbg_prt2 "cur=";threadcur,thread(threadcur).id,"replaced by new=";threadsel,thread(threadsel).id
 			thread_change(threadsel)
 		end if
 		'If threadsel<>threadcur AndAlso messbox("New Thread","Previous thread "+Str(thread(threadsel).id)+" changed by "+Str(thread(threadcur).id) _
@@ -560,7 +560,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
    ''' ========================= move in step/stepauto ???
 	'''restore CC previous line
 	'If thread(threadcur).sv<>-1 Then
-		''print "restoring CC "
+		''dbg_prt2 "restoring CC "
 		'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0)
 	'EndIf
    '''thread changed by threadcreate or by mutexunlock
@@ -599,7 +599,7 @@ While 1
 
 			firstchance=DebugEv.u.Exception.dwfirstchance
 			adr=cast(integer,DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
-			'PRINT "DEBUG EVENT EXCEPTION adr=";adr,DebugEv.u.Exception.ExceptionRecord.ExceptionCode
+			'dbg_prt2 "DEBUG EVENT EXCEPTION adr=";adr,DebugEv.u.Exception.ExceptionRecord.ExceptionCode
 			'dbg_prt("firstchance="+Str(firstchance))'25/01/2015
 			If firstchance=0 Then 'second try
 				If flagsecond=0 Then
@@ -655,8 +655,8 @@ While 1
 					Case EXCEPTION_BREAKPOINT
 					'=========================
 						while 1
-							'print "------------------------------------------------------------------------------------------"
-							'print "EXCEPTION_BREAKPOINT",adr
+							'dbg_prt2 "------------------------------------------------------------------------------------------"
+							'dbg_prt2 "EXCEPTION_BREAKPOINT",adr
 							dim as integer bpidx=-1
 							if runtype=RTCRASH then
 								''don't stop as running until a crash
@@ -770,9 +770,9 @@ While 1
 	        					End If
 							Next
 
-							libelexception=excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode)+Chr(13)+Chr(10) 'need chr(10) to dbg_prt otherwise bad print
+							libelexception=excep_lib(DebugEv.u.Exception.ExceptionRecord.ExceptionCode)+Chr(13)+Chr(10) 'need chr(10) to dbg_prt otherwise bad dbg_prt2
 							If DebugEv.u.Exception.ExceptionRecord.ExceptionCode=EXCEPTION_ACCESS_VIOLATION Then
-								'print "info=";.ExceptionInformation(0),.ExceptionInformation(1),Hex(.ExceptionInformation(1))
+								'dbg_prt2 "info=";.ExceptionInformation(0),.ExceptionInformation(1),Hex(.ExceptionInformation(1))
 								libelexception+=Accviolstr(.ExceptionInformation(0))+" AT ADR (dec/hex) : "+Str(.ExceptionInformation(1))+" / "+Hex(.ExceptionInformation(1))+Chr(13)+Chr(10)
 							EndIf
 
@@ -830,11 +830,11 @@ While 1
 		         	dbg_prt ("DebugEv.dwThreadId "+Str(DebugEv.dwThreadId))
 		         	dbg_prt ("hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress))
 	         	#EndIf
-					'LOLO print "DebugEv.dwThreadId "+Str(DebugEv.dwThreadId)
-		         	'LOLO print "hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress)
+					'LOLO dbg_prt2 "DebugEv.dwThreadId "+Str(DebugEv.dwThreadId)
+					'LOLO dbg_prt2 "hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress)
 					If threadnb<THREADMAX Then
 					      threadnb+=1 :thread(threadnb).hd=.hthread:thread(threadnb).id=DebugEv.dwThreadId
-					      'print "DebugEv.dwThreadId ";threadnb,Str(DebugEv.dwThreadId)
+					      'dbg_prt2 "DebugEv.dwThreadId ";threadnb,Str(DebugEv.dwThreadId)
 					      threadcontext=.hthread
 					      thread(threadnb).pe=FALSE
 					      thread(threadnb).sv=-1 'used for thread not debugged

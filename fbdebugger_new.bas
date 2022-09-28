@@ -121,7 +121,7 @@ Dim Shared as HWND hattachbx
 	Dim Shared As tdll dlldata(DLLMAX) ''base 1
 	Dim Shared As Integer dllnb
 
-	'print "MutexLock00"
+	'dbg_prt2 "MutexLock00"
 	MutexLock blocker
 #else ''linux
 	Dim Shared dbgprocid As long
@@ -249,19 +249,10 @@ Dim Shared dumpnbcol As Integer
 Dim Shared dumptyp   As Integer =2
 
 ''font
-Dim Shared As Integer fontsize=KSIZE8
+Dim Shared As Integer fontsize
 Dim Shared As Integer fontcolor
 Dim Shared As String  fontname
 fontname="Courier new"
-
-''for retrieving data from ini file
-Dim Shared As Integer restorefontsize
-Dim Shared As Integer restorefontcolor
-Dim Shared As String  restorefontname
-Dim Shared As Integer restorex
-Dim Shared As Integer restorey
-Dim Shared As Integer restorew
-Dim Shared As Integer restoreh
 
 Dim Shared htviewvar As HWND 'running proc/var
 Dim Shared htviewprc As HWND 'all proc
@@ -397,7 +388,7 @@ includebinary("buttons/noupdate.bmp",butNOUPDATE)
 #else
 	#include "dbg_linux.bas"
 	dbgpid=getpid
-	'print "first pid=";dbgpid
+	'dbg_prt2 "first pid=";dbgpid
 #EndIf
 gui_init()
 ini_read()
