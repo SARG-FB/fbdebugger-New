@@ -3288,6 +3288,7 @@ private sub ini_read()
 
 	If restorew<>0 then
 		resizewindow(hmain,restorex,restorey,restorew,restoreh)
+		size_changed()
 	EndIf
 End sub
 
