@@ -1453,40 +1453,40 @@ end function
 '===================================================
 private sub list_all()
 	dim scopelabel(1 to ...) as const zstring ptr={@"local",@"global",@"static",@"byref param",@"byval param",@"common"}
-	dbg_prt2 "sources ------------------------------------------------------- ";"total=";sourcenb+1
+	print "sources ------------------------------------------------------- ";"total=";sourcenb+1
 	for isrc as integer =0 to sourcenb
-		dbg_prt2 "isrc=";isrc;" ";source(isrc)
+		print "isrc=";isrc;" ";source(isrc)
 	next
-	dbg_prt2 "procedures ------------------------------------------------------- ";procnb
+	print "procedures ------------------------------------------------------- ";procnb
 	for iprc as integer =1 to procnb
-		dbg_prt2 "iprc=";iprc;" ";source(proc(iprc).sr);" ";proc(iprc).nm;" ";proc(iprc).nu;" ";udt(proc(iprc).rv).nm
-		dbg_prt2 "lower/upper/end ad=";hex(proc(iprc).db);" ";hex(proc(iprc).fn);" ";hex(proc(iprc).ed)
+		print "iprc=";iprc;" ";source(proc(iprc).sr);" ";proc(iprc).nm;" ";proc(iprc).nu;" ";udt(proc(iprc).rv).nm
+		print "lower/upper/end ad=";hex(proc(iprc).db);" ";hex(proc(iprc).fn);" ";hex(proc(iprc).ed)
 	next
-	dbg_prt2 "Lines ---------------------------------------------------------- ";linenb
+	print "Lines ---------------------------------------------------------- ";linenb
 	for iline as integer = 1 to linenb
-		dbg_prt2 "iline=";iline;" proc=";proc(rline(iline).px).nm;" ";rline(iline).nu;" ";hex(rline(iline).ad)
+		print "iline=";iline;" proc=";proc(rline(iline).px).nm;" ";rline(iline).nu;" ";hex(rline(iline).ad)
 	next
-	dbg_prt2
-	dbg_prt2 "types ----------------------------------------------------------- ";udtmax
+	print
+	print "types ----------------------------------------------------------- ";udtmax
 	for iudt as integer=1 to udtmax
 		if udt(iudt).nm<>"" then
-			dbg_prt2 "iudt=";iudt;" ";udt(iudt).nm;" ";udt(iudt).lg
+			print "iudt=";iudt;" ";udt(iudt).nm;" ";udt(iudt).lg
 			if udt(iudt).ub<>0 then
 				for icudt as integer =udt(iudt).lb to udt(iudt).ub
-					dbg_prt2 "icudt=";cudt(icudt).nm
+					print "icudt=";cudt(icudt).nm
 				next
 			end if
 		end if
 	next
-	dbg_prt2 "global variables ---------------------------------------------------------- ";vrbgbl
+	print "global variables ---------------------------------------------------------- ";vrbgbl
 	for ivrb as integer=1 to vrbgbl
-		dbg_prt2 "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
 	next
-	dbg_prt2 "local variables ----------------------------------------------------------- ";vrbloc-VGBLMAX
+	print "local variables ----------------------------------------------------------- ";vrbloc-VGBLMAX
 	for ivrb as integer=VGBLMAX+1 to vrbloc
-		dbg_prt2 "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
 	next
-	dbg_prt2 "end of list all"
+	print "end of list all"
 end sub
 
 

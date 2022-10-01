@@ -394,7 +394,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	EndIf
 
 	dbg_prt2("")
-	dbg_prt2("AD gest brk="+hex(ad)+" th="+Str(threadcur))
+	print "AD gest brk="+hex(ad)+" th="+Str(threadcur)
 	'LOLO dbg_prt2 "AD gest brk="+hex(ad)+" th="+Str(threadcur)," thid="+Str(thread(threadcur).id)
 	'show_context
 
@@ -423,7 +423,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		rln=i
 	end if
 	rlinecur=rln
-	'dbg_prt2 "rlinecur=";rlinecur
+	print "rlinecur=";rlinecur,rline(rln).nu,thread(threadcur).sv
 
 	thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=rln
 	procsv=rline(rln).px
@@ -474,7 +474,14 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			'''dbg_prt2 "new thread beginning of proc"
 			'''threadnewidcount-=1
 		'''EndIf
+		
+		''restore CC previous line
+		If thread(threadcur).od<>-1 Then
+			print "restore 00 ad=";hex(rLine(thread(threadcur).od).ad)
+			WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).od).ad),@breakcpu,1,0)
+		End If
 		thread_resume()
+		print "first instruc so exit"
 		Exit Sub
 	end if
 
@@ -509,6 +516,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			proc_runnew
 			flagattach=FALSE
 		else
+		print "in mode step"
 			If proccurad=proc(procsv).first Then 'is first fbc instruction ?
 				''check if not in the current proc, if used set 0 to .stack() when creation of thread????
 				'if procsk<>thread(threadcur).stack then
@@ -529,6 +537,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 
 		''restore CC previous line
 		If thread(threadcur).od<>-1 Then
+			print "restore 01 ad=";hex(rLine(thread(threadcur).od).ad)
 			WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).od).ad),@breakcpu,1,0)
 		End If
 
@@ -856,7 +865,7 @@ While 1
 				threadnb=0:thread(0).hd=.hthread:thread(0).id=DebugEv.dwThreadId
 				threadcontext=.hthread
 				thread(0).pe=FALSE
-				thread(0).sv=0  'used for thread not debugged
+				thread(0).sv=-1  'used for thread not debugged
 				thread(0).plt=0 'used for first proc of thread then keep the last proc
 				thread(0).tv=0  'handle of thread
 				thread(0).exc=0 'no exec auto
