@@ -75,7 +75,7 @@ private sub proc_del(j As Integer,t As Integer=1)
 	next
 	'dbg_prt2 "tempo=";tempo
 	if tempo=0 then
-		'DeleteTreeViewItem(GTVIEWTHD,thread(th).tv)
+		DeleteTreeViewItem(GTVIEWTHD,thread(th).tv)
 		thread(th).plt=0
 	EndIf
 End Sub
@@ -347,6 +347,7 @@ private sub proc_new()
 
 	'test if first proc of thread
 	'dbg_prt2 "threadcur=";threadcur,thread(threadcur).plt,proc(procsv).nm
+	print "in proc new=";threadcur,thread(threadcur).plt
 	If thread(threadcur).plt=0 Then
 		procr(procrnb).cl=-1  ''no real calling line
 		libel="ThID="+Str(procr(procrnb).thid)+" "
