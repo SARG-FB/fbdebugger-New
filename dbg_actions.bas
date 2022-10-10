@@ -24,6 +24,7 @@ private sub menu_action(poption as integer)
 			setgadgettext(GCMDLPARAM,cmdexe(0))
 			fontsize=send_sci(SCI_STYLEGETSIZE,STYLE_DEFAULT,0)
 			setgadgettext(GFONTSIZE,str(fontsize))
+			setgadgettext(GVALPERCENT,str(textpercent))
 			hidewindow(hsettings,KSHOW)
 
 		case MNEXEFILE0 to MNEXEFILE9
@@ -652,6 +653,11 @@ private sub gadget_action(igadget as LONG)
 			fontsize=valint(GetGadgetText(GFONTSIZE))
 			send_sci( SCI_STYLESETSIZE,STYLE_DEFAULT,fontsize)
 			send_sci(SCI_STYLECLEARALL, 0, 0)
+
+		case GTEXTPERCENT
+
+		case GVALPERCENT
+			size_changed(GetGadgetState(GVALPERCENT))
 
 		case GCMDLKEEP
 

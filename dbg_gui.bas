@@ -309,32 +309,41 @@ End Sub
 '================================================================================
 '' Changes size gadgets when main window is resized
 '===================================================
-Private Sub size_changed()
-	Dim As Integer sourcesize,rightsize, gsize
+Private Sub size_changed(tpercent as integer=0)
+	Dim As Integer sourceheight,sourcewidth,rightwidth,gsize
 	Static As Long iwprev,ihprev
 	Dim As Long iwlast=Windowclientwidth(hmain),ihlast=Windowclientheight(hmain)
-	If iwlast = iwprev And ihlast = ihprev Then
+	If iwlast = iwprev And ihlast = ihprev and tpercent=0 Then
 		Exit Sub
 	Endif
 	iwprev=iwlast
 	ihprev=ihlast
 
+	if tpercent<>0 then
+		textpercent=tpercent
+	EndIf
+
+	sourcewidth=(iwlast-2)*textpercent\100
 	#ifdef __fb_win32__
-		Resizewindow(hscint,0,93,550,ihlast-115)
+		Resizewindow(hscint,0,93,sourcewidth,ihlast-115)
 	#else
-		gtk_widget_set_size_request(wsci, 550, ihlast-115)
+		gtk_widget_set_size_request(wsci, sourcewidth, ihlast-115)
 	#endif
 
-	rightsize = iwlast - 552
-	sourcesize = ihlast - 70
-	gsize = sourcesize-5
+	rightwidth = iwlast - sourcewidth -2
+	sourceheight = ihlast - 70
+	gsize = sourceheight-5
 
-	Resizegadget(GRIGHTTABS,552,,rightsize,sourcesize)
-	Resizegadget(GTVIEWVAR,,,rightsize,gsize)
-	Resizegadget(GTVIEWPRC,,,rightsize,gsize)
-	Resizegadget(GTVIEWWCH,,,rightsize,gsize)
-	Resizegadget(GTVIEWTHD,,,rightsize,gsize)
-	Resizegadget(GDUMPMEM,,,rightsize,gsize)
+	Resizegadget(GCURRENTLINE,,,sourcewidth)
+	Resizegadget(GSRCCURRENT,,,sourcewidth-45)
+	Resizegadget(GBUTSHOWVAR,sourcewidth-30)
+
+	Resizegadget(GRIGHTTABS,sourcewidth+2,,rightwidth,sourceheight)
+	Resizegadget(GTVIEWVAR,,,rightwidth,gsize)
+	Resizegadget(GTVIEWPRC,,,rightwidth,gsize)
+	Resizegadget(GTVIEWWCH,,,rightwidth,gsize)
+	Resizegadget(GTVIEWTHD,,,rightwidth,gsize)
+	Resizegadget(GDUMPMEM,,,rightwidth,gsize)
 end sub
 '================================
 ''Loading of buttons from files
@@ -860,13 +869,17 @@ private sub create_settingsbx()
 	textgadget(GTEXTCMDLP,12,195,110,30,"Command line",0)
 	stringgadget(GCMDLPARAM,130,195,360,30,cmdexe(0))
 	CheckBoxGadget(GCMDLKEEP,12,230,190,30,"Keep cmdl")
+	
+	textgadget(GTEXTPERCENT,12,280,200,30,"% of width for code window",0)
+	spingadget(GVALPERCENT,215,280,80,30,80,20,textpercent,UDS_WRAP or UDS_SETBUDDYINT or UDS_ALIGNRIGHT,ES_NUMBER)
+	
+	groupgadget(FONTGROUP,10,350,450,60," Font for source code ")
+	'textgadget(GTEXTFTYPE,12,300,200,30,"type",0)
+	textgadget(GTEXTFSIZE,12,370,200,30,"size",0)
+	stringgadget(GFONTSIZE,225,370,60,30,"")
+	'textgadget(GTEXTFCOLOR,12,370,200,30,"color",0)
 
-	groupgadget(FONTGROUP,10,280,450,125," Font for source code ")
-	textgadget(GTEXTFTYPE,12,300,200,30,"type",0)
-	textgadget(GTEXTFSIZE,12,335,200,30,"size",0)
-	stringgadget(GFONTSIZE,225,335,60,30,"")
-	textgadget(GTEXTFCOLOR,12,370,200,30,"color",0)
-
+	
 	groupgadget(BUTGROUP,10,420,450,60,"Click on a button for setting/removing")
 	load_button2(SETBUTSTEP,12,440,butSTEP,@"Step/line by line",,0)
 	load_button2(SETBUTSTEPOVER,48,440,butSTEPOVER,@"Step Over line",,0)
