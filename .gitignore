@@ -9,8 +9,6 @@ fbdebugger_new.exe
 *.ini
 objdump.bat
 objdump.exe
-scilexer.bi
-scintilla.bi
 Window9.bi
 window9.chm
 window9.chw
