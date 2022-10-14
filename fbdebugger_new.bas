@@ -253,6 +253,7 @@ Dim Shared As Integer fontsize
 Dim Shared As Integer fontcolor
 Dim Shared As String  fontname
 fontname="Courier new"
+Dim Shared As Integer textpercent = 50
 
 Dim Shared htviewvar As HWND 'running proc/var
 Dim Shared htviewprc As HWND 'all proc

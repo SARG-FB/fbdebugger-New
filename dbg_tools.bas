@@ -3195,6 +3195,7 @@ private sub ini_write()
 	print #fileout,"[WDW]="+str(WindowWidth(hmain))
 	print #fileout,"[WDH]="+str(WindowHeight(hmain))
 	print #fileout,"[BUT]="+str(setbuttons)
+	print #fileout,"[PTC]="+str(textpercent)
 	'print #fileout,"[CHK]="+Str(clrkeyword) 'color highlighted keywords
 	'print #fileout,"[CCL]="+Str(clrcurline) 'color current line
 	'print #fileout,"[CTB]="+Str(clrtmpbrk) 'color tempo breakpoint
@@ -3212,7 +3213,7 @@ private sub ini_read()
 	Dim filein As Integer,lineread As String, c As Integer=-1,w As Integer,b As Integer
 	Dim As Integer restorefontcolor
 	Dim As String  restorefontname
-	Dim as Integer restorex,restorey,restorew,restoreh
+	Dim as Integer restorex,restorey,restorew,restoreh,restorepercent
 
 	If Dir(ExePath+slash+"fbdebugger.ini")="" Then
 	   'fb_message("Init Error","fbdebugger.ini doesn't exist"+chr(10)+"compilation impossible")
@@ -3240,6 +3241,8 @@ private sub ini_read()
 				brkexe(c,b)=RTrim(Mid(lineread,7))
 		ElseIf Left(lineread,6)="[FTN]=" Then
 				restorefontname=RTrim(Mid(lineread,7))
+		ElseIf Left(lineread,6)="[PTC]=" Then ''percentage for code windows
+				restorepercent=valint(RTrim(Mid(lineread,7)))
 		ElseIf Left(lineread,6)="[FTS]=" Then
 				fontsize=ValInt(RTrim(Mid(lineread,7)))
 				send_sci( SCI_STYLESETSIZE,STYLE_DEFAULT,fontsize)
@@ -3286,9 +3289,9 @@ private sub ini_read()
 		next
 	end if
 
-	If restorew<>0 then
+	If restorew<>0 or restorepercent<>textpercent then
 		resizewindow(hmain,restorex,restorey,restorew,restoreh)
-		size_changed()
+		size_changed(restorepercent)
 	EndIf
 End sub
 
