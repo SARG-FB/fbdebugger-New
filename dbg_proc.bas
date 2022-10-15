@@ -356,6 +356,7 @@ private sub proc_new()
 		thread(threadcur).ptv=thread(threadcur).tv ''last proc
 		thread_text() ''put text not only current but all to reset previous thread text
 		tv=TVI_LAST ''insert in last position
+		thread_status()
 	Else
 		procr(procrnb).cl=thread(threadcur).cl
 		tv=thread(threadcur).plt 'insert after the last item of thread
@@ -490,6 +491,7 @@ private sub proc_runnew()
 				libel="ThID="+Str(procr(procrnb).thid)+" "
 				tv=thread(ithd).tv 'insert in last position
 				'dbg_prt2 "in proc run new=";thread(ithd).tv
+				thread_status()
 			Else
 				tv=thread(ithd).plt 'insert after the last item of thread
 				procr(procrnb).ret=ret(k)
