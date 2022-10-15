@@ -106,9 +106,6 @@ private sub menu_action(poption as integer)
 		Case MNLISTENUM
 			enum_list()
 
-		Case MNFRTIMER
-			messbox("Fast run timer","Elapsed Time : "+Str(fasttimer))
-
 		Case MNSETBRKP 'set breakpoint
 			brk_set(1)
 

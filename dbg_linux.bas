@@ -1468,10 +1468,9 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		Exit Sub
 	end if
 	thread(threadcur).sts=KTHD_STOP ''doing that here because can exit just above and still running
-
+	thread_status()
 ''=========== end of code to move ========================================================
 	If runtype=RTRUN Then
-   		fasttimer=Timer-fasttimer
 		'''''''==== useful ?? ===============
 		'''''dbg_prt2 "restoring all CC after RTRUN"
 	  	'''''For i As Integer = 1 To linenb 'restore CC
@@ -1549,6 +1548,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 				threadnewidcount=0
 				runtype=RTSTEP
 				thread(threadcur).sts=KTHD_STOP
+				thread_status()
 				exec_order(KPT_EXIT)
 			else
 				'' check if a signal is pending (maybe  a SIGTRAP for the new thread)
@@ -1583,6 +1583,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			threadnewid=0
 			threadnewidcount=0
 			thread(threadnb).sts=KTHD_STOP
+			thread_status()
 		EndIf
 	else
 		''when there are many signals from different threads

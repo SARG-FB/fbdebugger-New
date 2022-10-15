@@ -247,7 +247,7 @@ private sub statusbar_text(fieldn as long, text as string)
 			fieldpos=800
 		Case KSTBBPM
 			fieldpos=830
-		case KSTBFRT
+		case KSTBTHS
 			fieldpos=-1
 	End Select
 	SetStatusBarField(GSTATUSBAR,fieldn,fieldpos,text)
@@ -923,9 +923,8 @@ private sub but_enable()
 			#endif
 			statusbar_text(KSTBSRC,source_name(source(proc(procsv).sr)))
 			statusbar_text(KSTBPRC,proc(procsv).nm)
-			statusbar_text(KSTBFRT,left(Str(fasttimer),10))
 
-   		case RTRUN,RTFREE 'step over / out / free / run / fast run
+   		case RTRUN,RTFREE 'step over / out / free / run
 			DisableGadget(IDBUTSTEP,1)
 			DisableGadget(IDBUTSTEPOVER,1)
 			DisableGadget(IDBUTRUNEND,1)
@@ -1261,7 +1260,6 @@ private sub menu_set()
 	MenuItem(MNLISTDLL,HMenutools, "Dlls list")
 	MenuItem(MNWINMSG,HMenutools, "Translate Win Message/Linux error")
 	MenuItem(MNSHWBDH,HMenutools, "Bin/Dec/Hex")
-	MenuItem(MNFRTIMER,HMenutools,"Show fast run timer")
 End Sub
 
 '===========================================
@@ -1339,7 +1337,7 @@ private sub gui_init()
 	statusbar_text(KSTBSRC,"Current source")
 	statusbar_text(KSTBPRC,"Current proc")
 	statusbar_text(KSTBBPM,"")
-	statusbar_text(KSTBFRT,"Fast time ?")
+	statusbar_text(KSTBTHS,"RSB=00/00/00")
 
 	AddKeyboardShortcut(hmain,FVIRTKEY,VK_F1,MNDBGHELP)
 

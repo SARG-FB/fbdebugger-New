@@ -392,7 +392,7 @@ end enum
 #define KSTBSRC 3
 #define KSTBPRC 4
 #define KSTBBPM 5
-#define KSTBFRT 6
+#define KSTBTHS 6
 
 'button main screen
 enum
@@ -518,7 +518,6 @@ enum
 	MNLISTDLL
 	MNWINMSG
 	MNSHWBDH
-	MNFRTIMER
 end enum
 
 '' watched menu
