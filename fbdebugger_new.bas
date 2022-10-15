@@ -286,8 +286,6 @@ dim shared as HMENU HMenuwch
 dim shared as HMENU HMenuthd
 dim shared as HMENU HMenutools
 
-Dim Shared As double fasttimer
-
 '' index selection
 #define KCOLMAX 30
 #define KLINEMAX 50

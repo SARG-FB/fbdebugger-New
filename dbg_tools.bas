@@ -1710,6 +1710,26 @@ private sub thread_procloc(t As Integer)
 	End If
 End Sub
 '===========================================
+'' update status bar with thread state
+'===========================================
+private sub thread_status()
+	dim as integer thrun,thstop,thblk
+	dim as string text
+	For ith As Integer=0 To threadnb
+		print  "ith=",ith,thread(ith).id,thread(ith).sts
+		select case thread(ith).sts
+			case KTHD_RUN
+				thrun+=1
+			case KTHD_STOP
+				thstop+=1
+			case KTHD_BLKD
+				thblk+=1
+		End Select
+	next
+	text="RSB="+right("0"+ltrim(str(thrun)),2)+"/"+right("0"+ltrim(str(thstop)),2)+"/"+right("0"+ltrim(str(thblk)),2)
+	statusbar_text(KSTBTHS, text)
+End Sub
+'===========================================
 '' updates text of thread(s)
 '===========================================
 private sub thread_text(th As Integer=-1)
@@ -1797,6 +1817,7 @@ private sub thread_block()
 		messbox("Trying to block thread","Only if stopped")
 	EndIf
 	thread_text(th)
+	thread_status()
 End Sub
 '====================================
 '' returns index using thread().id
@@ -2795,7 +2816,7 @@ private sub thread_del(thid As UInteger)
 	threadhs=thread(0).hd
 	'runtype=RTSTEP
 	dsp_change(thread(0).sv)
-
+	thread_status()
 End Sub
 '======================================================================
 ''releases the scintilla docs except the one attached to the window

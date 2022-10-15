@@ -486,9 +486,8 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	end if
 
 	thread(threadcur).sts=KTHD_STOP
-
+	thread_status()
 	If runtype=RTRUN Then
-   		fasttimer=Timer-fasttimer
 
 		if brkol(0).typ<>10 then ''for skip over always in same proc, if different thread ???
 			proc_runnew   'creating running proc tree
