@@ -346,8 +346,7 @@ private sub proc_new()
 	procr(procrnb).idx=procsv
 
 	'test if first proc of thread
-	'dbg_prt2 "threadcur=";threadcur,thread(threadcur).plt,proc(procsv).nm
-	print "in proc new=";threadcur,thread(threadcur).plt
+	dbg_prt2 "threadcur=";threadcur,thread(threadcur).plt,proc(procsv).nm
 	If thread(threadcur).plt=0 Then
 		procr(procrnb).cl=-1  ''no real calling line
 		libel="ThID="+Str(procr(procrnb).thid)+" "

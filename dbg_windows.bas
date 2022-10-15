@@ -394,8 +394,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 	EndIf
 
 	dbg_prt2("")
-	print "AD gest brk="+hex(ad)+" th="+Str(threadcur)
-	'LOLO dbg_prt2 "AD gest brk="+hex(ad)+" th="+Str(threadcur)," thid="+Str(thread(threadcur).id)
+	dbg_prt2 "AD gest brk="+hex(ad)+" th="+Str(threadcur)," thid="+Str(thread(threadcur).id)
 	'show_context
 
 	proccurad=ad
@@ -459,6 +458,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		End If
 	EndIf
 		vcontext.regip=ad
+		dbg_prt2 "reg IP=";hex(ad)
 		setThreadContext(threadcontext,@vcontext)
 	'dbg_prt2("PE"+Str(thread(threadcur).pe)+" "+Str(proccurad)+" "+Str(proc(procsv).fn))
 	If thread(threadcur).pe Then 'if previous instruction was the last of proc
@@ -477,11 +477,12 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		
 		''restore CC previous line
 		If thread(threadcur).od<>-1 Then
-			print "restore 00 ad=";hex(rLine(thread(threadcur).od).ad)
+			dbg_prt2 "restore 00 ad=";hex(rLine(thread(threadcur).od).ad)
 			WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).od).ad),@breakcpu,1,0)
 		End If
-		thread_resume()
 		print "first instruc so exit"
+		thread(threadcur).sts=KTHD_RUN ''threads not followed stay with init
+		thread_resume(threadcur)
 		Exit Sub
 	end if
 
@@ -518,9 +519,9 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		print "in mode step"
 			If proccurad=proc(procsv).first Then 'is first fbc instruction ?
 				''check if not in the current proc, if used set 0 to .stack() when creation of thread????
-				'if procsk<>thread(threadcur).stack then
+				if procsk<>thread(threadcur).stack then
 					proc_new()
-				'EndIf
+				EndIf
 				'thread_resume():Exit Sub
 			ElseIf proccurad=proc(procsv).fn Then
 				thread(threadcur).pe=TRUE        'is last instruction ?
@@ -536,7 +537,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 
 		''restore CC previous line
 		If thread(threadcur).od<>-1 Then
-			print "restore 01 ad=";hex(rLine(thread(threadcur).od).ad)
+			dbg_prt2 "restore 01 ad=";hex(rLine(thread(threadcur).od).ad)
 			WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).od).ad),@breakcpu,1,0)
 		End If
 
@@ -842,7 +843,7 @@ While 1
 					'LOLO dbg_prt2 "hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress)
 					If threadnb<THREADMAX Then
 					      threadnb+=1 :thread(threadnb).hd=.hthread:thread(threadnb).id=DebugEv.dwThreadId
-					      'dbg_prt2 "DebugEv.dwThreadId ";threadnb,Str(DebugEv.dwThreadId)
+					      dbg_prt2 "DebugEv.dwThreadId ";threadnb,Str(DebugEv.dwThreadId)
 					      threadcontext=.hthread
 					      thread(threadnb).pe=FALSE
 					      thread(threadnb).sv=-1 'used for thread not debugged
@@ -850,7 +851,7 @@ While 1
 					      thread(threadnb).st=thread(threadcur).od 'used to keep line origin
 					      thread(threadnb).tv=0
 					      thread(threadnb).exc=0 'no exec auto
-					      thread(threadnb).sts=KTHD_RUN
+					      thread(threadnb).sts=KTHD_INIT
 					Else
 				      	hard_closing("Number of threads ("+Str(THREADMAX+1)+") exceeded , change the THREADMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY" )
 					EndIf

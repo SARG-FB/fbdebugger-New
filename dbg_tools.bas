@@ -1624,7 +1624,7 @@ private sub thread_list()
 	dim as string text
 	For i As Integer =0 To threadnb
 		thid=thread(i).id
-		text+="ID="+fmt2(Str(thid),4)+"/"+fmt2(Hex(thid),4)+" HD="+fmt2(Str(thread(i).hd),4)+"/"+fmt2(Hex(thread(i).hd),3)+" : "
+		text+="ID="+fmt2(Str(thid),4)+"/"+fmt2(Hex(thid),5)+" HD="+fmt2(Str(thread(i).hd),4)+"/"+fmt2(Hex(thread(i).hd),3)+" : "
 		If thread(i).sv<>-1 Then 'thread debugged
 			p=proc_find(thid,KLAST)
 			text+=proc(procr(p).idx).nm
@@ -1641,15 +1641,25 @@ end sub
 '===========================================
 '' restore instruction and resume thread
 '===========================================
-Private sub thread_resume()
+Private sub thread_resume(thd as integer=-1)
+	dim as integer thdbeg=0,thdend=threadnb
 	#ifdef __fb_win32__
 		''todo move to dbg_windows.bas
-		''restore old value for execution
-		if thread(threadcur).sv>0 then ''if attachment no saved line
-			writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0)
-		end if
-		thread(threadcur).sts=KTHD_RUN
-		resumethread(threadhs)
+		if thd<>-1 then
+			thdbeg=thd
+			thdend=thd
+		EndIf
+		for ith as integer = thdbeg to thdend
+			if thread(ith).sts<>KTHD_BLKD and thread(ith).sts<>KTHD_INIT  then
+				dbg_prt2 "resume thread=";ith,thread(ith).id,thread(ith).sts,rLine(thread(ith).sv).nu
+				''restore old value for execution
+				if thread(ith).sv>0 then ''if attachment no saved line
+					writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(ith).sv).ad),@rLine(thread(ith).sv).sv,1,0)
+				end if
+				thread(ith).sts=KTHD_RUN
+				resumethread(thread(ith).hd)
+			end if
+		next
 	#else
 		''LINUX, maybe moved in dbg_linux.bas
 		thread_rsm()
@@ -2779,7 +2789,7 @@ End Sub
 '=====================================================
 private sub thread_del(thid As UInteger)
 	Dim As Integer k=1,threadsup,threadold=threadcur
-	'dbg_prt2 "in thread_del thid=";thid
+	dbg_prt2 "in thread_del thid=";thid
 
 	For i As Integer =1 To threadnb
 		If thid<>thread(i).id Then
