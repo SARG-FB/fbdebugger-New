@@ -385,10 +385,11 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 
 	dim as integer dummy
 	Dim vcontext As CONTEXT
-	vcontext.contextflags=CONTEXT_CONTROL
+	vcontext.contextflags=CONTEXT_CONTROL or CONTEXT_INTEGER
 	Dim As Integer i,debut=1,fin=linenb+1,adr,iold
    'egality added in case attach (example access violation) without -g option, ad=procfn=0....
 	If ad>=procfn Then
+		dbg_prt2 __FUNCTION__,__LINE__,thread(threadcur).sts,thread(threadcur).rtype
 		thread_resume()
 		Exit Sub
 	EndIf
@@ -422,7 +423,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		rln=i
 	end if
 	rlinecur=rln
-	print "rlinecur=";rlinecur,rline(rln).nu,thread(threadcur).sv
+	dbg_prt2 "rlinecur=";rlinecur,rline(rln).nu,thread(threadcur).sv
 
 	thread(threadcur).od=thread(threadcur).sv:thread(threadcur).sv=rln
 	procsv=rline(rln).px
@@ -458,8 +459,8 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		End If
 	EndIf
 		vcontext.regip=ad
-		dbg_prt2 "reg IP=";hex(ad)
 		setThreadContext(threadcontext,@vcontext)
+		dbg_prt2 "reg IP=";hex(ad),vcontext.regbp
 	'dbg_prt2("PE"+Str(thread(threadcur).pe)+" "+Str(proccurad)+" "+Str(proc(procsv).fn))
 	If thread(threadcur).pe Then 'if previous instruction was the last of proc
 		If proccurad<>proc(procsv).db Then 'reload procsk with rbp/ebp test added for case constructor on shared
@@ -477,25 +478,31 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		
 		''restore CC previous line
 		If thread(threadcur).od<>-1 Then
-			dbg_prt2 "restore 00 ad=";hex(rLine(thread(threadcur).od).ad)
+			dbg_prt2 "restore CC 00 ad=";hex(rLine(thread(threadcur).od).ad)
 			WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).od).ad),@breakcpu,1,0)
 		End If
-		print "first instruc so exit"
-		thread(threadcur).sts=KTHD_RUN ''threads not followed stay with init
+		dbg_prt2 "first instruc so exit"
+		thread(threadcur).sts=KTHD_STOP ''threads not followed stay in init status
+		prolog=1 ''only used when multithread to avoid release next thread too quickly
 		thread_resume(threadcur)
 		Exit Sub
 	end if
-
+	if thread(threadcur).sts=KTHD_INIT then ''case create thread when RTRUNning
+		dbg_prt2 "rtype=";threadcur,thread(threadcur).rtype
+		thread(threadcur).rtype=RTRUN
+	EndIf
+	dbg_prt2 "rtype=";threadcur,thread(threadcur).rtype,vcontext.regbp
 	thread(threadcur).sts=KTHD_STOP
 	thread_status()
-	If runtype=RTRUN Then
+
+	If thread(threadcur).rtype=RTRUN Then
 
 		if brkol(0).typ<>10 then ''for skip over always in same proc, if different thread ???
-			proc_runnew   'creating running proc tree
+			proc_runnew   ''fill running proc tree
 		end if
 
-			var_sh			'updating information about variables
-	runtype=RTSTEP ''could be done later if another threads also running ????
+			'var_sh			'updating information about variables
+		runtype=RTSTEP ''another threads could be still running but allows display (buttons, etc)
 
    		dsp_change(rln)
 		if stopcode=CSLINE then
@@ -516,10 +523,13 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 			proc_runnew
 			flagattach=FALSE
 		else
-		print "in mode step"
+			dbg_prt2 "in mode step runtype=";runtype,threadlistidx
 			If proccurad=proc(procsv).first Then 'is first fbc instruction ?
 				''check if not in the current proc, if used set 0 to .stack() when creation of thread????
-				if procsk<>thread(threadcur).stack then
+				'if procsk<>thread(threadcur).stack then
+				prolog=0
+				dbg_prt2 "check stack=";vcontext.regbp,procsk,thread(threadcur).stack
+				if vcontext.regbp<>thread(threadcur).stack then
 					proc_new()
 				EndIf
 				'thread_resume():Exit Sub
@@ -530,60 +540,33 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		EndIf
 		'NOTA If rline(i).nu=-1 Then
 			'fb_message("No line for this proc","Code added by compiler (constructor,...)")
-		'Else
-		'dbg_prt2 "before dsp"
+
+		If runtype=RTSTEP Then
+			thread(threadcur).rtype=RTSTEP ''case RTAUTO but halted
+		end if
+
 		dsp_change(rln)
-		'EndIf
 
 		''restore CC previous line
 		If thread(threadcur).od<>-1 Then
-			dbg_prt2 "restore 01 ad=";hex(rLine(thread(threadcur).od).ad)
+			dbg_prt2 "restore CC 01 ad=";hex(rLine(thread(threadcur).od).ad)
 			WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).od).ad),@breakcpu,1,0)
 		End If
 
 		If runtype=RTAUTO Then
 			Sleep(autostep)
-			If 0>1 Then 'at least 2 threads
-				Dim As Integer c=threadcur
-				Do
-					c+=1:If c>threadnb Then c=0
-				Loop Until thread(c).exc
-				thread_change(c)
-			EndIf
-			thread_resume()
-		EndIf
-		If threadsel<>threadcur then
-			dbg_prt2 "cur=";threadcur,thread(threadcur).id,"replaced by new=";threadsel,thread(threadsel).id
-			thread_change(threadsel)
+			dbg_prt2 "auto thread=";threadnb,threadlistidx
+			if threadnb=0 then
+				dbg_prt2 "auto 1 thread"
+				thread_resume(threadcur)
+			else
+				if threadlistidx=-1 then
+					dbg_prt2 "auto x threads"
+					thread_set()
+				End if
+			end if
 		end if
-		'If threadsel<>threadcur AndAlso messbox("New Thread","Previous thread "+Str(thread(threadsel).id)+" changed by "+Str(thread(threadcur).id) _
-				'+Chr(10)+Chr(13)+" Keep new one ?",MB_YESNO)=IDNO Then
-				'thread_change(threadsel)
-		'Else
-			'threadsel=threadcur
-		'EndIf
-
    End If
-
-   '================
-   ''' ========================= move in step/stepauto ???
-	'''restore CC previous line
-	'If thread(threadcur).sv<>-1 Then
-		''dbg_prt2 "restoring CC "
-		'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@breakcpu,1,0)
-	'EndIf
-   '''thread changed by threadcreate or by mutexunlock
-	'If threadcur<>threadprv Then
-		'If thread(threadprv).sv<>i Then 'don't do it if same line otherwise all is blocked.....not sure it's usefull
-			'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadprv).sv).ad),@breakcpu,1,0) 'restore CC
-		'EndIf
-		'stopcode=CSNEWTHRD  'status HALT NEW THREAD
-		'runtype=RTSTEP
-		'thread_text(threadprv) 'not next executed
-		'thread_text(threadcur) 'next executed
-		'threadprv=threadcur
-	'EndIf
-	'================
 End Sub
 '========================================================
 private function wait_debug() As Integer
@@ -839,8 +822,8 @@ While 1
 		         	dbg_prt ("DebugEv.dwThreadId "+Str(DebugEv.dwThreadId))
 		         	dbg_prt ("hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress))
 	         	#EndIf
-					'LOLO dbg_prt2 "DebugEv.dwThreadId "+Str(DebugEv.dwThreadId)
-					'LOLO dbg_prt2 "hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress)
+					'dbg_prt2 "DebugEv.dwThreadId "+Str(DebugEv.dwThreadId)
+					'dbg_prt2 "hthread "+Str(.hthread)+" start address "+Str(.lpStartAddress)
 					If threadnb<THREADMAX Then
 					      threadnb+=1 :thread(threadnb).hd=.hthread:thread(threadnb).id=DebugEv.dwThreadId
 					      dbg_prt2 "DebugEv.dwThreadId ";threadnb,Str(DebugEv.dwThreadId)
@@ -852,6 +835,7 @@ While 1
 					      thread(threadnb).tv=0
 					      thread(threadnb).exc=0 'no exec auto
 					      thread(threadnb).sts=KTHD_INIT
+					      thread(threadnb).rtype=runtype
 					Else
 				      	hard_closing("Number of threads ("+Str(THREADMAX+1)+") exceeded , change the THREADMAX value."+Chr(10)+Chr(10)+"CLOSING FBDEBUGGER, SORRY" )
 					EndIf
@@ -869,6 +853,8 @@ While 1
 				thread(0).plt=0 'used for first proc of thread then keep the last proc
 				thread(0).tv=0  'handle of thread
 				thread(0).exc=0 'no exec auto
+				thread(0).rtype=RTSTEP
+				thread(0).sts=KTHD_STOP
 				#Ifdef fulldbg_prt
 		  			dbg_prt ("create process debug")
 					dbg_prt ("DebugEv.dwProcessId "+Str(DebugEv.dwProcessid))
@@ -908,9 +894,9 @@ While 1
 		'=========================
 		Case EXIT_PROCESS_DEBUG_EVENT
 		'=========================
-			#Ifdef fulldbg_prt
-				dbg_prt ("exit process"+Str(debugev.u.exitprocess.dwexitcode))
-			#EndIf
+			'#Ifdef fulldbg_prt
+				dbg_prt2 ("exit process="+Str(debugev.u.exitprocess.dwexitcode))
+			'#EndIf
 			prun=FALSE
 
 			closehandle(dbghand)

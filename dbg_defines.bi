@@ -21,7 +21,7 @@
 #Define fbdebuggerversion "V 3.00 "+ver3264
 
 '#define fulldbg_prt 'uncomment to get more information
-#Define dbg_prt2 rem 'dbg_prt 'used temporary for debugging fbdebugger, change rem by dbg_prt
+#Define dbg_prt2 rem'dbg_prt 'used temporary for debugging fbdebugger, change rem by print 
 
  'take l char form a string and complete with spaces if needed
 #Define fmt(t,l) Left(t,l)+Space(l-Len(t))+"  "
@@ -762,6 +762,11 @@ enum
  KDBGEXCEPT
  'KDBGSTRING
 end enum
+'' multi action
+enum
+	KMULTINOTHING
+	KMULTISTEP
+End Enum
 
 ''editing value variable/memory
 #define KEDITVAR  0
@@ -919,7 +924,6 @@ enum ''stop code
 	CSACCVIOL
 	CSNEWTHRD
 	CSEXCEP
-	CSTHREADS
 End Enum
 
 ''for dissassembly
@@ -1159,7 +1163,7 @@ Type tthread
  exc As Integer   'to indicate execution in case of auto 1=yes, 0=no
  sts as integer ''status running /stopped /init /out of scop debugger (library)
  stack as integer ''stack of last proc
- runtyp as integer ''what was the runtype when running as global runtype could be different
+ rtype as integer ''what was the run type when running as global run type could be different
 End Type
 
 ''variable find

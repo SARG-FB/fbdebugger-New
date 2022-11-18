@@ -22,7 +22,7 @@ dim shared as INTEGER srcstart
 ''codes when debuggee stopped and corresponding texts
 Dim Shared stopcode As Integer
 Dim Shared stoplibel(20) As String*17 =>{"","BP On line","BP perm/tempo","BP cond","BP var","BP mem"_
-,"BP count","Halt by user","Access violation","thread created","Exception","multi threads"}
+,"BP count","Halt by user","Access violation","thread created","Exception"}
 
 ''source files
 dim Shared as String  source(SRCMAX)        ''source names with path
@@ -61,7 +61,7 @@ dim shared as integer proclistfirst ''first sorted element
 dim Shared As integer procsv,procsk,proccurad,procfn,procsort
 dim Shared As tprocr procr(PROCRMAX) ''list of running proc
 dim shared As Integer procrnb
-
+dim shared As Integer prolog ''it's in the prologue (if 1)
 
 ''arrays
 dim Shared  As tarr arr(ARRMAX)
@@ -101,13 +101,16 @@ dim shared as integer afterkilled ''what doing after debuggee killed
 ''attach running exe
 Dim Shared as HWND hattachbx
 
+Dim Shared as integer threadlistidx ''used with multi action
+dim shared as integer multiaction
+
 #ifdef __fb_win32__
 	''Threads
 	Dim Shared thread(THREADMAX) As tthread  ''zero based
+	Dim Shared threadlist(THREADMAX) As Integer
 	Dim Shared threadnb As Integer
 	Dim Shared threadcur As Integer
 	Dim Shared threadprv As Integer     'previous thread used when mutexunlock released thread or after thread create
-	Dim Shared threadsel As Integer     'thread selected by user, used to send a message if not equal current
 	Dim Shared threadcontext As HANDLE
 	Dim Shared threadhs As HANDLE       'handle thread to resume
 	Dim Shared dbgprocid As Integer     'pinfo.dwProcessId : debugged process id
@@ -130,7 +133,6 @@ Dim Shared as HWND hattachbx
 	dim shared as long thread2 ''second thread
 	dim shared as long threadhs '' in code defined dgbhand
 	dim shared as long threadcur '' index
-	dim shared as long threadsel '' index
 	dim shared as long threadnewid '' new thread tid
 	dim shared as integer threadnewidcount '' count for new thread (needed for accessing first basic line)
 
@@ -140,6 +142,7 @@ Dim Shared as HWND hattachbx
 	dim shared as pt_regs regs
 	Dim Shared As tthread thread(THREADMAX) ''zero based
 	Dim Shared As Integer threadnb
+	Dim Shared threadlist(THREADMAX) As long
 	dim shared as GtkWidget ptr wsci
 	''DLL = .so
 	Dim Shared As tdll dlldata(DLLMAX) ''base 1

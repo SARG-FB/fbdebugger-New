@@ -808,15 +808,27 @@ private function thread_select(id As Integer =0) As Integer
 	Dim As Integer hitem,temp
 
 	If id =0 Then  'take on cursor
-	'get current hitem in tree
-		temp=GetItemTreeView(GTVIEWTHD)
-		Do 'search thread item
-			hitem=temp
-			temp=getParentItemTreeview(GTVIEWTHD,hitem)
-		Loop While temp
+		'get current hitem in tree
+		If PanelGadgetgetCursel(GRIGHTTABS) = TABIDXTHD Then	
 
-		text=GetTextTreeView(GTVIEWTHD,hitem)
-		thid=ValInt(Mid(text,13,6))
+			temp=GetItemTreeView(GTVIEWTHD)
+			Do 'search thread item
+				hitem=temp
+				temp=getParentItemTreeview(GTVIEWTHD,hitem)
+			Loop While temp
+
+			text=GetTextTreeView(GTVIEWTHD,hitem)
+			thid=ValInt(Mid(text,13,6))
+		else
+			temp=GetItemTreeView(GTVIEWVAR)
+			text=GetTextTreeView(GTVIEWVAR,temp)
+			if left(text,5)<>"ThID=" then
+				messbox("Thread selection","Select a line with the thread ID")
+				return -1
+			else
+				thid=ValInt(Mid(text,6,5))
+			EndIf
+		end if
 	Else
 		thid=id
 	End If
@@ -1624,7 +1636,7 @@ private sub thread_list()
 	dim as string text
 	For i As Integer =0 To threadnb
 		thid=thread(i).id
-		text+="ID="+fmt2(Str(thid),4)+"/"+fmt2(Hex(thid),5)+" HD="+fmt2(Str(thread(i).hd),4)+"/"+fmt2(Hex(thread(i).hd),3)+" : "
+		text+="ID="+fmt2(Str(thid),5)+"/"+fmt2(Hex(thid),5)+" HD="+fmt2(Str(thread(i).hd),5)+"/"+fmt2(Hex(thread(i).hd),4)+" : "
 		If thread(i).sv<>-1 Then 'thread debugged
 			p=proc_find(thid,KLAST)
 			text+=proc(procr(p).idx).nm
@@ -1639,24 +1651,49 @@ private sub thread_list()
 	hidewindow(heditorbx,KSHOW)
 end sub
 '===========================================
+'' update status bar with thread state
+'===========================================
+private sub thread_status()
+	dim as integer thrun,thstop,thblk
+	dim as string text
+	For ith As Integer=0 To threadnb
+		'dbg_prt2  "ith=",ith,thread(ith).id,thread(ith).sts
+		select case thread(ith).sts
+			case KTHD_RUN
+				thrun+=1
+			case KTHD_STOP
+				thstop+=1
+			case KTHD_BLKD
+				thblk+=1
+		End Select
+	next
+	text="RSB="+right("0"+ltrim(str(thrun)),2)+"/"+right("0"+ltrim(str(thstop)),2)+"/"+right("0"+ltrim(str(thblk)),2)
+	statusbar_text(KSTBTHS, text)
+End Sub
+'===========================================
 '' restore instruction and resume thread
 '===========================================
 Private sub thread_resume(thd as integer=-1)
 	dim as integer thdbeg=0,thdend=threadnb
 	#ifdef __fb_win32__
 		''todo move to dbg_windows.bas
+		
 		if thd<>-1 then
 			thdbeg=thd
 			thdend=thd
 		EndIf
 		for ith as integer = thdbeg to thdend
-			if thread(ith).sts<>KTHD_BLKD and thread(ith).sts<>KTHD_INIT  then
-				dbg_prt2 "resume thread=";ith,thread(ith).id,thread(ith).sts,rLine(thread(ith).sv).nu
+			'dbg_prt2 "in thread resume 1=";ith,thread(ith).id,thread(ith).sts,thread(ith).rtype,rLine(thread(ith).sv).nu
+			'if thread(ith).sts<>KTHD_BLKD and thread(ith).sts<>KTHD_INIT  then
+			if thread(ith).sts=KTHD_STOP then ''not those BLKD or INIT and useless those RUN
 				''restore old value for execution
 				if thread(ith).sv>0 then ''if attachment no saved line
 					writeprocessmemory(dbghand,Cast(LPVOID,rLine(thread(ith).sv).ad),@rLine(thread(ith).sv).sv,1,0)
 				end if
 				thread(ith).sts=KTHD_RUN
+				thread(ith).rtype=runtype
+				dbg_prt2 "in thread resume 2=";ith,thread(ith).id,thread(ith).sts,thread(ith).rtype,rLine(thread(ith).sv).nu
+				thread_status()
 				resumethread(thread(ith).hd)
 			end if
 		next
@@ -1720,26 +1757,6 @@ private sub thread_procloc(t As Integer)
 	End If
 End Sub
 '===========================================
-'' update status bar with thread state
-'===========================================
-private sub thread_status()
-	dim as integer thrun,thstop,thblk
-	dim as string text
-	For ith As Integer=0 To threadnb
-		print  "ith=",ith,thread(ith).id,thread(ith).sts
-		select case thread(ith).sts
-			case KTHD_RUN
-				thrun+=1
-			case KTHD_STOP
-				thstop+=1
-			case KTHD_BLKD
-				thblk+=1
-		End Select
-	next
-	text="RSB="+right("0"+ltrim(str(thrun)),2)+"/"+right("0"+ltrim(str(thstop)),2)+"/"+right("0"+ltrim(str(thblk)),2)
-	statusbar_text(KSTBTHS, text)
-End Sub
-'===========================================
 '' updates text of thread(s)
 '===========================================
 private sub thread_text(th As Integer=-1)
@@ -1788,19 +1805,52 @@ private sub thread_text(th As Integer=-1)
 		ExpandTreeViewItem(GTVIEWTHD , thread(ith).tv, 1)
 	Next
 End Sub
+'=========================================
+''
+'=========================================
+private sub thread_set()
+	if (runtype=RTSTEP or runtype=RTAUTO) and threadnb > 0 then
+		threadlistidx=-1
+		for idx as INTEGER = threadnb to 0 step -1
+			if thread(idx).sts=KTHD_STOP then
+				dbg_prt2 "idx for multiaction=";idx
+				threadlistidx+=1
+				threadlist(threadlistidx)=thread(idx).id
+				thread(threadlistidx).rtype=runtype
+			elseif thread(idx).sts=KTHD_RUN then
+				threadlistidx=-1
+				exit sub
+			EndIf
+		next
+	end if
+	if threadlistidx>0 then
+		multiaction=KMULTISTEP
+	else
+		multiaction=KMULTINOTHING
+		thread(0).rtype=runtype
+		threadlistidx=-1
+		thread_resume(0)
+	end if
+End Sub
 '=======================================================================================
 private sub thread_change(th As Integer =-1)
 	Dim As Integer t,s
 
-	if runtype<>RTSTEP then
-		messbox("Changing thread","Not possible as current thread is running"+chr(10)+"If the thread is waiting (sleep, input, etc) try to quit this state")
-		exit sub
-	EndIf
+	'if runtype<>RTSTEP then
+		'messbox("Changing thread","Not possible as current thread is running"+chr(10)+"If the thread is waiting (sleep, input, etc) try to quit this state")
+		'exit sub
+	'EndIf
 
 	If th=-1 Then
 		t=thread_select()
+		if t=-1 then exit sub
 	Else
 		t=th
+	EndIf
+
+	if thread(t).sts=KTHD_RUN then
+		messbox("Changing thread","Not possible as current thread is running"+chr(10)+"If the thread is waiting (sleep, input, etc) try to quit this state")
+		exit sub
 	EndIf
 
 	s=threadcur
@@ -1809,7 +1859,6 @@ private sub thread_change(th As Integer =-1)
 	'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution selected thread
 	threadhs=thread(threadcur).hd
 	procsv=rline(thread(threadcur).sv).px
-	threadsel=threadcur
 	thread_text(t)
 	thread_text(s)
 	dsp_change(thread(threadcur).sv)
@@ -2696,25 +2745,16 @@ private sub dsp_change(index As Integer)
 	dim as integer tot
 	linecur_change(index)
 	If flagtrace And 2 Then dbg_prt(LTrim(line_text(linecur-1),Any " "+Chr(9)))
-	If runtype=RTAUTO Then
+	If thread(threadcur).rtype=RTAUTO Then
 		watch_array() 'update adr watched dyn array
 		watch_sh()    'update watched but not all the variables
-	ElseIf runtype=RTSTEP Then
+	Else ''RTSTEP or RTRUN
 		if flagupdate=true then
 			var_sh()
 			dump_sh()
 		end if
 		watch_array() ''even flagupdate is off watched are updated
 		watch_sh()
-
-		for ithd as integer =0 to threadnb
-			if  thread(ithd).sts=KTHD_STOP then
-				tot+=1
-			EndIf
-		Next
-		if tot>1 then
-			stopcode=CSTHREADS
-		EndIf
 
 		but_enable()
 		If PanelGadgetgetCursel(GRIGHTTABS) = TABIDXPRC Then
@@ -2822,9 +2862,7 @@ private sub thread_del(thid As UInteger)
 	If threadsup<>threadold Then Exit Sub 'if deleted thread was the current, replace by first thread
 
 	threadcur=0 'first thread
-	threadsel=0
 	threadhs=thread(0).hd
-	'runtype=RTSTEP
 	dsp_change(thread(0).sv)
 	thread_status()
 End Sub
@@ -2885,7 +2923,6 @@ private sub reinit()
 	flagattach=FALSE
 	flagkill=FALSE
 	shwexp.free=true
-	threadsel=0
 	for ith as integer =0 to threadnb
 		thread(ith).plt=0
 		thread(ith).pe=false
@@ -2913,6 +2950,8 @@ private sub reinit()
 	source_change(-1) ''reinit to avoid a potential problem
 	menu_enable()
 	proclistfirst=-1
+	threadlistidx=-1
+	prolog=0
 end sub
 '================================================================
 '' check if exe bitness if not wrong 32bit<>64bit windows only
@@ -3484,7 +3523,7 @@ private function debug_event() as INTEGER
 	dim as integer dbgevent=debugevent
 	static as INTEGER thprev
 	debugevent=KDBGNOTHING
-	if dbgevent = KDBGNOTHING then return true
+	if dbgevent = KDBGNOTHING and multiaction=KMULTINOTHING then return true
 	'dbg_prt2 "************ debug_event ";time;" ";dbgevent;" ";hex(debugdata);" stopcode=";stoplibel(stopcode)
 	select case as const dbgevent
 		Case KDBGRKPOINT
@@ -3501,6 +3540,8 @@ private function debug_event() as INTEGER
 			#Ifdef __fb_win32__
 				if debug_extract(debugdata,exename)=0 then ''otherwise there is a problem (no debug data or when reading debuggee memory)
 					init_debuggee(srcstart)
+				else
+					terminateprocess(dbghand,89)
 				EndIf
 			#else
 				elf_extract(exename)
@@ -3521,10 +3562,8 @@ private function debug_event() as INTEGER
 				'thread_change(threadnb)
 			Elseif ret=IDNO then
 				msgdata=0
-				threadsel=threadcur
 			else
 				msgdata=2
-				threadsel=threadcur
 			EndIf
 			mutexlock blocker
 			bool2=true
@@ -3559,8 +3598,8 @@ private function debug_event() as INTEGER
 
 		''Case KDBGSTRING not used
 
-		Case else
-			messbox("Handling debug event","Debug event unkown, not handled ="+str(debugevent))
+		'Case else
+			'messbox("Handling debug event","Debug event unkown, not handled ="+str(debugevent))
 	End Select
 	#Ifdef __fb_win32__
 		'dbg_prt2 "MutexunLock DBGEVENT"
@@ -3568,6 +3607,19 @@ private function debug_event() as INTEGER
 		'dbg_prt2 "MutexLock DBGEVENT"
 		mutexlock   blocker ''lock for next event
 	#endif
+	if multiaction=KMULTISTEP then
+		if prolog=1 then
+			dbg_prt2 "waiting next" ':sleep 1000
+			return true
+		EndIf
+
+		dbg_prt2 "multiaction";threadlistidx,thread_index(threadlist(threadlistidx))
+		thread_resume(thread_index(threadlist(threadlistidx)))
+		threadlistidx-=1
+		if threadlistidx=-1 then ''or zero ??
+			multiaction=KMULTINOTHING
+		EndIf
+	EndIf
 	return true
 end function
 '==================================================================
@@ -3633,7 +3685,7 @@ private sub restart_exe(byval idx as integer)
 	''todo make a sub and call also in sub external_launch, in select_file
 	if check_bitness(exename)=0 then exit sub ''bitness of debuggee and fbdebugger not corresponding
 
-	reinit ''reinit all except GUI parts
+	reinit() ''all except GUI parts
 	settitle()
 
 	SetTimer(hmain,GTIMER001,100,Cast(Any Ptr,@debug_event))

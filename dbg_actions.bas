@@ -1006,7 +1006,6 @@ private sub select_file()
 	if check_bitness(exename)=0 then exit sub ''bitness of debuggee and fbdebugger not corresponding
 
 	if kill_process("Trying to launch but debuggee still running")=FALSE then exit sub
-	reinit ''reinit all except GUI parts
 	flagrestart=-1
     exe_sav(exename,"")
 	SetTimer(hmain,GTIMER001,500,Cast(Any Ptr,@debug_event))
@@ -1024,8 +1023,6 @@ private sub button_action(button as integer)
 	select case button
 
 		case IDBUTSTEP 'STEP
-			stopcode=0
-			runtype=RTSTEP
 			hidewindow(hcchainbx,KHIDE)
 			#ifdef __fb_WIN32__
 				set_cc()
@@ -1035,7 +1032,11 @@ private sub button_action(button as integer)
 					exec_order(KPT_CCALL)
 				end if
 			#EndIf
-			thread_resume()
+			dbg_prt2 "=============== STEP =================================="
+			stopcode=0
+			runtype=RTSTEP
+			thread_set()
+			'thread_resume()
 
 		case IDBUTSTEPOVER 'STEP+ over
 			brk_set(10)
@@ -1054,7 +1055,8 @@ private sub button_action(button as integer)
 					exec_order(KPT_CCALL)
 				end if
 			#EndIf
-			thread_resume()
+			thread_set()
+			'thread_resume()
 
 		case IDBUTRUNEXIT
 			brk_set(12)
@@ -1062,9 +1064,12 @@ private sub button_action(button as integer)
 			'thread_resume()
 
 		case IDBUTSTOP
+			dbg_prt2 "========================== stop command ===================="
 			for ith as integer = 0 to threadnb
-				'' at least one thread running
-				if thread(ith).sts=KTHD_RUN then
+				'' at least one thread running, also case INIT when thread not already handled
+				if thread(ith).sts=KTHD_RUN or thread(ith).sts=KTHD_INIT then
+					runtype=RTSTEP
+					'ccstate=KCC_NONE 
 					#Ifdef __fb_win32__
 						set_cc()
 					#else
@@ -1075,14 +1080,6 @@ private sub button_action(button as integer)
 					exit for
 				end if
 			next
-				'If runtype=RTFREE Or runtype=RTRUN Then
-					'runtype=RTRUN 'to treat free as run
-'
-				'Else
-					''dbg_prt2 "halting all"
-					'flaghalt=true
-					'runtype=RTSTEP
-				'EndIf
 
 		case IDBUTFREE
 		   If messbox("FREE","Release debugged prgm",MB_YESNO)=IDYES Then

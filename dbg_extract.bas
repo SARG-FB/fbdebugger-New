@@ -1368,13 +1368,6 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 		If flagdll=NODLL Then
 			if flagattach=false then
 				messbox("NO information for Debugging","compile with -gen gas/gas64 and -g"+chr(10)+"killing the debuggee")
-				#ifdef __fb_win32__
-					KillTimer(hmain,GTIMER001)
-					terminateprocess(dbghand,-1)
-				#else
-					''todo linux function from W9
-					messbox("Feature missing for Linux","Kill_process")
-				#endif
 			else
 				hard_closing("Attaching running program"+chr(10)+"No information for Debugging")
 			end if
