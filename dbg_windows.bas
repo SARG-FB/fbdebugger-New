@@ -359,7 +359,12 @@ private sub thread_search(tid as integer,bptype as integer,ddata as integer)
 			stopcode=bptype
 			debugdata=ddata
 			debugevent=KDBGRKPOINT
-			mutexlock blocker ''waiting the Go from main thread
+			if stopcode<>CSSTEP and thread(i).rtype=RTAUTO then
+				dbg_prt2 "RTSTEP forced"
+				'thread(i).rtype=RTSTEP ''in case user's BP and RTAUTO
+				runtype=RTSTEP
+			end if
+			mutexlock blocker
 			mutexunlock blocker
 			exit sub
 		End If
@@ -491,7 +496,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		dbg_prt2 "rtype=";threadcur,thread(threadcur).rtype
 		thread(threadcur).rtype=RTRUN
 	EndIf
-	dbg_prt2 "rtype=";threadcur,thread(threadcur).rtype,vcontext.regbp
+	dbg_prt2 "threadcur, rtype=";threadcur,thread(threadcur).rtype,vcontext.regbp
 	thread(threadcur).sts=KTHD_STOP
 	thread_status()
 
@@ -544,7 +549,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 		If runtype=RTSTEP Then
 			thread(threadcur).rtype=RTSTEP ''case RTAUTO but halted
 		end if
-
+dbg_prt2 "rLine(thread(threadcur).sv).nu=";rLine(thread(threadcur).sv).nu
 		dsp_change(rln)
 
 		''restore CC previous line

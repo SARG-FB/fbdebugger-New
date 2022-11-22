@@ -1657,7 +1657,7 @@ private sub thread_status()
 	dim as integer thrun,thstop,thblk
 	dim as string text
 	For ith As Integer=0 To threadnb
-		'dbg_prt2  "ith=",ith,thread(ith).id,thread(ith).sts
+		dbg_prt2  "ith=",ith,thread(ith).id,thread(ith).sts
 		select case thread(ith).sts
 			case KTHD_RUN
 				thrun+=1
@@ -1786,19 +1786,12 @@ private sub thread_text(th As Integer=-1)
 			Case else
 				libel="?> "
 		End select
-		libel+="threadID="+fmt2(Str(thid),6)+" : "+proc(procr(p).idx).nm
+		libel+="threadID="+fmt2(Str(thid),6)+" : "+proc(procr(p).idx).nm+" ="+str(rline(thread(ith).sv).nu)
 
 		#ifdef __FB_WIN32__
 			If flagverbose Then
 				libel+=" HD: "+Str(thread(ith).hd)
 			EndIf
-			'If threadhs=thread(ith).hd Then
-				'libel+=" (next execution)"
-			'EndIf
-		#else
-			'If threadcur=ith Then
-				'libel+=" (next execution)"
-			'EndIf
 		#endif
 		SetTextItemTreeView(GTVIEWTHD,thread(ith).tv,libel)
 		'CollapseTreeViewItem(GTVIEWTHD , thread(ith).tv)
@@ -1859,8 +1852,8 @@ private sub thread_change(th As Integer =-1)
 	'WriteProcessMemory(dbghand,Cast(LPVOID,rLine(thread(threadcur).sv).ad),@rLine(thread(threadcur).sv).sv,1,0) 'restore old value for execution selected thread
 	threadhs=thread(threadcur).hd
 	procsv=rline(thread(threadcur).sv).px
-	thread_text(t)
-	thread_text(s)
+	thread_text()
+	'thread_text(s)
 	dsp_change(thread(threadcur).sv)
 End Sub
 '================================================
@@ -2759,10 +2752,10 @@ private sub dsp_change(index As Integer)
 		but_enable()
 		If PanelGadgetgetCursel(GRIGHTTABS) = TABIDXPRC Then
 			proc_sh()
-		elseIf PanelGadgetgetCursel(GRIGHTTABS) = TABIDXTHD Then
-			thread_text()
+		'elseIf PanelGadgetgetCursel(GRIGHTTABS) = TABIDXTHD Then
+			'thread_text()
 		EndIf
-
+		thread_text()
 		if indexdata.autoupd then
 			index_fullupdate()
 		EndIf
@@ -3544,7 +3537,10 @@ private function debug_event() as INTEGER
 					terminateprocess(dbghand,89)
 				EndIf
 			#else
-				elf_extract(exename)
+				if elf_extract(exename)=0 then
+					messbox("Loading error","Killing process")				
+					exec_order(KPT_KILL)
+				EndIf
 
 				mutexlock blocker
 				bool2=true

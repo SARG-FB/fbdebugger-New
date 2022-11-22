@@ -836,19 +836,21 @@ private sub brp_stop(tidx as integer,bptype as integer,ddata as integer,dbgevent
 			Case KPT_CONTALL
 				for ith as integer =0 to threadnb
 					dbg_prt2 "KPT_CONTALL idx,sts=";ith,thread(ith).sts
-					if thread(ith).sts=KTHD_STOP and rLine(thread(threadcur).sv).sv<>-1 then
-						dta = ptrace(PTRACE_PEEKTEXT,thread(ith).id,cast(any ptr,rLine(thread(ith).sv).ad),null)
-						dta = (dta and FIRSTBYTE ) or (rLine(thread(ith).sv).sv and &hFF)
-						dbg_prt2 "KPT_CONTALL=";" ";hex(rLine(thread(ith).sv).ad);" ";,hex(dta)
-						ptrace(PTRACE_POKETEXT,thread(ith).id,cast(any ptr,rLine(thread(ith).sv).ad),cast(any ptr,dta))
-						ptrace(PTRACE_CONT,thread(ith).id,0,0)
+					if thread(ith).sts=KTHD_STOP then ' and rLine(thread(threadcur).sv).sv<>-1 then
+						if thread(ith).sv>0 then ''if attachment no saved line
+							dta = ptrace(PTRACE_PEEKTEXT,thread(ith).id,cast(any ptr,rLine(thread(ith).sv).ad),null)
+							dta = (dta and FIRSTBYTE ) or (rLine(thread(ith).sv).sv and &hFF)
+							dbg_prt2 "KPT_CONTALL=";" ";hex(rLine(thread(ith).sv).ad);" ";,hex(dta)
+							ptrace(PTRACE_POKETEXT,thread(ith).id,cast(any ptr,rLine(thread(ith).sv).ad),cast(any ptr,dta))
+						end if
 						thread(ith).sts=KTHD_RUN
+						thread(ith).rtype=runtype
+						ptrace(PTRACE_CONT,thread(ith).id,0,0)
 					end if
 				next
 				bool1=true
 				condsignal(condid)
 				mutexunlock blocker
-
 				exit while
 
 			Case KPT_XIP ''update EIP or RIP

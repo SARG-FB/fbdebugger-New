@@ -1296,12 +1296,12 @@ private function elf_extract(filename as string) as integer
 	if dbg_dat_of=0 then
 		messbox("Loading error","Debug data not found, compile with -gen gas/gas64 and -g")
 		close #1
-		return 0
+		return -1
 	else
 		load_dat(dbg_dat_of,dbg_dat_size,dbg_str_of)
 	endif
 	close #1
-	return -1
+	return 0
 end function
 '============================================================================
 '' PE_extract inside memory from loaded sections (when debuggee is running)
