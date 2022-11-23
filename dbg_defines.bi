@@ -21,7 +21,7 @@
 #Define fbdebuggerversion "V 3.00 "+ver3264
 
 '#define fulldbg_prt 'uncomment to get more information
-#Define dbg_prt2 print 'rtsteprem dbg_prt 'used temporary for debugging fbdebugger, change rem by print 
+#Define dbg_prt2 rem ' dbg_prt 'used temporary for debugging fbdebugger, change rem by print 
 
  'take l char form a string and complete with spaces if needed
 #Define fmt(t,l) Left(t,l)+Space(l-Len(t))+"  "
