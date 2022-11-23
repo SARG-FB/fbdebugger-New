@@ -503,6 +503,7 @@ enum
 	MNTHRDEXP ''expand one thread
 	MNTHRDCOL ''collapse  all threads
 	MNPRCRADR ''addr  about  running procstart,end  stack
+	MNTHDIDLE ''mark thread as idle and let other threads run
 end enum
 
 '' tools menu
@@ -893,7 +894,7 @@ enum ''thread status
 	KTHD_STOP
 	KTHD_BLKD
 	KTHD_INIT
-	KTHD_OUT ''out of scope  ?? used
+	KTHD_IDLE
 End Enum
 
  ''for ccstate
@@ -1258,3 +1259,4 @@ declare function kill_process(text As String) As Integer
 declare sub attach_ok()
 declare sub attach_debuggee(p As Any Ptr)
 declare sub brk_marker(brkidx as integer)
+declare sub thread_text(th As Integer=-1)

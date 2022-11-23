@@ -1654,7 +1654,7 @@ end sub
 '' update status bar with thread state
 '===========================================
 private sub thread_status()
-	dim as integer thrun,thstop,thblk
+	dim as integer thrun,thstop,thblk,thidle
 	dim as string text
 	For ith As Integer=0 To threadnb
 		dbg_prt2  "ith=",ith,thread(ith).id,thread(ith).sts
@@ -1665,9 +1665,11 @@ private sub thread_status()
 				thstop+=1
 			case KTHD_BLKD
 				thblk+=1
+			case KTHD_IDLE
+				thidle+=1
 		End Select
 	next
-	text="RSB="+right("0"+ltrim(str(thrun)),2)+"/"+right("0"+ltrim(str(thstop)),2)+"/"+right("0"+ltrim(str(thblk)),2)
+	text="RSBI="+right("0"+ltrim(str(thrun)),2)+"/"+right("0"+ltrim(str(thstop)),2)+"/"+right("0"+ltrim(str(thblk)),2)+"/"+right("0"+ltrim(str(thidle)),2)
 	statusbar_text(KSTBTHS, text)
 End Sub
 '===========================================
@@ -1694,6 +1696,7 @@ Private sub thread_resume(thd as integer=-1)
 				thread(ith).rtype=runtype
 				dbg_prt2 "in thread resume 2=";ith,thread(ith).id,thread(ith).sts,thread(ith).rtype,rLine(thread(ith).sv).nu
 				thread_status()
+				thread_text(ith)
 				resumethread(thread(ith).hd)
 			end if
 		next
@@ -1781,8 +1784,8 @@ private sub thread_text(th As Integer=-1)
 				libel="S> "
 			case KTHD_BLKD
 				libel="B> "
-			case KTHD_OUT
-				libel="O> "
+			case KTHD_IDLE
+				libel="I> "
 			Case else
 				libel="?> "
 		End select
@@ -1842,8 +1845,9 @@ private sub thread_change(th As Integer =-1)
 	EndIf
 
 	if thread(t).sts=KTHD_RUN then
-		messbox("Changing thread","Not possible as current thread is running"+chr(10)+"If the thread is waiting (sleep, input, etc) try to quit this state")
-		exit sub
+		'messbox("Changing thread","Not possible as current thread is running"+chr(10)+"If the thread is waiting (sleep, input, etc) try to quit this state")
+		messbox("Changing thread","Caution : current thread is running")
+		'exit sub
 	EndIf
 
 	s=threadcur
@@ -1881,6 +1885,28 @@ private function thread_index(tid as long) as INTEGER
 		EndIf
 	next
 end function
+'===========================================================================================
+'' In auto/step mode force to continue threads when one is waiting (sleep, input, condwait)
+'===========================================================================================
+private sub thread_idle()
+ Dim t As Integer
+   t=thread_select()
+   if thread(t).sts<>KTHD_RUN then
+   	messbox("Marking Thread Idle","Only thread running can be marked idle")
+   EndIf
+   thread(t).sts=KTHD_IDLE
+	if threadlistidx=-1 then
+		dbg_prt2 "continuing new list of threads"
+		thread_set()
+	else
+		dbg_prt2 "continuing current list of threads=";threadlistidx
+		thread_resume(thread_index(threadlist(threadlistidx)))
+		threadlistidx-=1
+		if threadlistidx=-1 then
+			multiaction=KMULTINOTHING
+		EndIf
+	End if
+End Sub
 '===================================================
 private function enum_find(t As Integer,v As Integer) As String
 	'find the text associated with an enum value
@@ -2738,6 +2764,7 @@ private sub dsp_change(index As Integer)
 	dim as integer tot
 	linecur_change(index)
 	If flagtrace And 2 Then dbg_prt(LTrim(line_text(linecur-1),Any " "+Chr(9)))
+	thread_text()
 	If thread(threadcur).rtype=RTAUTO Then
 		watch_array() 'update adr watched dyn array
 		watch_sh()    'update watched but not all the variables
@@ -2755,7 +2782,6 @@ private sub dsp_change(index As Integer)
 		'elseIf PanelGadgetgetCursel(GRIGHTTABS) = TABIDXTHD Then
 			'thread_text()
 		EndIf
-		thread_text()
 		if indexdata.autoupd then
 			index_fullupdate()
 		EndIf

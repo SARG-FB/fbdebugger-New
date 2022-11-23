@@ -96,7 +96,10 @@ private sub menu_action(poption as integer)
 
 		Case MNTHRDKLL 'kill a thread
 			thread_kill()
-
+			
+		Case MNTHDIDLE 'mark thread as idle and let other threads run
+			thread_idle()
+			
 		Case MNLISTPROCESS
 		   process_list()
 

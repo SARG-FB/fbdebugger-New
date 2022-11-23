@@ -1563,7 +1563,7 @@ private sub gest_brk(ad As Integer,byval rln as integer =-1)
 					dbg_prt2 "no signal pending so new thread out of scope"
 					threadnewid=0 ''no signal pending so new thread out of scope
 					threadnewidcount=0
-					thread(threadnb).sts=KTHD_OUT
+					thread(threadnb).sts=KTHD_INIT
 					If runtype=RTAUTO Then
 						dbg_prt2 "auto resume all 00"
 						thread_resume()
