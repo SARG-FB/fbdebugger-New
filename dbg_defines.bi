@@ -18,7 +18,7 @@
 	#define ver3264 "(32bit) "
 #endif
 
-#Define fbdebuggerversion "V 3.00 "+ver3264
+#Define fbdebuggerversion "V 3.01 "+ver3264
 
 '#define fulldbg_prt 'uncomment to get more information
 #Define dbg_prt2 rem ' dbg_prt 'used temporary for debugging fbdebugger, change rem by print 

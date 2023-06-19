@@ -840,8 +840,8 @@ End Function
 '' shows the next executed line=1 or threadcreate line=2
 '============================================================
 private sub thread_execline(s As Integer,thid As Integer=0)
- Dim As Integer thidx,thline
-   thidx=thread_select(thid)
+	Dim As Integer thidx,thline
+	thidx=thread_select(thid)
 	If s=1 Then
 		thline=thread(thidx).sv
 	Else
@@ -856,7 +856,7 @@ private sub thread_execline(s As Integer,thid As Integer=0)
 		thline=thread(thidx).st
 	End If
 	source_change(rline(thline).sx)  ''display source
-	line_display(rline(thline).nu) ''Select Line
+	line_display(rline(thline).nu,1) ''Select Line
 End Sub
 '===========================================
 '' kills a thread
@@ -1694,7 +1694,7 @@ Private sub thread_resume(thd as integer=-1)
 				end if
 				thread(ith).sts=KTHD_RUN
 				thread(ith).rtype=runtype
-				dbg_prt2 "in thread resume 2=";ith,thread(ith).id,thread(ith).sts,thread(ith).rtype,rLine(thread(ith).sv).nu
+				dbg_prt2 "in thread resume 2=";ith,thread(ith).id,thread(ith).sts,thread(ith).rtype
 				thread_status()
 				thread_text(ith)
 				resumethread(thread(ith).hd)
@@ -2945,6 +2945,7 @@ private sub reinit()
 	for ith as integer =0 to threadnb
 		thread(ith).plt=0
 		thread(ith).pe=false
+		thread(ith).stack=0
 	Next
 	threadnb=-1
 	dumpadr=0
