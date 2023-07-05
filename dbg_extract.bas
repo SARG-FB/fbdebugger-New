@@ -1046,28 +1046,18 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 		proc(procnb).sr=sourceix
 		if proc(procnb).fn>procfn Then procfn=proc(procnb).fn+1 ' just to be sure to be above see gest_brk
 
-		''todo be checked ??????
-		'for proc added by fbc (constructor, operator, ...) ''adding >2 to avoid case only one line ...
+		'' for implicit proc added by fbc (constructor, operator, ...)
 		'dbg_prt2 "Checking procedure added by compiler =";proc(procnb).nm,proc(procnb).nu,rline(linenb).nu,hex(proc(procnb).db),hex(proc(procnb).fn)
-		'If proc(procnb).nu=rline(linenb).nu AndAlso linenb>2 then
-		If rline(linenb).nu=1 then
-
+		If  procnb<>procmain then
+			#Ifdef __FB_64BIT__
+			If rline(linenb).nu=1 then
+			#else
+			if proc(procnb).nu=rline(linenb).nu then
+			#EndIf
 			proc(procnb).nu=-1
 			linenb-=1
 			dbg_prt2 "Procedure added by compiler (constructor, etc) =";proc(procnb).nm
-           	'For i As Integer =1 To linenb
-           		'dbg_prt2("Proc db/fn inside for stab="+Hex(proc(procnb).db)+" "+Hex(proc(procnb).fn))
-           		'dbg_prt2("Line Adr="+Hex(rline(i).ad)+" "+Str(rline(i).ad))
-           		'If rline(i).ad>=proc(procnb).db AndAlso rline(i).ad<=proc(procnb).fn Then
-           			'#Ifdef __fb_win32__
-						'dbg_prt2 "Cancel breakpoint adr="+Hex(rline(i).ad)+" "+Str(rline(i).ad))
-						'WriteProcessMemory(dbghand,Cast(LPVOID,rline(i).ad),@rLine(i).sv,1,0)
-           			'#else
-						'dbg_prt2 "Procedure added by compiler (constructor, etc) line number should be -1=";proc(procnb).nm,rline(i).nu
-           			'#endif
-           			''nota rline(linenb).nu=-1
-           		'EndIf
-           	'next
+			end if
 		end if
 
         ''removing {modlevel empty just prolog and epilog
@@ -1112,9 +1102,11 @@ private sub dbg_epilog(ofset as integer)
 			EndIf
 		Next
 		''in case there are procedures after the last line of main
+
 		for iline as integer = linenb to 1 step -1
 			if rLine(iline).px=procmain then
 				for iproc as integer = 1 to procnb
+					if iproc=procmain then continue for
 					if proc(iproc).nu=rLine(iline).nu then
 						if proc(iproc).sr=proc(procmain).sr then
 							linenb-=1
