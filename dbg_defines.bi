@@ -106,7 +106,7 @@
 	#undef getitemtreeview
 	#define getitemtreeview(treeid) SendMessage(gadgetid(treeid),TVM_GETNEXTITEM,TVGN_CARET,0)
 
-
+	#define WSTRSIZE 2 ''size of one charactere in wstring
 ''end of define for windows
 
 ''==========================================================
@@ -288,7 +288,7 @@
 	#define	EFAULT		14
 	#define	ENOTBLK		15
 	#define	EBUSY		16
-	#define	EEXIST		17
+	#define EEXIST		17
 	#define	EXDEV		18
 	#define	ENODEV		19
 	#define	ENOTDIR		20
@@ -306,6 +306,8 @@
 	#define	EPIPE		32
 	#define	EDOM		33
 	#define	ERANGE		34
+
+	#define WSTRSIZE 4 ''size of one charactere in wstring
 #endif
 ''====================== end for linux =========================
 type tlist
@@ -315,7 +317,8 @@ type tlist
 	'as INTEGER idx
 end type
 
-#Define TYPESTD 17 ''upper limit for standard type, now 17 for va_list 2020/02/05
+#Define TYPESTD 18 ''upper limit for standard type, now 17 for va_list 2020/02/05
+const STYPESTD = ":t"+str(TYPESTD)
 
 '' DATA STAB
 Type udtstab
@@ -1022,6 +1025,7 @@ Type tvrb
 	mem As UByte    'scope
 	arr As tarr Ptr 'pointer to array def
 	pt As long      'pointer
+	fxlen as integer 'lenght of fix-len string (string *N)
 End type
 
 ''========================== Running variables ============================
@@ -1068,6 +1072,7 @@ Type tcudt
     lg As UInteger  'lenght
 	arr As tarr Ptr 'arr ptr
 	pt As long
+	fxlen as integer 'lenght of fix-len string (string *N)
 End Type
 
 ''========================= Excluded lines for procs added in dll (DllMain and tmp$x) ================
@@ -1098,6 +1103,7 @@ Type twtch
     vnm(10) As String   'name of var or component
     vty(10) As String   'type
     Var     As Integer  'array=1 / no array=0
+    fxlen   as INTEGER
 End type
 
 ''========================= Breakpoint on line ===================================
@@ -1175,6 +1181,7 @@ Type tvarfind
 	pr As Integer   'index of running var parent (if no parent same as ivr)
 	ad As UInteger
 	iv As Integer   'index of running var
+	fxlen as integer
 	tv As HWND      'handle treeview
     tl As integer 'handle line
 End Type
@@ -1206,6 +1213,7 @@ Type tvrp
 	ad As UInteger  'address
 	tl As integer   'line in treeview
 	iv As Integer   'index of variables
+	fxlen as integer
 End Type
 
 ''index box
@@ -1226,7 +1234,7 @@ declare sub dump_sh()
 declare sub var_sh()
 declare sub index_update()
 declare function var_find() as INTEGER
-declare function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="") As String
+declare function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="",fxlen as integer =0) As String
 declare sub shwexp_init()
 declare sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer, src as integer)
 declare function debug_extract(exebase As UInteger,nfile As String,dllflag As Long=NODLL) as integer

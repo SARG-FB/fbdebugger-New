@@ -123,12 +123,12 @@ private function parse_array(gv As String,d As Integer,f As Byte) As Integer
 
 		p=q+1
 		q=InStr(p,gv,";")
-		arr(arrnb).nlu(c).ub=Val(Mid(gv,p,q-p))'ubound
+		arr(arrnb).nlu(c).ub=Val(Mid(gv,p,q-p)) 'ubound
 		'''arr(arrnb).nlu(c).nb=arr(arrnb).nlu(c).ub-arr(arrnb).nlu(c).lb+1 'dim
 		p=q+1
 		c+=1
 	Wend
-		arr(arrnb).dm=c 'nb dim
+	arr(arrnb).dm=c 'nb dim
 	If f=TYDIM Then
 		vrb(*vrbptr).arr=@arr(arrnb)
 	Else
@@ -165,6 +165,7 @@ private sub parse_retval(prcnb As Integer,gv2 As String)
 	'done also with simple and array var
 	'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
 	If c=15 Then c=16
+	'If c=18 Then c=6
 	'========================================================
 
 	If c>TYPESTD Then c+=udtcpt
@@ -216,62 +217,80 @@ End function
 '' parse
 '--------------------------------------------
 private sub parse_var2(gv As String,f As Byte)
-Dim p As Integer=1,c As Integer,e As Integer,gv2 As String,pp As Integer
-If InStr(gv,"=")=0 Then
-	c=Val(Mid(gv,p,9))
-	'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used
-	'done also with array just below and param
-	'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
-	If c=15 Then c=16
-	'==================================
+	Dim As Integer p=1,c,e,pp,fxlen
+	dim As String gv2
+	If InStr(gv,"=")=0 Then
+		c=Val(Mid(gv,p,9))
+		'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used
+		'done also with array just below and param
+		'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
+		If c=15 Then c=16
+		'If c=18 Then c=6
+		'==================================
 
-	If c>TYPESTD Then c+=udtcpt 'udt type so adding the decal
-	pp=0
-	If f=TYUDT then
-		cudt(cudtnb).typ=c
-		cudt(cudtnb).pt=pp
-		cudt(cudtnb).arr=0 'by default not an array
-	Else
-		vrb(*vrbptr).typ=c
-		vrb(*vrbptr).pt=pp
-		vrb(*vrbptr).arr=0 'by default not an array
-	End if
-Else
-	If InStr(gv,"=ar1") Then p=parse_array(gv,InStr(gv,"=ar1")+1,f)
-	gv2=Mid(gv,p)
-	For p=0 To Len(gv2)-1
-		If gv2[p]=Asc("*") Then c+=1
-		If gv2[p]=Asc("=") Then e=p+1
-	next
-	If c Then 'pointer
-		If InStr(gv2,"=f") Then 'proc
-			If InStr(gv2,"=f7") Then
-				pp=200+c 'sub
-			Else
-				pp=220+c 'function
-			EndIf
-		Else
-			pp=c
-			If gv2[e]=Asc("*")Then e+=1
-		End If
-	Else
+		If c>TYPESTD Then c+=udtcpt 'udt type so adding the decal
 		pp=0
-	End If
-	c=Val(Mid(gv2,e+1))
+		If f=TYUDT then
+			cudt(cudtnb).typ=c
+			cudt(cudtnb).pt=pp
+			cudt(cudtnb).arr=0 'by default not an array
+		Else
+			vrb(*vrbptr).typ=c
+			vrb(*vrbptr).pt=pp
+			vrb(*vrbptr).arr=0 'by default not an array
+		End if
+	Else
+		If InStr(gv,"=ar1") Then p=parse_array(gv,InStr(gv,"=ar1")+1,f)
+		gv2=Mid(gv,p)
+		For p=0 To Len(gv2)-1
+			If gv2[p]=Asc("*") Then c+=1
+			If gv2[p]=Asc("=") Then e=p+1
+		next
+		If c Then 'pointer
+			If InStr(gv2,"=f") Then 'proc
+				If InStr(gv2,"=f7") Then
+					pp=200+c 'sub
+				Else
+					pp=220+c 'function
+				EndIf
+			Else
+				pp=c
+				If gv2[e]=Asc("*")Then e+=1
+			End If
+		Else
+			pp=0
+		End If
+		c=Val(Mid(gv2,e+1))
 
-	'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used
-	'done also with simple var and param
-	'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
-	If c=15 Then c=16
-	'========================================================
-
+		'workaround with gas boolean are not correctly defined type value 15 instead 16 so change the value as pchar (15) is not used
+		'done also with simple var and param
+		'dbg_prt2("cut up=2"+vrb(*vrbptr).nm+" value c="+Str(c))
+		If c=15 Then c=16
+		'If c=18 Then c=6
+		'========================================================
+		if (c=14 or c=4 or c=18) and pp=0 then ''fix-len strg
+			if arr(arrnb).dm=1 then ''not an array just lenght of fix-len string
+				fxlen=arr(arrnb).nlu(0).ub+1
+				arrnb-=1
+				If f=TYDIM Then
+					vrb(*vrbptr).arr=0
+				Else
+					cudt(cudtnb).arr=0
+				End If
+			else
+				fxlen=arr(arrnb).nlu(arr(arrnb).dm-1).ub+1
+				arr(arrnb).dm-=1
+			end if
+		End If
 		If c>TYPESTD Then c+=udtcpt 'udt type so adding the decal 20/08/2015
 		If f=TYUDT Then
 			cudt(cudtnb).pt=pp
 			cudt(cudtnb).typ=c
+			cudt(cudtnb).fxlen=fxlen
 		Else
 			vrb(*vrbptr).pt=pp
 			vrb(*vrbptr).typ=c
+			vrb(*vrbptr).fxlen=fxlen
 		End If
 	EndIf
 End Sub
@@ -334,7 +353,7 @@ private sub parse_udt(readl As String)
 				cudt(cudtnb).arr=Cast(tarr Ptr,-1) 'defined as dyn arr
 
 				'dbg_prt2("dyn array="+cudt(cudtnb).nm+" "+Str(cudt(cudtnb).typ)+" "+Str(cudt(cudtnb).pt)+" "+cudt(udt(cudt(cudtnb).typ).lb).nm)
-			EndIf
+		EndIf
 			'end new redim
 
 			p=q+1
@@ -344,7 +363,7 @@ private sub parse_udt(readl As String)
 			q=InStr(p,readl,";")
 			lgbits=Val(Mid(readl,p,q-p))	'length in bits
 
-			if cudt(cudtnb).typ<>4 And cudt(cudtnb).pt=0 And cudt(cudtnb).arr=0 Then 'not zstring, pointer,array !!!
+			if cudt(cudtnb).typ<>4 And cudt(cudtnb).typ<>14 And cudt(cudtnb).pt=0 And cudt(cudtnb).arr=0 Then 'not zstring, pointer,array !!!
 				If lgbits<>udt(cudt(cudtnb).typ).lg*8 Then 'bitfield
 				  cudt(cudtnb).typ=TYPEMAX 'special type for bitfield
 				  cudt(cudtnb).ofb=cudt(cudtnb).ofs-(cudt(cudtnb).ofs\8) * 8 ' bits mod byte
@@ -410,7 +429,7 @@ private sub parse_var(gv As String,ad As UInteger, dlldelta As Integer=0)
 	Static defaulttype As Integer
 	Dim As String vname
 
-	If instr(gv,"va_list:t") Then 'last default type
+	If instr(gv,STYPESTD) Then 'last default type
 		  defaulttype=0
 	ElseIf InStr(gv,"integer:t") Then
 		  defaulttype=1
@@ -975,14 +994,14 @@ end sub
 '' -----------------------
 private sub dbg_line(linenum as integer,ofset as integer)
 	if linenum then
-		#Ifndef __FB_64BIT__
-		''to skip stabd
-		if linenum<rline(linenb).nu then
-			if procnb=rLine(linenb).px then
-				exit sub
-			end if
-		end if
-		#endif
+		'#Ifndef __FB_64BIT__
+		'''to skip stabd
+		'if linenum<rline(linenb).nu then
+			'if procnb=rLine(linenb).px then
+				'exit sub
+			'end if
+		'end if
+		'#endif
 		if ofset+proc(procnb).db<>rline(linenb).ad Then ''checking to avoid asm with just comment line
 			linenb+=1
 		endif
@@ -1017,7 +1036,10 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 			'If InStr(procname,".LT")=0 then  ''to be checked if useful
 		 	If flagmain=TRUE And procname="main" Then
 				procmain=procnb+1
-		 		flagmain=false
+				flagmain=false
+				#Ifndef __FB_64BIT__
+					linenb-=1 ''skip stabd
+				#EndIf
 		 		'flagstabd=TRUE'first main ok but not the others
 				'dbg_prt2 "main found=";procnb+1
 		 	endif
@@ -1309,7 +1331,7 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 
 	dim As Integer pe,flagdll
 	dim as integer secnb
-	dim as string *8 secnm
+	dim as zstring *9 secnm
 	Dim As Integer basestab=0,basestabs=0,baseimg,sizemax,sizestabs
 	Dim As udtstab recupstab
 	Dim recup As ZString *STAB_SZ_MAX
@@ -1319,7 +1341,6 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 	linenbprev=linenb ''used for dll
 
 	statusbar_text(KSTBSTS,"Loading debug data")
-
 	ReadProcessMemory(dbghand,Cast(LPCVOID,exebase+&h3C),@pe,4,0)
 	pe+=exebase+6 'adr nb section
 	ReadProcessMemory(dbghand,Cast(LPCVOID,pe),@secnb,2,0)
@@ -1334,7 +1355,6 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 	#else
 		pe+=&hC4 'adr sections
 	#EndIf
-
 	For i As UShort =1 To secnb
 		Dim As UInteger basedata,sizedata
 		secnm=String(8,0) 'Init var
@@ -1368,7 +1388,6 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 	Else
 		basestab+=exebase+sizeof(udtstab) ''12 for 32bit / 16 for 64bit could be greater if udtstab is changed
 		basestabs+=exebase
-
 		While 1
 			If ReadProcessMemory(dbghand,Cast(LPCVOID,basestab),@recupstab,sizeof(udtstab),0)=0 Then
 				#Ifdef fulldbg_prt
@@ -1407,20 +1426,26 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 			#Ifdef fulldbg_prt
 				dbg_prt (recup)
 			#EndIf
+			baseimg=0
 	'=========================================
+			#Ifndef __FB_64BIT__
+				if baseimg<>&h400000 then
+					baseimg=-&h400000 ''with new version of gcc the base image is changed
+				end if
+			#EndIf
 			select case as const recupstab.code
 				case 100 '' file name
 					dbg_file(recup,recupstab.ad)
 				case 255 ''not as standard stab freebasic version and maybe other information
 					compilerversion=recup
 				Case 32,38,40,128,160 'init common/ var / uninit var / local / parameter
-					parse_var(recup,recupstab.ad)',exebase-baseimg) ''todo
+					parse_var(recup,recupstab.ad-baseimg)',exebase-baseimg) ''todo
 				case 132 '' file name
 					dbg_include(recup)
 				case 36 ''procedure
-					dbg_proc(recup,recupstab.nline,recupstab.ad)
+					dbg_proc(recup,recupstab.nline,recupstab.ad-baseimg)
 				case 68 ''line
-					dbg_line(recupstab.nline,recupstab.ad)
+					dbg_line(recupstab.nline,recupstab.ad) ''no need of baseimage as the address is relative to address of proc
 				case 224 ''address epilog
 					dbg_epilog(recupstab.ad)
 				case 42 ''main entry point
@@ -1465,11 +1490,21 @@ private sub list_all()
 	next
 	print "global variables ---------------------------------------------------------- ";vrbgbl
 	for ivrb as integer=1 to vrbgbl
-		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem);
+		if vrb(ivrb).typ=14 or vrb(ivrb).typ=4 or vrb(ivrb).typ=18 then
+			print " ";vrb(ivrb).fxlen
+		else
+			print
+		End If
 	next
 	print "local variables ----------------------------------------------------------- ";vrbloc-VGBLMAX
 	for ivrb as integer=VGBLMAX+1 to vrbloc
-		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem)
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem);
+		if vrb(ivrb).typ=14 or vrb(ivrb).typ=4 or vrb(ivrb).typ=18 then
+			print " ";vrb(ivrb).fxlen
+		else
+			print
+		End If
 	next
 	print "end of list all"
 end sub

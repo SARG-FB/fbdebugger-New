@@ -170,6 +170,8 @@ End Function
 '========================
 'flaglog=0 --> no output / 1--> only screen / 2-->only file / 3 --> both
 private sub output_wds(t As String)
+	'print t  ?????
+	'exit sub
 	Static As HANDLE scrnnumber
 	Static As Integer filenumber
 	Dim cpt As long,libel As String

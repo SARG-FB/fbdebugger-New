@@ -29,9 +29,15 @@ private sub index_sel()
 			   size=SizeOf(Integer)
 			   typ=1 'integer
 			Else
-			   size=udt(vrb(vrr(indexvar).vr).typ).lg
-			   typ=vrb(vrr(indexvar).vr).typ
-			EndIf
+				typ=vrb(vrr(indexvar).vr).typ
+				if typ=14 or typ=4 then
+					size=vrb(vrr(indexvar).vr).fxlen
+				Elseif typ=18 then
+					size=vrb(vrr(indexvar).vr).fxlen*WSTRSIZE
+				else
+					size=udt(typ).lg
+				EndIf
+			end if
 			If Cast(Integer,vrb(vrr(indexvar).vr).arr)=-1 Then 'dynamic array
 				adr=vrr(indexvar).ini+SizeOf(Integer)
 				readprocessmemory(dbghand,Cast(LPCVOID,adr),@adr,SizeOf(Integer),0)
@@ -72,7 +78,12 @@ private sub index_sel()
 				If .pt Then 'pointer
 					size=SizeOf(Integer)
 					typ=1 'integer
-				Else
+				Elseif .typ=14 or .typ=4 then
+					size=.fxlen
+					typ=.typ
+				Elseif .typ=18 then
+					size=.fxlen*WSTRSIZE
+				else
 					size=udt(.typ).lg
 					typ=.typ
 				EndIf

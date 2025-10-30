@@ -99,15 +99,13 @@ private sub string_sh(tv as integer)
 	dim as WString *52004 wstrg
 	#Ifdef __FB_WIN32__
 		dim As Short bufw
-		#define KCHARSIZE 2
 	#Else
 		dim As long bufw
-		#define KCHARSIZE 4
 	#EndIf
 
 	If var_find2(gadgetID(tv))=-1 Then Exit Sub 'search index variable under cursor
 
-	If varfind.ty<>4 And varfind.ty<>13 And varfind.ty<>14 And varfind.ty <>6 Then 'or ty<>15
+	If varfind.ty<>4 And varfind.ty<>13 And varfind.ty<>14 And varfind.ty<>6  And varfind.ty<>18 Then 'or ty<>15
 	   messbox("Show string error","Select only a string variable")
 	   Exit Sub
 	End If
@@ -118,7 +116,7 @@ private sub string_sh(tv as integer)
 	   If varfind.pt=2 Then ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@stringadr,SizeOf(Integer),0) ''if two levels
 	EndIf
 
-	If varfind.ty <>6 Then
+	If varfind.ty <>18 Then
 		''string zstring
 		If varfind.ty=13 Then 'string
 		   ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@stringadr,SizeOf(Integer),0) ''string address
@@ -140,12 +138,12 @@ private sub string_sh(tv as integer)
 	Else
 		''wstring
       	inc=0:wstrg=""
-      	ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@bufw,KCHARSIZE,0)
+		ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr),@bufw,WSTRSIZE,0)
 		While bufw
 			wstrg[inc]=bufw
 			inc+=1
 			If inc=52000 Then Exit While 'limit if wstring >52000
-			ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr+inc*2),@bufw,KCHARSIZE,0)
+			ReadProcessMemory(dbghand,Cast(LPCVOID,stringadr+inc*2),@bufw,WSTRSIZE,0)
 		Wend
 		WStrg[inc]=0:WStrg[inc+1]=0:WStrg[inc+2]=0:WStrg[inc+3]=0 'end of wstring
 		setgadgettext(GEDITOR,wstrg)
@@ -241,7 +239,6 @@ Private sub index_update()
 		Next
 	EndIf
 		''todo if number column inchanged use  : SetTextColumnListView(GIDXTABLE,i,txt)
-
 	''data
 	for lineindex as integer = idx to iif(limit-idx>KLINEMAX-1,idx+KLINEMAX-1,limit) ''KLINEMAX lines max
 		iline=lineindex-idx
@@ -249,7 +246,7 @@ Private sub index_update()
 
 		adrsav=adr
 		For colindex As Long =idx2 To IIf(limit2-idx2>KCOLMAX-1,idx2+KCOLMAX-1,limit2) ''30 columns max
-			txt=var_sh2(typ,adr,0,"")
+			txt=var_sh2(typ,adr,0,"",size)
 			txt=Mid(txt,InStr(txt,"=")+1) ''only data after "="
 			column=colindex-idx2+1
 			AddListViewItem(listview,txt,0,iline,column)
@@ -262,12 +259,11 @@ End Sub
 '=====================================
 '' fills shw / expand
 '=====================================
-private sub shwexp_fill(adr As Integer,typ As Integer,tv as integer,pt As Integer,iv As integer)
+private sub shwexp_fill(adr As Integer,typ As Integer,tv as integer,pt As Integer,iv As integer,fxlen As integer)
 	Dim As String text
 	Dim As Integer ad,temp
 	Dim As integer tvchild
 	Dim As Integer vrpnb,ivcnt=iv
-
 	If pt>221 Or (pt>201 And pt<220) Or (pt And pt<200) Then
 		If shwexp.nb=VRPMAX Then
 			messbox("Creating data for show/expand","Too much lines")
@@ -284,17 +280,17 @@ private sub shwexp_fill(adr As Integer,typ As Integer,tv as integer,pt As Intege
 		vrp(vrpnb).tl=tvchild
 		ivcnt+=1
 		vrp(vrpnb).iv=ivcnt
-		shwexp_fill(ad,typ,tvchild,pt-1,ivcnt)
+		shwexp_fill(ad,typ,tvchild,pt-1,ivcnt,0)
 		vrpnb=shwexp.nb 'counter updated in the executed proc
 	Else
 		If typ>TYPESTD And udt(typ).en=0 Then
-		   For i As Integer = udt(typ).lb To udt(typ).ub
+			For i As Integer = udt(typ).lb To udt(typ).ub
 			If shwexp.nb=VRPMAX Then
 				messbox("Creating data for show/expand","Too much lines")
 				Exit Sub
 			end if
 		   	shwexp.nb+=1
-			  With cudt(i)
+			With cudt(i)
 				text=.nm+" "
 				If .arr Then
 				   If Cast(Integer,.arr)=-1 Then
@@ -319,7 +315,7 @@ private sub shwexp_fill(adr As Integer,typ As Integer,tv as integer,pt As Intege
 					Mid(text,Len(text)) =Str(temp) 'exchange byte value by bit value
 					Mid(text,InStr(text,"<BITF")+5)="IELD"  'exchange 'byte' by IELD
 				Else
-					text+="<"+var_sh2(.typ,ad,.pt,Str(.ofs)+" / ")
+					text+="<"+var_sh2(.typ,ad,.pt,Str(.ofs)+" / ",.fxlen)
 				End If
 				tvchild=AddTreeViewItem(GTVIEWSHW,text,cast (hicon, 0),0,TVI_LAST,tv)
 				vrpnb=shwexp.nb
@@ -328,18 +324,20 @@ private sub shwexp_fill(adr As Integer,typ As Integer,tv as integer,pt As Intege
 				vrp(vrpnb).pt=.pt
 				vrp(vrpnb).ad=ad
 				vrp(vrpnb).tl=tvchild
+				vrp(vrpnb).fxlen=.fxlen
 				ivcnt+=1
 				vrp(vrpnb).iv=iv
 				If .pt>221 Or (.pt>201 And .pt<220) Or (.pt And .pt<200) Or .pt=0 Then
 					temp=.pt
-			   	If .pt>0 Then ReadProcessMemory(dbghand,Cast(LPCVOID,ad),@ad,4,0):temp-=1
-				   If .pt>200 Or (.pt And .typ<=TYPESTD)  Or (.pt And .typ>TYPESTD And udt(.typ).en) Or (.pt=0 And .typ>TYPESTD And udt(.typ).en=0 And .typ<>TYPEMAX) Then
-			   		shwexp_fill(ad,.typ,tvchild,temp,ivcnt)
-			   		vrpnb=shwexp.nb 'counter updated in the executed proc
-			   	EndIf
+					If .pt>0 Then ReadProcessMemory(dbghand,Cast(LPCVOID,ad),@ad,4,0):temp-=1
+					If .pt>200 Or (.pt And .typ<=TYPESTD)  Or (.pt And .typ>TYPESTD And udt(.typ).en) Or (.pt=0 And .typ>TYPESTD And udt(.typ).en=0 And .typ<>TYPEMAX) Then
+						shwexp_fill(ad,.typ,tvchild,temp,ivcnt,.fxlen)
+						ivcnt+=1
+						vrpnb=shwexp.nb 'counter updated in the executed proc
+					EndIf
 			   End If
-			  End With
-		   Next
+			End With
+			Next
 		Else
 		   If shwexp.nb=VRPMAX Then
 				messbox("Creating data for show/expand","To much lines")
@@ -354,6 +352,7 @@ private sub shwexp_fill(adr As Integer,typ As Integer,tv as integer,pt As Intege
 			vrp(vrpnb).tl=AddTreeViewItem(GTVIEWSHW,text,cast (hicon, 0),0,TVI_LAST,tv)
 			ivcnt+=1
 			vrp(vrpnb).iv=iv
+			vrp(vrpnb).fxlen=fxlen
 		End If
 	End If
 End Sub
@@ -408,10 +407,9 @@ end function
 ''===========================================
 '' initialises a new show / expand
 ''===========================================
-private sub shwexp_update(nm As String="",ad As Integer=0,ty As Integer=0,pt As integer=0,iv As integer=0)
-	Dim As Integer vrpnb,temp,htv,adr
+private sub shwexp_update(nm As String="",ad As Integer=0,ty As Integer=0,pt As integer=0,iv As integer=0,fxlen as integer=0)
+	Dim As Integer vrpnb,temp,htv,adr,fl
 	dim as string text
-
 	DeleteTreeViewItemAll(GTVIEWSHW)
 
 	vrpnb=1
@@ -423,23 +421,25 @@ private sub shwexp_update(nm As String="",ad As Integer=0,ty As Integer=0,pt As 
 		pt=vrp(vrpnb).pt
 		ad=vrp(vrpnb).ad
 		iv=vrp(vrpnb).iv
+		fl=vrp(vrpnb).fxlen
 	else
 		vrp(vrpnb).nm=nm
 		vrp(vrpnb).ty=ty
 		vrp(vrpnb).pt=pt
 		vrp(vrpnb).ad=ad
 		vrp(vrpnb).iv=iv
+		vrp(vrpnb).fxlen=fxlen
 	end if
 
 
-	text="--> "+nm+" <"+var_sh2(ty,ad,pt,"")
+	text="--> "+nm+" <"+var_sh2(ty,ad,pt,"",fxlen)
 	htv=AddTreeViewItem(GTVIEWSHW,text,cast (hicon, 0),0,TVI_FIRST,0)
 	vrp(vrpnb).tl=htv
 
 	adr=ad
 	If pt>221 Or (pt>201 And pt<220) Or (pt And pt<200) Or (ty>TYPESTD And udt(ty).en=0) Then
 		If pt Then temp=pt-1:ReadProcessMemory(dbghand,Cast(LPCVOID,ad),@adr,4,0)
-		shwexp_fill(adr,ty,htv,temp,iv)
+		shwexp_fill(adr,ty,htv,temp,iv,0)
 		ExpandTreeViewItem(GTVIEWSHW,htv,1) ''expand included child items
 	EndIf
 end sub
@@ -449,7 +449,6 @@ end sub
 private sub shwexp_new(gtview as integer)
 
 	dim as integer hitem,temp,typ,pt,rvadr,adr,addr
-
 	If shwexp.free=false Then ''shw/exp in use
 		if messbox("Show/Expand already in use","Do you want to change it ?",MB_YESNO)=IDNO then
 			exit sub
@@ -517,7 +516,6 @@ End Sub
 private sub shwexp_init()
 	dim as integer iv,temp,dm,adr
 	shwexp.arradr=0 ''by default not a dynamic array
-
 	iv=varfind.iv
 	''handling array  var or field / fixed or dynamic
 	if iv>0 then
@@ -615,7 +613,7 @@ private sub shwexp_init()
 		shwexp.arradr=0
 	endif
 
-	shwexp_update(varfind.nm,varfind.ad,varfind.ty,varfind.pt,varfind.iv)
+	shwexp_update(varfind.nm,varfind.ad,varfind.ty,varfind.pt,varfind.iv,varfind.fxlen)
 	hidewindow(hshwexpbx,KSHOW)
 end sub
 
@@ -809,7 +807,7 @@ private function thread_select(id As Integer =0) As Integer
 
 	If id =0 Then  'take on cursor
 		'get current hitem in tree
-		If PanelGadgetgetCursel(GRIGHTTABS) = TABIDXTHD Then	
+		If PanelGadgetgetCursel(GRIGHTTABS) = TABIDXTHD Then
 
 			temp=GetItemTreeView(GTVIEWTHD)
 			Do 'search thread item
@@ -1301,7 +1299,7 @@ private sub var_dump(tv As HWND,ptd As Long =0)
 		Case 13 'string
 			 dumptyp=2 'default for string
 			 ReadProcessMemory(dbghand,Cast(LPCVOID,dumpadr),@dumpadr,SizeOf(Integer),0) ''string address
-		Case 4,14 'f or zstring
+		Case 4,14,18 'f or zstring or wstring
 			dumptyp=2
 		Case Is>TYPESTD
 			 dumptyp=8 'default for pudt and any
@@ -1353,11 +1351,13 @@ private sub var_fill(i As Integer)
 		varfind.pt=cudt(-vrr(i).vr).pt
 		varfind.nm=cudt(-vrr(i).vr).nm
 		varfind.pr=vrr(var_parent(vrr(i).tv)).vr'index of the vrb
+		varfind.fxlen=cudt(-vrr(i).vr).fxlen
 	Else
 		varfind.ty=vrb(vrr(i).vr).Typ
 		varfind.pt=vrb(vrr(i).vr).pt
 		varfind.nm=vrb(vrr(i).vr).nm
 		varfind.pr=vrr(i).vr 'no parent so himself, index of the vrb
+		varfind.fxlen=vrb(vrr(i).vr).fxlen
 	End If
 	varfind.ad=vrr(i).ad
 	varfind.iv=i
@@ -1609,6 +1609,7 @@ private function var_find2(tv As HWND) As Integer 'return -1 if error
 	   varfind.tv=htviewwch 'handle treeview
 	   varfind.tl=wtch(idx).tvl 'handle line
 	   varfind.iv=wtch(idx).ivr
+	   varfind.fxlen=wtch(idx).fxlen
 	Else'shw/expand tree
 		'get current hitem in tree
 		hitem=GetItemTreeView(ID_In_Number(tv))
@@ -1616,12 +1617,13 @@ private function var_find2(tv As HWND) As Integer 'return -1 if error
 			If vrp(i).tl=hitem Then
 				varfind.nm=vrp(i).nm
 				If varfind.nm="" Then varfind.nm="<Memory>"
-				varfind.ty=vrp(i).Ty
+				varfind.ty=vrp(i).ty
 				varfind.pt=vrp(i).pt
 				varfind.ad=vrp(i).ad
 				varfind.tv=tv 'handle treeview
 				varfind.tl=hitem 'handle line
 				varfind.iv=-1
+				varfind.fxlen=vrp(i).fxlen
 				Return i
 			End If
 		Next
@@ -1679,7 +1681,7 @@ Private sub thread_resume(thd as integer=-1)
 	dim as integer thdbeg=0,thdend=threadnb
 	#ifdef __fb_win32__
 		''todo move to dbg_windows.bas
-		
+
 		if thd<>-1 then
 			thdbeg=thd
 			thdend=thd
@@ -1917,7 +1919,7 @@ private function enum_find(t As Integer,v As Integer) As String
 End Function
 
 '======================================================
-private function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="") As String
+private function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As String="", fxlen as integer = 0) As String
 	Dim adr As UInteger,varlib As String
 	Union lpointers
 	#Ifdef __FB_64BIT__
@@ -1952,7 +1954,7 @@ private function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As S
 	 		varlib=String(p,"*")+" "+udt(t).nm+">"
 		End If
 
-		If flagverbose Then varlib+="[sz"+Str(SizeOf(Integer))+" / "+sOffset+Str(pany)+"]"
+		If flagverbose Then varlib+="[sz "+Str(SizeOf(Integer))+" / "+sOffset+Str(pany)+"]"
 		If pany Then
 			ReadProcessMemory(dbghand,Cast(LPCVOID,pany),@recup(0),sizeof(Integer),0)
 	 		If p>200 Then
@@ -1965,7 +1967,18 @@ private function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As S
 		End If
 	Else
 		varlib=udt(t).nm+">"
-		If flagverbose Then varlib+="[sz "+Str(udt(t).lg)+" / "+sOffset+hex(pany)+"]"
+		if fxlen<>0 then
+			varlib+="("+str(fxlen)+") "
+		End If
+		If flagverbose Then
+			if t=14 or t=4 then
+				varlib+="[sz "+Str(fxlen)+" / "+sOffset+hex(pany)+"]"
+			elseif t=18 then
+				varlib+="[sz "+Str(fxlen*WSTRSIZE)+" / "+sOffset+hex(pany)+"]"
+			else
+				varlib+="[sz "+Str(udt(t).lg)+" / "+sOffset+hex(pany)+"]"
+			End If
+		End If
 		If pany Then
 		 If t>0 And t<=TYPESTD Then
 		 	varlib+="="
@@ -1981,13 +1994,20 @@ private function var_sh2(t As Integer,pany As UInteger,p As UByte=0,sOffset As S
 						varlib+=Str(*ptrs.pubyte)
 					Case 4,13,14 'stringSSSS
 						If t=13 Then  ' normal string
-		   				ReadProcessMemory(dbghand,Cast(LPCVOID,pany),@adr,SizeOf(Integer),0) 'address
+							ReadProcessMemory(dbghand,Cast(LPCVOID,pany),@adr,SizeOf(Integer),0) 'address
 						Else
 							adr=pany
 						End If
-		   			Clear recup(0),0,71 'max 70 char
-		   			ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@recup(0),70,0) 'value
-					   varlib+=*ptrs.pzstring
+						Clear recup(0),0,71 'max 70 char
+						ReadProcessMemory(dbghand,Cast(LPCVOID,adr),@recup(0),70,0) 'value
+						if t=14 then
+							if fxlen<70 then
+								recup(fxlen)=0
+							End If
+						End If
+						varlib+=*ptrs.pzstring
+					case 18
+						varlib+=" Use show z/w/string option"
 					Case 5 'short
 						ReadProcessMemory(dbghand,Cast(LPCVOID,pany),@recup(0),2,0)
 						varlib+=Str(*ptrs.pshort)
@@ -2049,8 +2069,7 @@ end sub
 '=====================================================================
 private sub edit_fill(txt as string,adr as integer,typ as integer, pt as integer,src as integer=0)
 	dim as integer p2,aptr
-
-	If (typ=4 Or typ=13 Or typ=14 Or typ=15) And pt=0 Then
+	If (typ=4 Or typ=13 Or typ=14 Or typ=15  Or typ=18) And pt=0 Then
 	   messbox("Edit variable error","Select only a numeric variable"+Chr(13)+"For string use change with dump")
 	   dump_string(adr,typ)
 	   hidewindow(heditbx,KHIDE)
@@ -2144,21 +2163,39 @@ Private sub update_address(midx As Long)
 End Sub
 '================================================================================
 private function var_sh1(i As Integer) As String
-	Dim adr As Integer,text As String,soffset As String
+	Dim adr As Integer,text As String,soffset As String,fxlen as integer
 	Dim As Integer temp1,temp2,temp3,vlbound(4),vubound(4)
 	Dim As tarr Ptr arradr
 	Dim As Long vflong,udtlg,nbdim,typ
 
 	If vrr(i).vr<0 Then ''field
 		text=cudt(Abs(vrr(i).vr)).nm+" "
+		if cudt(Abs(vrr(i).vr)).typ=14 or cudt(Abs(vrr(i).vr)).typ=4 or cudt(Abs(vrr(i).vr)).typ=18 then
+			fxlen=cudt(Abs(vrr(i).vr)).fxlen
+			if cudt(Abs(vrr(i).vr)).typ=18 then
+				udtlg=fxlen*WSTRSIZE
+			else
+				udtlg=fxlen
+			End If
+		else
+			udtlg=udt(cudt(Abs(vrr(i).vr)).typ).lg
+		End If
 		arradr=cudt(Abs(vrr(i).vr)).arr
-		udtlg=udt(cudt(Abs(vrr(i).vr)).typ).lg
 		if Cast(Integer,cudt(Abs(vrr(i).vr)).arr)>0 Then nbdim=cudt(Abs(vrr(i).vr)).arr->dm-1 ''only used in case of fixed-lenght array
 		typ=cudt(Abs(vrr(i).vr)).typ
 	Else
 		text=vrb(vrr(i).vr).nm+" "
+		if vrb(vrr(i).vr).typ=14 or vrb(vrr(i).vr).typ=4  or vrb(vrr(i).vr).typ=18 then
+			fxlen=vrb(vrr(i).vr).fxlen
+			if vrb(vrr(i).vr).typ=18 then
+				udtlg=fxlen*WSTRSIZE
+			else
+				udtlg=fxlen
+			End If
+		else
+			udtlg=udt(vrb(vrr(i).vr).typ).lg
+		End If
 		arradr=vrb(vrr(i).vr).arr
-		udtlg=udt(vrb(vrr(i).vr).typ).lg
 		If Cast(Integer,vrb(vrr(i).vr).arr)>0 Then nbdim=vrb(vrr(i).vr).arr->dm-1 ''only used in case of fixed-lenght array
 		typ=vrb(vrr(i).vr).typ
 	endif
@@ -2269,8 +2306,8 @@ private function var_sh1(i As Integer) As String
 				Mid(text,InStr(text,"<BITF")+5)="IELD"  'exchange 'byte' by IELD
 			Else
 				soffset=Str(.ofs)+" / "
-				If Cast(Integer,.arr)=-1 Then soffset+=Str(vrr(i).ini)+" >> "  '19/05/2014
-				text+="<"+var_sh2(.typ,vrr(i).ad,.pt,soffset)
+				If Cast(Integer,.arr)=-1 Then soffset+=Str(vrr(i).ini)+" >> "
+				text+="<"+var_sh2(.typ,vrr(i).ad,.pt,soffset,fxlen)
 				If .typ>TYPESTD then update_address(i) ''udt case
 			End If
 			Return text
@@ -2298,8 +2335,8 @@ private function var_sh1(i As Integer) As String
 				Case 6
 					text+="<Common / "
 			End Select
-			If Cast(Integer,.arr)=-1 Then soffset+=Str(vrr(i).ini+SizeOf(Integer))+" >> "  '25/07/2015
-		 text+=var_sh2(.typ,adr,.pt,soffset)
+			If Cast(Integer,.arr)=-1 Then soffset+=Str(vrr(i).ini+SizeOf(Integer))+" >> "
+		 text+=var_sh2(.typ,adr,.pt,soffset,fxlen)
 		 Return text
 	  End With
    End If
@@ -2440,6 +2477,7 @@ While wname(index)<>""
 	wtch(index).idx=pidx
 	wtch(index).pnt=ispnt
 	wtch(index).tad=tad
+	wtch(index).fxlen=tad
 	wtchcpt+=1
    index+=1
 Wend
@@ -2552,7 +2590,7 @@ For i As Integer= vbeg To vend
 	  ElseIf wtch(i).psk=-4 Then
 	  	value=libel
 	  Else
-			value=var_sh2(wtch(i).typ,wtch(i).adr,wtch(i).pnt)
+			value=var_sh2(wtch(i).typ,wtch(i).adr,wtch(i).pnt,,wtch(i).fxlen)
 			libel+=value '2 spaces for trace T
 	  End If
 		'trace
@@ -2587,6 +2625,7 @@ private sub watch_add(f As Integer,r As Integer =-1) 'if r<>-1 session watched, 
 	wtch(t).adr=varfind.ad
 	wtch(t).arr=0
 	wtch(t).tad=f
+	wtch(t).fxlen=varfind.fxlen
 
 If varfind.iv=-1 Then 'memory from dump_box or shw/expand
 	wtch(t).lbl=varfind.nm
@@ -2730,11 +2769,11 @@ private sub watch_trace(t As Integer=WTCHALL)
 					EndIf
 				EndIf
 				If wtch(t).psk=-2 Then
-					wtch(t).old=var_sh2(wtch(t).typ,wtch(t).adr,wtch(t).pnt)
+					wtch(t).old=var_sh2(wtch(t).typ,wtch(t).adr,wtch(t).pnt,,wtch(t).fxlen)
 				ElseIf wtch(t).psk=-3 Or wtch(t).psk=-4 Then
 					wtch(t).old=wtch(t).lbl
 				Else
-					wtch(t).old=var_sh2(wtch(t).typ,wtch(t).adr,wtch(t).pnt)
+					wtch(t).old=var_sh2(wtch(t).typ,wtch(t).adr,wtch(t).pnt,,wtch(t).fxlen)
 				EndIf
 			EndIf
 		EndIf
@@ -3462,14 +3501,13 @@ private sub init_debuggee(srcstart as integer)
 	   If flagwtch=0 AndAlso wtchexe(0,0)<>"" Then watch_check(wtchexe())
 	   flagwtch=0
 	EndIf
-	'list_all() ''list all the debug data
+	'''list_all() ''list all the debug data
 
 	listidx=srclistfirst
 	while listidx<>-1
 		AddComboBoxItem(GFILELIST,srcname(listidx-1),-1)
 		listidx=srclist(listidx).child
 	Wend
-
 
 	#Ifdef __fb_win32__
 		put_breakcpu()
@@ -3565,7 +3603,7 @@ private function debug_event() as INTEGER
 				EndIf
 			#else
 				if elf_extract(exename)=0 then
-					messbox("Loading error","Killing process")				
+					messbox("Loading error","Killing process")
 					exec_order(KPT_KILL)
 				EndIf
 
@@ -3611,7 +3649,7 @@ private function debug_event() as INTEGER
 		#Ifdef __fb_win32__
 			dll_load()
 		#else
-			messbox("Linux dll","nedd to be coded")
+			messbox("Linux dll","need to be coded")
 		#endif
 		Case KDBGDLLUNLOAD
 			dll_unload(debugdata)

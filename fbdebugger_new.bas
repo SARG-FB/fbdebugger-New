@@ -1,5 +1,5 @@
 '=================================================================
-'===== DEBUGGER FOR FREEBASIC === (C) 2006-2022 Laurent GRAS =====
+'===== DEBUGGER FOR FREEBASIC === (C) 2006-2025 Laurent GRAS =====
 '=================================================================
 
 #include once "dbg_defines.bi"
@@ -342,6 +342,7 @@ udt(13).nm="String":udt(13).lg=Len(String)
 udt(14).nm="Fstring":udt(14).lg=Len(Integer)
 udt(15).nm="fb_Object":udt(15).lg=Len(UInteger)
 udt(16).nm="Boolean":udt(16).lg=Len(boolean)
+udt(18).nm="Wstring":udt(18).lg=Len(Integer)
 
 
 ''last debugged exes / command line parameters
@@ -451,6 +452,8 @@ do
 			index_cell()
 		elseIf EventNumberTreeView=GTVIEWBRC Then
 			brc_check()
+		elseIf EventNumberTreeView=GTVIEWVAR Then 'and eventKey=MK_CONTROL
+			'print "here OK"
 		EndIf
 	elseif event=eventgadget then
 		button_action(eventnumber())
