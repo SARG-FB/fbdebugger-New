@@ -1386,6 +1386,21 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 		EndIf
 		return -1
 	Else
+
+		#Ifndef __FB_64BIT__
+			#ifndef __FB_OUT_DLL__
+				if baseimg<>&h400000 then
+					baseimg=-&h400000 ''with new version of gcc the base image is changed
+				else
+					baseimg=0
+				end if
+			#else
+				baseimg=0
+			#endif
+		#else
+			baseimg=0
+		#EndIf
+
 		basestab+=exebase+sizeof(udtstab) ''12 for 32bit / 16 for 64bit could be greater if udtstab is changed
 		basestabs+=exebase
 		While 1
@@ -1426,13 +1441,8 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 			#Ifdef fulldbg_prt
 				dbg_prt (recup)
 			#EndIf
-			baseimg=0
 	'=========================================
-			#Ifndef __FB_64BIT__
-				if baseimg<>&h400000 then
-					baseimg=-&h400000 ''with new version of gcc the base image is changed
-				end if
-			#EndIf
+
 			select case as const recupstab.code
 				case 100 '' file name
 					dbg_file(recup,recupstab.ad)
