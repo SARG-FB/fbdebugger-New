@@ -1017,7 +1017,7 @@ private sub dbg_line(linenum as integer,ofset as integer)
 		EndIf
 		''to be checked maybe fixed so useless
 		rline(linenb).sx=sourceix ''for line in include and not in a proc
-		'dbg_prt2 "linenum=";linenum,hex(rline(linenb).ad)
+		'dbg_prt2 "linenum=";linenb,linenum,hex(rline(linenb).ad)
 	else
 		'dbg_prt2 "line number=0"
 	end if
@@ -1026,25 +1026,19 @@ end sub
 '' Handling procedure sub/function/etc code=36
 '' ---------------------------------------------
 private sub dbg_proc(strg as string,linenum as integer,adr as integer)
-	dim as string procname
+	static as string procname
 	if linenum then
 		procnodll=false
 		procname=parse_proc(strg)
-
 		'procname=left(strg,instr(strg,":")-1)
-		if procname<>"" and (flagmain=true or procname<>"main") then
+		if len(procname)<>0 and (flagmain=true or procname<>"main") then
 			'If InStr(procname,".LT")=0 then  ''to be checked if useful
 		 	If flagmain=TRUE And procname="main" Then
 				procmain=procnb+1
 				flagmain=false
-				#Ifndef __FB_64BIT__
-					linenb-=1 ''skip stabd
-				#EndIf
-		 		'flagstabd=TRUE'first main ok but not the others
-				'dbg_prt2 "main found=";procnb+1
 		 	endif
 			procnodll=true
-
+			skipline=false
 			procnb+=1
 			'dbg_prt2 "in proc=";procname,procnb,sourceix
 			proc(procnb).sr=sourceix
@@ -1061,8 +1055,16 @@ private sub dbg_proc(strg as string,linenum as integer,adr as integer)
 			proc(procnb).rvadr=0 'for now only used in gcc case
 
 			'dbg_prt2 "proc =";proc(procnb).nm;" in source=";source(proc(procnb).sr)
+		else
+			skipline=true
+			procname=""
 		end if
 	else
+		''dll and ddlmain but no proc name
+		if len(procname)=0 then
+			exit sub
+		End If
+		skipline=true
 		proc(procnb).ed=proc(procnb).db+adr
 		'dbg_prt2 "end of proc=";proc(procnb).ed,hex(proc(procnb).ed)
 		proc(procnb).sr=sourceix
@@ -1105,7 +1107,7 @@ end sub
 private sub dbg_epilog(ofset as integer)
 	proc(procnb).fn=proc(procnb).db+ofset
 	if proc(procnb).fn<>rline(linenb).ad then
-		if proc(procnb).nm<>"main" and proc(procnb).nm<>"{MODLEVEL}" then
+		if skipline=false and proc(procnb).nm<>"main" and proc(procnb).nm<>"{MODLEVEL}" then
 		'' this test is useless as for sub it is ok  .fn = .ad  --> mov rsp, rbp
 		'' for function the last line ('end function' is not given by 224)
 		'' so forcing it except for main
@@ -1388,15 +1390,19 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 	Else
 
 		#Ifndef __FB_64BIT__
-			#ifndef __FB_OUT_DLL__
+			if flagdll=NODLL then
 				if baseimg<>&h400000 then
-					baseimg=-&h400000 ''with new version of gcc the base image is changed
+					baseimg-=&h400000 ''with new version of gcc the base image is changed
 				else
 					baseimg=0
 				end if
-			#else
-				baseimg=0
-			#endif
+			else
+				if baseimg<>&h10000000 then
+					baseimg-=&h10000000 ''with new version of gcc the base image is changed
+				else
+					baseimg=0
+				end if
+			end if
 		#else
 			baseimg=0
 		#EndIf
@@ -1448,14 +1454,22 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 					dbg_file(recup,recupstab.ad)
 				case 255 ''not as standard stab freebasic version and maybe other information
 					compilerversion=recup
-				Case 32,38,40,128,160 'init common/ var / uninit var / local / parameter
-					parse_var(recup,recupstab.ad-baseimg)',exebase-baseimg) ''todo
+				Case 32,38,40 'init common/ var / uninit var / local / parameter
+					parse_var(recup,recupstab.ad+baseimg)',exebase-baseimg) ''todo
+				case 128,160 'init common/ var / uninit var / local / parameter
+					parse_var(recup,recupstab.ad)'+baseimg)',exebase-baseimg) ''todo
 				case 132 '' file name
 					dbg_include(recup)
 				case 36 ''procedure
-					dbg_proc(recup,recupstab.nline,recupstab.ad-baseimg)
+					if recupstab.nline then
+						dbg_proc(recup,recupstab.nline,recupstab.ad+baseimg)
+					else
+						dbg_proc(recup,recupstab.nline,recupstab.ad)
+					end if
 				case 68 ''line
-					dbg_line(recupstab.nline,recupstab.ad) ''no need of baseimage as the address is relative to address of proc
+					if skipline=false then
+						dbg_line(recupstab.nline,recupstab.ad) ''no need of baseimage as the address is relative to address of proc
+					end if
 				case 224 ''address epilog
 					dbg_epilog(recupstab.ad)
 				case 42 ''main entry point
@@ -1500,7 +1514,7 @@ private sub list_all()
 	next
 	print "global variables ---------------------------------------------------------- ";vrbgbl
 	for ivrb as integer=1 to vrbgbl
-		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem);
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;"/";hex(vrb(ivrb).adr);" ";*scopelabel(vrb(ivrb).mem);
 		if vrb(ivrb).typ=14 or vrb(ivrb).typ=4 or vrb(ivrb).typ=18 then
 			print " ";vrb(ivrb).fxlen
 		else
@@ -1509,7 +1523,7 @@ private sub list_all()
 	next
 	print "local variables ----------------------------------------------------------- ";vrbloc-VGBLMAX
 	for ivrb as integer=VGBLMAX+1 to vrbloc
-		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;" ";*scopelabel(vrb(ivrb).mem);
+		print "ivrb=";ivrb;" ";vrb(ivrb).nm;" ";udt(vrb(ivrb).typ).nm;" ";vrb(ivrb).adr;"/";hex(vrb(ivrb).adr);" ";*scopelabel(vrb(ivrb).mem);
 		if vrb(ivrb).typ=14 or vrb(ivrb).typ=4 or vrb(ivrb).typ=18 then
 			print " ";vrb(ivrb).fxlen
 		else

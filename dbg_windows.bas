@@ -85,7 +85,7 @@ private sub dll_load()
 			dllnb-=1
 		Else
 			ResetAllComboBox(GFILELIST) ''as combobox completely refilled in init_debuggee
-			init_debuggee(srcstart)
+			init_debuggee(srcstart,linenbprev+1)
 
 			dlldata(dllnb).fnm=dllfn
 			dlldata(dllnb).gbln=vrbgbl-vrbgblprev
@@ -591,14 +591,12 @@ While 1
 	' Process the debugging event code.
 	'dbg_prt("exception code "+Str(DebugEv.dwDebugEventCode))
 	Select Case (DebugEv.dwDebugEventCode)
-		'=========================
+		'=========================  code 1
 		Case EXCEPTION_DEBUG_EVENT
 		'=========================
-			'dbg_prt("exception code "+Hex(DebugEv.u.Exception.ExceptionRecord.ExceptionCode))'+DebugEv.u.Exception.dwfirstchance+" adr : "+DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
-
+			'dbg_prt("EXCEPTION_DEBUG_EVENT code="+Hex(DebugEv.u.Exception.ExceptionRecord.ExceptionCode)+ " "+hex(DebugEv.u.Exception.dwfirstchance)+" adr : "+hex(DebugEv.u.Exception.ExceptionRecord.ExceptionAddress))
 			firstchance=DebugEv.u.Exception.dwfirstchance
 			adr=cast(integer,DebugEv.u.Exception.ExceptionRecord.ExceptionAddress)
-			'dbg_prt2 "DEBUG EVENT EXCEPTION adr=";adr,DebugEv.u.Exception.ExceptionRecord.ExceptionCode
 			'dbg_prt("firstchance="+Str(firstchance))'25/01/2015
 			If firstchance=0 Then 'second try
 				If flagsecond=0 Then
@@ -642,7 +640,7 @@ While 1
 						'mutexlock blocker ''waiting the Go from main thread
 						'mutexunlock blocker
 						'ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-					'==========================
+					'========================== code 80000004
 					case EXCEPTION_SINGLE_STEP
 					'==========================
 						''even if singlestepping the exception could also be on a line with a UBP ????
@@ -650,7 +648,7 @@ While 1
 						WriteProcessMemory(dbghand,Cast(LPVOID,ssadr),@breakcpu,1,0)
 						ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 
-					'=========================
+					'========================= code 80000003
 					Case EXCEPTION_BREAKPOINT
 					'=========================
 						while 1
@@ -820,7 +818,7 @@ While 1
 				dbg_prt("second chance")
 	         	ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, DBG_EXCEPTION_NOT_HANDLED)
 			End If
-		'=========================
+		'========================= code 2
 		Case CREATE_THREAD_DEBUG_EVENT
 		'=========================
 	        With DebugEv.u.Createthread
@@ -848,7 +846,7 @@ While 1
 					EndIf
 	        End With
 	        ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-		'=========================
+		'========================= code 3
 		Case CREATE_PROCESS_DEBUG_EVENT
 		'=========================
 			With DebugEv.u.CreateProcessInfo
@@ -885,7 +883,7 @@ While 1
 				''''''''''''''''' new way debug_extract(Cast(UInteger,.lpBaseOfImage),exename)
 			End With
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-		'=========================
+		'========================= code 4
 		Case EXIT_THREAD_DEBUG_EVENT
 		'=========================
 			#Ifdef fulldbg_prt
@@ -898,7 +896,7 @@ While 1
 				mutexunlock blocker
 			end if
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-		'=========================
+		'========================= code 5
 		Case EXIT_PROCESS_DEBUG_EVENT
 		'=========================
 			'#Ifdef fulldbg_prt
@@ -918,14 +916,14 @@ While 1
 			mutexunlock blocker
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
 			Exit While ''goes out the loop so closes the thread 2
-		'=========================
+		'========================= code 6
 		Case LOAD_DLL_DEBUG_EVENT
 		'=========================
      		Dim loaddll As LOAD_DLL_DEBUG_INFO=DebugEv.u.loaddll
 
       		#ifdef fulldbg_prt
-	      	   	dbg_prt(""):dbg_prt("Load dll event Pid/Tid "+Str(DebugEv.dwProcessId)+" "+Str(DebugEv.dwThreadId))
-	      		dbg_prt ("hFile="+Str(loaddll.hFile)+" lpBaseOfDll="+Str(loaddll.lpBaseOfDll)+" "+dll_name(loaddll.hFile))
+				dbg_prt(""):dbg_prt("Load dll event Pid/Tid "+Str(DebugEv.dwProcessId)+" "+Str(DebugEv.dwThreadId))
+				dbg_prt("hFile="+Str(loaddll.hFile)+" lpBaseOfDll="+hex(loaddll.lpBaseOfDll)+" "+dll_name(loaddll.hFile))
 			#EndIf
 
 			debugdata=Cast(Integer,@loaddll)
@@ -933,7 +931,7 @@ While 1
 			mutexlock blocker ''waiting the Go from main thread
 			mutexunlock blocker
 			ContinueDebugEvent(DebugEv.dwProcessId,DebugEv.dwThreadId, dwContinueStatus)
-		'=========================
+		'========================= code 7
 		Case UNLOAD_DLL_DEBUG_EVENT
 		'=========================
 			Dim unloaddll As UNLOAD_DLL_DEBUG_INFO =DebugEv.u.unloaddll

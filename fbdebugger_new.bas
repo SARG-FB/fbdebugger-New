@@ -175,6 +175,7 @@ Dim Shared As Integer dsptyp=0      ''type of display : 0 normal/ 1 source/ 2 va
 
 ''put in a ctx with type ??
 dim shared As boolean procnodll
+dim shared As boolean skipline =false
 dim shared As boolean flagmain
 Dim Shared As boolean flagkill =FALSE 'flag if killing process to avoid freeze in thread_del
 Dim Shared As Integer flagrestart=-1  'flag to indicate restart in fact number of bas files to avoid to reload those files

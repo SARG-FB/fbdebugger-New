@@ -3492,7 +3492,7 @@ End Sub
 '===================================================
 '' initializes for the current debuggee
 '===================================================
-private sub init_debuggee(srcstart as integer)
+private sub init_debuggee(srcstart as integer,linestart as Integer =1)
 	''end of extraction ''todo add that for linux when the exe is running
 	'dbg_prt2 "in init_debuggee"
 	dim as INTEGER listidx
@@ -3501,7 +3501,7 @@ private sub init_debuggee(srcstart as integer)
 	   If flagwtch=0 AndAlso wtchexe(0,0)<>"" Then watch_check(wtchexe())
 	   flagwtch=0
 	EndIf
-	'''list_all() ''list all the debug data
+	''list_all() ''list all the debug data
 
 	listidx=srclistfirst
 	while listidx<>-1
@@ -3510,7 +3510,7 @@ private sub init_debuggee(srcstart as integer)
 	Wend
 
 	#Ifdef __fb_win32__
-		put_breakcpu()
+		put_breakcpu(linestart)
 	#endif
 	''srcstart contains the index for starting the loading of source codes
 	sources_load(srcstart,filedatetime(exename))

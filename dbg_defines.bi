@@ -18,10 +18,10 @@
 	#define ver3264 "(32bit) "
 #endif
 
-#Define fbdebuggerversion "V 3.02 "+ver3264
+#Define fbdebuggerversion "V 3.03 "+ver3264
 
 '#define fulldbg_prt 'uncomment to get more information
-#Define dbg_prt2 rem ' dbg_prt 'used temporary for debugging fbdebugger, change rem by print 
+#Define dbg_prt2 rem ' dbg_prt 'used temporary for debugging fbdebugger, change rem by print
 
  'take l char form a string and complete with spaces if needed
 #Define fmt(t,l) Left(t,l)+Space(l-Len(t))+"  "
