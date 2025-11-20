@@ -1107,7 +1107,7 @@ end sub
 private sub dbg_epilog(ofset as integer)
 	proc(procnb).fn=proc(procnb).db+ofset
 	if proc(procnb).fn<>rline(linenb).ad then
-		if skipline=false and proc(procnb).nm<>"main" and proc(procnb).nm<>"{MODLEVEL}" then
+		if proc(procnb).nm<>"main" and proc(procnb).nm<>"{MODLEVEL}" then
 		'' this test is useless as for sub it is ok  .fn = .ad  --> mov rsp, rbp
 		'' for function the last line ('end function' is not given by 224)
 		'' so forcing it except for main
@@ -1457,7 +1457,9 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 				Case 32,38,40 'init common/ var / uninit var / local / parameter
 					parse_var(recup,recupstab.ad+baseimg)',exebase-baseimg) ''todo
 				case 128,160 'init common/ var / uninit var / local / parameter
-					parse_var(recup,recupstab.ad)'+baseimg)',exebase-baseimg) ''todo
+					if skipline=false then
+						parse_var(recup,recupstab.ad)'+baseimg)',exebase-baseimg) ''todo
+					end if
 				case 132 '' file name
 					dbg_include(recup)
 				case 36 ''procedure
@@ -1471,7 +1473,9 @@ private function debug_extract(exebase As UInteger,nfile As String,dllflag As Lo
 						dbg_line(recupstab.nline,recupstab.ad) ''no need of baseimage as the address is relative to address of proc
 					end if
 				case 224 ''address epilog
-					dbg_epilog(recupstab.ad)
+					if skipline=false then
+						dbg_epilog(recupstab.ad)
+					end if
 				case 42 ''main entry point
 					'not used
 				case else
