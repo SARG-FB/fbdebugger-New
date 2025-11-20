@@ -1191,17 +1191,25 @@ private sub load_dat(byval ofset as integer,byval size as integer,byval ofstr as
 				dbg_file(strg,value)
 			case 255 ''not as standard stab freebasic version and maybe other information
 				'dbg_prt2 "compiled with=";strg
-			Case 32,38,40,128,160 'init common/ var / uninit var / local / parameter
+			Case 32,38,40 'init common/ var / uninit var / local / parameter
                	parse_var(strg,value)',exebase-baseimg) ''todo
+			case 128,160 'init common/ var / uninit var / local / parameter
+				if skipline=false then
+					parse_var(recup,recupstab.ad)'+baseimg)',exebase-baseimg) ''todo
+				end if
 			case 132 '' file name
 				'dbg_prt2 "dbg include=";strg
 				dbg_include(strg)
 			case 36 ''procedure
 				dbg_proc(strg,stab.desc,value)
 			case 68 ''line
-				dbg_line(stab.desc,value)
+				if skipline=false then
+					dbg_line(stab.desc,value)
+				end if
 			case 224 ''address epilog
-				dbg_epilog(value)
+				if skipline=false then
+					dbg_epilog(value)
+				end if
 			case 42 ''main entry point
 				'not used
 			case 0
